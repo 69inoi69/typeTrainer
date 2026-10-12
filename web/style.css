@@ -19,9 +19,9 @@
   --kb-scale: 1;
   /* one key unit: the chosen size, but never wider than the window allows, and
      never taller than the room left on the screen. --u-fit (set by fitKeyboard)
-     is the largest unit that fits; L (scale 1.25) may use all of it, M and S
-     proportionally less, so the three sizes differ on small screens too */
-  --u: min(calc(52px * var(--kb-scale)), calc((100vw - 32px) / 13.6), calc(var(--u-fit, 999px) * var(--kb-scale) / 1.25));
+     is the largest unit that fits: L (scale 1) uses all of it, M and S a bit
+     less (.88, .75). 84px: even on a huge screen the keys stop growing */
+  --u: min(calc((100vw - 32px) / 13.6), calc(var(--u-fit, 56px) * var(--kb-scale)), calc(84px * var(--kb-scale)));
 
   /* motion: one place to tune how "snappy" the app feels */
   --fast: 70ms;
@@ -138,11 +138,11 @@ button, input { font: inherit; }
 
 /* ---------- views ---------- */
 .views {
-  flex: 1; width: 100%; max-width: 900px; margin: 0 auto; padding: 0 16px 40px;
+  flex: 1; width: 100%; max-width: 900px; margin: 0 auto; padding: 0 16px 12px;
   display: flex; flex-direction: column;
 }
 /* auto margins in a flex column = vertically centred; stats stay at the top */
-#view-type { margin-block: auto; padding-bottom: 4vh; }
+#view-type { margin-block: auto; padding-bottom: 1.5vh; }
 .view { animation: view-in var(--med) var(--ease); }
 @keyframes view-in { from { opacity: 0; transform: translateY(6px); } }
 
@@ -263,10 +263,10 @@ button, input { font: inherit; }
    "translate" and "rotate" properties, so they never fight each other. */
 .hands {
   display: flex; justify-content: center; align-items: flex-end; gap: calc(var(--u) * .9);
-  margin: 14px 0 12px; user-select: none; pointer-events: none;
+  margin: 10px 0 10px; user-select: none; pointer-events: none;
 }
 .hands.off { display: none; }
-.hand { width: calc(var(--u) * 2.2); height: auto; overflow: visible; display: block; --skin: color-mix(in srgb, var(--text) 13%, var(--panel)); }
+.hand { width: calc(var(--u) * 2); height: auto; overflow: visible; display: block; --skin: color-mix(in srgb, var(--text) 13%, var(--panel)); }
 /* no outlines, so palm and fingers read as one soft shape; every finger is
    tinted in its finger colour (the same colours as the keys) */
 .hand .palm { fill: var(--skin); }
@@ -325,11 +325,11 @@ button.icon.guide { padding: 0 14px 0 11px; font-size: .8rem; }
 /* keyboard shortcuts at the bottom of the page */
 .hints {
   display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 22px;
-  padding: 10px 16px 18px; color: color-mix(in srgb, var(--sub) 85%, transparent); font-size: .74rem;
+  padding: 6px 16px 12px; color: color-mix(in srgb, var(--sub) 85%, transparent); font-size: .74rem;
 }
 .hints kbd { background: var(--panel); color: color-mix(in srgb, var(--text) 60%, var(--sub)); padding: 1px 6px; border-radius: 4px; }
 @media (pointer: coarse) { .hints { display: none; } }
-.toolbar { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; margin: 24px 0 8px; color: var(--sub); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; margin: 18px 0 4px; color: var(--sub); }
 button {
   color: var(--sub); background: var(--panel); border: 0;
   padding: 8px 14px; border-radius: 8px; cursor: pointer;
@@ -645,7 +645,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 /* ---------- start screen ---------- */
 .splash {
   position: fixed; inset: 0; z-index: 50; background: var(--bg);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
 }
 .splash-logo { font-size: clamp(2rem, 7vw, 3.4rem); color: var(--accent); transform-origin: top left; line-height: 1.2; }
 .splash-logo b { color: var(--text); font-weight: 400; }

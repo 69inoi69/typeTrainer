@@ -184,9 +184,9 @@ function pulseKey(ch, ok) {
   }
 }
 
-// Keyboard size: three presets (S / M / L, in % of the normal size) and "off"
-// for keyboard + hands, in one switch. Remembered in this browser.
-const KB_SIZES = [80, 100, 125];
+// Keyboard size: three presets (S / M / L, in % of the largest size that fits
+// the window) and "off" for keyboard + hands, in one switch. Remembered here.
+const KB_SIZES = [75, 88, 100];
 let kbSize = 100, kbHidden = false;
 // animate = true on a click: the keyboard folds away / unfolds smoothly
 function applyKb(animate = false) {
@@ -225,7 +225,7 @@ const nearestKb = (n) => KB_SIZES.reduce((a, b) => (Math.abs(b - n) < Math.abs(a
 // Everything else is measured once (it does not depend on --u), and --u-fit
 // caps the unit so the rest fits. Runs on load, resize, a new text and a size
 // change: never on a keypress.
-const HANDS_KB_PER_U = 6.48;   // hands 2.11 u + keyboard 4.36 u (4 rows, 3 gaps of .12 u)
+const HANDS_KB_PER_U = 6.28;   // hands 1.92 u (2 u wide, 100:96) + keyboard 4.36 u (4 rows, 3 gaps of .12 u)
 let fitFrame = 0;
 function requestFit() {
   cancelAnimationFrame(fitFrame);
@@ -239,7 +239,7 @@ function fitKeyboard() {
   if (kbHidden || view !== "type") return;
   const rest = document.querySelector(".top").offsetHeight + el.viewType.offsetHeight
     - el.hands.offsetHeight - el.keyboard.offsetHeight
-    + document.querySelector(".hints").offsetHeight + 40;   // 40 = bottom padding of .views
+    + document.querySelector(".hints").offsetHeight + 12;   // 12 = bottom padding of .views
   const fit = Math.max(24, Math.floor((innerHeight - rest - 4) / HANDS_KB_PER_U));
   root.setProperty("--u-fit", fit + "px");
 }
