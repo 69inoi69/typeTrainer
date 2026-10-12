@@ -198,6 +198,7 @@ function applyKb(animate = false) {
     el.hands.classList.toggle("off", kbHidden);
   }
   el.kbToggle.setAttribute("aria-pressed", String(!kbHidden));
+  document.body.classList.toggle("kb-hidden", kbHidden);   // phone CSS centres the text then
   el.kbSizeOut.textContent = kbHidden ? t("kb.off") : kbSize + "%";
   el.kbSmaller.disabled = kbHidden || kbSize <= KB_MIN;
   el.kbLarger.disabled = kbHidden || kbSize >= KB_MAX;
@@ -961,7 +962,9 @@ el.heat.addEventListener("click", () => {
   const splash = Splash.start();
   // keyboard size from last time (an old saved 0 meant "hidden")
   const saved = Number(store.get("tt.kbSize") ?? 100) || 0;
-  kbHidden = store.get("tt.kbHidden") === "1" || saved === 0;
+  // never chosen yet: hidden on phones (no physical keys to look up), shown elsewhere
+  const hiddenSaved = store.get("tt.kbHidden");
+  kbHidden = hiddenSaved === null ? isTouch() : hiddenSaved === "1" || saved === 0;
   kbSize = saved ? Math.min(KB_MAX, Math.max(KB_MIN, Math.round(saved / KB_STEP) * KB_STEP)) : 100;
   applyKb();
   applyHeat(store.get("tt.heat") === "1");
