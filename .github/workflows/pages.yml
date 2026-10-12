@@ -1,0 +1,61 @@
+# Builds the GitHub Pages version on every push to main:
+#   1. run the tests (a broken build is never published)
+#   2. compile the whole Go app to WebAssembly (main_wasm.go)
+#   3. put web/ + app.wasm + the shim together and publish them
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # allows a manual run from the Actions tab
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Test
+        run: |
+          go vet ./...
+          go test ./...
+
+      - name: Build the site
+        run: |
+          mkdir -p site
+          cp -r web/. site/
+          cp pages/wasm-shim.js site/
+          GOOS=js GOARCH=wasm go build -trimpath -ldflags="-s -w" -o site/app.wasm .
+          # wasm_exec.js ships with Go; its folder moved in Go 1.24
+          cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" site/ 2>/dev/null \
+            || cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" site/
+          # load the Go runtime and the shim before app.js
+          sed -i 's|<script src="app.js"></script>|<script src="wasm_exec.js"></script>\n  <script src="wasm-shim.js"></script>\n  <script src="app.js"></script>|' site/index.html
+          grep -q 'wasm-shim.js' site/index.html # fail if the line above did nothing
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

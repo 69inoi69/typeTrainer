@@ -24,7 +24,11 @@ its own.
 
 | Path | Responsibility |
 |---|---|
-| `main.go` | Loads the embedded data files, creates the store, generator and API server, starts HTTP. |
+| `setup.go` | Loads the embedded data files, creates the store, generator and API server (`newApp`). Shared by both entry points. |
+| `main.go` | Entry point for the normal server: calls `newApp` and starts HTTP. |
+| `main_wasm.go` | Entry point for the GitHub Pages build (see below). |
+| `pages/wasm-shim.js` | Pages only: routes `/api/v1/` requests from `app.js` to the Go code in the browser. |
+| `.github/workflows/pages.yml` | On every push to `main`: test, build WebAssembly, publish to Pages. |
 | `internal/config` | Every tunable number in one place. |
 | `internal/engine/model.go` | Per-letter statistics, EMA update, difficulty, mastery, softmax weight. |
 | `internal/engine/generator.go` | Unlock order, first lesson size, unlocking rule, word selection. |
@@ -76,7 +80,7 @@ transaction (`SELECT ... FOR UPDATE`) instead.
 ## Adding PostgreSQL later
 
 Create `internal/storage/postgres.go` with a type that has the seven `Store`
-methods and change one line in `main.go`. A possible schema, once accounts exist:
+methods and change one line in `setup.go`. A possible schema, once accounts exist:
 
 ```sql
 CREATE TABLE users     (id BIGSERIAL PRIMARY KEY, name TEXT UNIQUE NOT NULL,
@@ -90,6 +94,29 @@ CREATE TABLE sessions  (id BIGSERIAL PRIMARY KEY, user_id BIGINT REFERENCES user
 ```
 
 With accounts, every `Store` method gets a `userID` parameter.
+
+## Two ways to run: server and GitHub Pages
+
+The same code runs in two places. Go build tags pick the entry point:
+
+| | Normal server | GitHub Pages |
+|---|---|---|
+| Entry point | `main.go` (`//go:build !(js && wasm)`) | `main_wasm.go` (`//go:build js && wasm`) |
+| Build | `go run .` | `GOOS=js GOARCH=wasm go build -o app.wasm .` |
+| Where Go runs | on your computer | in the visitor's browser (WebAssembly) |
+| How `app.js` reaches the API | HTTP to `localhost` | `pages/wasm-shim.js` replaces `fetch` for `/api/v1/` and calls `goApi(method, path, body)` |
+| Statistics | until the server stops | until the tab is closed or reloaded |
+
+`main_wasm.go` does not listen on a port. It builds the same handler with
+`newApp()` and gives JavaScript one function, `goApi`, which runs a request
+through that handler (`httptest.NewRequest` / `NewRecorder` serve as an
+in-memory request and response). Engine, store, validation and JSON are
+therefore identical in both versions; only the transport differs.
+
+The workflow builds the site by copying `web/`, adding `app.wasm`,
+`wasm_exec.js` (the Go runtime for browsers, shipped with Go) and the shim,
+and inserting two `<script>` tags before `app.js` in `index.html`. The
+server version never loads them.
 
 ## Adding a layout or language
 

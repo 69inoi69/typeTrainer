@@ -42,6 +42,18 @@ go test ./...
 
 Optional: build one `.exe` you can double-click: `go build -o typing-trainer.exe .`
 
+## Online version (GitHub Pages)
+
+<https://69inoi69.github.io/typing-trainer/> — no installation, share the link
+with anyone.
+
+GitHub Pages can only host static files, so the whole Go app (engine, store,
+API) is compiled to WebAssembly and runs inside the browser. It is the same Go
+code as the server version, not a copy. Every push to `main` runs the tests and
+republishes the site automatically (`.github/workflows/pages.yml`); progress is
+visible in the **Actions** tab. Statistics live only in the open tab and reset
+on reload.
+
 ## How to use
 
 - On the first visit a three-step intro explains the home position. At the end,
@@ -72,7 +84,11 @@ Optional: build one `.exe` you can double-click: `go build -o typing-trainer.exe
 
 ```
 typing-trainer/
-├── main.go                       wires everything together, starts the server
+├── setup.go                      loads data files, wires the packages together
+├── main.go                       entry point: normal web server (go run .)
+├── main_wasm.go                  entry point: WebAssembly build for GitHub Pages
+├── pages/wasm-shim.js            Pages only: sends /api/v1 calls to the Go code in the browser
+├── .github/workflows/pages.yml   builds and publishes the Pages version
 ├── data/
 │   ├── words-en.txt              word list, most frequent first
 │   └── layouts/qwerty-en.json    keyboard layout + finger mapping (data, not code)
@@ -121,5 +137,5 @@ automatically. wordfreq data is CC BY-SA 4.0: credit it if you publish.
 ## Adding PostgreSQL later
 
 Write `internal/storage/postgres.go` with a type that has the same seven
-methods as `Store`, then change one line in `main.go`. A schema sketch is in
+methods as `Store`, then change one line in `setup.go`. A schema sketch is in
 `docs/ARCHITECTURE.md`.

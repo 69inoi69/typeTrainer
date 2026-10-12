@@ -42,6 +42,11 @@ exercises from real words around the user's weak letters.
   per animation frame (`requestAnimationFrame`). Animations use CSS transitions
   or the Web Animations API (`element.animate`), never JS timers.
 
+- The app runs in two ways from the same code: a normal server (`main.go`)
+  and WebAssembly on GitHub Pages (`main_wasm.go`). Shared setup goes in
+  `setup.go`. Do not add anything that only works with a real server (files on
+  disk, background goroutines tied to HTTP) without telling me.
+
 Details: `docs/ARCHITECTURE.md`.
 
 ## Product decisions (do not change without asking)
@@ -69,6 +74,10 @@ go test ./...       # run all tests
 gofmt -w .          # format
 go vet ./...        # static checks
 ```
+
+Every push to `main` also runs the tests and republishes GitHub Pages
+(`.github/workflows/pages.yml`). If that run fails, the site stays on the old
+version.
 
 ## Before you say a task is done
 
