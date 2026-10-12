@@ -188,8 +188,6 @@ const Splash = (() => {
     async function done() {
       const wait = MIN_MS - (performance.now() - t0);
       if (!skipped && wait > 0) await new Promise((r) => setTimeout(r, wait));
-      document.getElementById("splash-bar").style.width = "100%";
-
       // FLIP: move the big logo onto the small header logo
       // (scale by font size, line up the left edges and the vertical centres)
       const from = document.getElementById("splash-logo");
@@ -206,10 +204,17 @@ const Splash = (() => {
         from.animate([{ transform: "none" },
           { transform: `translate(${dx}px, ${dy}px) scale(${s})` }],
           { duration: 520, easing: "cubic-bezier(.6,0,.2,1)", fill: "forwards" });
+      } else {
+        // phone: the header has no logo to land on, so the big one simply
+        // drifts up a little, shrinks slightly and fades out
+        from.style.transformOrigin = "50% 50%";
+        from.animate([{ opacity: 1, transform: "none" },
+          { opacity: 0, transform: "translateY(-14px) scale(.94)" }],
+          { duration: 420, easing: "cubic-bezier(.4,0,.2,1)", fill: "forwards" });
       }
       root.animate([{ backgroundColor: getComputedStyle(root).backgroundColor }, { backgroundColor: "transparent" }],
         { duration: 520, easing: "ease-in", fill: "forwards" });
-      root.querySelectorAll(".splash-phrase, .splash-bar").forEach((n) =>
+      root.querySelectorAll(".splash-phrase").forEach((n) =>
         n.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: "forwards" }));
       // typing is allowed again, but the header logo stays hidden ("landing")
       // until the flying logo has arrived, so there are never two of them

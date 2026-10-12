@@ -23,6 +23,11 @@
   --fast: 70ms;
   --med: 180ms;
   --ease: cubic-bezier(.2, .8, .2, 1);
+
+  /* controls: the switches on top and the buttons below share one look */
+  --ctl: 38px;          /* outer height of every switch and button */
+  --track: color-mix(in srgb, var(--text) 8%, var(--panel));
+  --ring: inset 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent);
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; } /* no blue flash on tap (phones) */
 html, body { min-height: 100%; }
@@ -66,13 +71,14 @@ button, input { font: inherit; }
 .switch {
   position: relative; display: grid; grid-template-columns: 1fr 1fr;
   /* a lighter track with a thin edge, so the switches stand out from the page */
-  background: color-mix(in srgb, var(--text) 8%, var(--panel)); border-radius: 999px; padding: 4px;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent);
+  background: var(--track); border-radius: 999px; padding: 4px;
+  box-shadow: var(--ring); height: var(--ctl);
   flex: none;                     /* never squeezed: both halves stay equal */
 }
 .switch button {
   position: relative; z-index: 1; border: 0; background: none; cursor: pointer; white-space: nowrap;
-  color: color-mix(in srgb, var(--text) 55%, var(--sub)); padding: 6px 14px; border-radius: 999px;
+  color: color-mix(in srgb, var(--text) 55%, var(--sub)); padding: 0 14px; border-radius: 999px;
+  height: 100%; display: grid; place-items: center;    /* same height in both switches */
   transition: color var(--med) var(--ease);
 }
 .switch button[aria-selected="true"] { color: var(--on-accent); }
@@ -84,7 +90,7 @@ button, input { font: inherit; }
   transition: transform 240ms cubic-bezier(.2, .8, .2, 1);   /* smooth, no bounce */
 }
 .switch.stats .switch-thumb { transform: translateX(100%); }
-.view-switch button { display: grid; place-items: center; padding: 5px 16px; }
+.view-switch button { padding: 0 16px; }
 .view-switch svg {
   width: 20px; height: 20px; fill: none; stroke: currentColor;
   stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
@@ -92,7 +98,7 @@ button, input { font: inherit; }
 
 /* ---------- language switch (same look as type/stats, N options) ---------- */
 .lang-switch { grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); font-size: .82rem; }
-.lang-switch button { padding: 6px 10px; letter-spacing: .05em; }
+.lang-switch button { padding: 0 10px; letter-spacing: .05em; }
 .lang-switch .switch-thumb {
   width: calc((100% - 8px) / var(--n, 4));
   transform: translateX(calc(var(--i, 0) * 100%));
@@ -109,7 +115,7 @@ button, input { font: inherit; }
 @keyframes view-in { from { opacity: 0; transform: translateY(6px); } }
 
 /* ---------- letters bar (unlock progress) ---------- */
-.letter-row { display: flex; flex-wrap: wrap; gap: 5px; }
+.letter-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; }
 .chip {
   width: 1.75em; height: 1.75em; display: grid; place-items: center;
   border-radius: 6px; font-size: .9rem; color: var(--sub);
@@ -136,7 +142,7 @@ button, input { font: inherit; }
    the warning appears in the same place on top of it */
 .caption-slot { position: relative; margin-top: 8px; min-height: 26px; }
 .letters-caption {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px;
   color: var(--sub); font-size: .82rem; transition: opacity var(--med), transform var(--med) var(--ease);
 }
 .caption-slot.warning .letters-caption { opacity: 0; transform: translateY(4px); pointer-events: none; }
@@ -166,6 +172,7 @@ button, input { font: inherit; }
   position: relative;
   font-size: clamp(1.1rem, 3.6vw, 1.6rem); line-height: 1.7;
   letter-spacing: .02em; color: var(--sub); word-break: break-word;
+  text-align: center;              /* every line centred, like "center" in Word */
   transition: filter var(--med), opacity var(--med);
 }
 .text.swap { animation: text-in var(--med) var(--ease); }   /* new exercise fades in */
@@ -206,7 +213,7 @@ button, input { font: inherit; }
 /* Caps Lock / wrong layout: sits on top of the status line, so the page
    never moves. Fades in and slides down a little. */
 .warn {
-  position: absolute; left: 0; top: 0; max-width: 100%; z-index: 2;
+  position: absolute; left: 0; right: 0; margin-inline: auto; top: 0; max-width: 100%; z-index: 2;
   display: block; width: max-content; min-height: 26px; padding: 4px 12px;
   border-radius: 8px; font-size: .82rem; line-height: 1.35;
   color: var(--text); background: color-mix(in srgb, var(--accent) 16%, var(--panel));
@@ -320,13 +327,15 @@ button:active { transform: scale(.95); }
 kbd { font: inherit; font-size: .8em; padding: 1px 5px; border-radius: 4px; background: var(--bg); }
 
 button.icon {
-  height: 38px; min-width: 38px; padding: 0 9px; border-radius: 10px;
+  height: var(--ctl); min-width: var(--ctl); padding: 0 9px; border-radius: 999px;
+  background: var(--track); box-shadow: var(--ring);
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
 }
 button.icon svg {
   width: 20px; height: 20px; flex: none;
   fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
 }
+button.icon:hover { background: color-mix(in srgb, var(--text) 14%, var(--panel)); }
 /* switched on: accent color, tinted background and a thin ring */
 button.icon[aria-pressed="true"] {
   color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--panel));
@@ -350,8 +359,11 @@ button:disabled:hover { color: var(--sub); background: none; }
 button:disabled:active { transform: none; }
 
 /* [ - | keyboard 100% | + ] as one group */
-.kb-size { display: flex; align-items: center; gap: 2px; padding: 0 2px; border-radius: 12px; background: var(--panel); }
-.kb-size button.icon { background: none; }
+.kb-size {
+  display: flex; align-items: center; gap: 2px; padding: 4px; height: var(--ctl);
+  border-radius: 999px; background: var(--track); box-shadow: var(--ring);
+}
+.kb-size button.icon { background: none; box-shadow: none; height: 100%; min-width: calc(var(--ctl) - 8px); }
 .kb-size button.icon:not(:disabled):hover { background: color-mix(in srgb, var(--text) 6%, var(--panel)); }
 .kb-size button.small { min-width: 30px; padding: 0 5px; }
 .kb-size button.small svg { width: 16px; height: 16px; }
@@ -550,7 +562,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .streak:not(.show) { display: none; }   /* no empty reserved space on a phone */
   .streak { min-width: 0; }
   .logo { display: none; }
-  .switch button { padding: 6px 14px; }
+  :root { --ctl: 34px; }
+  .switch button { padding: 0 14px; }
   .metric span { font-size: 1.3rem; }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .letter-row { gap: 4px; }
@@ -571,7 +584,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .k-tab .toast-mark { width: 22px; height: 22px; }
   .toasts .toast:nth-child(n+3) { display: none; }
   .toolbar { gap: 6px; }
-  button.icon { height: 34px; min-width: 34px; padding: 0 7px; }
+  button.icon { padding: 0 7px; }
   .kb-size button.small { display: none; } /* phone: the keyboard is hidden by default, no room for -/+ */
   #kb-size-out { min-width: 0; }
   #btn-reset { margin-left: 0; }
@@ -605,9 +618,6 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   opacity: 0; animation: splash-phrase .5s var(--ease) 700ms forwards;
 }
 @keyframes splash-phrase { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-.splash-bar { width: min(180px, 50vw); height: 2px; border-radius: 2px; background: var(--panel); overflow: hidden; }
-.splash-bar i { display: block; height: 100%; width: 0; background: var(--accent); animation: splash-load 1.2s var(--ease) forwards; transition: width .25s; }
-@keyframes splash-load { to { width: 85%; } }
 body.splashing .top .logo, body.landing .top .logo { visibility: hidden; }  /* the splash logo lands here */
 
 /* after the splash: the page slides in, piece by piece */
