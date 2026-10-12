@@ -62,6 +62,8 @@
         <div class="caption-slot" id="caption-slot">
           <div id="letters-caption" class="letters-caption">&nbsp;</div>
           <div class="warn" id="layout-warn" role="status" aria-live="polite"></div>
+          <!-- messages (fx.js, FX.toast) appear here, in place of the status line -->
+          <div class="notice" id="notice" role="status" aria-live="polite"></div>
         </div>
       </div>
 
@@ -151,8 +153,6 @@
     <span><kbd>alt</kbd> + <kbd>1</kbd>…<kbd>4</kbd> <span data-i18n="hint.lang">language</span></span>
   </footer>
 
-  <!-- messages (fx.js, FX.toast): top right, newest on top -->
-  <div id="toasts" class="toasts" aria-live="polite"></div>
   <div id="tooltip" class="tooltip" role="tooltip"></div>
 
   <!-- Intro for the very first visit: a short hands-on start, not a text to read.

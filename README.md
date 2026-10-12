@@ -88,9 +88,10 @@ on reload.
   green from 3, yellow from 10, orange with a flickering flame from 25, glowing
   red from 50. New records, mastered letters and new letters get
   a small celebration.
-- Messages appear in the top right corner. The thin bar at the bottom of each
-  one fills up while it is shown; when it is full, the message closes. Hover
-  pauses it, a click closes it. Every kind has its own color, icon and small
+- Messages are part of the page, not pop-ups: a message takes the place of the
+  status line under the letters for a few seconds, then the status line comes
+  back. One at a time, the others wait their turn. The thin bar under each
+  message fills up while it is shown; hover pauses it, a click skips it. Every kind has its own color, icon and small
   animation: record (gold trophy), new letter (blue, the letter itself),
   mastered (green check), streak (orange flame), Tab urges beaten (violet
   shield), Tab message (small, grey).

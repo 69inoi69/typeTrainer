@@ -41,7 +41,7 @@ its own.
 | `data/layouts/*.json` | Keys, rows, finger per key, AltGr letters, finger colors. |
 | `data/langs/<id>/words.txt` | Word list per language, most frequent first. |
 | `tools/wordlists/` | Python script + block lists that build the word lists (not part of the app). |
-| `web/` | Static frontend: `index.html`, `style.css`, `app.js`, `i18n.js` with every interface text in all four languages, and `fx.js` with the visual rewards (confetti, counters, toast queue; they never affect what is measured). The interface language always follows the practice language. |
+| `web/` | Static frontend: `index.html`, `style.css`, `app.js`, `i18n.js` with every interface text in all four languages, and `fx.js` with the visual rewards (confetti, counters, the message queue shown in the status line; they never affect what is measured). The interface language always follows the practice language. |
 
 The `web/` and `data/` folders are embedded into the binary (`//go:embed`), so
 the program runs the same from any folder.

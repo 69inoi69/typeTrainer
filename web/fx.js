@@ -102,21 +102,22 @@ const FX = (() => {
     [{ transform: "translateX(0)" }, { transform: "translateX(-5px)" }, { transform: "translateX(4px)" }, { transform: "translateX(-2px)" }, { transform: "none" }],
     { duration: 320, easing: "ease-out" });
 
-  // ---------- toasts ----------
-  // Messages stack in the top right corner, newest on top. Each one has a thin
-  // bar that fills up while it is shown: when the bar is full (CSS animation
-  // "animationend"), the message closes. Hover pauses it, a click closes it.
+  // ---------- messages: part of the interface, not pop-ups ----------
+  // A message takes the place of the status line under the letters (focus /
+  // mastered letters / next) for a few seconds, then the status line comes
+  // back. One message at a time; the others wait in a queue. A thin bar under
+  // the message fills up while it is shown: when it is full (CSS animation,
+  // "animationend") the next one comes. Hover pauses it, a click skips it.
   //
   // Every KIND of message has its own look (color, icon, small animation in
-  // style.css, .toast.k-<kind>), so you can tell what happened at a glance:
+  // style.css, .note.k-<kind>), so you can tell what happened at a glance:
   //   best     new personal record       gold, trophy, shine
   //   letter   a new letter opened       blue, the letter itself pops in
   //   mastered letters mastered          green, a check that draws itself
   //   streak   clean words in a row      orange, a flickering flame
   //   resisted Tab urges beaten          violet, shield
   //   tab      message after Tab         grey, small and quick
-  const TOAST_MS = 4500;   // default time on screen
-  const TOAST_MAX = 4;     // more at once: the oldest one goes away
+  const NOTE_MS = 3500;    // default time on screen
   const ICONS = {
     best: '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4"/><path d="M12 13v4M8 20h8"/>',
     mastered: '<path class="draw" d="M5 12.5l4.5 4.5L19 7.5"/>',
@@ -125,36 +126,47 @@ const FX = (() => {
     tab: '<path d="M4 12h11M11 8l4 4-4 4M19 6v12"/>',
     info: '<circle cx="12" cy="12" r="8"/><path d="M12 11v5M12 8h.01"/>',
   };
-  const KIND_MS = { best: 5500, letter: 6000, tab: 2800 };
-  // toast(html, ms) or toast(html, {kind, ms, badge}); badge = big text instead of the icon
+  const KIND_MS = { best: 4500, letter: 5500, tab: 2200 };
+  const queue = [];
+  let current = null;        // the message on screen, or null
+  // toast(html) or toast(html, {kind, ms, badge}); badge = a letter instead of the icon
   function toast(html, opts = {}) {
-    if (typeof opts === "number") opts = { ms: opts };
-    const kind = opts.kind || "info";
-    const ms = opts.ms ?? KIND_MS[kind] ?? TOAST_MS;
-    const box = document.getElementById("toasts");
-    const node = document.createElement("div");
-    node.className = "toast k-" + kind;
-    node.setAttribute("role", "status");
-    node.style.setProperty("--ms", ms + "ms");
-    const mark = document.createElement("span");
-    mark.className = "toast-mark";
-    if (opts.badge) mark.textContent = opts.badge;
-    else mark.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[kind] || ICONS.info}</svg>`;
-    node.innerHTML = `<div class="toast-body">${html}</div><i class="toast-bar"></i>`;
-    node.prepend(mark);
-    node.querySelector(".toast-bar").addEventListener("animationend", () => closeToast(node));
-    node.addEventListener("click", () => closeToast(node));
-    box.prepend(node);
-    while (box.children.length > TOAST_MAX) box.lastElementChild.remove();
+    queue.push({ html, opts });
+    if (!current) showNext();
   }
-  function closeToast(node) {
-    if (node.classList.contains("out")) return;
-    node.classList.add("out");             // slide-out animation, then remove
-    node.addEventListener("animationend", (e) => { if (e.target === node) node.remove(); });
+  function showNext() {
+    const slot = document.getElementById("caption-slot");
+    const box = document.getElementById("notice");
+    const item = queue.shift();
+    if (!item) {                         // nothing left: the status line comes back
+      current = null;
+      slot.classList.remove("noticing");
+      return;
+    }
+    const kind = item.opts.kind || "info";
+    const node = document.createElement("div");
+    node.className = "note k-" + kind;
+    node.style.setProperty("--ms", (item.opts.ms ?? KIND_MS[kind] ?? NOTE_MS) + "ms");
+    const mark = document.createElement("span");
+    mark.className = "note-mark";
+    if (item.opts.badge) mark.textContent = item.opts.badge;
+    else mark.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[kind] || ICONS.info}</svg>`;
+    node.innerHTML = `<span class="note-body">${item.html}</span><i class="note-bar"></i>`;
+    node.prepend(mark);
+    node.querySelector(".note-bar").addEventListener("animationend", () => closeNote(node));
+    node.addEventListener("click", () => closeNote(node));
+    box.replaceChildren(node);
+    current = node;
+    slot.classList.add("noticing");
+  }
+  function closeNote(node) {
+    if (node !== current || node.classList.contains("out")) return;
+    node.classList.add("out");           // fade out, then the next one (or the status line)
+    node.addEventListener("animationend", (e) => { if (e.target === node) { node.remove(); showNext(); } });
   }
 
-  // true when no message is on screen (Tab messages never pile up)
-  const idle = () => !document.querySelector("#toasts .toast:not(.out)");
+  // true when no message is shown or waiting (Tab messages never pile up)
+  const idle = () => !current && !queue.length;
 
   return { burst, burstFrom, countUp, bump, shake, toast, anim, idle, collapse, fadeOut };
 })();
