@@ -519,9 +519,8 @@ function setView(name) {
     focusText();
   }
 }
-el.tabType.addEventListener("click", (e) => { e.currentTarget.blur(); if (view !== "type") squishThumb(el.switch); setView("type"); });
-el.tabStats.addEventListener("click", (e) => { e.currentTarget.blur(); if (view !== "stats") squishThumb(el.switch); setView("stats"); });
-const squishThumb = (sw) => FX.squish(sw.querySelector(".switch-thumb"));
+el.tabType.addEventListener("click", (e) => { e.currentTarget.blur(); setView("type"); });
+el.tabStats.addEventListener("click", (e) => { e.currentTarget.blur(); setView("stats"); });
 
 function renderStats() {
   const s = lastStats;
@@ -797,7 +796,6 @@ function buildLangSwitch() {
 }
 function switchLanguage(id) {
   if (busy || id === lang) return;
-  squishThumb(el.langSwitch);
   loadLanguage(id).catch((err) => console.error(err));
 }
 function markLangSwitch() {
@@ -866,7 +864,6 @@ document.addEventListener("keydown", (e) => {
   // shortcuts: Shift+Tab = type <-> stats, Alt+1...4 = language
   if (e.key === "Tab" && e.shiftKey) {
     e.preventDefault();
-    squishThumb(el.switch);
     setView(view === "type" ? "stats" : "type");
     return;
   }

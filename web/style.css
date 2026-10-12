@@ -79,7 +79,7 @@ button, input { font: inherit; }
   position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px);
   background: var(--accent); border-radius: 999px;
   box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 35%, transparent);
-  transition: transform 260ms cubic-bezier(.3, 1.4, .5, 1);   /* small overshoot */
+  transition: transform 240ms cubic-bezier(.2, .8, .2, 1);   /* smooth, no bounce */
 }
 .switch.stats .switch-thumb { transform: translateX(100%); }
 .view-switch button { display: grid; place-items: center; padding: 5px 16px; }
@@ -336,7 +336,13 @@ button.icon[aria-pressed="true"] {
   color: var(--error); background: color-mix(in srgb, var(--error) 16%, var(--panel));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--error) 55%, transparent);
 }
-#heat-toggle[aria-pressed="true"] svg { fill: color-mix(in srgb, var(--accent) 35%, transparent); }
+/* heatmap icon: keys tinted by how hard they are (h1 light ... h3 full) */
+#heat-toggle svg { stroke: none; }
+#heat-toggle svg rect { fill: currentColor; }
+#heat-toggle svg .h0 { fill-opacity: .18; }
+#heat-toggle svg .h1 { fill-opacity: .38; }
+#heat-toggle svg .h2 { fill-opacity: .65; }
+#heat-toggle svg .h3 { fill-opacity: 1; }
 button:disabled { opacity: .35; cursor: default; }
 button:disabled:hover { color: var(--sub); background: none; }
 button:disabled:active { transform: none; }

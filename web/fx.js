@@ -101,11 +101,6 @@ const FX = (() => {
   const shake = (node) => anim(node,
     [{ transform: "translateX(0)" }, { transform: "translateX(-5px)" }, { transform: "translateX(4px)" }, { transform: "translateX(-2px)" }, { transform: "none" }],
     { duration: 320, easing: "ease-out" });
-  // squish uses the separate CSS "scale" property, so it combines with the
-  // element's own transform (the switch thumb is positioned with transform)
-  const squish = (node) => anim(node,
-    [{ scale: "1 1" }, { scale: "1.14 .88" }, { scale: "1 1" }],
-    { duration: 320, easing: "ease-out" });
 
   // ---------- toasts ----------
   // Messages stack in the top right corner, newest on top. Each one has a thin
@@ -161,7 +156,7 @@ const FX = (() => {
   // true when no message is on screen (Tab messages never pile up)
   const idle = () => !document.querySelector("#toasts .toast:not(.out)");
 
-  return { burst, burstFrom, countUp, bump, shake, squish, toast, anim, idle, collapse, fadeOut };
+  return { burst, burstFrom, countUp, bump, shake, toast, anim, idle, collapse, fadeOut };
 })();
 
 // ---------- start screen ----------
