@@ -1,133 +1,125 @@
-# Typing Trainer — prototype
+<p align="center">
+  <img src="web/favicon.svg" width="76" alt="typetrainer logo: a yellow key with the home-row bump">
+</p>
 
-An adaptive touch-typing trainer (engineering thesis prototype).
-Go backend (standard library only) + plain HTML/CSS/JS frontend.
-The server watches which keys you miss or type slowly and puts them into the
-next exercise more often.
+<h1 align="center">typetrainer</h1>
 
-## Run it on Windows (from zero)
+<p align="center"><sub><i>eyes up, fingers down</i></sub></p>
 
-1. **Install Go** (once). Go to <https://go.dev/dl/>, download the
-   Windows installer (`go1.24.x.windows-amd64.msi` or newer, at least 1.22),
-   run it and click Next until it finishes.
-2. **Check it works.** Open a *new* PowerShell window
-   (Start → type `powershell` → Enter) and run:
-   ```
-   go version
-   ```
-   You should see something like `go version go1.24.7 windows/amd64`.
-3. **Go to the project folder** (where this README is), for example:
-   ```
-   cd C:\Users\YOUR_NAME\Downloads\typing-trainer
-   ```
-4. **Start the server:**
-   ```
-   go run .
-   ```
-   The first run takes a few seconds. Then you see
-   `Typing trainer running. Open http://localhost:3000 in your browser`.
-   Windows may ask about the firewall — "Allow" is fine (or Cancel; localhost works anyway).
-5. **Open** <http://localhost:3000> in your browser and start typing.
-   Always open the page through this address. Double-clicking `web/index.html`
-   opens it without the server, and then it has no words and no statistics.
-   If the port is taken by another program, change `Addr` in
+<p align="center">
+  A touch-typing trainer that <b>finds your weakest letters</b><br>
+  and builds every exercise from <b>real words</b> around them.
+</p>
+
+<p align="center">
+  <a href="https://69inoi69.github.io/typing-trainer/"><b>▶&nbsp; Try it in your browser</b></a>
+  &nbsp;·&nbsp; <a href="docs/ALGORITHM.md">How it works</a>
+  &nbsp;·&nbsp; <a href="#run-it-on-your-computer">Run it locally</a>
+</p>
+
+<p align="center">English · Polski · Українська · Русский</p>
+
+<p align="center">
+  <img src="docs/screenshots/typing.png" width="880" alt="The typing screen: letters you have unlocked, the text, hands showing which finger to use, and the keyboard">
+</p>
+
+---
+
+## Why
+
+Monkeytype is great for **measuring** how fast you type. keybr.com **teaches**,
+but with made-up letter salad like *"tetsna nartse"*. typetrainer sits in
+between: it teaches touch typing step by step, and you only ever type **real
+words**.
+
+## What it does
+
+- **Watches every keypress.** For each letter it keeps track of how often you
+  miss it and how long it takes you, and turns that into one difficulty score.
+- **Practises what you are bad at.** Each new exercise is picked so your weak
+  letters show up much more often, while the strong ones still appear.
+- **Opens letters gradually.** You start with the most common ones; a new
+  letter opens once every open letter is accurate and fast enough. Already a
+  touch typist? Open everything at once.
+- **Shows which finger to use.** Two hands above the keyboard light up the
+  right finger for the next key.
+- **Four languages, one progress each.** English, Polish, Ukrainian and Russian,
+  with their own keyboard layouts and word lists.
+- **Shows where it is hard.** A statistics screen with your speed over time and
+  a keyboard coloured by difficulty.
+- **No restart on Tab.** On purpose: restarting throws away exactly the mistakes
+  the trainer learns from.
+- **One mode, no settings to tune.** The algorithm decides what you practise.
+
+<p align="center">
+  <img src="docs/screenshots/stats.png" width="600" alt="Statistics: speed per exercise, a keyboard coloured by difficulty, and every letter from weakest to strongest">
+  &nbsp;
+  <img src="docs/screenshots/phone.png" width="200" alt="The typing screen on a phone, in Ukrainian">
+</p>
+
+## How it works, in 30 seconds
+
+```
+every letter:   how often you miss it  +  how slow it is   →  difficulty 0 … 1
+little data?    assume the letter is fairly hard until there is evidence
+next exercise:  pick a weak letter (softmax: weaker = much more likely),
+                then a real word that contains it (and other weak letters)
+mastered:       20+ presses, under 5 % mistakes, 30 wpm or faster
+all mastered:   the next letter opens
+```
+
+Every formula, every number and the reasons behind them are in
+[**docs/ALGORITHM.md**](docs/ALGORITHM.md).
+
+## Run it on your computer
+
+You need [Go](https://go.dev/dl/) 1.22 or newer. Then, in the project folder:
+
+```
+go run .
+```
+
+and open <http://localhost:3000>. That is all: no database, no npm, no build step.
+
+<details>
+<summary><b>Step by step on Windows (from zero)</b></summary>
+
+1. **Install Go** (once): download the Windows installer from
+   <https://go.dev/dl/> (`go1.24.x.windows-amd64.msi` or newer) and click Next
+   until it finishes.
+2. **Check it works.** Open a *new* PowerShell window (Start → `powershell` →
+   Enter) and run `go version`. You should see something like
+   `go version go1.24.7 windows/amd64`.
+3. **Go to the project folder**, for example
+   `cd C:\Users\YOUR_NAME\Downloads\typing-trainer`.
+4. **Start the server:** `go run .`. The first run takes a few seconds, then you
+   see `Typing trainer running. Open http://localhost:3000 in your browser`.
+   If Windows asks about the firewall, "Allow" is fine.
+5. **Open** <http://localhost:3000>. Always use this address: double-clicking
+   `web/index.html` opens the page without the server, with no words and no
+   statistics. If the port is taken, change `Addr` in
    `internal/config/config.go`.
-6. **Stop** the server with `Ctrl + C` in PowerShell. All statistics are
-   in memory, so they are reset when the server stops (PostgreSQL comes later).
+6. **Stop** the server with `Ctrl + C`. Progress lives in memory for now, so
+   save it first with the export button (⬇) and load it back (⬆) next time.
 
-Run the unit tests:
-```
-go test ./...
-```
+Optional: `go build -o typing-trainer.exe .` makes one `.exe` you can double-click.
 
-Optional: build one `.exe` you can double-click: `go build -o typing-trainer.exe .`
+</details>
 
-## Online version (GitHub Pages)
+Tests: `go test ./...`
 
-<https://69inoi69.github.io/typing-trainer/> — no installation, share the link
-with anyone.
+## Built with
 
-GitHub Pages can only host static files, so the whole Go app (engine, store,
-API) is compiled to WebAssembly and runs inside the browser. It is the same Go
-code as the server version, not a copy. Every push to `main` runs the tests and
-republishes the site automatically (`.github/workflows/pages.yml`); progress is
-visible in the **Actions** tab. Statistics live only in the open tab and reset
-on reload.
+- **Go**, standard library only (`net/http`), no frameworks.
+- **Plain HTML, CSS and JavaScript**, no frameworks, no npm.
+- **WebAssembly** for the website: GitHub Pages can only host static files, so
+  the same Go code is compiled to WebAssembly and runs inside the browser.
+  Every push to `main` runs the tests and republishes the site.
+- **Storage** sits behind one `Store` interface: in memory today,
+  PostgreSQL next.
 
-## How to use
-
-- The app opens with a short start screen: the logo types itself, a random
-  phrase in your language, then the page slides in. Any key or click skips it.
-- On the very first visit a short hands-on intro starts: put your fingers on
-  the home row and press those eight keys, press space with a thumb, then
-  "watch the screen". It reacts to the real keys (physical positions, so it
-  works with any system layout). `Esc` or "skip" closes it; the **?** button
-  reopens it. At the end: "Start" (a few letters) or "I can already touch type"
-  (all letters open). Before your first exercise the letters caption also has an
-  "open all letters" button.
-- Type the grey text. Wrong key = the letter turns red and you must press the
-  right one before moving on.
-- The row of letters at the top shows your progress: open letters, the letter in
-  **focus** (yellow, your weakest right now), mastered letters (green dot), and
-  locked letters (outlined). Master every open letter and the next one opens.
-  Under it, small status pills: focus letter, mastered open letters (with a
-  bar) and the next letter; hover them for details. Caps Lock and wrong layout
-  warnings appear in the same place, on top of the pills, so nothing moves.
-- The keyboard shows the next key in its finger color; keys you do not need yet
-  are dimmed. Above the keyboard two hands light up the finger that presses
-  it (space = both thumbs, AltGr letters = right thumb + the finger).
-- The **EN · PL · UK · RU** switch changes the language you practise **and the
-  language of the interface** (remembered in your browser; the first time it
-  follows your browser's language).
-- **Tab does not restart.** Restarting throws away exactly the mistakes the
-  trainer learns from, so Tab only answers with a small animation and a kind
-  message; at the end you see how many times you resisted. `Esc` still gives a
-  new exercise.
-- The **flame + number** in the header counts clean words in a row (typed
-  without a single mistake; hover for the tooltip). It gets hotter as it grows:
-  green from 3, yellow from 10, orange with a flickering flame from 25, glowing
-  red from 50. New records, mastered letters and new letters get
-  a small celebration.
-- Messages are part of the page, not pop-ups: a message takes the place of the
-  status line under the letters for a few seconds, then the status line comes
-  back. One at a time, the others wait their turn. The thin bar under each
-  message fills up while it is shown; hover pauses it, a click skips it. Every kind has its own color, icon and small
-  animation: record (gold trophy), new letter (blue, the letter itself),
-  mastered (green check), streak (orange flame), Tab urges beaten (violet
-  shield), Tab message (small, grey).
-- Buttons under the keyboard (hover for a tooltip): **beginner guide** (the
-  intro again) and the keyboard switch **off · S · M · L** (hides keyboard and
-  hands, or picks a size; remembered in your browser). The keyboard never makes
-  the page scroll: on a small window it shrinks to fit, L uses all the room,
-  M and S a bit less.
-- The two arrow buttons save your statistics (all languages, full history) to one
-  `.json` file and load such a file back. Loading **replaces** the current data.
-  Use it to keep progress across server restarts (or page reloads on the website).
-- The red-on-click bin button resets everything: progress in all languages and
-  the settings saved in your browser, as on the very first visit. It needs a
-  second click (the first one turns it red), so it does not happen by accident.
-- Shortcuts, also listed small at the bottom of the page: `Esc` new text ·
-  `Shift + Tab` type / stats · `Alt + 1…4` language. On phones (no Esc key) a
-  "new text" button is shown under the text instead.
-- The header shows **wpm**, **raw** (every keypress counts, wrong ones too, like
-  on monkeytype; only shown, never stored) and accuracy. Over the logo there is
-  a small phrase: the same one the start screen showed, it flies there with
-  the logo.
-- The **keyboard / chart** icon switch at the top (or `Shift + Tab`) opens the statistics screen: totals,
-  speed of every exercise, a **difficulty keyboard** (grey keys, the redder the
-  harder the letter is for you, dashed = no data yet; hover or tap a key for
-  its numbers), and every letter from weakest to strongest.
-
-## Documentation
-
-- [`docs/ALGORITHM.md`](docs/ALGORITHM.md): the adaptive model, every formula
-  and parameter, why it is built this way, known simplifications, ideas for
-  evaluation. Start here for the thesis.
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): packages, data flow, API,
-  how to add PostgreSQL, layouts and languages.
-- [`docs/LITERATURE.md`](docs/LITERATURE.md): reading list with sources.
-
-## Project structure
+<details>
+<summary><b>Project structure</b></summary>
 
 ```
 typing-trainer/
@@ -141,57 +133,54 @@ typing-trainer/
 │   ├── langs/<id>/words.txt      2000 most frequent words per language
 │   └── layouts/*.json            keyboard layouts + finger mapping (data, not code)
 ├── tools/wordlists/              script + block lists that build the word lists
-├── docs/                         algorithm, architecture, reading list
+├── docs/                         algorithm, architecture, user guide, reading list
 ├── internal/
-│   ├── config/config.go          ALL tunable numbers
+│   ├── config/config.go          all tunable numbers
 │   ├── engine/model.go           the math: EMA, difficulty, mastery, softmax
 │   ├── engine/generator.go       unlocking letters, choosing words
-│   ├── engine/*_test.go          unit tests
-│   ├── storage/store.go          Store interface
-│   ├── storage/memory.go         in-memory implementation
-│   ├── layout/layout.go          loads and validates layout JSON
-│   ├── language/language.go      loads languages.json, checks words against the alphabet
-│   └── api/handlers.go           HTTP JSON API under /api/v1/
-└── web/                          index.html, style.css, app.js, i18n.js (interface texts), fx.js (animations)
+│   ├── storage/                  Store interface + in-memory implementation
+│   ├── layout/, language/        load and check layouts and languages
+│   └── api/handlers.go           JSON API under /api/v1/
+└── web/                          index.html, style.css, app.js, i18n.js, fx.js
 ```
 
-## The algorithm in short
+A new language is data only: an entry in `data/languages.json`, a layout in
+`data/layouts/` and a word list in `data/langs/<id>/`. PostgreSQL will be a new
+file in `internal/storage/` implementing the same `Store` interface, plus one
+changed line in `setup.go`.
 
-```
-per letter (EMA, a = max(0.1, 1/n)):   ErrEMA, TimeEMA
-raw        = 0.6 * clamp(ErrEMA / 0.25) + 0.4 * clamp((TimeEMA - 400) / 600)
-difficulty = (n * raw + 5 * 0.7) / (n + 5)
-P(letter)  ~ exp(difficulty / 0.25)            -> focus letter
-P(word)    ~ exp(mean difficulty of its letters / 0.25)   among words with that letter
-mastered   = n >= 20, ErrEMA <= 5 %, TimeEMA <= 400 ms (30 WPM)
-all open letters mastered -> next letter opens
-```
+</details>
 
-Full explanation: [`docs/ALGORITHM.md`](docs/ALGORITHM.md).
+## Documentation
 
-## Languages and word lists
+| | |
+|---|---|
+| [User guide](docs/USER-GUIDE.md) | every screen, button and shortcut |
+| [Algorithm](docs/ALGORITHM.md) | the adaptive model: formulas, parameters, why it is built this way |
+| [Architecture](docs/ARCHITECTURE.md) | packages, data flow, API, how to add PostgreSQL |
+| [Reading list](docs/LITERATURE.md) | sources on typing, learning and adaptive practice |
 
-English, Polish, Ukrainian and Russian, chosen with the switch at the top. Each
-language keeps its own progress. Switch your **system** keyboard layout too
-(Windows: Win + Space); the app shows a hint when the layout does not match.
-Polish uses the standard "Polish (Programmers)" layout: ą, ę, ł... with AltGr.
+## Word lists and credits
 
-The word lists are the 2000 most frequent words of each language from
+The words are the 2000 most frequent words of each language from
 [FrequencyWords](https://github.com/hermitdave/FrequencyWords) by Hermit Dave,
-counted in the OpenSubtitles 2018 corpus. **License of the word data:
-CC BY-SA 4.0** (attribution and share-alike). Filtering steps:
-`docs/ALGORITHM.md`, section 12. To rebuild them (Python 3 needed):
+counted in the OpenSubtitles 2018 corpus. **Word data license: CC BY-SA 4.0.**
+The filtering steps are described in [docs/ALGORITHM.md](docs/ALGORITHM.md),
+section 12.
+
+<details>
+<summary>Rebuild the word lists (Python 3)</summary>
 
 ```
 git clone --depth 1 https://github.com/hermitdave/FrequencyWords
 python tools/wordlists/build.py FrequencyWords/content/2018
 ```
 
-A new language = an entry in `data/languages.json`, a layout in
-`data/layouts/` and a word list in `data/langs/<id>/`. No code changes.
+</details>
 
-## Adding PostgreSQL later
+## About
 
-Write `internal/storage/postgres.go` with a type that has the same eight
-methods as `Store`, then change one line in `setup.go`. A schema sketch is in
-`docs/ARCHITECTURE.md`.
+typetrainer is the practical part of an engineering thesis at the
+**Lublin University of Technology** (2027), made by
+[@69inoi69](https://github.com/69inoi69). Ideas and feedback are welcome in the
+[issues](https://github.com/69inoi69/typing-trainer/issues).
