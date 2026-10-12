@@ -85,7 +85,10 @@ on reload.
   a small celebration.
 - Messages appear in the top right corner. The thin bar at the bottom of each
   one fills up while it is shown; when it is full, the message closes. Hover
-  pauses it, a click closes it.
+  pauses it, a click closes it. Every kind has its own color, icon and small
+  animation: record (gold trophy), new letter (blue, the letter itself),
+  mastered (green check), streak (orange flame), Tab urges beaten (violet
+  shield), Tab message (small, grey).
 - Icon buttons under the keyboard (hover for a tooltip): new text, intro,
   heatmap (tints keys red by how hard they are for you; lit = on), and
   `−` keyboard `+`: size from 70 % to 150 %, the middle button hides or shows

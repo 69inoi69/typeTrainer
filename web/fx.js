@@ -88,15 +88,42 @@ const FX = (() => {
   // Messages stack in the top right corner, newest on top. Each one has a thin
   // bar that fills up while it is shown: when the bar is full (CSS animation
   // "animationend"), the message closes. Hover pauses it, a click closes it.
+  //
+  // Every KIND of message has its own look (color, icon, small animation in
+  // style.css, .toast.k-<kind>), so you can tell what happened at a glance:
+  //   best     new personal record       gold, trophy, shine
+  //   letter   a new letter opened       blue, the letter itself pops in
+  //   mastered letters mastered          green, a check that draws itself
+  //   streak   clean words in a row      orange, a flickering flame
+  //   resisted Tab urges beaten          violet, shield
+  //   tab      message after Tab         grey, small and quick
   const TOAST_MS = 4500;   // default time on screen
   const TOAST_MAX = 4;     // more at once: the oldest one goes away
-  function toast(html, ms = TOAST_MS) {
+  const ICONS = {
+    best: '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4"/><path d="M12 13v4M8 20h8"/>',
+    mastered: '<path class="draw" d="M5 12.5l4.5 4.5L19 7.5"/>',
+    streak: '<path d="M12 3c.8 3.2 4.5 4.8 4.5 9.2a4.5 4.5 0 0 1-9 0c0-1.9.8-3.2 1.9-4.2.1 1.5.8 2.4 1.9 2.8C10.8 8 11 5.4 12 3z"/>',
+    resisted: '<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
+    tab: '<path d="M4 12h11M11 8l4 4-4 4M19 6v12"/>',
+    info: '<circle cx="12" cy="12" r="8"/><path d="M12 11v5M12 8h.01"/>',
+  };
+  const KIND_MS = { best: 5500, letter: 6000, tab: 2800 };
+  // toast(html, ms) or toast(html, {kind, ms, badge}); badge = big text instead of the icon
+  function toast(html, opts = {}) {
+    if (typeof opts === "number") opts = { ms: opts };
+    const kind = opts.kind || "info";
+    const ms = opts.ms ?? KIND_MS[kind] ?? TOAST_MS;
     const box = document.getElementById("toasts");
     const node = document.createElement("div");
-    node.className = "toast";
+    node.className = "toast k-" + kind;
     node.setAttribute("role", "status");
     node.style.setProperty("--ms", ms + "ms");
+    const mark = document.createElement("span");
+    mark.className = "toast-mark";
+    if (opts.badge) mark.textContent = opts.badge;
+    else mark.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[kind] || ICONS.info}</svg>`;
     node.innerHTML = `<div class="toast-body">${html}</div><i class="toast-bar"></i>`;
+    node.prepend(mark);
     node.querySelector(".toast-bar").addEventListener("animationend", () => closeToast(node));
     node.addEventListener("click", () => closeToast(node));
     box.prepend(node);

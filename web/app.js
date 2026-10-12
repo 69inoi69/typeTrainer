@@ -227,7 +227,9 @@ function placeCaret(jump) {
     const h = s.offsetHeight;
     if (jump) el.caret.classList.add("jump");
     el.caret.style.height = Math.round(h * 0.82) + "px";
-    el.caret.style.transform = `translate(${x - 1}px, ${s.offsetTop + h * 0.09}px)`;
+    // position in the separate CSS "translate" property: the Tab nudge animates
+    // "scale", and scale must not multiply the position (the caret flew away)
+    el.caret.style.translate = `${x - 1}px ${s.offsetTop + h * 0.09}px`;
     if (jump) requestAnimationFrame(() => el.caret.classList.remove("jump"));
   });
 }
@@ -372,7 +374,7 @@ function endWord() {
     if (streak >= 3) FX.bump(el.streakN);
     if (streak % 25 === 0) {                 // every 25 clean words: a small party
       FX.burstFrom(el.streak, 40);
-      FX.toast(t("toast.streak", { n: streak }));
+      FX.toast(t("toast.streak", { n: streak }), { kind: "streak" });
     }
   }
   wordClean = true;
@@ -395,7 +397,7 @@ function nudge() {
   if (startTime !== null) tabsResisted++;
   FX.anim(el.caret, [{ scale: "1 1" }, { scale: "2.2 1.3" }, { scale: "1 1" }], { duration: 380, easing: "cubic-bezier(.3,1.6,.5,1)" });
   FX.anim(el.text, [{ translate: "0" }, { translate: "6px" }, { translate: "-4px" }, { translate: "2px" }, { translate: "0" }], { duration: 420, easing: "ease-out" });
-  if (FX.idle()) FX.toast(t(`tab.${tabMsg++ % 4}`), 2800); // never pile up messages
+  if (FX.idle()) FX.toast(t(`tab.${tabMsg++ % 4}`), { kind: "tab" }); // never pile up messages
 }
 
 function showWarn(kind) {
@@ -443,17 +445,17 @@ async function finishExercise() {
     await refreshStats();
 
     if (hadSessions && wpm > prevBest) {
-      FX.toast(t("toast.best", { wpm: Math.round(wpm) }));
+      FX.toast(t("toast.best", { wpm: Math.round(wpm) }), { kind: "best" });
       FX.burstFrom(el.wpm, 80);
     }
     if (res.newLetter) {
       popLetter = res.newLetter;
-      FX.toast(t("toast.newLetter", { letter: res.newLetter }), 6000);
+      FX.toast(t("toast.newLetter", { letter: res.newLetter }), { kind: "letter", badge: res.newLetter });
       FX.burstFrom(el.letters, 60);
     }
     justMastered = new Set(lastStats.keys.filter((k) => k.mastered && !prevMastered.has(k.char)).map((k) => k.char));
-    if (justMastered.size) FX.toast(t("toast.mastered", { letters: [...justMastered].join(" ") }));
-    if (resisted) FX.toast(t("toast.resisted", { n: resisted }));
+    if (justMastered.size) FX.toast(t("toast.mastered", { letters: [...justMastered].join(" ") }), { kind: "mastered" });
+    if (resisted) FX.toast(t("toast.resisted", { n: resisted }), { kind: "resisted" });
 
     await loadExercise();   // generated from the UPDATED model
   } catch (err) {
