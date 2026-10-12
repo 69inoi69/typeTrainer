@@ -17,8 +17,7 @@ const el = {
   letters: $("letters"), lettersCaption: $("letters-caption"),
   tooltip: $("tooltip"),
   btnNew: $("btn-new"), btnIntro: $("btn-intro"), heatKb: $("heat-kb"),
-  kbSmaller: $("kb-smaller"), kbLarger: $("kb-larger"), kbToggle: $("kb-toggle"),
-  kbSizeOut: $("kb-size-out"), hands: $("hands"),
+  kbSwitch: $("kb-switch"), hands: $("hands"),
   intro: $("intro"),
   switch: document.querySelector(".switch"), tabType: $("tab-type"), tabStats: $("tab-stats"),
   viewType: $("view-type"), viewStats: $("view-stats"),
@@ -53,8 +52,8 @@ let popLetter = null;      // letter that was just unlocked (for the animation)
 let view = "type";         // "type" or "stats"
 
 // Rewards (they change nothing in the statistics, they only feel nice)
-const MOTTOS = 8;           // motto.0 ... motto.7 in i18n.js
-const mottoIndex = Math.floor(Math.random() * MOTTOS);   // the small phrase over the logo
+// the small phrase over the logo: the same one the start screen showed
+let mottoIndex = Math.floor(Math.random() * SPLASH_PHRASES);
 let streak = 0;            // words in a row typed without a single mistake
 let wordClean = true;      // no mistake in the current word so far
 let tabsResisted = 0;      // Tab presses during this exercise (no restart here)
@@ -185,9 +184,9 @@ function pulseKey(ch, ok) {
   }
 }
 
-// Keyboard size: 70 % ... 150 % in steps of 10 (smaller is unreadable), and a
-// separate on/off button for keyboard + hands. Both remembered in this browser.
-const KB_MIN = 70, KB_MAX = 150, KB_STEP = 10;
+// Keyboard size: three presets (S / M / L, in % of the normal size) and "off"
+// for keyboard + hands, in one switch. Remembered in this browser.
+const KB_SIZES = [80, 100, 125];
 let kbSize = 100, kbHidden = false;
 // animate = true on a click: the keyboard folds away / unfolds smoothly
 function applyKb(animate = false) {
@@ -199,28 +198,51 @@ function applyKb(animate = false) {
     el.keyboard.classList.toggle("off", kbHidden);
     el.hands.classList.toggle("off", kbHidden);
   }
-  el.kbToggle.setAttribute("aria-pressed", String(!kbHidden));
+  const sel = kbHidden ? 0 : KB_SIZES.indexOf(kbSize) + 1;   // which option is on
+  el.kbSwitch.style.setProperty("--i", sel);                 // the yellow thumb slides there
+  el.kbSwitch.querySelectorAll("button").forEach((b, i) => b.setAttribute("aria-checked", String(i === sel)));
+  el.kbSwitch.querySelector('[data-kb="off"]').setAttribute("aria-label", t("kb.off"));
   document.body.classList.toggle("kb-hidden", kbHidden);   // phone CSS centres the text then
-  el.kbSizeOut.textContent = kbHidden ? t("kb.off") : kbSize + "%";
-  el.kbSmaller.disabled = kbHidden || kbSize <= KB_MIN;
-  el.kbLarger.disabled = kbHidden || kbSize >= KB_MAX;
   store.set("tt.kbSize", kbSize);
   store.set("tt.kbHidden", kbHidden ? "1" : "");
+  requestFit();
 }
-function resizeKb(delta) {
-  kbSize = Math.min(KB_MAX, Math.max(KB_MIN, kbSize + delta));
-  applyKb();
-  placeCaret(true);
-}
-el.kbSmaller.addEventListener("click", (e) => { e.currentTarget.blur(); resizeKb(-KB_STEP); });
-el.kbLarger.addEventListener("click", (e) => { e.currentTarget.blur(); resizeKb(KB_STEP); });
-el.kbToggle.addEventListener("click", (e) => {
-  e.currentTarget.blur();
-  kbHidden = !kbHidden;
-  applyKb(true);
-  FX.bump(el.kbToggle, 1.12);
+el.kbSwitch.addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-kb]");
+  if (!b) return;
+  b.blur();
+  const wasHidden = kbHidden;
+  kbHidden = b.dataset.kb === "off";
+  if (!kbHidden) kbSize = Number(b.dataset.kb);
+  applyKb(wasHidden !== kbHidden);           // fold / unfold only when that changed
   placeCaret(true);
 });
+// the preset closest to a saved size (older versions saved any 70...150)
+const nearestKb = (n) => KB_SIZES.reduce((a, b) => (Math.abs(b - n) < Math.abs(a - n) ? b : a));
+
+// Fit to the window: keyboard and hands grow with the key unit --u, and they
+// must never push the page below the bottom of the window (no scrolling).
+// Everything else is measured once (it does not depend on --u), and --u-fit
+// caps the unit so the rest fits. Runs on load, resize, a new text and a size
+// change: never on a keypress.
+const HANDS_KB_PER_U = 6.48;   // hands 2.11 u + keyboard 4.36 u (4 rows, 3 gaps of .12 u)
+let fitFrame = 0;
+function requestFit() {
+  cancelAnimationFrame(fitFrame);
+  fitFrame = requestAnimationFrame(fitKeyboard);
+}
+function fitKeyboard() {
+  const root = document.documentElement.style;
+  // phones: the on-screen keyboard of the phone changes the window height all
+  // the time, and the page may scroll there; no cap
+  if (isTouch()) { root.removeProperty("--u-fit"); return; }
+  if (kbHidden || view !== "type") return;
+  const rest = document.querySelector(".top").offsetHeight + el.viewType.offsetHeight
+    - el.hands.offsetHeight - el.keyboard.offsetHeight
+    + document.querySelector(".hints").offsetHeight + 40;   // 40 = bottom padding of .views
+  const fit = Math.max(24, Math.floor((innerHeight - rest - 4) / HANDS_KB_PER_U));
+  root.setProperty("--u-fit", fit + "px");
+}
 
 // ---------- caret ----------
 // One caret element that slides to the current letter (CSS transition on
@@ -243,6 +265,7 @@ function placeCaret(jump) {
   });
 }
 window.addEventListener("resize", () => {
+  requestFit();
   placeCaret(true);
   if (view === "stats") renderStats();
 });
@@ -324,6 +347,7 @@ function showExercise(ex) {
     return s;
   });
   el.text.replaceChildren(frag, el.caret);   // the caret lives inside the text
+  requestFit();                              // 2 or 3 lines of text: room for the keyboard changes
   el.text.classList.remove("swap");
   void el.text.offsetWidth;                  // restart the fade-in (once per exercise)
   el.text.classList.add("swap");
@@ -527,6 +551,7 @@ function setView(name) {
     refreshStats().catch(console.error);
     renderStats();
   } else {
+    requestFit();
     placeCaret(true);
     focusText();
   }
@@ -905,7 +930,7 @@ async function loadLanguage(id) {
     // home-row keys for the intro text ("bumps on F and J" / "on А and О")
     const home = layout.rows.flat().filter((k) => k.home).map((k) => k.char.toUpperCase());
     [i18nVars.f, i18nVars.j] = home;
-    el.motto.innerHTML = t(`motto.${mottoIndex}`, i18nVars);   // after f / j are known
+    el.motto.textContent = t(`splash.${mottoIndex}`);   // in the interface language
     const row = layout.rows[1].map((k) => k.char.toUpperCase());
     i18nVars.l = row.slice(0, 4).join(" ");
     i18nVars.r = row.slice(6, 10).join(" ");
@@ -1083,12 +1108,13 @@ importFile.addEventListener("change", async () => {
   const guess = store.get("tt.lang") || (navigator.language || "").slice(0, 2).toLowerCase();
   uiLang = I18N[guess] ? guess : "en";
   const splash = Splash.start();
+  if (splash.phrase !== undefined) mottoIndex = splash.phrase;   // the logo keeps the start phrase
   // keyboard size from last time (an old saved 0 meant "hidden")
   const saved = Number(store.get("tt.kbSize") ?? 100) || 0;
   // never chosen yet: hidden on phones (no physical keys to look up), shown elsewhere
   const hiddenSaved = store.get("tt.kbHidden");
   kbHidden = hiddenSaved === null ? isTouch() : hiddenSaved === "1" || saved === 0;
-  kbSize = saved ? Math.min(KB_MAX, Math.max(KB_MIN, Math.round(saved / KB_STEP) * KB_STEP)) : 100;
+  kbSize = saved ? nearestKb(saved) : 100;
   applyKb();
   labelTips();
   if (isTouch()) el.textBox.classList.add("blurred"); // phone: tap to open the keyboard

@@ -78,9 +78,10 @@
       <!-- Which finger presses the next key: two hands, the finger lights up
            in its color. The sentence below is for screen readers only. -->
       <div class="hands" id="hands" aria-hidden="true">
-        <!-- drawn in SVG: palm + rounded fingers; every finger has data-f -->
-        <svg class="hand left" aria-hidden="true" viewBox="0 0 100 96"><g transform="rotate(-6 18.5 74)"><rect class="finger" data-f="lp" x="11" y="30" width="15" height="44" rx="7.5"/></g><g transform="rotate(-3 34.5 74)"><rect class="finger" data-f="lr" x="27" y="13" width="15" height="61" rx="7.5"/></g><g transform="rotate(1 52.5 74)"><rect class="finger" data-f="lm" x="45" y="6" width="15" height="68" rx="7.5"/></g><g transform="rotate(6 70.5 74)"><rect class="finger" data-f="li" x="63" y="15" width="15" height="59" rx="7.5"/></g><g transform="rotate(108 77 74)"><rect class="finger thumb" data-f="thl" x="69.5" y="40" width="15" height="36" rx="7.5"/></g><path class="palm" d="M8 60 Q8 55 14 55 H78 Q84 55 84 60 L82 72 Q79 88 63 89 H30 Q15 88 11 72 Z"/></svg>
-        <svg class="hand right" aria-hidden="true" viewBox="0 0 100 96"><g transform="translate(100 0) scale(-1 1)"><g transform="rotate(-6 18.5 74)"><rect class="finger" data-f="rp" x="11" y="30" width="15" height="44" rx="7.5"/></g><g transform="rotate(-3 34.5 74)"><rect class="finger" data-f="rr" x="27" y="13" width="15" height="61" rx="7.5"/></g><g transform="rotate(1 52.5 74)"><rect class="finger" data-f="rm" x="45" y="6" width="15" height="68" rx="7.5"/></g><g transform="rotate(6 70.5 74)"><rect class="finger" data-f="ri" x="63" y="15" width="15" height="59" rx="7.5"/></g><g transform="rotate(108 77 74)"><rect class="finger thumb" data-f="thr" x="69.5" y="40" width="15" height="36" rx="7.5"/></g><path class="palm" d="M8 60 Q8 55 14 55 H78 Q84 55 84 60 L82 72 Q79 88 63 89 H30 Q15 88 11 72 Z"/></g></svg>
+        <!-- drawn in SVG: one soft shape per hand, every finger tinted in its finger
+             colour; the finger to use fills up. Every finger <g> has data-f. -->
+        <svg class="hand left" viewBox="0 0 100 96" aria-hidden="true"><g transform="rotate(-7 19.5 72)"><g class="finger" data-f="lp"><rect class="skin" x="12" y="30" width="15" height="42" rx="7.5"/></g></g><g transform="rotate(-2.5 36.0 72)"><g class="finger" data-f="lr"><rect class="skin" x="28.5" y="14" width="15" height="58" rx="7.5"/></g></g><g transform="rotate(1.5 52.5 72)"><g class="finger" data-f="lm"><rect class="skin" x="45" y="7" width="15" height="65" rx="7.5"/></g></g><g transform="rotate(6 69.0 72)"><g class="finger" data-f="li"><rect class="skin" x="61.5" y="16" width="15" height="56" rx="7.5"/></g></g><g transform="rotate(112 76 70)"><g class="finger thumb" data-f="thl"><rect class="skin" x="68.5" y="38" width="15" height="34" rx="7.5"/></g></g><path class="palm" d="M13 63 Q13 54 22 54 H71 Q80 54 80 63 L78 74 Q75 90 60 91 H32 Q17 90 14 74 Z"/></svg>
+        <svg class="hand right" viewBox="0 0 100 96" aria-hidden="true"><g transform="translate(100 0) scale(-1 1)"><g transform="rotate(-7 19.5 72)"><g class="finger" data-f="rp"><rect class="skin" x="12" y="30" width="15" height="42" rx="7.5"/></g></g><g transform="rotate(-2.5 36.0 72)"><g class="finger" data-f="rr"><rect class="skin" x="28.5" y="14" width="15" height="58" rx="7.5"/></g></g><g transform="rotate(1.5 52.5 72)"><g class="finger" data-f="rm"><rect class="skin" x="45" y="7" width="15" height="65" rx="7.5"/></g></g><g transform="rotate(6 69.0 72)"><g class="finger" data-f="ri"><rect class="skin" x="61.5" y="16" width="15" height="56" rx="7.5"/></g></g><g transform="rotate(112 76 70)"><g class="finger thumb" data-f="thr"><rect class="skin" x="68.5" y="38" width="15" height="34" rx="7.5"/></g></g><path class="palm" d="M13 63 Q13 54 22 54 H71 Q80 54 80 63 L78 74 Q75 90 60 91 H32 Q17 90 14 74 Z"/></g></svg>
       </div>
       <div class="finger-hint sr-only" id="finger-hint" aria-live="off">&nbsp;</div>
 
@@ -90,10 +91,13 @@
       <div class="toolbar" role="toolbar">
         <button id="btn-new" type="button" class="icon touch-only" data-tip="tip.new"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg></button>
         <button id="btn-intro" type="button" class="icon guide" data-tip="tip.intro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9.5 12 5l9.5 4.5L12 14z"/><path d="M6.5 11.5v4.2c0 1.3 2.5 2.8 5.5 2.8s5.5-1.5 5.5-2.8v-4.2"/><path d="M21.5 9.5v5"/></svg><span data-i18n="btn.guide">beginner guide</span></button>
-        <div class="kb-size" role="group">
-          <button id="kb-smaller" type="button" class="icon small" data-tip="tip.smaller"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
-          <button id="kb-toggle" type="button" class="icon" aria-pressed="true" data-tip="tip.kb"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="11" rx="2"/><path d="M7 10.5h.01M10 10.5h.01M13 10.5h.01M16 10.5h.01M8 14h8"/></svg><span id="kb-size-out">100%</span></button>
-          <button id="kb-larger" type="button" class="icon small" data-tip="tip.larger"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg></button>
+        <!-- on-screen keyboard: off / S / M / L, the same kind of switch as in the header -->
+        <div class="switch kb-switch" id="kb-switch" role="radiogroup" data-tip="tip.kb">
+          <span class="switch-thumb" aria-hidden="true"></span>
+          <button type="button" role="radio" data-kb="off"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="11" rx="2"/><path d="M8 14h8"/><path d="M4 4l16 16"/></svg></button>
+          <button type="button" role="radio" data-kb="80">S</button>
+          <button type="button" role="radio" data-kb="100">M</button>
+          <button type="button" role="radio" data-kb="125">L</button>
         </div>
         <!-- save / load all statistics as one JSON file -->
         <button id="btn-export" type="button" class="icon" data-tip="tip.export"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19h14"/></svg></button>

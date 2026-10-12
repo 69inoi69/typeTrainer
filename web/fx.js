@@ -214,8 +214,22 @@ const Splash = (() => {
       }
       root.animate([{ backgroundColor: getComputedStyle(root).backgroundColor }, { backgroundColor: "transparent" }],
         { duration: 520, easing: "ease-in", fill: "forwards" });
-      root.querySelectorAll(".splash-phrase").forEach((n) =>
-        n.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: "forwards" }));
+      // the phrase flies onto the small motto over the header logo (same text);
+      // on phones (no logo in the header) it just fades out
+      const phrase = document.getElementById("splash-phrase");
+      const motto = document.querySelector(".top .logo-motto");
+      const textBox = (node) => { const r = document.createRange(); r.selectNodeContents(node); return r.getBoundingClientRect(); };
+      const ma = motto ? textBox(motto) : null;
+      if (b.width > 0 && ma && ma.width > 0) {
+        const pa = textBox(phrase), pf = phrase.getBoundingClientRect();
+        const ps = parseFloat(getComputedStyle(motto).fontSize) / parseFloat(getComputedStyle(phrase).fontSize);
+        phrase.style.transformOrigin = `${pa.left - pf.left}px ${pa.top - pf.top}px`;   // the text's top-left corner
+        phrase.animate([{ transform: "none" },
+          { transform: `translate(${ma.left - pa.left}px, ${ma.top - pa.top}px) scale(${ps})` }],
+          { duration: 520, easing: "cubic-bezier(.6,0,.2,1)", fill: "forwards" });
+      } else {
+        phrase.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: "forwards" });
+      }
       // typing is allowed again, but the header logo stays hidden ("landing")
       // until the flying logo has arrived, so there are never two of them
       document.body.classList.add("entering", "landing");
@@ -225,7 +239,7 @@ const Splash = (() => {
       root.remove();
       setTimeout(() => document.body.classList.remove("entering"), 900);
     }
-    return { done };
+    return { done, phrase: i };   // the app shows the same phrase over the logo
   }
   return { start };
 })();

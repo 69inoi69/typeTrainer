@@ -17,7 +17,11 @@
 
   /* keyboard size: --kb-scale is set by the - / + buttons (1 = 100 %, .7 ... 1.5) */
   --kb-scale: 1;
-  --u: min(calc(52px * var(--kb-scale)), calc((100vw - 32px) / 13.6)); /* one key unit */
+  /* one key unit: the chosen size, but never wider than the window allows, and
+     never taller than the room left on the screen. --u-fit (set by fitKeyboard)
+     is the largest unit that fits; L (scale 1.25) may use all of it, M and S
+     proportionally less, so the three sizes differ on small screens too */
+  --u: min(calc(52px * var(--kb-scale)), calc((100vw - 32px) / 13.6), calc(var(--u-fit, 999px) * var(--kb-scale) / 1.25));
 
   /* motion: one place to tune how "snappy" the app feels */
   --fast: 70ms;
@@ -31,6 +35,9 @@
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; } /* no blue flash on tap (phones) */
 html, body { min-height: 100%; }
+/* no scrollbar: the typing screen always fits; the stats screen still scrolls with the wheel */
+html { scrollbar-width: none; }
+html::-webkit-scrollbar { display: none; }
 body {
   margin: 0;
   /* header on top, the typing view centred in the rest of the screen */
@@ -259,21 +266,15 @@ button, input { font: inherit; }
   margin: 14px 0 12px; user-select: none; pointer-events: none;
 }
 .hands.off { display: none; }
-.hand { width: calc(var(--u) * 2.2); height: auto; overflow: visible; display: block; }
-.hand .palm {
-  fill: color-mix(in srgb, var(--sub) 16%, var(--bg));
-  stroke: color-mix(in srgb, var(--sub) 35%, transparent); stroke-width: 1.2;
-}
-/* each finger: tinted with its finger colour, outlined; the one to use fills
-   up and lifts a little along its own direction */
-.hand .finger {
-  --fc: #888;
-  --fc-dim: color-mix(in srgb, var(--fc) 24%, var(--panel));
-  --fc-line: color-mix(in srgb, var(--fc) 50%, var(--panel));
-  fill: var(--fc-dim); stroke: var(--fc-line); stroke-width: 1.2;
-  transition: fill var(--fast), stroke var(--fast), translate var(--med) var(--ease);
-}
-.hand .finger.on { fill: var(--fc); stroke: var(--fc); translate: 0 -6px; animation: finger-on 260ms cubic-bezier(.3, 1.6, .5, 1); }
+.hand { width: calc(var(--u) * 2.2); height: auto; overflow: visible; display: block; --skin: color-mix(in srgb, var(--text) 13%, var(--panel)); }
+/* no outlines, so palm and fingers read as one soft shape; every finger is
+   tinted in its finger colour (the same colours as the keys) */
+.hand .palm { fill: var(--skin); }
+.hand .finger { --fc: #888; --tint: color-mix(in srgb, var(--fc) 34%, var(--panel)); transition: translate var(--med) var(--ease); }
+.hand .finger .skin { fill: var(--tint); transition: fill var(--fast); }
+/* the finger to use: fills with its full colour and lifts along its own direction */
+.hand .finger.on { translate: 0 -6px; animation: finger-on 260ms cubic-bezier(.3, 1.6, .5, 1); }
+.hand .finger.on .skin { fill: var(--fc); }
 @keyframes finger-on { from { translate: 0 1px; } }
 
 /* visually hidden, still read by screen readers (the finger sentence) */
@@ -364,17 +365,15 @@ button:disabled { opacity: .35; cursor: default; }
 button:disabled:hover { color: var(--sub); background: none; }
 button:disabled:active { transform: none; }
 
-/* [ - | keyboard 100% | + ] as one group */
-.kb-size {
-  display: flex; align-items: center; gap: 2px; padding: 4px; height: var(--ctl);
-  border-radius: 999px; background: var(--track); box-shadow: var(--ring);
+/* keyboard: [off | S | M | L], the same switch as in the header (--i = selected) */
+.kb-switch { grid-template-columns: repeat(4, minmax(0, 1fr)); font-size: .8rem; letter-spacing: .04em; }
+.kb-switch button { padding: 0 12px; }
+.kb-switch button[aria-checked="true"] { color: var(--on-accent); }
+.kb-switch .switch-thumb { width: calc((100% - 8px) / 4); transform: translateX(calc(var(--i, 2) * 100%)); }
+.kb-switch svg {
+  width: 17px; height: 17px; fill: none; stroke: currentColor;
+  stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
 }
-.kb-size button.icon { background: none; box-shadow: none; height: 100%; min-width: calc(var(--ctl) - 8px); }
-.kb-size button.icon:not(:disabled):hover { background: color-mix(in srgb, var(--text) 6%, var(--panel)); }
-.kb-size button.small { min-width: 30px; padding: 0 5px; }
-.kb-size button.small svg { width: 16px; height: 16px; }
-#kb-toggle[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 14%, var(--panel)); }
-#kb-size-out { font-size: .8rem; min-width: 3.2em; text-align: left; font-variant-numeric: tabular-nums; }
 
 /* ---------- stats view ---------- */
 .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 8px; }
@@ -579,13 +578,12 @@ button:disabled:active { transform: none; }
 button.primary kbd { background: rgba(0, 0, 0, .16); color: inherit; }
 /* step 2: the fingers light up one after another */
 .intro-hands { --u: min(44px, calc((100vw - 120px) / 9)); margin: 14px 0 22px; }
-.intro-hands .finger { animation: demo 3s calc(var(--d) * .3s) infinite; }
-/* both ends spelled out: with one end left implicit, Chrome mixes the
-   colours through odd neon shades */
-@keyframes demo {
-  0%, 9% { fill: var(--fc); stroke: var(--fc); translate: 0 -6px; }
-  12%, 100% { fill: var(--fc-dim); stroke: var(--fc-line); translate: 0 0; }
-}
+.intro-hands .finger { animation: demo-lift 3s calc(var(--d) * .3s) infinite; }
+.intro-hands .finger .skin { animation: demo-fill 3s calc(var(--d) * .3s) infinite; }
+/* intro: the fingers light up one after another. Both ends spelled out: with
+   one end left implicit, Chrome mixes the colours through odd neon shades */
+@keyframes demo-lift { 0%, 9% { translate: 0 -6px; } 12%, 100% { translate: 0 0; } }
+@keyframes demo-fill { 0%, 9% { fill: var(--fc); } 12%, 100% { fill: var(--tint); } }
 button.inline { padding: 1px 8px; font-size: inherit; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); border-radius: 6px; }
 button.inline:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 20%, transparent); }
 .intro-choice { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
@@ -632,8 +630,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .toasts .toast:nth-child(n+3) { display: none; }
   .toolbar { gap: 6px; }
   button.icon { padding: 0 7px; }
-  .kb-size button.small { display: none; } /* phone: the keyboard is hidden by default, no room for -/+ */
-  #kb-size-out { min-width: 0; }
+  .kb-switch button { padding: 0 9px; }
   #btn-reset { margin-left: 0; }
 }
 
@@ -665,7 +662,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   opacity: 0; animation: splash-phrase .5s var(--ease) 700ms forwards;
 }
 @keyframes splash-phrase { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-body.splashing .top .logo, body.landing .top .logo-name { visibility: hidden; }  /* the splash logo lands on the name */
+body.splashing .top .logo, body.landing .top .logo-name, body.landing .top .logo-motto { visibility: hidden; }  /* the splash logo and phrase land here */
 
 /* after the splash: the page slides in, piece by piece */
 body.entering .switches, body.entering .live, body.entering .letters, body.entering .text-box,
