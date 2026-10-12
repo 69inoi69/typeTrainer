@@ -64,7 +64,7 @@ const store = { // localStorage can be blocked; the app must work without it
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch { /* ignore */ } },
 };
-const introOpen = () => !el.intro.classList.contains("hidden");
+const introOpen = () => !el.intro.classList.contains("hidden") && !el.intro.classList.contains("closing");
 
 // ---------- server calls ----------
 // Every call except /languages is about one language: add ?lang= to it.
@@ -187,10 +187,16 @@ function pulseKey(ch, ok) {
 // separate on/off button for keyboard + hands. Both remembered in this browser.
 const KB_MIN = 70, KB_MAX = 150, KB_STEP = 10;
 let kbSize = 100, kbHidden = false;
-function applyKb() {
-  document.documentElement.style.setProperty("--kb-scale", kbSize / 100);
-  el.keyboard.classList.toggle("off", kbHidden);
-  el.hands.classList.toggle("off", kbHidden);
+// animate = true on a click: the keyboard folds away / unfolds smoothly
+function applyKb(animate = false) {
+  document.documentElement.style.setProperty("--kb-scale", kbSize / 100); // CSS transitions it
+  if (animate) {
+    FX.collapse(el.keyboard, kbHidden);
+    FX.collapse(el.hands, kbHidden);
+  } else {
+    el.keyboard.classList.toggle("off", kbHidden);
+    el.hands.classList.toggle("off", kbHidden);
+  }
   el.kbToggle.setAttribute("aria-pressed", String(!kbHidden));
   el.kbSizeOut.textContent = kbHidden ? t("kb.off") : kbSize + "%";
   el.kbSmaller.disabled = kbHidden || kbSize <= KB_MIN;
@@ -208,7 +214,7 @@ el.kbLarger.addEventListener("click", (e) => { e.currentTarget.blur(); resizeKb(
 el.kbToggle.addEventListener("click", (e) => {
   e.currentTarget.blur();
   kbHidden = !kbHidden;
-  applyKb();
+  applyKb(true);
   FX.bump(el.kbToggle, 1.12);
   placeCaret(true);
 });
@@ -402,7 +408,8 @@ function nudge() {
 
 function showWarn(kind) {
   const info = languages.find((l) => l.id === lang);
-  el.warn.innerHTML = kind === "caps" ? t("warn.caps") : t("warn.layout", { layout: info?.systemLayout ?? lang });
+  // two wrappers: the outer one folds its height open/closed (style.css)
+  el.warn.innerHTML = `<div class="warn-clip"><div class="warn-box">${kind === "caps" ? t("warn.caps") : t("warn.layout", { layout: info?.systemLayout ?? lang })}</div></div>`;
   el.warn.classList.add("show");
 }
 function hideWarn() {
@@ -687,7 +694,9 @@ function introKey(e) {
 // unlockAll: true = "I can already touch type", false = "Start",
 // undefined = closed with skip / Esc (nothing changes).
 async function closeIntro(unlockAll) {
-  el.intro.classList.add("hidden");
+  if (!introOpen() || el.intro.classList.contains("closing")) return;
+  el.intro.classList.add("closing");             // fade out, then hide
+  FX.fadeOut(el.intro).then(() => el.intro.classList.add("hidden"), () => {}).finally(() => el.intro.classList.remove("closing"));
   store.set("tt.introDone", "1");
   if (unlockAll) {
     await openAllLetters();
@@ -803,6 +812,11 @@ async function loadLanguage(id) {
     el.live.classList.remove("final");
     layout = await getJSON("/layout");
     drawKeyboard();
+    // switching language: the new keyboard and letters fade in (not at start)
+    if (languages.length && exercise) {
+      FX.anim(el.keyboard, [{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 260, easing: "cubic-bezier(.2,.8,.2,1)" });
+      FX.anim(el.letters, [{ opacity: 0 }, { opacity: 1 }], { duration: 260 });
+    }
     // home-row keys for the intro text ("bumps on F and J" / "on А and О")
     const home = layout.rows.flat().filter((k) => k.home).map((k) => k.char.toUpperCase());
     [i18nVars.f, i18nVars.j] = home;

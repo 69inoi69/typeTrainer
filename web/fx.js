@@ -71,7 +71,30 @@ const FX = (() => {
     };
     requestAnimationFrame(tick);
   }
-  const anim = (node, frames, opts) => { if (node?.animate && !reduced()) node.animate(frames, opts); };
+  // returns the Animation (or null), so callers can wait for .finished
+  const anim = (node, frames, opts) => (node?.animate && !reduced() ? node.animate(frames, opts) : null);
+
+  // collapse(node, hide): fold an element away (height, margins, opacity) or
+  // unfold it, then the class "off" (display: none) is set or removed. The
+  // content around it slides instead of jumping. Called on clicks only.
+  async function collapse(node, hide, ms = 240) {
+    if (reduced() || !node.animate) { node.classList.toggle("off", hide); return; }
+    node.getAnimations().forEach((a) => a.cancel());
+    if (!hide) node.classList.remove("off");
+    const cs = getComputedStyle(node);
+    const open = { height: node.offsetHeight + "px", marginTop: cs.marginTop, marginBottom: cs.marginBottom, opacity: 1 };
+    const shut = { height: "0px", marginTop: "0px", marginBottom: "0px", opacity: 0 };
+    node.style.overflow = "hidden";
+    const a = node.animate(hide ? [open, shut] : [shut, open], { duration: ms, easing: "cubic-bezier(.2,.8,.2,1)" });
+    try { await a.finished; } catch { return; }   // cancelled by a newer call
+    node.style.overflow = "";
+    if (hide) node.classList.add("off");
+  }
+  // fade an element out (and a little down); resolves when done
+  const fadeOut = async (node, ms = 200) => {
+    const a = anim(node, [{ opacity: 1 }, { opacity: 0, transform: "translateY(4px)" }], { duration: ms, easing: "ease-in" });
+    if (a) { try { await a.finished; } catch { /* cancelled */ } }
+  };
   const bump = (node, s = 1.3) => anim(node,
     [{ transform: "scale(1)" }, { transform: `scale(${s})` }, { transform: "scale(1)" }],
     { duration: 280, easing: "cubic-bezier(.3,1.6,.5,1)" });
@@ -138,7 +161,7 @@ const FX = (() => {
   // true when no message is on screen (Tab messages never pile up)
   const idle = () => !document.querySelector("#toasts .toast:not(.out)");
 
-  return { burst, burstFrom, countUp, bump, shake, squish, toast, anim, idle };
+  return { burst, burstFrom, countUp, bump, shake, squish, toast, anim, idle, collapse, fadeOut };
 })();
 
 // ---------- start screen ----------

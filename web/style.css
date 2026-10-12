@@ -1,6 +1,9 @@
 /* ---------- theme (all colors in one place) ---------- */
+/* registered, so the browser can animate it: the keyboard grows smoothly */
+@property --kb-scale { syntax: "<number>"; inherits: true; initial-value: 1; }
 :root {
   color-scheme: dark;
+  transition: --kb-scale 220ms cubic-bezier(.2, .8, .2, 1);
   --bg: #1f2125;
   --panel: #282b30;
   --line: #34383e;      /* hairlines, chart grid */
@@ -142,10 +145,11 @@ button, input { font: inherit; }
 @keyframes text-in { from { opacity: 0; transform: translateY(4px); } }
 .text-box.blurred .text { filter: blur(3px); opacity: .5; }
 .focus-hint {
-  position: absolute; inset: 0; display: none;
+  position: absolute; inset: 0; display: flex; opacity: 0; pointer-events: none;
   align-items: center; justify-content: center; color: var(--text);
+  transition: opacity var(--med);
 }
-.text-box.blurred .focus-hint { display: flex; }
+.text-box.blurred .focus-hint { opacity: 1; }
 
 .text span { transition: color var(--fast) linear; }
 .text span.ok { color: var(--text); animation: ink 260ms ease-out; }
@@ -172,12 +176,19 @@ button, input { font: inherit; }
 .hidden-input { position: absolute; opacity: 0; width: 1px; height: 1px; left: -9999px; }
 
 /* ---------- Caps Lock / wrong layout warning ---------- */
+/* It folds open and closed: a grid row going from 0fr to 1fr animates the
+   height to "whatever the text needs", and the content below slides along. */
 .warn {
-  display: none; margin-top: 12px; padding: 8px 12px; border-radius: 8px; font-size: .85rem;
+  display: grid; grid-template-rows: 0fr; opacity: 0; margin-top: 0;
+  transition: grid-template-rows .28s var(--ease), opacity .22s, margin-top .28s var(--ease);
+}
+.warn.show { grid-template-rows: 1fr; opacity: 1; margin-top: 12px; }
+.warn-clip { overflow: hidden; min-height: 0; }
+.warn-box {
+  padding: 8px 12px; border-radius: 8px; font-size: .85rem;
   color: var(--text); background: color-mix(in srgb, var(--accent) 16%, var(--panel));
   box-shadow: inset 3px 0 0 var(--accent);
 }
-.warn.show { display: block; animation: view-in var(--med) var(--ease); }
 .warn b { color: var(--accent); font-weight: 500; }
 
 /* ---------- hands: which finger presses the next key ---------- */
@@ -275,7 +286,7 @@ button, input { font: inherit; }
 button {
   color: var(--sub); background: var(--panel); border: 0;
   padding: 8px 14px; border-radius: 8px; cursor: pointer;
-  transition: color var(--med), background var(--med), box-shadow var(--med), transform 90ms var(--ease);
+  transition: color var(--med), background var(--med), box-shadow var(--med), opacity var(--med), transform 90ms var(--ease);
 }
 button:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6%, var(--panel)); }
 button:active { transform: scale(.95); }
