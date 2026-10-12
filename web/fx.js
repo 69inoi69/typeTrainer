@@ -124,7 +124,7 @@ const Splash = (() => {
     let skipped = false;
     const skip = () => { skipped = true; };
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      root.remove(); document.body.classList.remove("splashing");
+      root.remove(); document.body.classList.remove("splashing", "landing");
       return { done: async () => {} };
     }
     // a random phrase, never the same as last time
@@ -163,9 +163,12 @@ const Splash = (() => {
         { duration: 520, easing: "ease-in", fill: "forwards" });
       root.querySelectorAll(".splash-phrase, .splash-bar").forEach((n) =>
         n.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: "forwards" }));
-      document.body.classList.add("entering");
+      // typing is allowed again, but the header logo stays hidden ("landing")
+      // until the flying logo has arrived, so there are never two of them
+      document.body.classList.add("entering", "landing");
       document.body.classList.remove("splashing");
       await new Promise((r) => setTimeout(r, 520));
+      document.body.classList.remove("landing");
       root.remove();
       setTimeout(() => document.body.classList.remove("entering"), 900);
     }

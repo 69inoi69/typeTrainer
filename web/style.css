@@ -363,7 +363,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .splash-bar { width: min(180px, 50vw); height: 2px; border-radius: 2px; background: var(--panel); overflow: hidden; }
 .splash-bar i { display: block; height: 100%; width: 0; background: var(--accent); animation: splash-load 1.2s var(--ease) forwards; transition: width .25s; }
 @keyframes splash-load { to { width: 85%; } }
-body.splashing .top .logo { visibility: hidden; }  /* the splash logo lands here */
+body.splashing .top .logo, body.landing .top .logo { visibility: hidden; }  /* the splash logo lands here */
 
 /* after the splash: the page slides in, piece by piece */
 body.entering .switches, body.entering .live, body.entering .letters, body.entering .text-box,
