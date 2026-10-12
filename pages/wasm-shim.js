@@ -9,12 +9,15 @@
 "use strict";
 (function () {
   const realFetch = window.fetch.bind(window);
+  // the build adds ?v=<commit> to this script; load the wasm of the same version
+  const version = new URL(document.currentScript.src).searchParams.get("v");
+  const wasmUrl = "app.wasm" + (version ? "?v=" + version : "");
 
   // Start Go. main_wasm.go fires "go-ready" once goApi exists.
   const ready = new Promise((resolve, reject) => {
     window.addEventListener("go-ready", resolve, { once: true });
     const go = new Go(); // from wasm_exec.js (ships with Go)
-    WebAssembly.instantiateStreaming(realFetch("app.wasm"), go.importObject)
+    WebAssembly.instantiateStreaming(realFetch(wasmUrl), go.importObject)
       .then((result) => go.run(result.instance))
       .catch(reject);
   });

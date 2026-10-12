@@ -126,7 +126,10 @@ therefore identical in both versions; only the transport differs.
 The workflow builds the site by copying `web/`, adding `app.wasm`,
 `wasm_exec.js` (the Go runtime for browsers, shipped with Go) and the shim,
 and inserting two `<script>` tags before `app.js` in `index.html`. The
-server version never loads them.
+server version never loads them. Every file is linked with `?v=<commit>`
+(`app.wasm` too, through the shim), because GitHub Pages lets browsers cache
+files for 10 minutes: without it, a visitor right after a deploy could get the
+new page with an old `app.js` or `app.wasm`.
 
 ## Adding a layout or language
 

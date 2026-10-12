@@ -42,9 +42,14 @@ jobs:
           # wasm_exec.js ships with Go; its folder moved in Go 1.24
           cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" site/ 2>/dev/null \
             || cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" site/
-          # load the Go runtime and the shim before app.js
-          sed -i 's|<script src="app.js"></script>|<script src="wasm_exec.js"></script>\n  <script src="wasm-shim.js"></script>\n  <script src="app.js"></script>|' site/index.html
-          grep -q 'wasm-shim.js' site/index.html # fail if the line above did nothing
+          # Load the Go runtime and the shim before app.js. Every file gets
+          # ?v=<commit>, so a browser never mixes cached files of two versions
+          # (GitHub Pages lets browsers cache files for 10 minutes).
+          V="${GITHUB_SHA::8}"
+          sed -i "s|href=\"style.css\"|href=\"style.css?v=$V\"|" site/index.html
+          sed -i "s|<script src=\"app.js\"></script>|<script src=\"wasm_exec.js?v=$V\"></script>\n  <script src=\"wasm-shim.js?v=$V\"></script>\n  <script src=\"app.js?v=$V\"></script>|" site/index.html
+          grep -q "wasm-shim.js?v=$V" site/index.html # fail if the lines above did nothing
+          grep -q "style.css?v=$V" site/index.html
 
       - uses: actions/upload-pages-artifact@v3
         with:
