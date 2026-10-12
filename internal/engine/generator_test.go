@@ -159,3 +159,45 @@ func TestNextUnlocked(t *testing.T) {
 		t.Fatalf("clamp: got %d", got)
 	}
 }
+
+// Letters like ą or Cyrillic take two bytes in UTF-8. The generator must
+// treat them as one letter each, otherwise words get wrongly locked.
+func TestNext_MultiByteLetters(t *testing.T) {
+	for name, words := range map[string][]string{
+		"polish":    strings.Fields("się że jest już tak nie mnie coś będzie wiem pan może są tylko ją ta za na"),
+		"ukrainian": strings.Fields("я не що на це ти так у і з а ми все тебе він як за ви до мене їх її"),
+		"russian":   strings.Fields("я не что в и ты это на с он мы как вы да все мне у нет меня так но"),
+	} {
+		p := testParams
+		p.StartLetters, p.MinWords = 4, 3
+		g := NewGenerator(words, rand.New(rand.NewSource(7)), p)
+		for _, c := range g.Order() {
+			if n := len([]rune(c)); n != 1 {
+				t.Fatalf("%s: %q is %d letters, want 1", name, c, n)
+			}
+		}
+		ex := g.Next(nil, 0, p)
+		if ex.Text == "" {
+			t.Fatalf("%s: empty exercise", name)
+		}
+		open := strings.Join(ex.Unlocked, "") + " "
+		for _, r := range ex.Text {
+			if !strings.ContainsRune(open, r) {
+				t.Fatalf("%s: locked letter %q in %q", name, r, ex.Text)
+			}
+		}
+		// with everything open, every word must be usable
+		all := g.Next(nil, len(g.Order()), p)
+		if len(strings.Fields(all.Text)) != p.ExerciseWords {
+			t.Fatalf("%s: got %q", name, all.Text)
+		}
+	}
+}
+
+func TestLetterRune(t *testing.T) {
+	for in, want := range map[string]rune{"e": 'e', "ą": 'ą', "ж": 'ж', "ї": 'ї'} {
+		if got := letterRune(in); got != want {
+			t.Errorf("letterRune(%q) = %q, want %q", in, got, want)
+		}
+	}
+}

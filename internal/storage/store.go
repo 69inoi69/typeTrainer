@@ -1,6 +1,6 @@
 // Package storage hides WHERE data is kept behind the Store interface.
 // Right now there is an in-memory version (memory.go). Later you add
-// postgres.go implementing the same interface and change one line in main.go.
+// postgres.go implementing the same interface and change one line in setup.go.
 package storage
 
 import (
@@ -19,15 +19,19 @@ type Session struct {
 
 // Store is every data operation the app needs. Nothing outside this
 // package should know how the data is actually stored.
+//
+// Every method takes the language id ("en", "pl", ...): each language has its
+// own letter statistics, its own unlock progress and its own history,
+// because being good at English says nothing about Ukrainian.
 type Store interface {
-	KeyStats() (map[string]engine.KeyStat, error)
-	SaveKeyStats(stats map[string]engine.KeyStat) error
+	KeyStats(lang string) (map[string]engine.KeyStat, error)
+	SaveKeyStats(lang string, stats map[string]engine.KeyStat) error
 
 	// Unlocked is how many letters of the unlock order are open (0 = new user).
-	Unlocked() (int, error)
-	SetUnlocked(n int) error
+	Unlocked(lang string) (int, error)
+	SetUnlocked(lang string, n int) error
 
-	AddSession(s Session) error
-	RecentSessions(limit int) ([]Session, error) // newest first
-	SessionCount() (int, error)                  // all finished exercises
+	AddSession(lang string, s Session) error
+	RecentSessions(lang string, limit int) ([]Session, error) // newest first
+	SessionCount(lang string) (int, error)                    // all finished exercises
 }

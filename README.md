@@ -66,6 +66,8 @@ on reload.
   locked letters (outlined). Master every open letter and the next one opens.
 - The keyboard shows the next key in its finger color; keys you do not need yet
   are dimmed. `Esc` or "new exercise" gives a new text without saving.
+- The **EN · PL · UK · RU** switch changes the language (remembered in your
+  browser; the first time it follows your browser's language).
 - "keyboard" slider: size of the on-screen keyboard (0 = hidden). Remembered in
   your browser. "heatmap" tints keys red by how hard they are for you.
 - The **type / stats** switch at the top opens the statistics screen: totals,
@@ -90,8 +92,10 @@ typing-trainer/
 ├── pages/wasm-shim.js            Pages only: sends /api/v1 calls to the Go code in the browser
 ├── .github/workflows/pages.yml   builds and publishes the Pages version
 ├── data/
-│   ├── words-en.txt              word list, most frequent first
-│   └── layouts/qwerty-en.json    keyboard layout + finger mapping (data, not code)
+│   ├── languages.json            the four languages: name, layout, alphabet
+│   ├── langs/<id>/words.txt      2000 most frequent words per language
+│   └── layouts/*.json            keyboard layouts + finger mapping (data, not code)
+├── tools/wordlists/              script + block lists that build the word lists
 ├── docs/                         algorithm, architecture, reading list
 ├── internal/
 │   ├── config/config.go          ALL tunable numbers
@@ -101,6 +105,7 @@ typing-trainer/
 │   ├── storage/store.go          Store interface
 │   ├── storage/memory.go         in-memory implementation
 │   ├── layout/layout.go          loads and validates layout JSON
+│   ├── language/language.go      loads languages.json, checks words against the alphabet
 │   └── api/handlers.go           HTTP JSON API under /api/v1/
 └── web/                          index.html, style.css, app.js
 ```
@@ -119,20 +124,26 @@ all open letters mastered -> next letter opens
 
 Full explanation: [`docs/ALGORITHM.md`](docs/ALGORITHM.md).
 
-## Replacing the word list
+## Languages and word lists
 
-`data/words-en.txt` is a hand-made list of about 1000 frequent English words
-(one or more per line, separated by spaces, **most frequent first**). For a
-bigger, citable list, use SUBTLEX-US or `wordfreq` (see `docs/LITERATURE.md`).
-With Python installed:
+English, Polish, Ukrainian and Russian, chosen with the switch at the top. Each
+language keeps its own progress. Switch your **system** keyboard layout too
+(Windows: Win + Space); the app shows a hint when the layout does not match.
+Polish uses the standard "Polish (Programmers)" layout: ą, ę, ł... with AltGr.
+
+The word lists are the 2000 most frequent words of each language from
+[FrequencyWords](https://github.com/hermitdave/FrequencyWords) by Hermit Dave,
+counted in the OpenSubtitles 2018 corpus. **License of the word data:
+CC BY-SA 4.0** (attribution and share-alike). Filtering steps:
+`docs/ALGORITHM.md`, section 12. To rebuild them (Python 3 needed):
 
 ```
-pip install wordfreq
-python -c "from wordfreq import top_n_list; import re; open('data/words-en.txt', 'w').write(' '.join(w for w in top_n_list('en', 6000) if re.fullmatch('[a-z]+', w)))"
+git clone --depth 1 https://github.com/hermitdave/FrequencyWords
+python tools/wordlists/build.py FrequencyWords/content/2018
 ```
 
-Then restart the server. The unlock order and first lesson are recomputed
-automatically. wordfreq data is CC BY-SA 4.0: credit it if you publish.
+A new language = an entry in `data/languages.json`, a layout in
+`data/layouts/` and a word list in `data/langs/<id>/`. No code changes.
 
 ## Adding PostgreSQL later
 

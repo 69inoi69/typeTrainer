@@ -13,6 +13,10 @@ type Key struct {
 	Finger string  `json:"finger"`          // id from Layout.Fingers, e.g. "li"
 	Home   bool    `json:"home,omitempty"`  // home-row bump (F and J)
 	Width  float64 `json:"width,omitempty"` // relative width, defaults to 1
+	// Alt is the letter this key types together with AltGr (Polish ą on the
+	// "a" key). Modifier marks a key that types nothing itself (AltGr).
+	Alt      string `json:"alt,omitempty"`
+	Modifier bool   `json:"modifier,omitempty"`
 }
 
 type Finger struct {

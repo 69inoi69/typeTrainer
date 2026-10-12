@@ -13,7 +13,8 @@ Code: `internal/engine/model.go` (the math) and `internal/engine/generator.go`
 
 ## 1. The idea in one paragraph
 
-The user types **real English words**. For every letter the program keeps a
+The user types **real words** in one of four languages (English, Polish,
+Ukrainian, Russian). For every letter the program keeps a
 short, constantly updated picture of how well the user types it: how often they
 make a mistake on it and how long it takes. These two numbers are combined into
 one **difficulty** between 0 and 1. Letters are introduced **gradually**, most
@@ -149,15 +150,28 @@ uniform choice.
 
 ## 6. Unlocking letters
 
-**Order.** Letters are sorted by how often they occur in the word list. For the
-included list this gives `e t a r o n s i l c h d u p m g w f b y v k x q j z`.
-The order is computed from the data, not written by hand, so another language
-only needs another word list.
+**Order.** Letters are sorted by how often they occur in the word list of the
+language. The order is computed from the data, not written by hand, so a new
+language only needs a word list. With the included lists (first lesson in bold):
+
+| Language | Unlock order |
+|---|---|
+| English | **e a r s t i** n o l d c g h u p m y f w b k v x j q z |
+| Polish | **a i e o z m n** w r s y c d p t k j ł u b l ę g ć ś ó ą ż h f ź ń |
+| Ukrainian | **о а и т в н р і** с е д у п л м к з б я ь й ч ш г ж х ю є ц ї щ ф |
+| Russian | **о а е т и с н р** л в д м у п ь к я з б г ш ч й ы ж ю х ц щ ф э ъ |
+
+Letters that never occur in the list (Polish q v x, Ukrainian ґ) are not in the
+order and never appear in exercises.
 
 **First lesson.** At least `StartLetters = 6` letters, and more if needed until
-at least `MinWords = 30` real words can be built from them. With the included
-list this gives 7 letters (`e t a r o n s`, 50 words). Without this rule the
-first lesson would cycle through a handful of words.
+at least `MinWords = 30` real words can be built from them: 6 letters for
+English, 7 for Polish, 8 for Ukrainian and Russian. Without this rule the first
+lesson would cycle through a handful of words.
+
+**Every language has its own progress.** Statistics, unlocked letters and
+history are stored per language: mastering `e` in English says nothing about
+`е` in Russian, even though both sit on similar keys.
 
 **Mastery** of a letter is a plain yes/no rule on the smoothed values:
 
@@ -249,8 +263,12 @@ user data is a good subject for the evaluation chapter (section 11).
   movement. It is assigned to `s`.
 - **One global user.** There are no accounts yet; all statistics belong to whoever
   uses the server.
-- **Small word list.** About 1000 frequent words, collected by hand for the
-  prototype. Rare letters (`q`, `j`, `x`, `z`) have few words.
+- **Word lists from subtitles.** The 2000 most frequent words per language,
+  counted in film and TV subtitles (section 12). That is spoken, everyday
+  language: good for typing practice, but some names or slang may remain after
+  filtering. Rare letters (`q`, `j`, `x`, `z`, `ф`, `щ`) have few words.
+- **Simplified spelling.** Russian `ё` is typed as `е`, and Ukrainian words with
+  an apostrophe (`м'ясо`, `п'ять`) are left out for now.
 - **One stubborn letter blocks progress.** If one letter never reaches mastery,
   nothing new opens. The focus pushes that letter, which is the intended
   behaviour, but a cap (for example "open anyway after N exercises") may be needed.
@@ -284,3 +302,37 @@ These are directions, not things that are built:
   and a uniform random generator bring all letters below 5 % errors.
 - **Small user study.** Two groups (adaptive vs. random words), the same total
   practice time, compare WPM and accuracy before and after.
+
+## 12. Languages, layouts and word lists
+
+**Layouts** (`data/layouts/`): English QWERTY; Polish "Programmers" (the
+standard in Poland: QWERTY, Polish letters with AltGr, e.g. AltGr + a = ą);
+Ukrainian and Russian ЙЦУКЕН. Finger zones are the same for every layout, by
+key position. AltGr letters are shown in the corner of their base key; for such
+a letter the trainer highlights the base key and the AltGr key together.
+
+**The system layout is not replaced.** The user switches the operating system's
+keyboard layout, as in real life (Windows: Win + Space). If the typed letter
+is not in the language's alphabet at all (for example Latin letters while
+practising Ukrainian), the app does not count a mistake but shows a hint to
+switch the layout. Caps Lock is detected the same way. Wrong-layout presses
+would otherwise ruin the statistics for reasons that have nothing to do with
+typing skill.
+
+**Word lists** (`data/langs/<id>/words.txt`) come from FrequencyWords
+(Hermit Dave), word frequencies counted in the OpenSubtitles 2018 corpus
+(CC BY-SA 4.0). Subtitle frequencies are a good model of everyday language
+(Brysbaert & New, 2009). `tools/wordlists/build.py` rebuilds the lists and
+documents every filtering step:
+
+1. lowercase; Russian ё → е;
+2. only words made of the language's alphabet;
+3. one-letter words only if they are real words (en: a, i; pl: a, i, o, u, w, z; ...);
+4. no tokens without a vowel (encoding garbage in the source);
+5. Ukrainian: drop words more than 1.6× more frequent in the Russian list
+   (Ukrainian subtitles contain a lot of Russian text; known Russian words fall
+   between 1.7× and 2×, real shared words like "я" or "не" at about 1×);
+6. Polish: drop words more frequent in the English list (untranslated names);
+7. hand-made block lists in `tools/wordlists/block_<id>.txt`: names, places,
+   profanity, sound tags ("sighs") and fragments ("don" from "don't");
+8. keep the first 2000.

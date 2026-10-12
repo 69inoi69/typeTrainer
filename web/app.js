@@ -22,12 +22,19 @@ const el = {
   switch: document.querySelector(".switch"), tabType: $("tab-type"), tabStats: $("tab-stats"),
   viewType: $("view-type"), viewStats: $("view-stats"),
   tiles: $("tiles"), chart: $("chart"), chartNote: $("chart-note"), letterGrid: $("letter-grid"),
+  langSwitch: $("lang-switch"), warn: $("layout-warn"),
 };
 
 // ---------- state ----------
-let layout = null;         // keyboard layout from the server
-const keyEls = {};         // char -> key <div>
-const fingerOf = {};       // char -> finger id
+let languages = [];       // from /api/v1/languages
+let lang = "en";           // id of the current language
+let alphabet = new Set();  // letters of the current language
+let layout = null;         // keyboard layout of the current language
+let keyEls = {};           // char -> key <div> (the letter printed on the key)
+let fingerOf = {};         // char -> finger id
+let altBase = {};          // AltGr letter -> base key char ("ą" -> "a")
+let altgrEl = null;        // the AltGr key, if the layout has one
+let wrongScript = 0;       // presses in a row that came from another keyboard layout
 
 let exercise = null;       // last /exercise answer: text, focus, unlocked, locked
 let lastStats = null;      // last /stats answer
@@ -51,13 +58,17 @@ const store = { // localStorage can be blocked; the app must work without it
 const introOpen = () => !el.intro.classList.contains("hidden");
 
 // ---------- server calls ----------
-async function getJSON(path) {
-  const res = await fetch(API + path);
+// Every call except /languages is about one language: add ?lang= to it.
+function withLang(path) {
+  return path + (path.includes("?") ? "&" : "?") + "lang=" + encodeURIComponent(lang);
+}
+async function getJSON(path, global = false) {
+  const res = await fetch(API + (global ? path : withLang(path)));
   if (!res.ok) throw new Error(path + " -> " + res.status);
   return res.json();
 }
 async function postJSON(path, body) {
-  const res = await fetch(API + path, {
+  const res = await fetch(API + withLang(path), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -75,12 +86,20 @@ function makeKey(k) {
   if (k.width) key.style.width = `calc(var(--u) * ${k.width} + var(--u) * .12 * ${k.width - 1})`;
   key.innerHTML = `<span class="heat"></span><span class="lbl"></span>`;
   key.querySelector(".lbl").textContent = k.label || k.char;
+  if (k.alt) {                         // second letter, typed with AltGr
+    const alt = document.createElement("span");
+    alt.className = "alt";
+    alt.textContent = k.alt;
+    key.appendChild(alt);
+  }
+  if (k.modifier) key.classList.add("mod");
   key.title = finger.name;
   return key;
 }
 
 function drawKeyboard() {
   el.keyboard.innerHTML = "";
+  keyEls = {}; fingerOf = {}; altBase = {}; altgrEl = null; nextKeyEl = null;
   layout.rows.forEach((row, i) => {
     const rowEl = document.createElement("div");
     rowEl.className = "kb-row";
@@ -88,8 +107,10 @@ function drawKeyboard() {
     for (const k of row) {
       const key = makeKey(k);
       rowEl.appendChild(key);
+      if (k.modifier) { altgrEl = key; continue; }
       keyEls[k.char] = key;
       fingerOf[k.char] = k.finger;
+      if (k.alt) altBase[k.alt] = k.char;
     }
     el.keyboard.appendChild(rowEl);
   });
@@ -99,22 +120,33 @@ function drawKeyboard() {
   for (const k of layout.rows[1].slice(0, 10)) home.appendChild(makeKey(k));
 }
 
+// The key that types ch: its own key, or the base key for an AltGr letter.
+const keyFor = (ch) => keyEls[ch] || keyEls[altBase[ch]] || null;
+
 let nextKeyEl = null;
 function highlightNextKey() {
   if (nextKeyEl) nextKeyEl.classList.remove("next");
+  if (altgrEl) altgrEl.classList.remove("next");
   const ch = text[pos];
-  nextKeyEl = keyEls[ch] || null;
+  const base = altBase[ch] ?? ch;      // "ą" is typed on the "a" key
+  nextKeyEl = keyEls[base] || null;
   if (!nextKeyEl) { el.hint.innerHTML = "&nbsp;"; return; }
   nextKeyEl.classList.add("next");
-  const finger = layout.fingers[fingerOf[ch]];
+  const finger = layout.fingers[fingerOf[base]];
   el.hint.style.setProperty("--fc", finger.color);
-  el.hint.innerHTML = `press <b>${ch === " " ? "space" : ch}</b> with your <b>${finger.name.toLowerCase()}</b>`;
+  const name = ch === " " ? "space" : ch;
+  if (altBase[ch]) {
+    if (altgrEl) altgrEl.classList.add("next");
+    el.hint.innerHTML = `press <b>${name}</b>: hold <b>altgr</b> with your right thumb, then <b>${base}</b> with your <b>${finger.name.toLowerCase()}</b>`;
+  } else {
+    el.hint.innerHTML = `press <b>${name}</b> with your <b>${finger.name.toLowerCase()}</b>`;
+  }
 }
 
 // Key feedback with the Web Animations API: runs on the compositor and
 // needs no class juggling or layout reads, so it costs almost nothing.
 function pulseKey(ch, ok) {
-  const k = keyEls[ch];
+  const k = keyFor(ch);
   if (!k || !k.animate) return;
   if (ok) {
     k.animate([{ transform: "translateY(1px) scale(.93)" }, { transform: "none" }],
@@ -189,7 +221,9 @@ function renderLetters() {
 
   // every key you do not need yet is dimmed on the keyboard
   const open = new Set([...exercise.unlocked, " "]);
-  for (const [c, key] of Object.entries(keyEls)) key.classList.toggle("locked", !open.has(c));
+  const altOf = Object.fromEntries(Object.entries(altBase).map(([a, b]) => [b, a]));
+  for (const [c, key] of Object.entries(keyEls)) key.classList.toggle("locked", !open.has(c) && !open.has(altOf[c]));
+  if (altgrEl) altgrEl.classList.toggle("locked", !exercise.unlocked.some((c) => altBase[c]));
 
   const openCount = exercise.unlocked.length;
   const all = openCount + exercise.locked.length;
@@ -247,9 +281,20 @@ function handleChar(ch) {
   el.textBox.classList.add("typing");
 
   const expected = text[pos];
+
+  // Not a typing mistake but a wrong keyboard setting: Caps Lock, or the
+  // system layout is set to another language. Not counted, just explained.
+  if (ch !== expected && /\p{L}/u.test(ch)) {
+    if (ch.toLowerCase() === expected) { showWarn("caps"); return; }
+    if (!alphabet.has(ch.toLowerCase())) {
+      if (++wrongScript >= 2) showWarn("layout");
+      return;
+    }
+  }
   presses++;
 
   if (ch === expected) {
+    if (wrongScript || el.warn.classList.contains("show")) hideWarn();
     // ms = time since the previous correct press. Not measured (0) for the
     // first character; after a mistake the server ignores the time anyway.
     const ms = lastTime !== null ? now - lastTime : 0;
@@ -269,6 +314,18 @@ function handleChar(ch) {
     pulseKey(ch, false);
   }
   updateLive();
+}
+
+function showWarn(kind) {
+  const info = languages.find((l) => l.id === lang);
+  el.warn.innerHTML = kind === "caps"
+    ? "<b>Caps Lock</b> is on"
+    : `Your keyboard is typing in another language. Switch the system layout to <b>${info?.systemLayout ?? lang}</b> (Windows: <kbd>Win</kbd> + <kbd>Space</kbd>)`;
+  el.warn.classList.add("show");
+}
+function hideWarn() {
+  wrongScript = 0;
+  el.warn.classList.remove("show");
 }
 
 // WPM uses the standard definition: 5 characters = 1 word.
@@ -322,10 +379,12 @@ function toast(html) {
 async function refreshStats() {
   lastStats = await getJSON("/stats");
   $("intro-target").textContent = lastStats.targetWpm;
+  const heat = new Map();               // one key can carry two letters (a, ą): show the harder
   for (const k of lastStats.keys) {
-    const key = keyEls[k.char];
-    if (key) key.style.setProperty("--heat", k.count ? k.difficulty.toFixed(3) : 0);
+    const key = keyFor(k.char);
+    if (key) heat.set(key, Math.max(heat.get(key) ?? 0, k.count ? k.difficulty : 0));
   }
+  for (const [key, d] of heat) key.style.setProperty("--heat", d.toFixed(3));
   if (view === "stats") renderStats();
 }
 
@@ -446,12 +505,16 @@ function drawLetterGrid(keys) {
 }
 
 // ---------- intro ----------
+// Shown in full on the very first visit. For a language you have not used
+// yet, only the last step (new / can already type) is shown.
 let introStep = 0;
-function showIntro() {
-  introStep = 0;
+function showIntro(step = 0) {
+  introStep = step;
+  const info = languages.find((l) => l.id === lang);
+  $("intro-lang").textContent = info ? " · " + info.name : "";
   renderIntro();
   el.intro.classList.remove("hidden");
-  $("intro-next").focus();
+  if (step < 2) $("intro-next").focus();
 }
 function renderIntro() {
   document.querySelectorAll(".intro-step").forEach((s, i) => s.classList.toggle("active", i === introStep));
@@ -463,6 +526,9 @@ function renderIntro() {
 }
 async function closeIntro(unlockAll) {
   el.intro.classList.add("hidden");
+  store.set("tt.introDone", "1");
+  // remember the answer per language (skipping counts as "new")
+  store.set(`tt.level.${lang}`, unlockAll ? "pro" : "new");
   if (unlockAll !== undefined) {
     try {
       const res = await postJSON("/progress", { unlockAll });
@@ -481,6 +547,63 @@ $("intro-new").addEventListener("click", () => closeIntro(false));
 $("intro-pro").addEventListener("click", () => closeIntro(true));
 el.btnIntro.addEventListener("click", (e) => { e.currentTarget.blur(); showIntro(); });
 
+// ---------- languages ----------
+// The switch is built once; changing language only moves the yellow thumb
+// (CSS variable --i), so the slide animation can run.
+function buildLangSwitch() {
+  el.langSwitch.style.setProperty("--n", languages.length);
+  el.langSwitch.innerHTML = `<span class="switch-thumb" aria-hidden="true"></span>` +
+    languages.map((l) => `<button type="button" role="tab" data-lang="${l.id}" title="${l.name}">${l.label}</button>`).join("");
+  el.langSwitch.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    b.blur();
+    if (busy || b.dataset.lang === lang) return;
+    loadLanguage(b.dataset.lang).catch((err) => console.error(err));
+  }));
+}
+function markLangSwitch() {
+  el.langSwitch.style.setProperty("--i", Math.max(0, languages.findIndex((l) => l.id === lang)));
+  el.langSwitch.querySelectorAll("button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.lang === lang)));
+}
+
+// First choice: what was used last time, else the browser's language, else the first one.
+function initialLanguage() {
+  const ids = languages.map((l) => l.id);
+  const saved = store.get("tt.lang");
+  if (ids.includes(saved)) return saved;
+  const browser = (navigator.language || "").slice(0, 2).toLowerCase();
+  return ids.includes(browser) ? browser : ids[0];
+}
+
+async function loadLanguage(id) {
+  busy = true;
+  try {
+    lang = id;
+    store.set("tt.lang", id);
+    const info = languages.find((l) => l.id === id);
+    alphabet = new Set(info.alphabet);
+    document.documentElement.lang = id;
+    markLangSwitch();
+    hideWarn();
+    el.live.classList.remove("final");
+    layout = await getJSON("/layout");
+    drawKeyboard();
+    await refreshStats();
+    await loadExercise();
+
+    const level = store.get(`tt.level.${id}`);
+    if (!level) {
+      showIntro(store.get("tt.introDone") ? 2 : 0);
+    } else if (level === "pro" && exercise.locked.length && !lastStats.sessionCount) {
+      // the GitHub Pages version forgets progress on reload: re-apply the choice
+      await postJSON("/progress", { unlockAll: true });
+      await refreshStats();
+      await loadExercise();
+    }
+  } finally {
+    busy = false;
+  }
+}
+
 // ---------- input ----------
 // Desktop: keydown gives us the real key. preventDefault stops the character
 // from ALSO arriving through the hidden input (and space from scrolling).
@@ -492,7 +615,10 @@ document.addEventListener("keydown", (e) => {
   if (view !== "type") return;
   if (document.activeElement === el.kbSize) return;  // arrows move the slider
   if (e.key === "Escape") { e.preventDefault(); newExercise(); return; }
-  if (e.ctrlKey || e.metaKey || e.altKey) return;   // keep browser shortcuts
+  // AltGr (Polish ą, ę, ...) is reported as Ctrl+Alt on Windows; let it through,
+  // but keep real browser shortcuts like Ctrl+R working.
+  const altGr = e.getModifierState?.("AltGraph");
+  if ((e.ctrlKey || e.metaKey || e.altKey) && !altGr) return;
   if (e.key.length !== 1) return;                     // Shift, Tab, "Unidentified"...
   e.preventDefault();
   focusText();
@@ -534,11 +660,9 @@ el.heat.addEventListener("change", () => {
     return;
   }
   try {
-    layout = await getJSON("/layout");
-    drawKeyboard();
-    await refreshStats();
-    await loadExercise();
-    if (!lastStats.sessionCount) showIntro(); // first visit
+    languages = await getJSON("/languages", true);
+    buildLangSwitch();
+    await loadLanguage(initialLanguage());
   } catch (err) {
     console.error(err);
     el.text.textContent = "Could not load from the server. Is the Go server running?";

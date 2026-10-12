@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"sort"
 	"strings"
+	"unicode/utf8"
 )
 
 // Generator builds exercises out of REAL words (no random letter soup).
@@ -100,11 +101,19 @@ func (g *Generator) NextUnlocked(stats map[string]KeyStat, unlocked int, p Param
 	return unlocked + 1
 }
 
+// letterRune turns a one-letter string ("e", "ą", "ж") into its rune.
+// (c[0] would only be the first BYTE, which is wrong for ą or Cyrillic,
+// because those letters take two bytes in UTF-8.)
+func letterRune(c string) rune {
+	r, _ := utf8.DecodeRuneInString(c)
+	return r
+}
+
 // eligible returns the words that use only the first n letters of the order.
 func (g *Generator) eligible(n int) []string {
 	open := map[rune]bool{}
 	for _, c := range g.order[:n] {
-		open[rune(c[0])] = true
+		open[letterRune(c)] = true
 	}
 	var out []string
 	for _, w := range g.words {
@@ -155,7 +164,7 @@ func (g *Generator) Next(stats map[string]KeyStat, unlocked int, p Params) Exerc
 	best := -1.0
 	for i, c := range open {
 		d := Difficulty(stats[c], p)
-		diff[rune(c[0])] = d
+		diff[letterRune(c)] = d
 		letterW[i] = SoftmaxWeight(d, p)
 		if d > best {
 			best, ex.Focus = d, c

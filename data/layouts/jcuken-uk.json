@@ -1,0 +1,206 @@
+{
+ "id": "jcuken-uk",
+ "name": "Ukrainian",
+ "fingers": {
+  "lp": {
+   "name": "Left pinky",
+   "color": "#c98bd6"
+  },
+  "lr": {
+   "name": "Left ring",
+   "color": "#7fa6e0"
+  },
+  "lm": {
+   "name": "Left middle",
+   "color": "#5fc4c4"
+  },
+  "li": {
+   "name": "Left index",
+   "color": "#8cc97a"
+  },
+  "ri": {
+   "name": "Right index",
+   "color": "#e3c46a"
+  },
+  "rm": {
+   "name": "Right middle",
+   "color": "#e59a62"
+  },
+  "rr": {
+   "name": "Right ring",
+   "color": "#e57f8f"
+  },
+  "rp": {
+   "name": "Right pinky",
+   "color": "#b38fe6"
+  },
+  "th": {
+   "name": "Thumb",
+   "color": "#9aa3ad"
+  }
+ },
+ "offsets": [
+  0,
+  0.25,
+  0.75,
+  2.75
+ ],
+ "rows": [
+  [
+   {
+    "char": "й",
+    "finger": "lp"
+   },
+   {
+    "char": "ц",
+    "finger": "lr"
+   },
+   {
+    "char": "у",
+    "finger": "lm"
+   },
+   {
+    "char": "к",
+    "finger": "li"
+   },
+   {
+    "char": "е",
+    "finger": "li"
+   },
+   {
+    "char": "н",
+    "finger": "ri"
+   },
+   {
+    "char": "г",
+    "finger": "ri",
+    "alt": "ґ"
+   },
+   {
+    "char": "ш",
+    "finger": "rm"
+   },
+   {
+    "char": "щ",
+    "finger": "rr"
+   },
+   {
+    "char": "з",
+    "finger": "rp"
+   },
+   {
+    "char": "х",
+    "finger": "rp"
+   },
+   {
+    "char": "ї",
+    "finger": "rp"
+   }
+  ],
+  [
+   {
+    "char": "ф",
+    "finger": "lp"
+   },
+   {
+    "char": "і",
+    "finger": "lr"
+   },
+   {
+    "char": "в",
+    "finger": "lm"
+   },
+   {
+    "char": "а",
+    "finger": "li",
+    "home": true
+   },
+   {
+    "char": "п",
+    "finger": "li"
+   },
+   {
+    "char": "р",
+    "finger": "ri"
+   },
+   {
+    "char": "о",
+    "finger": "ri",
+    "home": true
+   },
+   {
+    "char": "л",
+    "finger": "rm"
+   },
+   {
+    "char": "д",
+    "finger": "rr"
+   },
+   {
+    "char": "ж",
+    "finger": "rp"
+   },
+   {
+    "char": "є",
+    "finger": "rp"
+   }
+  ],
+  [
+   {
+    "char": "я",
+    "finger": "lp"
+   },
+   {
+    "char": "ч",
+    "finger": "lr"
+   },
+   {
+    "char": "с",
+    "finger": "lm"
+   },
+   {
+    "char": "м",
+    "finger": "li"
+   },
+   {
+    "char": "и",
+    "finger": "li"
+   },
+   {
+    "char": "т",
+    "finger": "ri"
+   },
+   {
+    "char": "ь",
+    "finger": "ri"
+   },
+   {
+    "char": "б",
+    "finger": "rm"
+   },
+   {
+    "char": "ю",
+    "finger": "rr"
+   },
+   {
+    "char": ".",
+    "finger": "rp"
+   }
+  ],
+  [
+   {
+    "char": " ",
+    "label": "space",
+    "finger": "th",
+    "width": 6
+   },
+   {
+    "char": "AltGr",
+    "label": "altgr",
+    "finger": "th",
+    "width": 1.5,
+    "modifier": true
+   }
+  ]
+ ]
+}

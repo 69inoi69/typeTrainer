@@ -61,6 +61,15 @@ button, input { font: inherit; }
 }
 .switch.stats .switch-thumb { transform: translateX(100%); }
 
+/* ---------- language switch (same look as type/stats, N options) ---------- */
+.subbar { max-width: 900px; margin: -8px auto 14px; padding: 0 16px; display: flex; }
+.lang-switch { grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); font-size: .85rem; }
+.lang-switch button { padding: 5px 14px; letter-spacing: .04em; }
+.lang-switch .switch-thumb {
+  width: calc((100% - 8px) / var(--n, 4));
+  transform: translateX(calc(var(--i, 0) * 100%));
+}
+
 /* ---------- views ---------- */
 .views { max-width: 900px; margin: 0 auto; padding: 0 16px 40px; }
 .view { animation: view-in var(--med) var(--ease); }
@@ -124,6 +133,15 @@ button, input { font: inherit; }
 
 .hidden-input { position: absolute; opacity: 0; width: 1px; height: 1px; left: -9999px; }
 
+/* ---------- Caps Lock / wrong layout warning ---------- */
+.warn {
+  display: none; margin-top: 12px; padding: 8px 12px; border-radius: 8px; font-size: .85rem;
+  color: var(--text); background: color-mix(in srgb, var(--accent) 16%, var(--panel));
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.warn.show { display: block; animation: view-in var(--med) var(--ease); }
+.warn b { color: var(--accent); font-weight: 500; }
+
 /* ---------- finger hint ---------- */
 .finger-hint { text-align: center; color: var(--sub); margin: 16px 0 10px; min-height: 1.4em; }
 .finger-hint b { color: var(--fc, var(--text)); font-weight: 600; transition: color var(--fast); }
@@ -153,6 +171,11 @@ button, input { font: inherit; }
 .keyboard.show-heat .key .heat { opacity: calc(var(--heat, 0) * .75); }
 .keyboard.show-heat .key.next .heat { opacity: 0; } /* never dim the key to press */
 .key .lbl { position: relative; }
+.key .alt {                           /* letter typed with AltGr, e.g. ą on the a key */
+  position: absolute; right: 12%; bottom: 8%; font-size: .62em; opacity: .7;
+}
+.key.next .alt { opacity: 1; }
+.key.mod .lbl { font-size: .8em; }
 .key.next {
   background: var(--fc); color: var(--on-accent); transform: translateY(-2px);
   box-shadow: 0 5px 16px color-mix(in srgb, var(--fc) 40%, transparent);

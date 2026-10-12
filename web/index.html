@@ -23,6 +23,11 @@
     </div>
   </header>
 
+  <!-- Language switch, shared by both views. Buttons come from /api/v1/languages. -->
+  <div class="subbar">
+    <div class="switch lang-switch" id="lang-switch" role="tablist" aria-label="Language"></div>
+  </div>
+
   <main class="views">
     <!-- ================= TYPE VIEW ================= -->
     <section id="view-type" class="view active" role="tabpanel" aria-labelledby="tab-type">
@@ -31,6 +36,9 @@
         <div id="letters" class="letter-row"></div>
         <div id="letters-caption" class="letters-caption">&nbsp;</div>
       </div>
+
+      <!-- Shown when Caps Lock is on or the system keyboard layout is wrong. -->
+      <div class="warn" id="layout-warn" role="status" aria-live="polite"></div>
 
       <!-- The text to type. Each character is its own <span>; the caret is one
            separate element that slides to the current character. -->
@@ -101,7 +109,7 @@
              thumbs rest on space. Every key is colored by the finger that presses it.</p>
         </section>
         <section class="intro-step" data-step="2">
-          <p class="intro-kicker">how you progress</p>
+          <p class="intro-kicker">how you progress<span id="intro-lang"></span></p>
           <h2>A few letters first, then more.</h2>
           <p>You start with the most common letters. Type each of them cleanly at
              <b id="intro-target">30</b> words per minute and the next letter opens.

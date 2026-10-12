@@ -36,8 +36,11 @@ its own.
 | `internal/storage/memory.go` | In-memory `Store` (lost on restart). |
 | `internal/api/handlers.go` | JSON API, input validation, locking around read-modify-write. |
 | `internal/layout` | Parses and validates the keyboard layout JSON. |
-| `data/layouts/qwerty-en.json` | Keys, rows, finger per key, finger colors. |
-| `data/words-en.txt` | Word list, most frequent first. |
+| `internal/language` | Parses `languages.json`; `Allows(word)` checks a word against the alphabet. |
+| `data/languages.json` | The languages: id, name, label, layout, alphabet, OS layout name. |
+| `data/layouts/*.json` | Keys, rows, finger per key, AltGr letters, finger colors. |
+| `data/langs/<id>/words.txt` | Word list per language, most frequent first. |
+| `tools/wordlists/` | Python script + block lists that build the word lists (not part of the app). |
 | `web/` | Static frontend: `index.html`, `style.css`, `app.js`. |
 
 The `web/` and `data/` folders are embedded into the binary (`//go:embed`), so
@@ -57,18 +60,25 @@ the program runs the same from any folder.
 
 ## API
 
-All responses are JSON.
+All responses are JSON. Every route except `/languages` takes `?lang=<id>`
+(`en`, `pl`, `uk`, `ru`; default `en`). An unknown id is a 400 error.
 
 | Method | Path | Request | Response |
 |---|---|---|---|
+| GET | `/api/v1/languages` | | `[{id, name, label, layout, alphabet, systemLayout}]` |
 | GET | `/api/v1/layout` | | layout JSON |
 | GET | `/api/v1/exercise` | | `{text, focus, unlocked: [..], locked: [..]}` |
 | POST | `/api/v1/results` | `{samples: [{char, errors, ms}], wpm, accuracy}` | `{unlocked, newLetter}` |
 | POST | `/api/v1/progress` | `{unlockAll: true\|false}` | `{unlocked}` |
 | GET | `/api/v1/stats` | | `{keys: [{char, count, errorRate, avgMs, difficulty, mastered, unlocked}], sessions: [last 50, newest first], sessionCount, targetWpm}` |
 
-Validation on `/results`: 1–5000 samples, each with exactly one character,
-`errors >= 0`, `ms >= 0`; WPM 0–400; accuracy 0–100. Body limit 1 MB.
+Validation on `/results`: 1–5000 samples, each with exactly one character that
+is a letter of the language or a space, `errors >= 0`, `ms >= 0`; WPM 0–400;
+accuracy 0–100. Body limit 1 MB.
+
+Every `Store` method takes the language id, so each language has its own
+statistics, unlocked letters and history. Each language also has its own
+`Generator` (own unlock order and first lesson), built in `setup.go`.
 
 ## Concurrency
 
@@ -120,6 +130,8 @@ server version never loads them.
 
 ## Adding a layout or language
 
-- New layout: a new JSON file in `data/layouts/` (keys, finger per key).
-- New language: a new word list, most frequent first. The unlock order is
-  computed from it automatically.
+- New layout: a new JSON file in `data/layouts/` (keys, finger per key, optional
+  `alt` letter typed with AltGr, one key with `"modifier": true` for AltGr).
+- New language: an entry in `data/languages.json` + a layout + a word list in
+  `data/langs/<id>/words.txt` (most frequent first). The unlock order and the
+  first lesson are computed from the list automatically; no code changes.

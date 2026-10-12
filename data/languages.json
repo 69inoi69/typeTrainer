@@ -1,0 +1,34 @@
+[
+ {
+  "id": "en",
+  "name": "English",
+  "label": "EN",
+  "layout": "qwerty-en",
+  "alphabet": "abcdefghijklmnopqrstuvwxyz",
+  "systemLayout": "English (US)"
+ },
+ {
+  "id": "pl",
+  "name": "Polski",
+  "label": "PL",
+  "layout": "qwerty-pl",
+  "alphabet": "aąbcćdeęfghijklłmnńoóprsśtuwyzźżqvx",
+  "systemLayout": "Polish (Programmers)"
+ },
+ {
+  "id": "uk",
+  "name": "Українська",
+  "label": "UK",
+  "layout": "jcuken-uk",
+  "alphabet": "абвгґдеєжзиіїйклмнопрстуфхцчшщьюя",
+  "systemLayout": "Ukrainian"
+ },
+ {
+  "id": "ru",
+  "name": "Русский",
+  "label": "RU",
+  "layout": "jcuken-ru",
+  "alphabet": "абвгдежзийклмнопрстуфхцчшщъыьэюя",
+  "systemLayout": "Russian"
+ }
+]

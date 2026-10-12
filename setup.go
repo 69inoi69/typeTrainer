@@ -18,6 +18,7 @@ import (
 	"typingtrainer/internal/api"
 	"typingtrainer/internal/config"
 	"typingtrainer/internal/engine"
+	"typingtrainer/internal/language"
 	"typingtrainer/internal/layout"
 	"typingtrainer/internal/storage"
 )
@@ -33,29 +34,29 @@ var files embed.FS
 func newApp() (http.Handler, config.Config, error) {
 	cfg := config.Default()
 
-	layoutJSON, err := files.ReadFile("data/layouts/qwerty-en.json")
+	langData, err := files.ReadFile("data/languages.json")
 	if err != nil {
 		return nil, cfg, err
 	}
-	if _, err := layout.Parse(layoutJSON); err != nil { // fail early on a broken layout
+	infos, err := language.Parse(langData)
+	if err != nil {
 		return nil, cfg, err
 	}
 
-	wordData, err := files.ReadFile("data/words-en.txt")
-	if err != nil {
-		return nil, cfg, err
-	}
-	words := uniqueWords(string(wordData))
-	if len(words) == 0 {
-		return nil, cfg, fmt.Errorf("word list is empty")
+	seed := time.Now().UnixNano()
+	var langs []*api.Language
+	for i, info := range infos {
+		l, err := loadLanguage(info, cfg, seed+int64(i))
+		if err != nil {
+			return nil, cfg, fmt.Errorf("language %s: %w", info.ID, err)
+		}
+		langs = append(langs, l)
 	}
 
 	// Swap this line for storage.NewPostgresStore(...) later.
 	var store storage.Store = storage.NewMemoryStore()
 
-	gen := engine.NewGenerator(words, rand.New(rand.NewSource(time.Now().UnixNano())), cfg.Engine)
-	server := api.NewServer(cfg, store, gen, layoutJSON)
-
+	server := api.NewServer(cfg, store, langs)
 	mux := http.NewServeMux()
 	server.Register(mux)
 	webFS, err := fs.Sub(files, "web")
@@ -66,26 +67,39 @@ func newApp() (http.Handler, config.Config, error) {
 	return mux, cfg, nil
 }
 
+// loadLanguage reads one language's layout and word list and builds its
+// generator (the unlock order is computed from the words).
+func loadLanguage(info language.Language, cfg config.Config, seed int64) (*api.Language, error) {
+	layoutJSON, err := files.ReadFile("data/layouts/" + info.Layout + ".json")
+	if err != nil {
+		return nil, err
+	}
+	if _, err := layout.Parse(layoutJSON); err != nil { // fail early on a broken layout
+		return nil, err
+	}
+	wordData, err := files.ReadFile("data/langs/" + info.ID + "/words.txt")
+	if err != nil {
+		return nil, err
+	}
+	words := uniqueWords(string(wordData), info)
+	if len(words) == 0 {
+		return nil, fmt.Errorf("word list is empty")
+	}
+	gen := engine.NewGenerator(words, rand.New(rand.NewSource(seed)), cfg.Engine)
+	return &api.Language{Info: info, Gen: gen, LayoutJSON: layoutJSON}, nil
+}
+
 // uniqueWords splits the word list (most frequent first), lowercases it,
-// keeps only words made of the letters a-z and removes duplicates.
+// keeps only words made of the language's letters and removes duplicates.
 // The order is kept: it is the frequency order of the source list.
-func uniqueWords(s string) []string {
+func uniqueWords(s string, l language.Language) []string {
 	seen := map[string]bool{}
 	var out []string
 	for _, w := range strings.Fields(strings.ToLower(s)) {
-		if !seen[w] && onlyLetters(w) {
+		if !seen[w] && l.Allows(w) {
 			seen[w] = true
 			out = append(out, w)
 		}
 	}
 	return out
-}
-
-func onlyLetters(w string) bool {
-	for _, r := range w {
-		if r < 'a' || r > 'z' {
-			return false
-		}
-	}
-	return true
 }

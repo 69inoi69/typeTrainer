@@ -58,11 +58,19 @@ marked ★.
 
 ## Word lists (data)
 
+- ★ **Lison, P., Tiedemann, J., Kouylekov, M. (2018).** *OpenSubtitles2018:
+  Statistical Rescoring of Sentence Alignments in Large, Noisy Parallel
+  Corpora.* LREC 2018. The corpus the word lists in `data/langs/` are counted
+  from. Corpus: <https://opus.nlpl.eu/OpenSubtitles2018.php>
+- **FrequencyWords** (Hermit Dave): frequency lists computed from that corpus
+  for many languages, the direct source of the word lists. Data license
+  CC BY-SA 4.0. <https://github.com/hermitdave/FrequencyWords>
 - **Brysbaert, M., New, B. (2009).** *Moving beyond Kučera and Francis: A critical
   evaluation of current word frequency norms and the introduction of a new and
   improved word frequency measure for American English.* Behavior Research
-  Methods, 41(4). The SUBTLEX-US frequency list, a scientifically grounded
-  replacement for the hand-made list in `data/words-en.txt`.
+  Methods, 41(4). Introduces SUBTLEX-US and shows that word frequencies counted
+  in subtitles predict word processing better than book-based counts. Cite it
+  to justify subtitle-based word lists.
 - **wordfreq** (Robyn Speer), Python library with frequency lists for many
   languages: <https://github.com/rspeer/wordfreq>. Data license CC BY-SA 4.0,
   so credit it in the README if you use it.

@@ -1,6 +1,7 @@
 // Package api is the HTTP layer: it turns JSON requests into calls to the
 // engine and the store, and turns the answers back into JSON.
-// All routes start with /api/v1/.
+// All routes start with /api/v1/. Every route except /languages takes
+// ?lang=<id> (default: the first language in data/languages.json).
 package api
 
 import (
@@ -8,61 +9,103 @@ import (
 	"log"
 	"net/http"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 	"unicode/utf8"
 
 	"typingtrainer/internal/config"
 	"typingtrainer/internal/engine"
+	"typingtrainer/internal/language"
 	"typingtrainer/internal/storage"
 )
 
-type Server struct {
-	cfg        config.Config
-	store      storage.Store
-	gen        *engine.Generator
-	layoutJSON []byte
+// Language is everything the server needs for one typing language.
+type Language struct {
+	Info       language.Language
+	Gen        *engine.Generator
+	LayoutJSON []byte
+}
 
-	// genMu: the generator's random source is not safe for parallel use.
+type Server struct {
+	cfg   config.Config
+	store storage.Store
+	langs map[string]*Language
+	order []*Language // the order of data/languages.json; order[0] is the default
+
+	// genMu: the generators' random sources are not safe for parallel use.
 	// writeMu: makes "read stats -> update -> save" one atomic step.
 	// (A PostgreSQL store would do this inside a transaction instead.)
 	genMu   sync.Mutex
 	writeMu sync.Mutex
 }
 
-func NewServer(cfg config.Config, store storage.Store, gen *engine.Generator, layoutJSON []byte) *Server {
-	return &Server{cfg: cfg, store: store, gen: gen, layoutJSON: layoutJSON}
+func NewServer(cfg config.Config, store storage.Store, langs []*Language) *Server {
+	s := &Server{cfg: cfg, store: store, langs: map[string]*Language{}, order: langs}
+	for _, l := range langs {
+		s.langs[l.Info.ID] = l
+	}
+	return s
 }
 
 // Register adds all API routes to the mux (Go 1.22+ "METHOD /path" patterns).
 func (s *Server) Register(mux *http.ServeMux) {
-	mux.HandleFunc("GET /api/v1/layout", s.handleLayout)
-	mux.HandleFunc("GET /api/v1/exercise", s.handleExercise)
-	mux.HandleFunc("POST /api/v1/results", s.handleResults)
-	mux.HandleFunc("POST /api/v1/progress", s.handleProgress)
-	mux.HandleFunc("GET /api/v1/stats", s.handleStats)
+	mux.HandleFunc("GET /api/v1/languages", s.handleLanguages)
+	mux.HandleFunc("GET /api/v1/layout", s.withLang(s.handleLayout))
+	mux.HandleFunc("GET /api/v1/exercise", s.withLang(s.handleExercise))
+	mux.HandleFunc("POST /api/v1/results", s.withLang(s.handleResults))
+	mux.HandleFunc("POST /api/v1/progress", s.withLang(s.handleProgress))
+	mux.HandleFunc("GET /api/v1/stats", s.withLang(s.handleStats))
 }
 
-// GET /api/v1/layout -> the keyboard layout JSON, as is.
-func (s *Server) handleLayout(w http.ResponseWriter, r *http.Request) {
+type langHandler func(w http.ResponseWriter, r *http.Request, l *Language)
+
+// withLang reads ?lang= and passes the matching Language to the handler.
+// An unknown language is a 400 error, an empty one means the default.
+func (s *Server) withLang(h langHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.URL.Query().Get("lang")
+		l := s.order[0]
+		if id != "" {
+			var ok bool
+			if l, ok = s.langs[id]; !ok {
+				badRequest(w, "unknown language: "+id)
+				return
+			}
+		}
+		h(w, r, l)
+	}
+}
+
+// GET /api/v1/languages -> the list for the language switch.
+func (s *Server) handleLanguages(w http.ResponseWriter, r *http.Request) {
+	out := make([]language.Language, len(s.order))
+	for i, l := range s.order {
+		out[i] = l.Info
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+// GET /api/v1/layout?lang= -> the keyboard layout JSON, as is.
+func (s *Server) handleLayout(w http.ResponseWriter, r *http.Request, l *Language) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(s.layoutJSON)
+	w.Write(l.LayoutJSON)
 }
 
-// GET /api/v1/exercise -> text + which letters are open / locked / in focus.
-func (s *Server) handleExercise(w http.ResponseWriter, r *http.Request) {
-	stats, err := s.store.KeyStats()
+// GET /api/v1/exercise?lang= -> text + which letters are open / locked / in focus.
+func (s *Server) handleExercise(w http.ResponseWriter, r *http.Request, l *Language) {
+	stats, err := s.store.KeyStats(l.Info.ID)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	unlocked, err := s.store.Unlocked()
+	unlocked, err := s.store.Unlocked(l.Info.ID)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
 	s.genMu.Lock()
-	ex := s.gen.Next(stats, unlocked, s.cfg.Engine)
+	ex := l.Gen.Next(stats, unlocked, s.cfg.Engine)
 	s.genMu.Unlock()
 	writeJSON(w, http.StatusOK, ex)
 }
@@ -73,46 +116,47 @@ type resultsRequest struct {
 	Accuracy float64         `json:"accuracy"`
 }
 
-// POST /api/v1/results -> stores a finished exercise, maybe unlocks a letter.
+// POST /api/v1/results?lang= -> stores a finished exercise, maybe unlocks a letter.
 // Answer: {"unlocked": 8, "newLetter": "s"} (newLetter is "" if nothing opened).
-func (s *Server) handleResults(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, l *Language) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20) // 1 MB is plenty
 	var req resultsRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		badRequest(w, "invalid JSON")
 		return
 	}
-	if msg := validate(req, s.cfg.MaxEvents); msg != "" {
+	if msg := validate(req, s.cfg.MaxEvents, l.Info.Alphabet); msg != "" {
 		badRequest(w, msg)
 		return
 	}
+	id := l.Info.ID
 
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	stats, err := s.store.KeyStats()
+	stats, err := s.store.KeyStats(id)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
 	stats = engine.Apply(stats, req.Samples, s.cfg.Engine)
-	if err := s.store.SaveKeyStats(stats); err != nil {
+	if err := s.store.SaveKeyStats(id, stats); err != nil {
 		serverError(w, err)
 		return
 	}
 
-	before, err := s.store.Unlocked()
+	before, err := s.store.Unlocked(id)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	before = s.gen.Clamp(before)
-	after := s.gen.NextUnlocked(stats, before, s.cfg.Engine)
-	if err := s.store.SetUnlocked(after); err != nil {
+	before = l.Gen.Clamp(before)
+	after := l.Gen.NextUnlocked(stats, before, s.cfg.Engine)
+	if err := s.store.SetUnlocked(id, after); err != nil {
 		serverError(w, err)
 		return
 	}
 
-	err = s.store.AddSession(storage.Session{
+	err = s.store.AddSession(id, storage.Session{
 		WPM: req.WPM, Accuracy: req.Accuracy, Chars: len(req.Samples), FinishedAt: time.Now(),
 	})
 	if err != nil {
@@ -121,15 +165,15 @@ func (s *Server) handleResults(w http.ResponseWriter, r *http.Request) {
 	}
 	newLetter := ""
 	if after > before {
-		newLetter = s.gen.Order()[after-1]
+		newLetter = l.Gen.Order()[after-1]
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"unlocked": after, "newLetter": newLetter})
 }
 
-// POST /api/v1/progress {"unlockAll": true} -> for people who can already
+// POST /api/v1/progress?lang= {"unlockAll": true} -> for people who can already
 // touch type: skip the lessons and open every letter. {"unlockAll": false}
 // goes back to the first lesson (statistics are kept).
-func (s *Server) handleProgress(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleProgress(w http.ResponseWriter, r *http.Request, l *Language) {
 	var req struct {
 		UnlockAll bool `json:"unlockAll"`
 	}
@@ -137,26 +181,31 @@ func (s *Server) handleProgress(w http.ResponseWriter, r *http.Request) {
 		badRequest(w, "invalid JSON")
 		return
 	}
-	n := s.gen.Start()
+	n := l.Gen.Start()
 	if req.UnlockAll {
-		n = len(s.gen.Order())
+		n = len(l.Gen.Order())
 	}
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	if err := s.store.SetUnlocked(n); err != nil {
+	if err := s.store.SetUnlocked(l.Info.ID, n); err != nil {
 		serverError(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]int{"unlocked": n})
 }
 
-func validate(req resultsRequest, maxEvents int) string {
+// validate checks a results request. Every sample must be one letter of the
+// language's alphabet or a space, so junk keys never end up in the statistics.
+func validate(req resultsRequest, maxEvents int, alphabet string) string {
 	if len(req.Samples) == 0 || len(req.Samples) > maxEvents {
 		return "samples: wrong number of samples"
 	}
 	for _, smp := range req.Samples {
 		if utf8.RuneCountInString(smp.Char) != 1 || smp.Ms < 0 || smp.Errors < 0 {
 			return "samples: each needs exactly one char, errors >= 0 and ms >= 0"
+		}
+		if smp.Char != " " && !strings.Contains(alphabet, smp.Char) {
+			return "samples: " + smp.Char + " is not a letter of this language"
 		}
 	}
 	if req.WPM < 0 || req.WPM > 400 || req.Accuracy < 0 || req.Accuracy > 100 {
@@ -175,23 +224,24 @@ type keyInfo struct {
 	Unlocked   bool    `json:"unlocked"`
 }
 
-// GET /api/v1/stats -> every letter (hardest first), the last 50 sessions
+// GET /api/v1/stats?lang= -> every letter (hardest first), the last 50 sessions
 // (newest first) and the total number of finished exercises.
-func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
-	stats, err := s.store.KeyStats()
+func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, l *Language) {
+	id := l.Info.ID
+	stats, err := s.store.KeyStats(id)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	unlocked, err := s.store.Unlocked()
+	unlocked, err := s.store.Unlocked(id)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	unlocked = s.gen.Clamp(unlocked)
+	unlocked = l.Gen.Clamp(unlocked)
 	p := s.cfg.Engine
 	keys := []keyInfo{}
-	for i, c := range s.gen.Order() {
+	for i, c := range l.Gen.Order() {
 		st := stats[c]
 		keys = append(keys, keyInfo{
 			Char: c, Count: st.Count, ErrorRate: st.ErrEMA, AvgMs: st.TimeEMA,
@@ -200,18 +250,18 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	sort.SliceStable(keys, func(i, j int) bool { return keys[i].Difficulty > keys[j].Difficulty })
-	sessions, err := s.store.RecentSessions(50)
+	sessions, err := s.store.RecentSessions(id, 50)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	count, err := s.store.SessionCount()
+	count, err := s.store.SessionCount(id)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"keys": keys, "sessions": sessions, "sessionCount": count, "targetWpm": p.TargetWPM,
+		"lang": id, "keys": keys, "sessions": sessions, "sessionCount": count, "targetWpm": p.TargetWPM,
 	})
 }
 
