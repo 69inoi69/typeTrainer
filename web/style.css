@@ -42,10 +42,7 @@ body {
   margin: 0;
   /* header on top, the typing view centred in the rest of the screen */
   display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh;
-  /* a faint warm glow from the top, so the page is not a flat grey */
-  background:
-    radial-gradient(900px 340px at 50% -140px, color-mix(in srgb, var(--accent) 9%, transparent), transparent 75%) no-repeat,
-    var(--bg);
+  background: var(--bg);          /* one flat colour everywhere */
   color: var(--text);
   font-family: var(--mono);
 }
@@ -654,7 +651,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 @keyframes splash-typing { to { width: 11.1ch; } }
 @keyframes splash-caret { 50% { border-color: transparent; } }
 .splash-phrase {
-  margin: 0; color: var(--sub); font-size: .95rem; text-align: center; padding: 0 16px;
+  /* the same size as the motto in the header: it only moves there, no resizing */
+  margin: 0; color: var(--sub); font-size: .62rem; letter-spacing: .02em; text-align: center; padding: 0 16px;
   opacity: 0; animation: splash-phrase .5s var(--ease) 700ms forwards;
 }
 @keyframes splash-phrase { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
