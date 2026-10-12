@@ -70,6 +70,9 @@ on reload.
 - The row of letters at the top shows your progress: open letters, the letter in
   **focus** (yellow, your weakest right now), mastered letters (green dot), and
   locked letters (outlined). Master every open letter and the next one opens.
+  Under it, small status pills: focus letter, mastered open letters (with a
+  bar) and the next letter; hover them for details. Caps Lock and wrong layout
+  warnings appear in the same place, on top of the pills, so nothing moves.
 - The keyboard shows the next key in its finger color; keys you do not need yet
   are dimmed. Above the keyboard two hands light up the finger that presses
   it (space = both thumbs, AltGr letters = right thumb + the finger).

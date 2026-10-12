@@ -130,8 +130,33 @@ button, input { font: inherit; }
 }
 .chip:not(.locked):hover { transform: translateY(-2px); }
 @keyframes pop { 0% { transform: scale(.4); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
-.letters-caption { color: var(--sub); font-size: .85rem; margin-top: 8px; min-height: 1.2em; }
-.letters-caption b { color: var(--accent); font-weight: 500; }
+/* status line under the letters: a fixed slot (it never changes height),
+   the warning appears in the same place on top of it */
+.caption-slot { position: relative; margin-top: 8px; min-height: 26px; }
+.letters-caption {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  color: var(--sub); font-size: .82rem; transition: opacity var(--med), transform var(--med) var(--ease);
+}
+.caption-slot.warning .letters-caption { opacity: 0; transform: translateY(4px); pointer-events: none; }
+.stat {
+  display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px 0 8px;
+  border-radius: 999px; background: var(--panel); color: color-mix(in srgb, var(--text) 70%, var(--sub));
+  cursor: default; transition: background var(--med);
+}
+.stat:hover { background: color-mix(in srgb, var(--text) 6%, var(--panel)); }
+.stat svg {
+  width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; color: var(--sub);
+}
+.stat .lbl { color: var(--sub); }
+.stat b { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
+.stat .lt { color: var(--accent); font-weight: 600; }
+.stat.focus svg { color: var(--accent); }
+.stat.ok svg { color: var(--ok); }
+.stat.next .lt { color: var(--text); }
+.stat .mini { width: 44px; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.stat .mini i { display: block; height: 100%; background: var(--ok); border-radius: 2px; transition: width .5s var(--ease); }
+.letters-caption .begin { padding: 0 4px; }
 
 /* ---------- text ---------- */
 .text-box { position: relative; padding: 22px 0 6px; outline: none; cursor: text; }
@@ -176,19 +201,18 @@ button, input { font: inherit; }
 .hidden-input { position: absolute; opacity: 0; width: 1px; height: 1px; left: -9999px; }
 
 /* ---------- Caps Lock / wrong layout warning ---------- */
-/* It folds open and closed: a grid row going from 0fr to 1fr animates the
-   height to "whatever the text needs", and the content below slides along. */
+/* Caps Lock / wrong layout: sits on top of the status line, so the page
+   never moves. Fades in and slides down a little. */
 .warn {
-  display: grid; grid-template-rows: 0fr; opacity: 0; margin-top: 0;
-  transition: grid-template-rows .28s var(--ease), opacity .22s, margin-top .28s var(--ease);
-}
-.warn.show { grid-template-rows: 1fr; opacity: 1; margin-top: 12px; }
-.warn-clip { overflow: hidden; min-height: 0; }
-.warn-box {
-  padding: 8px 12px; border-radius: 8px; font-size: .85rem;
+  position: absolute; left: 0; top: 0; max-width: 100%; z-index: 2;
+  display: block; width: max-content; min-height: 26px; padding: 4px 12px;
+  border-radius: 8px; font-size: .82rem; line-height: 1.35;
   color: var(--text); background: color-mix(in srgb, var(--accent) 16%, var(--panel));
-  box-shadow: inset 3px 0 0 var(--accent);
+  box-shadow: inset 3px 0 0 var(--accent), 0 6px 18px rgba(0, 0, 0, .25);
+  opacity: 0; transform: translateY(-4px); pointer-events: none;
+  transition: opacity var(--med), transform var(--med) var(--ease);
 }
+.warn.show { opacity: 1; transform: none; }
 .warn b { color: var(--accent); font-weight: 500; }
 
 /* ---------- hands: which finger presses the next key ---------- */
@@ -575,3 +599,4 @@ body.entering .kb-row:nth-child(3) { animation-delay: .38s; }
 body.entering .kb-row:nth-child(4) { animation-delay: .42s; }
 body.entering .toolbar { animation-delay: .48s; }
 @keyframes rise-in { from { opacity: 0; transform: translateY(12px); } }
+.letters-caption .begin + .begin::before { content: "·"; margin-right: 10px; color: var(--sub); }

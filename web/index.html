@@ -43,11 +43,14 @@
       <!-- Letters: open ones, the one in focus, and the ones still locked. -->
       <div class="letters" aria-label="Letters">
         <div id="letters" class="letter-row"></div>
-        <div id="letters-caption" class="letters-caption">&nbsp;</div>
+        <!-- One fixed slot: the status line, or (on top of it, in the same
+             place) the warning about Caps Lock / a wrong system layout.
+             Nothing else on the page moves when the warning shows. -->
+        <div class="caption-slot" id="caption-slot">
+          <div id="letters-caption" class="letters-caption">&nbsp;</div>
+          <div class="warn" id="layout-warn" role="status" aria-live="polite"></div>
+        </div>
       </div>
-
-      <!-- Shown when Caps Lock is on or the system keyboard layout is wrong. -->
-      <div class="warn" id="layout-warn" role="status" aria-live="polite"></div>
 
       <!-- The text to type. Each character is its own <span>; the caret is one
            separate element that slides to the current character. -->

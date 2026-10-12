@@ -245,6 +245,12 @@ window.addEventListener("resize", () => {
 });
 
 // ---------- letters bar ----------
+const STAT_ICONS = {
+  open: '<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>',
+  focus: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+};
 function renderLetters() {
   if (!exercise) return;
   const info = {};
@@ -274,19 +280,27 @@ function renderLetters() {
   for (const [c, key] of Object.entries(keyEls)) key.classList.toggle("locked", !open.has(c) && !open.has(altOf[c]));
   if (altgrEl) altgrEl.classList.toggle("locked", !exercise.unlocked.some((c) => altBase[c]));
 
+  // status line: small pills with an icon each (details in their tooltips)
   const openCount = exercise.unlocked.length;
   const all = openCount + exercise.locked.length;
   const mastered = exercise.unlocked.filter((c) => info[c]?.mastered).length;
   const started = (lastStats?.sessionCount ?? 0) > 0;
-  let caption;
-  if (!started) caption = t("caption.start", { open: openCount, all });
-  else {
-    caption = t("caption.mastered", { m: mastered, n: openCount });
-    if (focusHasData) caption = t("caption.focus", { letter: exercise.focus }) + " · " + caption;
+  const pill = (icon, cls, tip, label, value) =>
+    `<span class="stat ${cls}" data-tip="${tip}"><svg viewBox="0 0 24 24" aria-hidden="true">${STAT_ICONS[icon]}</svg>` +
+    `<span class="lbl">${label}</span>${value}</span>`;
+  const parts = [];
+  if (!started) {
+    parts.push(pill("open", "", "tip.open", t("stat.open"), `<b>${openCount}/${all}</b>`));
+    parts.push(`<span class="begin">${t("stat.begin")}</span>`);
+    if (exercise.locked.length) parts.push(`<span class="begin">${t("openAll")}</span>`); // a button inside
+  } else {
+    if (focusHasData) parts.push(pill("focus", "focus", "tip.focus", t("stat.focus"), `<b class="lt">${exercise.focus}</b>`));
+    const pct = openCount ? Math.round((mastered / openCount) * 100) : 0;
+    parts.push(pill("check", "ok", "tip.mastered", t("stat.mastered"),
+      `<span class="mini"><i style="width:${pct}%"></i></span><b>${mastered}/${openCount}</b>`));
+    if (exercise.locked.length) parts.push(pill("lock", "next", "tip.next", t("stat.next"), `<b class="lt">${exercise.locked[0]}</b>`));
   }
-  if (exercise.locked.length && started) caption += " · " + t("caption.next", { letter: exercise.locked[0] });
-  if (exercise.locked.length && !started) caption += " · " + t("openAll"); // a button inside the caption
-  el.lettersCaption.innerHTML = caption;
+  el.lettersCaption.innerHTML = parts.join("");
   popLetter = null;
   justMastered = new Set();
 }
@@ -408,13 +422,14 @@ function nudge() {
 
 function showWarn(kind) {
   const info = languages.find((l) => l.id === lang);
-  // two wrappers: the outer one folds its height open/closed (style.css)
-  el.warn.innerHTML = `<div class="warn-clip"><div class="warn-box">${kind === "caps" ? t("warn.caps") : t("warn.layout", { layout: info?.systemLayout ?? lang })}</div></div>`;
+  el.warn.innerHTML = kind === "caps" ? t("warn.caps") : t("warn.layout", { layout: info?.systemLayout ?? lang });
   el.warn.classList.add("show");
+  $("caption-slot").classList.add("warning");   // the status line fades out under it
 }
 function hideWarn() {
   wrongScript = 0;
   el.warn.classList.remove("show");
+  $("caption-slot").classList.remove("warning");
 }
 
 // WPM uses the standard definition: 5 characters = 1 word.
