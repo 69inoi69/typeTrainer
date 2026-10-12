@@ -110,3 +110,66 @@ const FX = (() => {
 
   return { burst, burstFrom, countUp, bump, shake, squish, toast, anim, idle };
 })();
+
+// ---------- start screen ----------
+// Splash.start() runs right away; splash.done() is awaited once the app has
+// loaded. The splash stays at least MIN_MS so the animation can play, and any
+// key or click skips the rest. The logo then flies into the header (FLIP:
+// measure both positions, animate the difference) and the page slides in.
+const Splash = (() => {
+  const MIN_MS = 1300;
+  function start() {
+    const root = document.getElementById("splash");
+    const t0 = performance.now();
+    let skipped = false;
+    const skip = () => { skipped = true; };
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      root.remove(); document.body.classList.remove("splashing");
+      return { done: async () => {} };
+    }
+    // a random phrase, never the same as last time
+    let last = -1;
+    try { last = Number(localStorage.getItem("tt.splash") ?? -1); } catch { /* blocked */ }
+    let i = Math.floor(Math.random() * SPLASH_PHRASES);
+    if (i === last) i = (i + 1) % SPLASH_PHRASES;
+    try { localStorage.setItem("tt.splash", String(i)); } catch { /* blocked */ }
+    document.getElementById("splash-phrase").textContent = t(`splash.${i}`);
+    addEventListener("keydown", skip, { once: true });
+    addEventListener("pointerdown", skip, { once: true });
+
+    async function done() {
+      const wait = MIN_MS - (performance.now() - t0);
+      if (!skipped && wait > 0) await new Promise((r) => setTimeout(r, wait));
+      document.getElementById("splash-bar").style.width = "100%";
+
+      // FLIP: move the big logo onto the small header logo
+      // (scale by font size, line up the left edges and the vertical centres)
+      const from = document.getElementById("splash-logo");
+      const text = from.querySelector(".splash-type");
+      const to = document.querySelector(".top .logo");
+      const a = text.getBoundingClientRect(), b = to.getBoundingClientRect();
+      if (b.width > 0) {
+        const s = parseFloat(getComputedStyle(to).fontSize) / parseFloat(getComputedStyle(from).fontSize);
+        const f = from.getBoundingClientRect();
+        const dx = b.left - a.left * 1 - (a.left - f.left) * (s - 1);
+        const dy = (b.top + b.height / 2) - (f.top + (a.top - f.top + a.height / 2) * s);
+        from.style.transformOrigin = "0 0";
+        text.style.borderRightColor = "transparent";      // no caret on the small logo
+        from.animate([{ transform: "none" },
+          { transform: `translate(${dx}px, ${dy}px) scale(${s})` }],
+          { duration: 520, easing: "cubic-bezier(.6,0,.2,1)", fill: "forwards" });
+      }
+      root.animate([{ backgroundColor: getComputedStyle(root).backgroundColor }, { backgroundColor: "transparent" }],
+        { duration: 520, easing: "ease-in", fill: "forwards" });
+      root.querySelectorAll(".splash-phrase, .splash-bar").forEach((n) =>
+        n.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: "forwards" }));
+      document.body.classList.add("entering");
+      document.body.classList.remove("splashing");
+      await new Promise((r) => setTimeout(r, 520));
+      root.remove();
+      setTimeout(() => document.body.classList.remove("entering"), 900);
+    }
+    return { done };
+  }
+  return { start };
+})();

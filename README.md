@@ -56,6 +56,8 @@ on reload.
 
 ## How to use
 
+- The app opens with a short start screen: the logo types itself, a random
+  phrase in your language, then the page slides in. Any key or click skips it.
 - On the first visit a three-step intro explains the home position. At the end,
   choose "I'm new to this" (start with 7 letters) or "I can already touch type"
   (all letters open). You can reopen it with "how it works".

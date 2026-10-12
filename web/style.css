@@ -339,3 +339,45 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 
 /* confetti canvas (fx.js), above everything, never catches clicks */
 .confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 30; }
+
+/* ---------- start screen ---------- */
+.splash {
+  position: fixed; inset: 0; z-index: 50; background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+}
+.splash-logo { font-size: clamp(2rem, 7vw, 3.4rem); color: var(--sub); transform-origin: top left; line-height: 1.2; }
+.splash-logo b { color: var(--text); font-weight: 400; }
+/* typewriter: the text is revealed in 11 steps (monospace: 1 step = 1 letter) */
+.splash-type {
+  display: inline-block; overflow: hidden; white-space: nowrap; vertical-align: bottom;
+  width: 0; border-right: .08em solid var(--accent); padding-right: .04em;
+  animation: splash-typing 620ms steps(11, end) 120ms forwards, splash-caret .8s steps(1) infinite;
+}
+@keyframes splash-typing { to { width: 11.1ch; } }
+@keyframes splash-caret { 50% { border-color: transparent; } }
+.splash-phrase {
+  margin: 0; color: var(--sub); font-size: .95rem; text-align: center; padding: 0 16px;
+  opacity: 0; animation: splash-phrase .5s var(--ease) 700ms forwards;
+}
+@keyframes splash-phrase { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.splash-bar { width: min(180px, 50vw); height: 2px; border-radius: 2px; background: var(--panel); overflow: hidden; }
+.splash-bar i { display: block; height: 100%; width: 0; background: var(--accent); animation: splash-load 1.2s var(--ease) forwards; transition: width .25s; }
+@keyframes splash-load { to { width: 85%; } }
+body.splashing .top .logo { visibility: hidden; }  /* the splash logo lands here */
+
+/* after the splash: the page slides in, piece by piece */
+body.entering .switches, body.entering .live, body.entering .letters, body.entering .text-box,
+body.entering .finger-hint, body.entering .kb-row, body.entering .toolbar {
+  animation: rise-in .55s var(--ease) both;
+}
+body.entering .switches { animation-delay: .08s; }
+body.entering .live { animation-delay: .12s; }
+body.entering .letters { animation-delay: .16s; }
+body.entering .text-box { animation-delay: .22s; }
+body.entering .finger-hint { animation-delay: .28s; }
+body.entering .kb-row:nth-child(1) { animation-delay: .30s; }
+body.entering .kb-row:nth-child(2) { animation-delay: .34s; }
+body.entering .kb-row:nth-child(3) { animation-delay: .38s; }
+body.entering .kb-row:nth-child(4) { animation-delay: .42s; }
+body.entering .toolbar { animation-delay: .48s; }
+@keyframes rise-in { from { opacity: 0; transform: translateY(12px); } }

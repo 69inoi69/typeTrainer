@@ -284,7 +284,7 @@ async function loadExercise() {
 // purpose: it only flips classes on 1-2 spans; the caret is moved in the
 // next animation frame.
 function handleChar(ch) {
-  if (busy || pos >= text.length || introOpen() || view !== "type") return;
+  if (busy || pos >= text.length || introOpen() || view !== "type" || document.body.classList.contains("splashing")) return;
   const now = performance.now();
   if (startTime === null) {
     startTime = now;
@@ -723,10 +723,15 @@ el.heat.addEventListener("change", () => {
 
 // ---------- start ----------
 (async function init() {
+  // interface language for the splash, before the server answers
+  const guess = store.get("tt.lang") || (navigator.language || "").slice(0, 2).toLowerCase();
+  uiLang = I18N[guess] ? guess : "en";
+  const splash = Splash.start();
   applyKbSize(store.get("tt.kbSize") ?? 100);
   if (isTouch()) el.textBox.classList.add("blurred"); // phone: tap to open the keyboard
   if (location.protocol === "file:") {                 // opened by double-click, no server
     el.text.textContent = t("err.file");
+    await splash.done();
     return;
   }
   try {
@@ -737,4 +742,5 @@ el.heat.addEventListener("change", () => {
     console.error(err);
     el.text.textContent = t("err.load");
   }
+  await splash.done();
 })();

@@ -12,6 +12,14 @@
 
 const I18N = {
   en: {
+    "splash.0": "warming up the fingers…",
+    "splash.1": "f and j: find the bumps",
+    "splash.2": "no looking down today",
+    "splash.3": "accuracy first, speed follows",
+    "splash.4": "your weakest letter is waiting",
+    "splash.5": "real words only, promise",
+    "splash.6": "one key at a time (◕‿◕)",
+    "splash.7": "today you type a little faster",
     "streak.label": "clean words",
     "tab.0": "no restarts here, keep going (◕‿◕)",
     "tab.1": "mistakes are data. the trainer loves them :3",
@@ -67,6 +75,14 @@ const I18N = {
   },
 
   pl: {
+    "splash.0": "rozgrzewamy palce…",
+    "splash.1": "f i j: znajdź wypustki",
+    "splash.2": "dziś nie patrzymy na klawiaturę",
+    "splash.3": "najpierw dokładność, potem szybkość",
+    "splash.4": "twoja najsłabsza litera już czeka",
+    "splash.5": "tylko prawdziwe słowa, obiecuję",
+    "splash.6": "klawisz po klawiszu (◕‿◕)",
+    "splash.7": "dziś piszesz trochę szybciej",
     "streak.label": "czyste słowa",
     "tab.0": "tu nie ma restartów, pisz dalej (◕‿◕)",
     "tab.1": "błędy to dane, trener je uwielbia :3",
@@ -121,6 +137,14 @@ const I18N = {
   },
 
   uk: {
+    "splash.0": "розігріваємо пальці…",
+    "splash.1": "а та о: намацай виступи",
+    "splash.2": "сьогодні не дивимось на клавіатуру",
+    "splash.3": "спершу точність, швидкість прийде",
+    "splash.4": "твоя найслабша літера вже чекає",
+    "splash.5": "тільки справжні слова, обіцяю",
+    "splash.6": "клавіша за клавішею (◕‿◕)",
+    "splash.7": "сьогодні ти друкуєш трохи швидше",
     "streak.label": "чисті слова",
     "tab.0": "тут без перезапусків, друкуй далі (◕‿◕)",
     "tab.1": "помилки — це дані, тренажер їх обожнює :3",
@@ -175,6 +199,14 @@ const I18N = {
   },
 
   ru: {
+    "splash.0": "разогреваем пальцы…",
+    "splash.1": "а и о: нащупай выступы",
+    "splash.2": "сегодня не смотрим на клавиатуру",
+    "splash.3": "сначала точность, скорость придёт",
+    "splash.4": "твоя самая слабая буква уже ждёт",
+    "splash.5": "только настоящие слова, обещаю",
+    "splash.6": "клавиша за клавишей (◕‿◕)",
+    "splash.7": "сегодня ты печатаешь чуть быстрее",
     "streak.label": "чистые слова",
     "tab.0": "тут без перезапусков, печатай дальше (◕‿◕)",
     "tab.1": "ошибки — это данные, тренажёр их обожает :3",
@@ -230,6 +262,7 @@ const I18N = {
 };
 
 let uiLang = "en";        // set by app.js together with the typing language
+const SPLASH_PHRASES = 8; // splash.0 ... splash.7 in every language
 const i18nVars = {};      // placeholders used by static texts: {f}, {j}, {target}
 
 function t(key, vars = {}) {

@@ -6,7 +6,14 @@
   <title>Typing Trainer</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="splashing">
+  <!-- Start screen: the logo types itself, a random phrase, then the logo
+       flies to its place in the header (fx.js, Splash). -->
+  <div class="splash" id="splash" aria-hidden="true">
+    <div class="splash-logo" id="splash-logo"><span class="splash-type">type<b>trainer</b></span></div>
+    <p class="splash-phrase" id="splash-phrase">&nbsp;</p>
+    <div class="splash-bar"><i id="splash-bar"></i></div>
+  </div>
   <header class="top">
     <div class="logo">type<span>trainer</span></div>
 
