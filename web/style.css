@@ -58,14 +58,30 @@ button, input { font: inherit; }
 .metric span { font-size: 1.6rem; color: var(--accent); font-variant-numeric: tabular-nums; transition: color var(--med); }
 .metric small { color: var(--sub); margin-left: 4px; white-space: nowrap; }
 .live.final .metric span { color: var(--text); }   /* result of the last exercise */
+/* streak: looks like the numbers next to it (big number, small label on the
+   same line). The longer the streak, the hotter the colour (data-tier). */
 .streak {
-  display: flex; flex-direction: column; align-items: center; line-height: 1.1;
+  --sc: var(--ok);
+  display: flex; align-items: baseline; cursor: default;   /* the words are in the tooltip: no room in the header */
   opacity: 0; transform: translateY(-4px); transition: opacity var(--med), transform var(--med) var(--ease);
-  min-width: 3.2em;
 }
 .streak.show { opacity: 1; transform: none; }
-.streak span { font-size: 1.15rem; color: var(--ok); font-variant-numeric: tabular-nums; display: inline-block; }
-.streak small { color: var(--sub); font-size: .62rem; white-space: nowrap; }
+.streak span {
+  font-size: 1.6rem; color: var(--sc); font-variant-numeric: tabular-nums; display: inline-block;
+  min-width: 2ch; transition: color .4s var(--ease), text-shadow .4s var(--ease);
+}
+.flame {
+  width: 17px; height: 17px; margin-right: 3px; flex: none; align-self: baseline;
+  fill: color-mix(in srgb, var(--sc) 30%, transparent); stroke: var(--sc);
+  stroke-width: 1.8; stroke-linejoin: round; transform-origin: 50% 90%;
+  transition: fill .4s, stroke .4s;
+}
+.streak[data-tier="1"] { --sc: var(--accent); }                     /* 10+ */
+.streak[data-tier="2"] { --sc: #e59a62; }                           /* 25+: orange, flame flickers */
+.streak[data-tier="3"] { --sc: #ef6b5b; }                           /* 50+: red hot, glowing */
+.streak[data-tier="2"] .flame, .streak[data-tier="3"] .flame { animation: flicker .5s ease-in-out infinite alternate; }
+.streak[data-tier="3"] .flame { animation-duration: .3s; }
+.streak[data-tier="3"] span { text-shadow: 0 0 14px color-mix(in srgb, var(--sc) 55%, transparent); }
 
 /* ---------- type / stats switch ---------- */
 .switch {
@@ -560,11 +576,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .switches { flex-wrap: wrap; gap: 8px; }
   .live { gap: 14px; flex-wrap: nowrap; justify-content: center; }
   .streak:not(.show) { display: none; }   /* no empty reserved space on a phone */
-  .streak { min-width: 0; }
   .logo { display: none; }
   :root { --ctl: 34px; }
   .switch button { padding: 0 14px; }
-  .metric span { font-size: 1.3rem; }
+  .metric span, .streak span { font-size: 1.3rem; }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .letter-row { gap: 4px; }
   .chip { font-size: .8rem; width: 1.6em; height: 1.6em; }

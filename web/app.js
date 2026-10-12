@@ -388,11 +388,17 @@ function handleChar(ch) {
 }
 
 // ---------- streak: clean words in a row ----------
+// Shown from 3 words; at 10, 25 and 50 it gets "hotter" (colour, flicker,
+// glow: see .streak[data-tier] in style.css). Visual only, nothing is sent.
+const STREAK_TIERS = [10, 25, 50];
+const streakTier = (n) => STREAK_TIERS.filter((x) => n >= x).length;
 function endWord() {
   if (wordClean) {
+    const before = streakTier(streak);
     streak++;
     renderStreak();
-    if (streak >= 3) FX.bump(el.streakN);
+    if (streakTier(streak) > before) FX.bump(el.streak, 1.25);   // next tier: a bigger jump
+    else if (streak >= 3) FX.bump(el.streakN);
     if (streak % 25 === 0) {                 // every 25 clean words: a small party
       FX.burstFrom(el.streak, 40);
       FX.toast(t("toast.streak", { n: streak }), { kind: "streak" });
@@ -406,7 +412,8 @@ function breakStreak() {
   renderStreak();
 }
 function renderStreak() {
-  el.streakN.textContent = "×" + streak;
+  el.streakN.textContent = streak;
+  el.streak.dataset.tier = streakTier(streak);
   el.streak.classList.toggle("show", streak >= 3);
 }
 

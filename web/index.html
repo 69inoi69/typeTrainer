@@ -35,8 +35,11 @@
     <div class="live" id="live">
       <div class="metric"><span id="wpm">0</span><small>wpm</small></div>
       <div class="metric"><span id="acc">100</span><small data-i18n="metric.acc">% acc</small></div>
-      <!-- clean-word streak: words typed without a single mistake, in a row -->
-      <div class="streak" id="streak" aria-live="polite"><span id="streak-n">0</span><small data-i18n="streak.label">clean words</small></div>
+      <!-- clean-word streak: words typed without a single mistake, in a row.
+           Same shape as the numbers next to it; data-tier makes it "hotter". -->
+      <div class="streak" id="streak" aria-live="polite" data-tier="0" data-tip="tip.streak">
+        <svg class="flame" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c.8 3.2 4.5 4.8 4.5 9.2a4.5 4.5 0 0 1-9 0c0-1.9.8-3.2 1.9-4.2.1 1.5.8 2.4 1.9 2.8C10.8 8 11 5.4 12 3z"/></svg><span id="streak-n">0</span><small class="sr-only" data-i18n="streak.label">clean words</small>
+      </div>
     </div>
   </header>
 

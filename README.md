@@ -83,8 +83,10 @@ on reload.
   trainer learns from, so Tab only answers with a small animation and a kind
   message; at the end you see how many times you resisted. `Esc` still gives a
   new exercise.
-- The green **×N clean words** counter in the header counts words in a row typed
-  without a single mistake. New records, mastered letters and new letters get
+- The **flame + number** in the header counts clean words in a row (typed
+  without a single mistake; hover for the tooltip). It gets hotter as it grows:
+  green from 3, yellow from 10, orange with a flickering flame from 25, glowing
+  red from 50. New records, mastered letters and new letters get
   a small celebration.
 - Messages appear in the top right corner. The thin bar at the bottom of each
   one fills up while it is shown; when it is full, the message closes. Hover
