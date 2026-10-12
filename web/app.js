@@ -16,7 +16,7 @@ const el = {
   live: $("live"), wpm: $("wpm"), acc: $("acc"),
   letters: $("letters"), lettersCaption: $("letters-caption"),
   tooltip: $("tooltip"),
-  btnNew: $("btn-new"), btnIntro: $("btn-intro"), heat: $("heat-toggle"),
+  btnNew: $("btn-new"), btnIntro: $("btn-intro"), heatKb: $("heat-kb"),
   kbSmaller: $("kb-smaller"), kbLarger: $("kb-larger"), kbToggle: $("kb-toggle"),
   kbSizeOut: $("kb-size-out"), hands: $("hands"),
   intro: $("intro"),
@@ -93,7 +93,7 @@ function makeKey(k) {
   key.className = "key" + (k.home ? " home" : "");
   key.style.setProperty("--fc", finger.color);
   if (k.width) key.style.width = `calc(var(--u) * ${k.width} + var(--u) * .12 * ${k.width - 1})`;
-  key.innerHTML = `<span class="heat"></span><span class="lbl"></span>`;
+  key.innerHTML = `<span class="lbl"></span>`;
   key.querySelector(".lbl").textContent = k.char === " " ? t("key.space") : (k.label || k.char);
   if (k.alt) {                         // second letter, typed with AltGr
     const alt = document.createElement("span");
@@ -500,12 +500,6 @@ async function refreshStats() {
   lastStats = await getJSON("/stats");
   i18nVars.target = lastStats.targetWpm;
   applyI18n(el.intro);
-  const heat = new Map();               // one key can carry two letters (a, ą): show the harder
-  for (const k of lastStats.keys) {
-    const key = keyFor(k.char);
-    if (key) heat.set(key, Math.max(heat.get(key) ?? 0, k.count ? k.difficulty : 0));
-  }
-  for (const [key, d] of heat) key.style.setProperty("--heat", d.toFixed(3));
   if (view === "stats") renderStats();
 }
 
@@ -545,8 +539,67 @@ function renderStats() {
   ].map(([v, l]) => `<div class="tile"><b>${v}</b><small>${l}</small></div>`).join("");
 
   drawChart(sessions, s.targetWpm, s.sessionCount);
+  drawHeatKeyboard(s.keys);
   drawLetterGrid(s.keys);
 }
+
+// Difficulty heatmap: the keyboard of the language, but grey, and every key
+// as red as the difficulty the algorithm gives its letter (0 = no red,
+// 1 = full red). Dashed = no data yet. Hover (or tap) a key for the numbers.
+// It lives only on the stats screen, so it never distracts while typing.
+function drawHeatKeyboard(keys) {
+  if (!layout) return;
+  const byChar = new Map(keys.map((k) => [k.char, k]));
+  el.heatKb.innerHTML = "";
+  layout.rows.forEach((row, i) => {
+    const rowEl = document.createElement("div");
+    rowEl.className = "kb-row";
+    rowEl.style.paddingLeft = `calc(var(--u) * ${layout.offsets?.[i] ?? 0})`;
+    for (const k of row) {
+      const key = document.createElement("div");
+      key.className = "key hk" + (k.home ? " home" : "");
+      if (k.width) key.style.width = `calc(var(--u) * ${k.width} + var(--u) * .12 * ${k.width - 1})`;
+      key.innerHTML = `<span class="heat"></span><span class="lbl"></span>`;
+      key.querySelector(".lbl").textContent = k.char === " " ? t("key.space") : (k.label || k.char);
+      if (k.alt) {
+        const alt = document.createElement("span");
+        alt.className = "alt";
+        alt.textContent = k.alt;
+        key.appendChild(alt);
+      }
+      // one key can carry two letters (a and ą): the harder one colours it
+      const letters = k.modifier ? [] : [k.char, k.alt].filter(Boolean).map((c) => byChar.get(c)).filter(Boolean);
+      const seen = letters.filter((s) => s.count);
+      if (!letters.length) key.classList.add("none");                  // not a letter of this language
+      else if (!seen.length) key.classList.add(letters.some((s) => s.unlocked) ? "nodata" : "locked");
+      else {
+        key.style.setProperty("--heat", Math.max(...seen.map((s) => s.difficulty)).toFixed(3));
+        if (seen.every((s) => s.mastered)) key.classList.add("mastered");
+      }
+      if (letters.length) key.dataset.tipText = letters.map(heatLine).join("   |   ");
+      rowEl.appendChild(key);
+    }
+    el.heatKb.appendChild(rowEl);
+  });
+}
+// "b: 25% errors · 811 ms · presses: 4"
+function heatLine(s) {
+  let info;
+  if (!s.count) info = s.unlocked ? t("letter.noData") : t("letter.locked");
+  else {
+    info = [t("letter.err", { e: Math.round(s.errorRate * 100) })];
+    if (s.avgMs) info.push(t("letter.ms", { ms: Math.round(s.avgMs) }));
+    info.push(t("heat.count", { n: s.count }));
+    if (s.mastered) info.push(t("letter.mastered"));
+    info = info.join(" · ");
+  }
+  return `${s.char}: ${info}`;
+}
+// phones have no hover: a tap on a key shows its numbers
+el.heatKb.addEventListener("click", (e) => {
+  const key = e.target.closest("[data-tip-text]");
+  if (key) showTip(key);
+});
 
 // Bar chart of WPM per exercise, drawn as SVG by hand (no chart library).
 function drawChart(sessions, target, total) {
@@ -764,7 +817,7 @@ let tipFor = null;
 function showTip(node) {
   tipFor = node;
   const r = node.getBoundingClientRect();
-  el.tooltip.textContent = t(node.dataset.tip);
+  el.tooltip.textContent = node.dataset.tipText || t(node.dataset.tip); // tipText: ready text, tip: i18n key
   // keep a long tooltip inside the window (measured on hover, never per keypress)
   const half = el.tooltip.offsetWidth / 2 + 8;
   el.tooltip.style.left = Math.min(innerWidth - half, Math.max(half, r.left + r.width / 2)) + "px";
@@ -779,7 +832,7 @@ function hideTip() {
 }
 document.addEventListener("pointerover", (e) => {
   if (e.pointerType === "touch") return;            // no sticky tooltips on phones
-  const node = e.target.closest?.("[data-tip]");
+  const node = e.target.closest?.("[data-tip], [data-tip-text]");
   if (node && node !== tipFor) showTip(node);
   else if (!node && tipFor) hideTip();
 });
@@ -1012,17 +1065,6 @@ importFile.addEventListener("change", async () => {
   }
 });
 
-function applyHeat(on) {
-  el.keyboard.classList.toggle("show-heat", on);
-  el.heat.setAttribute("aria-pressed", String(on));
-  store.set("tt.heat", on ? "1" : "");
-}
-el.heat.addEventListener("click", () => {
-  el.heat.blur();
-  applyHeat(el.heat.getAttribute("aria-pressed") !== "true");
-  FX.bump(el.heat, 1.15);
-});
-
 // ---------- start ----------
 (async function init() {
   // interface language for the splash, before the server answers
@@ -1036,7 +1078,6 @@ el.heat.addEventListener("click", () => {
   kbHidden = hiddenSaved === null ? isTouch() : hiddenSaved === "1" || saved === 0;
   kbSize = saved ? Math.min(KB_MAX, Math.max(KB_MIN, Math.round(saved / KB_STEP) * KB_STEP)) : 100;
   applyKb();
-  applyHeat(store.get("tt.heat") === "1");
   labelTips();
   if (isTouch()) el.textBox.classList.add("blurred"); // phone: tap to open the keyboard
   if (location.protocol === "file:") {                 // opened by double-click, no server

@@ -311,12 +311,6 @@ button, input { font: inherit; }
   content: ""; position: absolute; bottom: 18%; width: 28%; height: 2px;
   background: currentColor; border-radius: 2px; opacity: .7;
 }
-.key .heat {                          /* difficulty heatmap overlay */
-  position: absolute; inset: 0; background: var(--error);
-  opacity: 0; transition: opacity .4s; pointer-events: none;
-}
-.keyboard.show-heat .key .heat { opacity: calc(var(--heat, 0) * .75); }
-.keyboard.show-heat .key.next .heat { opacity: 0; } /* never dim the key to press */
 .key .lbl { position: relative; }
 .key .alt {                           /* letter typed with AltGr, e.g. ą on the a key */
   position: absolute; right: 12%; bottom: 8%; font-size: .62em; opacity: .7;
@@ -363,13 +357,6 @@ button.icon[aria-pressed="true"] {
   color: var(--error); background: color-mix(in srgb, var(--error) 16%, var(--panel));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--error) 55%, transparent);
 }
-/* heatmap icon: keys tinted by how hard they are (h1 light ... h3 full) */
-#heat-toggle svg { stroke: none; }
-#heat-toggle svg rect { fill: currentColor; }
-#heat-toggle svg .h0 { fill-opacity: .25; }
-#heat-toggle svg .h1 { fill-opacity: .45; }
-#heat-toggle svg .h2 { fill-opacity: .65; }
-#heat-toggle svg .h3 { fill-opacity: 1; }
 button:disabled { opacity: .35; cursor: default; }
 button:disabled:hover { color: var(--sub); background: none; }
 button:disabled:active { transform: none; }
@@ -393,6 +380,43 @@ button:disabled:active { transform: none; }
 .tile b { display: block; font-size: 1.7rem; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; }
 .tile small { color: var(--sub); font-size: .8rem; }
 .panel { margin-top: 26px; }
+
+/* ---------- stats: difficulty heatmap keyboard ---------- */
+/* grey keys (no finger colours), red only = how hard the letter is */
+.heat-kb {
+  --u: min(46px, calc((100vw - 48px) / 13.6)); --hk: color-mix(in srgb, var(--text) 7%, var(--panel));
+  display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * .12);
+  user-select: none; padding-top: 4px;
+}
+.key.hk { background: var(--hk); border-bottom-color: color-mix(in srgb, var(--text) 14%, transparent); cursor: default; }
+.key.hk .heat {
+  position: absolute; inset: 0; background: var(--error); pointer-events: none;
+  opacity: calc(var(--heat, 0) * .85); transition: opacity .4s;
+}
+.key.hk .alt { opacity: .8; }
+.key.hk:not(.none):hover { transform: translateY(-2px); }
+.key.hk.none { opacity: .3; }                          /* not a letter of this language */
+.key.hk.nodata, .key.hk.locked {                       /* dashed = nothing measured yet */
+  background: transparent; border-bottom-color: transparent;
+  outline: 1px dashed color-mix(in srgb, var(--sub) 80%, transparent); outline-offset: -1px;
+}
+.key.hk.locked { opacity: .45; }
+.key.hk.mastered::before {                             /* same green dot as on the letter chips */
+  content: ""; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px;
+  border-radius: 50%; background: var(--ok); z-index: 1;
+}
+.heat-legend {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px;
+  margin-top: 14px; color: var(--sub); font-size: .78rem;
+}
+.heat-scale {
+  width: 96px; height: 8px; border-radius: 4px;
+  background: linear-gradient(to right, color-mix(in srgb, var(--text) 7%, var(--panel)), color-mix(in srgb, var(--error) 85%, var(--panel)));
+}
+.heat-sample {
+  width: 14px; height: 14px; border-radius: 3px; margin-left: 14px;
+  outline: 1px dashed color-mix(in srgb, var(--sub) 80%, transparent); outline-offset: -1px;
+}
 .panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin-bottom: 10px; }
 .panel h2 { font-size: .95rem; font-weight: 500; margin: 0; color: var(--text); }
 .panel-note { color: var(--sub); font-size: .8rem; }
