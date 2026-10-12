@@ -17,13 +17,13 @@
   <header class="top">
     <div class="logo">type<span>trainer</span></div>
 
-    <!-- Type / Stats switch with the language switch right below it.
-         The yellow pill slides between the options. -->
+    <!-- Type / Stats switch (icons) and the language switch, always in the
+         middle of the header. The yellow pill slides between the options. -->
     <div class="switches">
-    <div class="switch" role="tablist" aria-label="View" data-tip="tip.view">
+    <div class="switch view-switch" role="tablist" aria-label="View">
       <span class="switch-thumb" aria-hidden="true"></span>
-      <button type="button" role="tab" id="tab-type" aria-selected="true" aria-controls="view-type" data-i18n="tab.type">type</button>
-      <button type="button" role="tab" id="tab-stats" aria-selected="false" aria-controls="view-stats" data-i18n="tab.stats">stats</button>
+      <button type="button" role="tab" id="tab-type" aria-selected="true" aria-controls="view-type" data-tip="tip.type"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="11" rx="2"/><path d="M7 10.5h.01M10 10.5h.01M13 10.5h.01M16 10.5h.01M8 14h8"/></svg></button>
+      <button type="button" role="tab" id="tab-stats" aria-selected="false" aria-controls="view-stats" data-tip="tip.stats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16"/><path d="M7 16v-5M12 16V7M17 16v-8"/></svg></button>
     </div>
     <!-- Buttons come from /api/v1/languages. -->
     <div class="switch lang-switch" id="lang-switch" role="tablist" aria-label="Language" data-tip="tip.lang"></div>

@@ -88,7 +88,7 @@ on reload.
   `−` keyboard `+`: size from 70 % to 150 %, the middle button hides or shows
   keyboard and hands. All remembered in your browser.
 - Shortcuts: `Esc` new text · `Shift + Tab` type / stats · `Alt + 1…4` language.
-- The **type / stats** switch at the top opens the statistics screen: totals,
+- The **keyboard / chart** icon switch at the top (or `Shift + Tab`) opens the statistics screen: totals,
   speed of every exercise, and every letter from weakest to strongest.
 
 ## Documentation
