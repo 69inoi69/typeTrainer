@@ -45,6 +45,9 @@ exercises from real words around the user's weak letters.
 
 - Every API route except `/languages` takes `?lang=`; every `Store` method
   takes the language id. Each language has its own progress.
+- Visual rewards (confetti, bumps, toasts) live in `web/fx.js` and must never
+  change what is measured or sent to the server. Tab never restarts an
+  exercise: that is a deliberate product decision.
 - Every text the user sees lives in `web/i18n.js`, in all four languages
   (en, pl, uk, ru). Never hard-code interface text in `app.js` or `index.html`;
   use `t("key")` or `data-i18n="key"`. Finger names there are in the form the

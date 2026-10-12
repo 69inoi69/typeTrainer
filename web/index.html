@@ -10,23 +10,25 @@
   <header class="top">
     <div class="logo">type<span>trainer</span></div>
 
-    <!-- Type / Stats switch. The yellow pill slides between the two options. -->
+    <!-- Type / Stats switch with the language switch right below it.
+         The yellow pill slides between the options. -->
+    <div class="switches">
     <div class="switch" role="tablist" aria-label="View">
       <span class="switch-thumb" aria-hidden="true"></span>
       <button type="button" role="tab" id="tab-type" aria-selected="true" aria-controls="view-type" data-i18n="tab.type">type</button>
       <button type="button" role="tab" id="tab-stats" aria-selected="false" aria-controls="view-stats" data-i18n="tab.stats">stats</button>
     </div>
+    <!-- Buttons come from /api/v1/languages. -->
+    <div class="switch lang-switch" id="lang-switch" role="tablist" aria-label="Language"></div>
+    </div>
 
     <div class="live" id="live">
       <div class="metric"><span id="wpm">0</span><small>wpm</small></div>
       <div class="metric"><span id="acc">100</span><small data-i18n="metric.acc">% acc</small></div>
+      <!-- clean-word streak: words typed without a single mistake, in a row -->
+      <div class="streak" id="streak" aria-live="polite"><span id="streak-n">0</span><small data-i18n="streak.label">clean words</small></div>
     </div>
   </header>
-
-  <!-- Language switch, shared by both views. Buttons come from /api/v1/languages. -->
-  <div class="subbar">
-    <div class="switch lang-switch" id="lang-switch" role="tablist" aria-label="Language"></div>
-  </div>
 
   <main class="views">
     <!-- ================= TYPE VIEW ================= -->
@@ -130,6 +132,7 @@
   </div>
 
   <script src="i18n.js"></script>
+  <script src="fx.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

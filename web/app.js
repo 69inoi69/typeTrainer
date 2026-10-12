@@ -23,6 +23,7 @@ const el = {
   viewType: $("view-type"), viewStats: $("view-stats"),
   tiles: $("tiles"), chart: $("chart"), chartNote: $("chart-note"), letterGrid: $("letter-grid"),
   langSwitch: $("lang-switch"), warn: $("layout-warn"),
+  streak: $("streak"), streakN: $("streak-n"),
 };
 
 // ---------- state ----------
@@ -49,6 +50,13 @@ let presses = 0, correctPresses = 0;
 let busy = false;          // true while talking to the server between exercises
 let popLetter = null;      // letter that was just unlocked (for the animation)
 let view = "type";         // "type" or "stats"
+
+// Rewards (they change nothing in the statistics, they only feel nice)
+let streak = 0;            // words in a row typed without a single mistake
+let wordClean = true;      // no mistake in the current word so far
+let tabsResisted = 0;      // Tab presses during this exercise (no restart here)
+let tabMsg = 0;            // which of the Tab messages comes next
+let justMastered = new Set(); // letters mastered in the last exercise (chips shine)
 
 // ---------- small helpers ----------
 const store = { // localStorage can be blocked; the app must work without it
@@ -209,6 +217,7 @@ function renderLetters() {
     chip.className = "chip " + cls;
     chip.textContent = c;
     if (c === popLetter) chip.classList.add("pop");
+    if (justMastered.has(c)) chip.classList.add("shine");
     frag.appendChild(chip);
   };
   for (const c of exercise.unlocked) {
@@ -238,13 +247,14 @@ function renderLetters() {
   if (exercise.locked.length && started) caption += " · " + t("caption.next", { letter: exercise.locked[0] });
   el.lettersCaption.innerHTML = caption;
   popLetter = null;
+  justMastered = new Set();
 }
 
 // ---------- exercise ----------
 function showExercise(ex) {
   exercise = ex;
   text = ex.text;
-  pos = 0; wrongHere = 0; samples = [];
+  pos = 0; wrongHere = 0; samples = []; wordClean = true; tabsResisted = 0;
   startTime = null; lastTime = null; presses = 0; correctPresses = 0;
 
   // build all spans at once with a fragment: one DOM update, not hundreds
@@ -309,13 +319,50 @@ function handleChar(ch) {
     pulseKey(expected, true);
     highlightNextKey();
     placeCaret(false);
+    if (expected === " " || pos === text.length) endWord();
     if (pos === text.length) finishExercise();
   } else {
     wrongHere++;
     spans[pos].classList.add("bad");
     pulseKey(ch, false);
+    if (wordClean) breakStreak();
+    wordClean = false;
   }
   updateLive();
+}
+
+// ---------- streak: clean words in a row ----------
+function endWord() {
+  if (wordClean) {
+    streak++;
+    renderStreak();
+    if (streak >= 3) FX.bump(el.streakN);
+    if (streak % 25 === 0) {                 // every 25 clean words: a small party
+      FX.burstFrom(el.streak, 40);
+      FX.toast(t("toast.streak", { n: streak }));
+    }
+  }
+  wordClean = true;
+}
+function breakStreak() {
+  if (streak >= 3) FX.shake(el.streak);
+  streak = 0;
+  renderStreak();
+}
+function renderStreak() {
+  el.streakN.textContent = "×" + streak;
+  el.streak.classList.toggle("show", streak >= 3);
+}
+
+// ---------- Tab: no restarts here ----------
+// Monkeytype habit: Tab restarts the test when typing gets messy. Restarting
+// throws away exactly the mistakes this trainer learns from, so Tab only
+// answers with a small animation and a kind message, and counts the urge.
+function nudge() {
+  if (startTime !== null) tabsResisted++;
+  FX.anim(el.caret, [{ scale: "1 1" }, { scale: "2.2 1.3" }, { scale: "1 1" }], { duration: 380, easing: "cubic-bezier(.3,1.6,.5,1)" });
+  FX.anim(el.text, [{ translate: "0" }, { translate: "6px" }, { translate: "-4px" }, { translate: "2px" }, { translate: "0" }], { duration: 420, easing: "ease-out" });
+  if (FX.idle()) FX.toast(t(`tab.${tabMsg++ % 4}`), 1800); // never pile up messages
 }
 
 function showWarn(kind) {
@@ -348,17 +395,33 @@ async function finishExercise() {
   busy = true;
   const wpm = Math.round(currentWpm() * 10) / 10;
   const accuracy = Math.round(currentAccuracy() * 10) / 10;
-  // the header keeps showing this result until the next exercise starts
-  el.wpm.textContent = Math.round(wpm);
-  el.acc.textContent = Math.round(accuracy);
+  // the header keeps showing this result until the next exercise starts;
+  // the numbers count up from zero, just because it feels good
   el.live.classList.add("final");
+  FX.countUp(el.wpm, Math.round(wpm));
+  FX.countUp(el.acc, Math.round(accuracy));
+  // remember the state before, to see what this exercise achieved
+  const prevBest = Math.max(0, ...(lastStats?.sessions ?? []).map((x) => x.wpm));
+  const hadSessions = (lastStats?.sessionCount ?? 0) > 0;
+  const prevMastered = new Set((lastStats?.keys ?? []).filter((k) => k.mastered).map((k) => k.char));
+  const resisted = tabsResisted;
   try {
     const res = await postJSON("/results", { samples, wpm, accuracy });
+    await refreshStats();
+
+    if (hadSessions && wpm > prevBest) {
+      FX.toast(t("toast.best", { wpm: Math.round(wpm) }));
+      FX.burstFrom(el.wpm, 80);
+    }
     if (res.newLetter) {
       popLetter = res.newLetter;
-      toast(t("toast.newLetter", { letter: res.newLetter }));
+      FX.toast(t("toast.newLetter", { letter: res.newLetter }), 3600);
+      FX.burstFrom(el.letters, 60);
     }
-    await refreshStats();
+    justMastered = new Set(lastStats.keys.filter((k) => k.mastered && !prevMastered.has(k.char)).map((k) => k.char));
+    if (justMastered.size) FX.toast(t("toast.mastered", { letters: [...justMastered].join(" ") }));
+    if (resisted) FX.toast(t("toast.resisted", { n: resisted }));
+
     await loadExercise();   // generated from the UPDATED model
   } catch (err) {
     console.error(err);
@@ -368,13 +431,7 @@ async function finishExercise() {
   }
 }
 
-let toastTimer = null;
-function toast(html) {
-  el.toast.innerHTML = html;
-  el.toast.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.toast.classList.remove("show"), 4000);
-}
+const toast = (html) => FX.toast(html);
 
 async function refreshStats() {
   lastStats = await getJSON("/stats");
@@ -406,8 +463,9 @@ function setView(name) {
     focusText();
   }
 }
-el.tabType.addEventListener("click", (e) => { e.currentTarget.blur(); setView("type"); });
-el.tabStats.addEventListener("click", (e) => { e.currentTarget.blur(); setView("stats"); });
+el.tabType.addEventListener("click", (e) => { e.currentTarget.blur(); if (view !== "type") squishThumb(el.switch); setView("type"); });
+el.tabStats.addEventListener("click", (e) => { e.currentTarget.blur(); if (view !== "stats") squishThumb(el.switch); setView("stats"); });
+const squishThumb = (sw) => FX.squish(sw.querySelector(".switch-thumb"));
 
 function renderStats() {
   const s = lastStats;
@@ -560,6 +618,7 @@ function buildLangSwitch() {
   el.langSwitch.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
     b.blur();
     if (busy || b.dataset.lang === lang) return;
+    squishThumb(el.langSwitch);
     loadLanguage(b.dataset.lang).catch((err) => console.error(err));
   }));
 }
@@ -625,6 +684,7 @@ document.addEventListener("keydown", (e) => {
   if (view !== "type") return;
   if (document.activeElement === el.kbSize) return;  // arrows move the slider
   if (e.key === "Escape") { e.preventDefault(); newExercise(); return; }
+  if (e.key === "Tab") { e.preventDefault(); nudge(); return; }   // no restart, see nudge()
   // AltGr (Polish ą, ę, ...) is reported as Ctrl+Alt on Windows; let it through,
   // but keep real browser shortcuts like Ctrl+R working.
   const altGr = e.getModifierState?.("AltGraph");

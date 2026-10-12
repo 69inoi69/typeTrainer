@@ -48,7 +48,7 @@ jobs:
           V="${GITHUB_SHA::8}"
           sed -i 's|<script src="app.js"></script>|<script src="wasm_exec.js"></script>\n  <script src="wasm-shim.js"></script>\n  <script src="app.js"></script>|' site/index.html
           sed -i -E "s/(src|href)=\"([a-z0-9_.-]+\.(js|css))\"/\1=\"\2?v=$V\"/g" site/index.html
-          for f in style.css i18n.js wasm_exec.js wasm-shim.js app.js; do
+          for f in style.css i18n.js fx.js wasm_exec.js wasm-shim.js app.js; do
             grep -q "$f?v=$V" site/index.html || { echo "missing version on $f"; exit 1; }
           done
 

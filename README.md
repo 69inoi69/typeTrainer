@@ -69,6 +69,13 @@ on reload.
 - The **EN · PL · UK · RU** switch changes the language you practise **and the
   language of the interface** (remembered in your browser; the first time it
   follows your browser's language).
+- **Tab does not restart.** Restarting throws away exactly the mistakes the
+  trainer learns from, so Tab only answers with a small animation and a kind
+  message; at the end you see how many times you resisted. `Esc` still gives a
+  new exercise.
+- The green **×N clean words** counter in the header counts words in a row typed
+  without a single mistake. New records, mastered letters and new letters get
+  a small celebration.
 - "keyboard" slider: size of the on-screen keyboard (0 = hidden). Remembered in
   your browser. "heatmap" tints keys red by how hard they are for you.
 - The **type / stats** switch at the top opens the statistics screen: totals,
@@ -108,7 +115,7 @@ typing-trainer/
 │   ├── layout/layout.go          loads and validates layout JSON
 │   ├── language/language.go      loads languages.json, checks words against the alphabet
 │   └── api/handlers.go           HTTP JSON API under /api/v1/
-└── web/                          index.html, style.css, app.js, i18n.js (interface texts)
+└── web/                          index.html, style.css, app.js, i18n.js (interface texts), fx.js (animations)
 ```
 
 ## The algorithm in short

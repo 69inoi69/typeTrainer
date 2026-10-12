@@ -12,6 +12,15 @@
 
 const I18N = {
   en: {
+    "streak.label": "clean words",
+    "tab.0": "no restarts here, keep going (◕‿◕)",
+    "tab.1": "mistakes are data. the trainer loves them :3",
+    "tab.2": "finish the line, you've got this",
+    "tab.3": "breathe… and continue",
+    "toast.resisted": "restart urge beaten {n}×, exercise finished (◕‿◕)",
+    "toast.best": "new personal best: <b>{wpm} wpm</b>",
+    "toast.mastered": "mastered: <b>{letters}</b>",
+    "toast.streak": "<b>{n}</b> clean words in a row",
     "tab.type": "type", "tab.stats": "stats", "metric.acc": "% acc",
     "focusHint": "tap here to start typing",
     "btn.new": "new exercise <kbd>esc</kbd>", "btn.intro": "how it works",
@@ -58,6 +67,15 @@ const I18N = {
   },
 
   pl: {
+    "streak.label": "czyste słowa",
+    "tab.0": "tu nie ma restartów, pisz dalej (◕‿◕)",
+    "tab.1": "błędy to dane, trener je uwielbia :3",
+    "tab.2": "dokończ linijkę, dasz radę",
+    "tab.3": "oddech… i dalej",
+    "toast.resisted": "restart pokonany {n}×, ćwiczenie ukończone (◕‿◕)",
+    "toast.best": "nowy rekord: <b>{wpm} wpm</b>",
+    "toast.mastered": "opanowane: <b>{letters}</b>",
+    "toast.streak": "<b>{n}</b> czystych słów z rzędu",
     "tab.type": "pisz", "tab.stats": "statystyki", "metric.acc": "% dokł.",
     "focusHint": "dotknij tutaj, aby zacząć pisać",
     "btn.new": "nowe ćwiczenie <kbd>esc</kbd>", "btn.intro": "jak to działa",
@@ -103,6 +121,15 @@ const I18N = {
   },
 
   uk: {
+    "streak.label": "чисті слова",
+    "tab.0": "тут без перезапусків, друкуй далі (◕‿◕)",
+    "tab.1": "помилки — це дані, тренажер їх обожнює :3",
+    "tab.2": "доведи рядок до кінця, ти зможеш",
+    "tab.3": "вдих… і далі",
+    "toast.resisted": "перезапуск переможено {n}×, вправу завершено (◕‿◕)",
+    "toast.best": "новий рекорд: <b>{wpm} wpm</b>",
+    "toast.mastered": "опановано: <b>{letters}</b>",
+    "toast.streak": "<b>{n}</b> чистих слів поспіль",
     "tab.type": "друк", "tab.stats": "статистика", "metric.acc": "% точн.",
     "focusHint": "торкнись тут, щоб почати друкувати",
     "btn.new": "нова вправа <kbd>esc</kbd>", "btn.intro": "як це працює",
@@ -148,6 +175,15 @@ const I18N = {
   },
 
   ru: {
+    "streak.label": "чистые слова",
+    "tab.0": "тут без перезапусков, печатай дальше (◕‿◕)",
+    "tab.1": "ошибки — это данные, тренажёр их обожает :3",
+    "tab.2": "допечатай строку, у тебя получится",
+    "tab.3": "вдох… и дальше",
+    "toast.resisted": "перезапуск побеждён {n}×, упражнение закончено (◕‿◕)",
+    "toast.best": "новый рекорд: <b>{wpm} wpm</b>",
+    "toast.mastered": "освоено: <b>{letters}</b>",
+    "toast.streak": "<b>{n}</b> чистых слов подряд",
     "tab.type": "печать", "tab.stats": "статистика", "metric.acc": "% точн.",
     "focusHint": "нажми сюда, чтобы начать печатать",
     "btn.new": "новое упражнение <kbd>esc</kbd>", "btn.intro": "как это работает",
