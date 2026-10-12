@@ -69,3 +69,9 @@ func (m *MemoryStore) RecentSessions(limit int) ([]Session, error) {
 	}
 	return out, nil
 }
+
+func (m *MemoryStore) SessionCount() (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return len(m.sessions), nil
+}

@@ -9,43 +9,79 @@
 <body>
   <header class="top">
     <div class="logo">type<span>trainer</span></div>
-    <div class="live">
+
+    <!-- Type / Stats switch. The yellow pill slides between the two options. -->
+    <div class="switch" role="tablist" aria-label="View">
+      <span class="switch-thumb" aria-hidden="true"></span>
+      <button type="button" role="tab" id="tab-type" aria-selected="true" aria-controls="view-type">type</button>
+      <button type="button" role="tab" id="tab-stats" aria-selected="false" aria-controls="view-stats">stats</button>
+    </div>
+
+    <div class="live" id="live">
       <div class="metric"><span id="wpm">0</span><small>wpm</small></div>
       <div class="metric"><span id="acc">100</span><small>% acc</small></div>
     </div>
   </header>
 
-  <main>
-    <!-- Letters: open ones, the one in focus, and the ones still locked. -->
-    <section class="letters" aria-label="Letters">
-      <div id="letters" class="letter-row"></div>
-      <div id="letters-caption" class="letters-caption">&nbsp;</div>
+  <main class="views">
+    <!-- ================= TYPE VIEW ================= -->
+    <section id="view-type" class="view active" role="tabpanel" aria-labelledby="tab-type">
+      <!-- Letters: open ones, the one in focus, and the ones still locked. -->
+      <div class="letters" aria-label="Letters">
+        <div id="letters" class="letter-row"></div>
+        <div id="letters-caption" class="letters-caption">&nbsp;</div>
+      </div>
+
+      <!-- The text to type. Each character is its own <span>; the caret is one
+           separate element that slides to the current character. -->
+      <div id="text-box" class="text-box" tabindex="0" aria-label="Exercise text">
+        <div id="text" class="text">loading…</div>
+        <div id="caret" class="caret" aria-hidden="true"></div>
+        <div id="focus-hint" class="focus-hint">tap here to start typing</div>
+      </div>
+      <!-- Invisible input: lets phone keyboards open and send characters. -->
+      <input id="hidden-input" class="hidden-input" autocomplete="off" autocapitalize="off"
+             autocorrect="off" spellcheck="false" aria-hidden="true">
+
+      <div class="finger-hint" id="finger-hint">&nbsp;</div>
+
+      <div id="keyboard" class="keyboard" aria-label="On-screen keyboard"></div>
+
+      <div class="toolbar">
+        <button id="btn-new" type="button">new exercise <kbd>esc</kbd></button>
+        <button id="btn-intro" type="button">how it works</button>
+        <label class="toggle"><input type="checkbox" id="heat-toggle"> heatmap</label>
+        <label class="size" for="kb-size">keyboard
+          <input type="range" id="kb-size" min="0" max="140" step="10" value="100">
+          <output id="kb-size-out" for="kb-size">100%</output>
+        </label>
+      </div>
     </section>
 
-    <!-- The text to type. Each character becomes its own <span>. -->
-    <section id="text-box" class="text-box" tabindex="0" aria-label="Exercise text">
-      <div id="text" class="text">loading…</div>
-      <div id="focus-hint" class="focus-hint">tap here to start typing</div>
+    <!-- ================= STATS VIEW ================= -->
+    <section id="view-stats" class="view" role="tabpanel" aria-labelledby="tab-stats" hidden>
+      <div class="tiles" id="tiles"></div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>speed per exercise</h2>
+          <span class="panel-note" id="chart-note"></span>
+        </div>
+        <div class="chart" id="chart"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>letters</h2>
+          <span class="panel-note">weakest first · difficulty 0 = easy, 1 = hard</span>
+        </div>
+        <div class="letter-grid" id="letter-grid"></div>
+      </div>
     </section>
-    <!-- Invisible input: lets phone keyboards open and send characters. -->
-    <input id="hidden-input" class="hidden-input" autocomplete="off" autocapitalize="off"
-           autocorrect="off" spellcheck="false" aria-hidden="true">
-
-    <div class="finger-hint" id="finger-hint">&nbsp;</div>
-
-    <section id="keyboard" class="keyboard" aria-label="On-screen keyboard"></section>
-
-    <div class="toolbar">
-      <button id="btn-new" type="button">new exercise <kbd>esc</kbd></button>
-      <button id="btn-intro" type="button">how it works</button>
-      <label class="toggle"><input type="checkbox" id="heat-toggle"> difficulty heatmap</label>
-    </div>
-
-    <section id="result" class="result hidden" aria-live="polite"></section>
-    <section id="history" class="history"></section>
   </main>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="tooltip" class="tooltip" role="tooltip"></div>
 
   <!-- Intro: three short steps, shown on the first visit. -->
   <div id="intro" class="intro hidden" role="dialog" aria-modal="true" aria-labelledby="intro-title">

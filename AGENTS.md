@@ -37,8 +37,10 @@ exercises from real words around the user's weak letters.
   in the logic.
 - All API routes start with `/api/v1/`.
 - Keyboard layouts are data (`data/layouts/*.json`), not code.
-- Keep keypress handling in `web/app.js` light: no layout reads, no heavy work
-  per keystroke.
+- Keep keypress handling in `web/app.js` light: only flip classes on the 1-2
+  letters that changed. The only layout read is the caret position, done once
+  per animation frame (`requestAnimationFrame`). Animations use CSS transitions
+  or the Web Animations API (`element.animate`), never JS timers.
 
 Details: `docs/ARCHITECTURE.md`.
 

@@ -61,7 +61,7 @@ All responses are JSON.
 | GET | `/api/v1/exercise` | | `{text, focus, unlocked: [..], locked: [..]}` |
 | POST | `/api/v1/results` | `{samples: [{char, errors, ms}], wpm, accuracy}` | `{unlocked, newLetter}` |
 | POST | `/api/v1/progress` | `{unlockAll: true\|false}` | `{unlocked}` |
-| GET | `/api/v1/stats` | | `{keys: [{char, count, errorRate, avgMs, difficulty, mastered, unlocked}], sessions: [..], targetWpm}` |
+| GET | `/api/v1/stats` | | `{keys: [{char, count, errorRate, avgMs, difficulty, mastered, unlocked}], sessions: [last 50, newest first], sessionCount, targetWpm}` |
 
 Validation on `/results`: 1–5000 samples, each with exactly one character,
 `errors >= 0`, `ms >= 0`; WPM 0–400; accuracy 0–100. Body limit 1 MB.
@@ -75,7 +75,7 @@ transaction (`SELECT ... FOR UPDATE`) instead.
 
 ## Adding PostgreSQL later
 
-Create `internal/storage/postgres.go` with a type that has the six `Store`
+Create `internal/storage/postgres.go` with a type that has the seven `Store`
 methods and change one line in `main.go`. A possible schema, once accounts exist:
 
 ```sql

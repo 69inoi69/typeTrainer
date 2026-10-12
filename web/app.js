@@ -11,13 +11,17 @@ const API = "/api/v1";
 // ---------- page elements ----------
 const $ = (id) => document.getElementById(id);
 const el = {
-  textBox: $("text-box"), text: $("text"), input: $("hidden-input"),
+  textBox: $("text-box"), text: $("text"), caret: $("caret"), input: $("hidden-input"),
   keyboard: $("keyboard"), hint: $("finger-hint"),
-  wpm: $("wpm"), acc: $("acc"),
+  live: $("live"), wpm: $("wpm"), acc: $("acc"),
   letters: $("letters"), lettersCaption: $("letters-caption"),
-  result: $("result"), history: $("history"), toast: $("toast"),
+  toast: $("toast"), tooltip: $("tooltip"),
   btnNew: $("btn-new"), btnIntro: $("btn-intro"), heat: $("heat-toggle"),
+  kbSize: $("kb-size"), kbSizeOut: $("kb-size-out"),
   intro: $("intro"),
+  switch: document.querySelector(".switch"), tabType: $("tab-type"), tabStats: $("tab-stats"),
+  viewType: $("view-type"), viewStats: $("view-stats"),
+  tiles: $("tiles"), chart: $("chart"), chartNote: $("chart-note"), letterGrid: $("letter-grid"),
 };
 
 // ---------- state ----------
@@ -37,6 +41,14 @@ let lastTime = null;       // performance.now() of the previous correct keypress
 let presses = 0, correctPresses = 0;
 let busy = false;          // true while talking to the server between exercises
 let popLetter = null;      // letter that was just unlocked (for the animation)
+let view = "type";         // "type" or "stats"
+
+// ---------- small helpers ----------
+const store = { // localStorage can be blocked; the app must work without it
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch { /* ignore */ } },
+};
+const introOpen = () => !el.intro.classList.contains("hidden");
 
 // ---------- server calls ----------
 async function getJSON(path) {
@@ -99,13 +111,58 @@ function highlightNextKey() {
   el.hint.innerHTML = `press <b>${ch === " " ? "space" : ch}</b> with your <b>${finger.name.toLowerCase()}</b>`;
 }
 
-function flashMiss(ch) {
+// Key feedback with the Web Animations API: runs on the compositor and
+// needs no class juggling or layout reads, so it costs almost nothing.
+function pulseKey(ch, ok) {
   const k = keyEls[ch];
-  if (!k) return;
-  k.classList.remove("miss");
-  void k.offsetWidth; // restart the CSS animation
-  k.classList.add("miss");
+  if (!k || !k.animate) return;
+  if (ok) {
+    k.animate([{ transform: "translateY(1px) scale(.93)" }, { transform: "none" }],
+      { duration: 130, easing: "cubic-bezier(.2,.8,.2,1)" });
+  } else {
+    k.animate([{ transform: "translateX(-3px)" }, { transform: "translateX(3px)" }, { transform: "none" }],
+      { duration: 160, easing: "ease-out" });
+  }
 }
+
+// Keyboard size: 0 = hidden, 100 = default. Remembered in this browser.
+function applyKbSize(v) {
+  v = Number(v);
+  document.documentElement.style.setProperty("--kb-scale", Math.max(v, 10) / 100);
+  el.keyboard.classList.toggle("off", v === 0);
+  el.hint.style.visibility = v === 0 ? "hidden" : "";
+  el.kbSizeOut.textContent = v === 0 ? "off" : v + "%";
+  el.kbSize.value = v;
+}
+el.kbSize.addEventListener("input", () => {
+  applyKbSize(el.kbSize.value);
+  store.set("tt.kbSize", el.kbSize.value);
+  placeCaret(true);
+});
+el.kbSize.addEventListener("change", () => el.kbSize.blur()); // keys go back to typing
+
+// ---------- caret ----------
+// One caret element that slides to the current letter (CSS transition on
+// transform). We read the letter's position once per animation frame.
+let caretFrame = 0;
+function placeCaret(jump) {
+  cancelAnimationFrame(caretFrame);
+  caretFrame = requestAnimationFrame(() => {
+    if (!spans.length) return;
+    const atEnd = pos >= spans.length;
+    const s = spans[Math.min(pos, spans.length - 1)];
+    const x = s.offsetLeft + (atEnd ? s.offsetWidth : 0);
+    const h = s.offsetHeight;
+    if (jump) el.caret.classList.add("jump");
+    el.caret.style.height = Math.round(h * 0.82) + "px";
+    el.caret.style.transform = `translate(${x - 1}px, ${s.offsetTop + h * 0.09}px)`;
+    if (jump) requestAnimationFrame(() => el.caret.classList.remove("jump"));
+  });
+}
+window.addEventListener("resize", () => {
+  placeCaret(true);
+  if (view === "stats") renderStats();
+});
 
 // ---------- letters bar ----------
 function renderLetters() {
@@ -137,12 +194,12 @@ function renderLetters() {
   const openCount = exercise.unlocked.length;
   const all = openCount + exercise.locked.length;
   const mastered = exercise.unlocked.filter((c) => info[c]?.mastered).length;
+  const started = (lastStats?.sessionCount ?? 0) > 0;
   let caption;
-  if (!lastStats?.sessions?.length) caption = `${openCount} of ${all} letters open. Type the text to begin.`;
+  if (!started) caption = `${openCount} of ${all} letters open. Type the text to begin.`;
   else if (focusHasData) caption = `focus: <b>${exercise.focus}</b> · mastered ${mastered} of ${openCount} open letters`;
   else caption = `mastered ${mastered} of ${openCount} open letters`;
-  if (exercise.locked.length && lastStats?.sessions?.length)
-    caption += ` · master all to open <b>${exercise.locked[0]}</b>`;
+  if (exercise.locked.length && started) caption += ` · master all to open <b>${exercise.locked[0]}</b>`;
   el.lettersCaption.innerHTML = caption;
   popLetter = null;
 }
@@ -162,13 +219,15 @@ function showExercise(ex) {
     frag.appendChild(s);
     return s;
   });
-  el.text.replaceChildren(frag);
-  spans[0]?.classList.add("cur");
+  el.text.replaceChildren(frag, el.caret);   // the caret lives inside the text
+  el.text.classList.remove("swap");
+  void el.text.offsetWidth;                  // restart the fade-in (once per exercise)
+  el.text.classList.add("swap");
   el.textBox.classList.remove("typing");
-  el.wpm.textContent = "0";
-  el.acc.textContent = "100";
+  if (!el.live.classList.contains("final")) { el.wpm.textContent = "0"; el.acc.textContent = "100"; }
   highlightNextKey();
   renderLetters();
+  placeCaret(true);
 }
 
 async function loadExercise() {
@@ -176,13 +235,16 @@ async function loadExercise() {
 }
 
 // The core of the app, called once per typed character. Kept small on
-// purpose: only the 1-2 spans that changed are touched, no layout reads.
+// purpose: it only flips classes on 1-2 spans; the caret is moved in the
+// next animation frame.
 function handleChar(ch) {
-  if (busy || pos >= text.length || !el.intro.classList.contains("hidden")) return;
+  if (busy || pos >= text.length || introOpen() || view !== "type") return;
   const now = performance.now();
-  if (startTime === null) startTime = now;
+  if (startTime === null) {
+    startTime = now;
+    el.live.classList.remove("final");
+  }
   el.textBox.classList.add("typing");
-  el.result.classList.add("hidden");
 
   const expected = text[pos];
   presses++;
@@ -194,16 +256,17 @@ function handleChar(ch) {
     samples.push({ char: expected, errors: wrongHere, ms: Math.round(ms) });
     correctPresses++;
     const span = spans[pos];
-    span.classList.remove("cur", "bad");
+    span.classList.remove("bad");
     span.classList.add(wrongHere ? "fixed" : "ok");
     pos++; wrongHere = 0; lastTime = now;
-    if (pos < text.length) spans[pos].classList.add("cur");
+    pulseKey(expected, true);
     highlightNextKey();
+    placeCaret(false);
     if (pos === text.length) finishExercise();
   } else {
     wrongHere++;
     spans[pos].classList.add("bad");
-    flashMiss(ch);
+    pulseKey(ch, false);
   }
   updateLive();
 }
@@ -228,11 +291,10 @@ async function finishExercise() {
   busy = true;
   const wpm = Math.round(currentWpm() * 10) / 10;
   const accuracy = Math.round(currentAccuracy() * 10) / 10;
-  el.result.innerHTML =
-    `<div><b>${Math.round(wpm)}</b><small>wpm</small></div>` +
-    `<div><b>${Math.round(accuracy)}%</b><small>accuracy</small></div>` +
-    `<div><b>${text.length}</b><small>chars</small></div>`;
-  el.result.classList.remove("hidden");
+  // the header keeps showing this result until the next exercise starts
+  el.wpm.textContent = Math.round(wpm);
+  el.acc.textContent = Math.round(accuracy);
+  el.live.classList.add("final");
   try {
     const res = await postJSON("/results", { samples, wpm, accuracy });
     if (res.newLetter) {
@@ -257,7 +319,6 @@ function toast(html) {
   toastTimer = setTimeout(() => el.toast.classList.remove("show"), 4000);
 }
 
-// ---------- statistics: heatmap + history ----------
 async function refreshStats() {
   lastStats = await getJSON("/stats");
   $("intro-target").textContent = lastStats.targetWpm;
@@ -265,16 +326,123 @@ async function refreshStats() {
     const key = keyEls[k.char];
     if (key) key.style.setProperty("--heat", k.count ? k.difficulty.toFixed(3) : 0);
   }
-  const sessions = [...lastStats.sessions].reverse(); // oldest first
-  if (!sessions.length) { el.history.innerHTML = ""; return; }
-  const max = Math.max(...sessions.map((s) => s.wpm), 1);
-  const bars = sessions.map((s) =>
-    `<div class="bar" title="${Math.round(s.wpm)} wpm, ${Math.round(s.accuracy)}%" style="height:${(s.wpm / max) * 100}%"></div>`).join("");
-  const weak = lastStats.keys.filter((k) => k.unlocked && k.count > 0 && !k.mastered).slice(0, 5)
-    .map((k) => `<span>${k.char}</span>`).join("");
-  el.history.innerHTML =
-    `<h3>last ${sessions.length} exercises (wpm)</h3><div class="bars">${bars}</div>` +
-    (weak ? `<div class="weak">weakest letters: ${weak}</div>` : "");
+  if (view === "stats") renderStats();
+}
+
+// ---------- views: type / stats ----------
+function setView(name) {
+  view = name;
+  const stats = name === "stats";
+  el.switch.classList.toggle("stats", stats);
+  el.tabType.setAttribute("aria-selected", String(!stats));
+  el.tabStats.setAttribute("aria-selected", String(stats));
+  el.viewType.hidden = stats;
+  el.viewStats.hidden = !stats;
+  if (stats) {
+    refreshStats().catch(console.error);
+    renderStats();
+  } else {
+    placeCaret(true);
+    focusText();
+  }
+}
+el.tabType.addEventListener("click", (e) => { e.currentTarget.blur(); setView("type"); });
+el.tabStats.addEventListener("click", (e) => { e.currentTarget.blur(); setView("stats"); });
+
+function renderStats() {
+  const s = lastStats;
+  if (!s) return;
+  const sessions = [...s.sessions].reverse(); // oldest first
+  const last10 = sessions.slice(-10);
+  const avg = (arr, f) => arr.length ? arr.reduce((a, x) => a + f(x), 0) / arr.length : null;
+  const fmt = (v, suffix = "") => v === null ? "—" : Math.round(v) + suffix;
+  const best = sessions.length ? Math.max(...sessions.map((x) => x.wpm)) : null;
+  el.tiles.innerHTML = [
+    [s.sessionCount, "exercises"],
+    [fmt(best), "best wpm"],
+    [fmt(avg(last10, (x) => x.wpm)), "avg wpm, last 10"],
+    [fmt(avg(last10, (x) => x.accuracy), "%"), "avg accuracy, last 10"],
+  ].map(([v, l]) => `<div class="tile"><b>${v}</b><small>${l}</small></div>`).join("");
+
+  drawChart(sessions, s.targetWpm, s.sessionCount);
+  drawLetterGrid(s.keys);
+}
+
+// Bar chart of WPM per exercise, drawn as SVG by hand (no chart library).
+function drawChart(sessions, target, total) {
+  if (!sessions.length) {
+    el.chart.innerHTML = `<div class="empty">finish an exercise and it shows up here</div>`;
+    el.chartNote.textContent = "";
+    return;
+  }
+  const first = total - sessions.length + 1; // number of the oldest shown exercise
+  el.chartNote.textContent = `${sessions.length === total ? "all" : "last " + sessions.length} exercises · dashed line = goal ${target} wpm`;
+
+  // draw at the real pixel width, so text stays 11px on a phone too
+  const W = Math.max(280, el.chart.clientWidth || 860), H = 200, padL = 34, padR = 8, padT = 10, padB = 22;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const max = niceMax(Math.max(target, ...sessions.map((x) => x.wpm)));
+  const y = (v) => padT + plotH - (v / max) * plotH;
+  const slot = plotW / Math.max(sessions.length, 10);    // few bars stay thin, not giant
+  const bw = Math.max(3, Math.min(28, slot - 2));         // 2px gap between bars
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="WPM per exercise">`;
+  for (let i = 0; i <= 4; i++) {                          // grid + y labels
+    const v = (max / 4) * i, yy = y(v);
+    svg += `<line class="grid" x1="${padL}" x2="${W - padR}" y1="${yy}" y2="${yy}"/>`;
+    svg += `<text class="axis" x="${padL - 6}" y="${yy + 4}" text-anchor="end">${Math.round(v)}</text>`;
+  }
+  sessions.forEach((x, i) => {
+    const bx = padL + i * slot + (slot - bw) / 2, top = y(x.wpm), base = y(0);
+    const r = Math.min(4, bw / 2, base - top);           // rounded top, flat on the baseline
+    const d = `M${bx},${base} V${top + r} Q${bx},${top} ${bx + r},${top} H${bx + bw - r} Q${bx + bw},${top} ${bx + bw},${top + r} V${base} Z`;
+    svg += `<path class="bar${i === sessions.length - 1 ? " last" : ""}" data-i="${i}" d="${d}"/>`;
+  });
+  svg += `<line class="target" x1="${padL}" x2="${W - padR}" y1="${y(target)}" y2="${y(target)}"/>`;
+  // x labels: first and last exercise number
+  svg += `<text class="axis" x="${padL + slot / 2}" y="${H - 6}" text-anchor="middle">#${first}</text>`;
+  if (sessions.length > 1)
+    svg += `<text class="axis" x="${padL + (sessions.length - 0.5) * slot}" y="${H - 6}" text-anchor="middle">#${total}</text>`;
+  // invisible full-height hover targets, wider than the bars
+  sessions.forEach((_, i) => {
+    svg += `<rect class="hit" data-i="${i}" x="${padL + i * slot}" y="${padT}" width="${slot}" height="${plotH}"/>`;
+  });
+  svg += `</svg>`;
+  el.chart.innerHTML = svg;
+
+  const bars = el.chart.querySelectorAll(".bar");
+  el.chart.querySelectorAll(".hit").forEach((h) => {
+    const i = Number(h.dataset.i), x = sessions[i];
+    h.addEventListener("pointerenter", () => bars[i].classList.add("hover"));
+    h.addEventListener("pointerleave", () => { bars[i].classList.remove("hover"); el.tooltip.classList.remove("show"); });
+    h.addEventListener("pointermove", (e) => {
+      el.tooltip.innerHTML = `<span>#${first + i}</span> ${Math.round(x.wpm)} wpm <span>·</span> ${Math.round(x.accuracy)}%`;
+      el.tooltip.style.left = e.clientX + "px";
+      el.tooltip.style.top = e.clientY + "px";
+      el.tooltip.classList.add("show");
+    });
+  });
+}
+function niceMax(v) {                 // round the axis up to 20, 40, 60, 80, 100, 150, 200...
+  const steps = [20, 40, 60, 80, 100, 120, 150, 200, 250, 300, 400];
+  return steps.find((s) => s >= v * 1.05) ?? Math.ceil(v / 100) * 100;
+}
+
+function drawLetterGrid(keys) {
+  // open letters first (weakest first, as the server sorts them), locked ones last
+  keys = [...keys.filter((k) => k.unlocked), ...keys.filter((k) => !k.unlocked)];
+  el.letterGrid.innerHTML = keys.map((k) => {
+    let meta;
+    if (!k.unlocked) meta = "locked";
+    else if (!k.count) meta = "no data yet";
+    else meta = `${Math.round(k.errorRate * 100)}% err` + (k.avgMs ? ` · ${Math.round(k.avgMs)} ms` : "");
+    const width = k.count ? Math.round(k.difficulty * 100) : 0;
+    return `<div class="lcard${k.unlocked ? "" : " locked"}${k.mastered ? " mastered" : ""}" title="${k.mastered ? "mastered" : ""}">
+      <span class="ch">${k.char}</span>
+      <div class="meter" title="difficulty ${k.difficulty.toFixed(2)}"><i style="width:${width}%"></i></div>
+      <div class="meta">${meta}</div>
+    </div>`;
+  }).join("");
 }
 
 // ---------- intro ----------
@@ -317,10 +485,12 @@ el.btnIntro.addEventListener("click", (e) => { e.currentTarget.blur(); showIntro
 // Desktop: keydown gives us the real key. preventDefault stops the character
 // from ALSO arriving through the hidden input (and space from scrolling).
 document.addEventListener("keydown", (e) => {
-  if (!el.intro.classList.contains("hidden")) {
+  if (introOpen()) {
     if (e.key === "Escape") closeIntro();
     return; // let Enter/Tab work on the intro buttons
   }
+  if (view !== "type") return;
+  if (document.activeElement === el.kbSize) return;  // arrows move the slider
   if (e.key === "Escape") { e.preventDefault(); newExercise(); return; }
   if (e.ctrlKey || e.metaKey || e.altKey) return;   // keep browser shortcuts
   if (e.key.length !== 1) return;                     // Shift, Tab, "Unidentified"...
@@ -346,7 +516,7 @@ el.input.addEventListener("blur", () => { if (isTouch()) el.textBox.classList.ad
 
 function newExercise() {
   if (busy) return;
-  el.result.classList.add("hidden");
+  el.live.classList.remove("final");
   loadExercise().catch(console.error);
 }
 el.btnNew.addEventListener("click", (e) => { e.currentTarget.blur(); newExercise(); });
@@ -357,13 +527,18 @@ el.heat.addEventListener("change", () => {
 
 // ---------- start ----------
 (async function init() {
+  applyKbSize(store.get("tt.kbSize") ?? 100);
   if (isTouch()) el.textBox.classList.add("blurred"); // phone: tap to open the keyboard
+  if (location.protocol === "file:") {                 // opened by double-click, no server
+    el.text.textContent = "Open this page through the server: run `go run .` and go to the address it prints (http://localhost:3000).";
+    return;
+  }
   try {
     layout = await getJSON("/layout");
     drawKeyboard();
     await refreshStats();
     await loadExercise();
-    if (!lastStats.sessions.length) showIntro(); // first visit
+    if (!lastStats.sessionCount) showIntro(); // first visit
   } catch (err) {
     console.error(err);
     el.text.textContent = "Could not load from the server. Is the Go server running?";

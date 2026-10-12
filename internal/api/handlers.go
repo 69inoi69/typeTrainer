@@ -175,7 +175,8 @@ type keyInfo struct {
 	Unlocked   bool    `json:"unlocked"`
 }
 
-// GET /api/v1/stats -> every letter (hardest first) + recent sessions.
+// GET /api/v1/stats -> every letter (hardest first), the last 50 sessions
+// (newest first) and the total number of finished exercises.
 func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 	stats, err := s.store.KeyStats()
 	if err != nil {
@@ -199,12 +200,19 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	sort.SliceStable(keys, func(i, j int) bool { return keys[i].Difficulty > keys[j].Difficulty })
-	sessions, err := s.store.RecentSessions(10)
+	sessions, err := s.store.RecentSessions(50)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"keys": keys, "sessions": sessions, "targetWpm": p.TargetWPM})
+	count, err := s.store.SessionCount()
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"keys": keys, "sessions": sessions, "sessionCount": count, "targetWpm": p.TargetWPM,
+	})
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

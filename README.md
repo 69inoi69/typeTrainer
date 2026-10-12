@@ -25,9 +25,13 @@ next exercise more often.
    go run .
    ```
    The first run takes a few seconds. Then you see
-   `Typing trainer running. Open http://localhost:8080 in your browser`.
+   `Typing trainer running. Open http://localhost:3000 in your browser`.
    Windows may ask about the firewall — "Allow" is fine (or Cancel; localhost works anyway).
-5. **Open** <http://localhost:8080> in your browser and start typing.
+5. **Open** <http://localhost:3000> in your browser and start typing.
+   Always open the page through this address. Double-clicking `web/index.html`
+   opens it without the server, and then it has no words and no statistics.
+   If the port is taken by another program, change `Addr` in
+   `internal/config/config.go`.
 6. **Stop** the server with `Ctrl + C` in PowerShell. All statistics are
    in memory, so they are reset when the server stops (PostgreSQL comes later).
 
@@ -50,7 +54,10 @@ Optional: build one `.exe` you can double-click: `go build -o typing-trainer.exe
   locked letters (outlined). Master every open letter and the next one opens.
 - The keyboard shows the next key in its finger color; keys you do not need yet
   are dimmed. `Esc` or "new exercise" gives a new text without saving.
-- "difficulty heatmap" tints keys red by how hard they are for you.
+- "keyboard" slider: size of the on-screen keyboard (0 = hidden). Remembered in
+  your browser. "heatmap" tints keys red by how hard they are for you.
+- The **type / stats** switch at the top opens the statistics screen: totals,
+  speed of every exercise, and every letter from weakest to strongest.
 
 ## Documentation
 
@@ -113,6 +120,6 @@ automatically. wordfreq data is CC BY-SA 4.0: credit it if you publish.
 
 ## Adding PostgreSQL later
 
-Write `internal/storage/postgres.go` with a type that has the same six
+Write `internal/storage/postgres.go` with a type that has the same seven
 methods as `Store`, then change one line in `main.go`. A schema sketch is in
 `docs/ARCHITECTURE.md`.

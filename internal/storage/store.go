@@ -29,4 +29,5 @@ type Store interface {
 
 	AddSession(s Session) error
 	RecentSessions(limit int) ([]Session, error) // newest first
+	SessionCount() (int, error)                  // all finished exercises
 }
