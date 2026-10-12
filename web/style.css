@@ -357,14 +357,29 @@ button:disabled:active { transform: none; }
 .tooltip.show { opacity: 1; }
 .tooltip span { color: var(--sub); }
 
-.toast {
-  position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-  transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
-  background: var(--panel); color: var(--text); padding: 10px 18px; border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, .35); transition: opacity .3s, transform .3s var(--ease);
-  max-width: calc(100vw - 32px); text-align: center;
+.toasts {
+  position: fixed; top: 76px; right: 16px; z-index: 25;
+  width: min(340px, calc(100vw - 32px));
+  display: flex; flex-direction: column; gap: 8px; pointer-events: none;
 }
-.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast {
+  position: relative; overflow: hidden; pointer-events: auto; cursor: pointer;
+  background: var(--panel); color: var(--text); padding: 11px 16px 13px; border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35), inset 3px 0 0 var(--accent);
+  animation: toast-in .32s var(--ease);
+}
+.toast.out { animation: toast-out .25s ease-in forwards; }
+@keyframes toast-in { from { opacity: 0; transform: translateX(28px); } }
+@keyframes toast-out { to { opacity: 0; transform: translateX(28px); } }
+/* time left: fills from left to right; full = the message closes */
+.toast-bar {
+  position: absolute; left: 0; bottom: 0; height: 3px; width: 100%;
+  background: color-mix(in srgb, var(--accent) 75%, transparent);
+  transform-origin: left; transform: scaleX(0);
+  animation: toast-bar var(--ms, 4500ms) linear forwards;
+}
+.toast:hover .toast-bar { animation-play-state: paused; }   /* reading: wait */
+@keyframes toast-bar { to { transform: scaleX(1); } }
 .toast b { color: var(--accent); }
 
 /* ---------- intro ---------- */
@@ -444,11 +459,13 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .metric span { font-size: 1.3rem; }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .letter-row { gap: 4px; }
+  .toasts { top: 8px; }
   .chip { font-size: .8rem; width: 1.6em; height: 1.6em; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  .toasts .toast-bar { animation-duration: var(--ms, 4500ms) !important; } /* it is a timer, not decoration */
 }
 
 /* confetti canvas (fx.js), above everything, never catches clicks */

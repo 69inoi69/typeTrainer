@@ -84,29 +84,32 @@ const FX = (() => {
     [{ scale: "1 1" }, { scale: "1.14 .88" }, { scale: "1 1" }],
     { duration: 320, easing: "ease-out" });
 
-  // ---------- toast queue ----------
-  // Several things can happen at the end of one exercise (new letter, new
-  // record, mastered letters): show them one after another, not on top.
-  const queue = [];
-  let showing = false;
-  function toast(html, ms = 2600) {
-    queue.push({ html, ms });
-    if (!showing) next();
+  // ---------- toasts ----------
+  // Messages stack in the top right corner, newest on top. Each one has a thin
+  // bar that fills up while it is shown: when the bar is full (CSS animation
+  // "animationend"), the message closes. Hover pauses it, a click closes it.
+  const TOAST_MS = 4500;   // default time on screen
+  const TOAST_MAX = 4;     // more at once: the oldest one goes away
+  function toast(html, ms = TOAST_MS) {
+    const box = document.getElementById("toasts");
+    const node = document.createElement("div");
+    node.className = "toast";
+    node.setAttribute("role", "status");
+    node.style.setProperty("--ms", ms + "ms");
+    node.innerHTML = `<div class="toast-body">${html}</div><i class="toast-bar"></i>`;
+    node.querySelector(".toast-bar").addEventListener("animationend", () => closeToast(node));
+    node.addEventListener("click", () => closeToast(node));
+    box.prepend(node);
+    while (box.children.length > TOAST_MAX) box.lastElementChild.remove();
   }
-  function next() {
-    const el = document.getElementById("toast");
-    const item = queue.shift();
-    if (!item) { showing = false; return; }
-    showing = true;
-    el.innerHTML = item.html;
-    el.classList.add("show");
-    setTimeout(() => {
-      el.classList.remove("show");
-      setTimeout(next, 280); // wait for the fade-out
-    }, item.ms);
+  function closeToast(node) {
+    if (node.classList.contains("out")) return;
+    node.classList.add("out");             // slide-out animation, then remove
+    node.addEventListener("animationend", (e) => { if (e.target === node) node.remove(); });
   }
 
-  const idle = () => !showing && !queue.length;
+  // true when no message is on screen (Tab messages never pile up)
+  const idle = () => !document.querySelector("#toasts .toast:not(.out)");
 
   return { burst, burstFrom, countUp, bump, shake, squish, toast, anim, idle };
 })();

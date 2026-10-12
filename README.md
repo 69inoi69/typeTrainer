@@ -83,6 +83,9 @@ on reload.
 - The green **×N clean words** counter in the header counts words in a row typed
   without a single mistake. New records, mastered letters and new letters get
   a small celebration.
+- Messages appear in the top right corner. The thin bar at the bottom of each
+  one fills up while it is shown; when it is full, the message closes. Hover
+  pauses it, a click closes it.
 - Icon buttons under the keyboard (hover for a tooltip): new text, intro,
   heatmap (tints keys red by how hard they are for you; lit = on), and
   `−` keyboard `+`: size from 70 % to 150 %, the middle button hides or shows

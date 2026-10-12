@@ -15,7 +15,7 @@ const el = {
   keyboard: $("keyboard"), hint: $("finger-hint"),
   live: $("live"), wpm: $("wpm"), acc: $("acc"),
   letters: $("letters"), lettersCaption: $("letters-caption"),
-  toast: $("toast"), tooltip: $("tooltip"),
+  tooltip: $("tooltip"),
   btnNew: $("btn-new"), btnIntro: $("btn-intro"), heat: $("heat-toggle"),
   kbSmaller: $("kb-smaller"), kbLarger: $("kb-larger"), kbToggle: $("kb-toggle"),
   kbSizeOut: $("kb-size-out"), hands: $("hands"),
@@ -395,7 +395,7 @@ function nudge() {
   if (startTime !== null) tabsResisted++;
   FX.anim(el.caret, [{ scale: "1 1" }, { scale: "2.2 1.3" }, { scale: "1 1" }], { duration: 380, easing: "cubic-bezier(.3,1.6,.5,1)" });
   FX.anim(el.text, [{ translate: "0" }, { translate: "6px" }, { translate: "-4px" }, { translate: "2px" }, { translate: "0" }], { duration: 420, easing: "ease-out" });
-  if (FX.idle()) FX.toast(t(`tab.${tabMsg++ % 4}`), 1800); // never pile up messages
+  if (FX.idle()) FX.toast(t(`tab.${tabMsg++ % 4}`), 2800); // never pile up messages
 }
 
 function showWarn(kind) {
@@ -448,7 +448,7 @@ async function finishExercise() {
     }
     if (res.newLetter) {
       popLetter = res.newLetter;
-      FX.toast(t("toast.newLetter", { letter: res.newLetter }), 3600);
+      FX.toast(t("toast.newLetter", { letter: res.newLetter }), 6000);
       FX.burstFrom(el.letters, 60);
     }
     justMastered = new Set(lastStats.keys.filter((k) => k.mastered && !prevMastered.has(k.char)).map((k) => k.char));
@@ -463,8 +463,6 @@ async function finishExercise() {
     busy = false;
   }
 }
-
-const toast = (html) => FX.toast(html);
 
 async function refreshStats() {
   lastStats = await getJSON("/stats");
