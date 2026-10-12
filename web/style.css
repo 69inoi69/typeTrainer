@@ -546,8 +546,25 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .metric span { font-size: 1.3rem; }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .letter-row { gap: 4px; }
-  .toasts { top: 8px; }
   .chip { font-size: .8rem; width: 1.6em; height: 1.6em; }
+  /* phone: no vertical centring (it left a big hole under the header, and
+     the phone keyboard covers the bottom anyway): content starts right
+     under the header */
+  #view-type { margin-block: 4px 0; padding-bottom: 0; }
+  .top { padding-bottom: 6px; }
+  /* phone: compact messages, at most two at once */
+  .toasts { top: 8px; left: 12px; right: 12px; width: auto; gap: 6px; }
+  .toast { font-size: .82rem; gap: 10px; padding: 7px 12px 9px 9px; border-radius: 9px; }
+  .toast-mark { width: 26px; height: 26px; border-radius: 7px; font-size: 1rem; }
+  .toast-mark svg { width: 16px; height: 16px; }
+  .k-letter .toast-mark { width: 30px; height: 30px; font-size: 1.15rem; }
+  .k-tab .toast-mark { width: 22px; height: 22px; }
+  .toasts .toast:nth-child(n+3) { display: none; }
+  .toolbar { gap: 6px; }
+  button.icon { height: 34px; min-width: 34px; padding: 0 7px; }
+  .kb-size button.small { min-width: 26px; }
+  #kb-size-out { min-width: 0; }
+  #btn-reset { margin-left: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
