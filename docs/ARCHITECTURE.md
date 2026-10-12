@@ -70,6 +70,7 @@ All responses are JSON. Every route except `/languages` takes `?lang=<id>`
 | GET | `/api/v1/exercise` | | `{text, focus, unlocked: [..], locked: [..]}` |
 | POST | `/api/v1/results` | `{samples: [{char, errors, ms}], wpm, accuracy}` | `{unlocked, newLetter}` |
 | POST | `/api/v1/progress` | `{unlockAll: true\|false}` | `{unlocked}` |
+| POST | `/api/v1/reset` | | `{ok: true}`; deletes all data of the language (reset button, until there are user accounts) |
 | GET | `/api/v1/stats` | | `{keys: [{char, count, errorRate, avgMs, difficulty, mastered, unlocked}], sessions: [last 50, newest first], sessionCount, targetWpm}` |
 
 Validation on `/results`: 1–5000 samples, each with exactly one character that
@@ -89,7 +90,7 @@ transaction (`SELECT ... FOR UPDATE`) instead.
 
 ## Adding PostgreSQL later
 
-Create `internal/storage/postgres.go` with a type that has the seven `Store`
+Create `internal/storage/postgres.go` with a type that has the eight `Store`
 methods and change one line in `setup.go`. A possible schema, once accounts exist:
 
 ```sql

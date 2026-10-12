@@ -732,7 +732,9 @@ function showTip(node) {
   tipFor = node;
   const r = node.getBoundingClientRect();
   el.tooltip.textContent = t(node.dataset.tip);
-  el.tooltip.style.left = r.left + r.width / 2 + "px";
+  // keep a long tooltip inside the window (measured on hover, never per keypress)
+  const half = el.tooltip.offsetWidth / 2 + 8;
+  el.tooltip.style.left = Math.min(innerWidth - half, Math.max(half, r.left + r.width / 2)) + "px";
   const below = r.top < 60;                         // header: no room above
   el.tooltip.classList.toggle("below", below);
   el.tooltip.style.top = (below ? r.bottom : r.top) + "px";
@@ -875,6 +877,40 @@ function newExercise() {
   loadExercise().catch(console.error);
 }
 el.btnNew.addEventListener("click", (e) => { e.currentTarget.blur(); newExercise(); });
+// ---------- reset ----------
+// Back to the very first visit: the server forgets every language, the
+// browser forgets its settings (keys starting with "tt."), the page reloads.
+// The first click only "arms" the button (red, new tooltip); the second one
+// resets. Moving the mouse away disarms it.
+const btnReset = $("btn-reset");
+function disarmReset() {
+  btnReset.classList.remove("armed");
+  btnReset.dataset.tip = "tip.reset";
+  if (tipFor === btnReset) showTip(btnReset);
+}
+btnReset.addEventListener("click", async () => {
+  if (!btnReset.classList.contains("armed")) {
+    btnReset.classList.add("armed");
+    btnReset.dataset.tip = "tip.resetConfirm";
+    FX.shake(btnReset);
+    showTip(btnReset);
+    return;
+  }
+  if (busy) return;
+  busy = true;
+  try {
+    for (const l of languages) {
+      await fetch(`${API}/reset?lang=${encodeURIComponent(l.id)}`, { method: "POST" });
+    }
+  } catch (err) { console.error(err); }
+  try {
+    for (const k of Object.keys(localStorage)) if (k.startsWith("tt.")) localStorage.removeItem(k);
+  } catch { /* storage blocked: nothing saved anyway */ }
+  location.reload();
+});
+btnReset.addEventListener("pointerleave", (e) => { if (e.pointerType !== "touch") disarmReset(); }); // a tap "leaves" at once
+btnReset.addEventListener("blur", disarmReset);
+
 function applyHeat(on) {
   el.keyboard.classList.toggle("show-heat", on);
   el.heat.setAttribute("aria-pressed", String(on));

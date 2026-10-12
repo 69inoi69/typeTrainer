@@ -44,3 +44,29 @@ func TestMemoryStore_RecentSessionsNewestFirst(t *testing.T) {
 		t.Fatalf("got %+v", got)
 	}
 }
+
+// Reset clears one language and leaves the others alone.
+func TestMemoryStore_Reset(t *testing.T) {
+	m := NewMemoryStore()
+	for _, l := range []string{"en", "pl"} {
+		m.SaveKeyStats(l, map[string]engine.KeyStat{"e": {Count: 5}})
+		m.SetUnlocked(l, 9)
+		m.AddSession(l, Session{WPM: 40})
+	}
+	if err := m.Reset("en"); err != nil {
+		t.Fatal(err)
+	}
+	stats, _ := m.KeyStats("en")
+	unlocked, _ := m.Unlocked("en")
+	count, _ := m.SessionCount("en")
+	if len(stats) != 0 || unlocked != 0 || count != 0 {
+		t.Fatalf("en not reset: stats=%v unlocked=%d sessions=%d", stats, unlocked, count)
+	}
+	if c, _ := m.SessionCount("pl"); c != 1 {
+		t.Fatalf("pl lost its data: sessions=%d", c)
+	}
+	// resetting a language with no data is fine too
+	if err := m.Reset("uk"); err != nil {
+		t.Fatal(err)
+	}
+}

@@ -90,6 +90,9 @@ on reload.
   heatmap (tints keys red by how hard they are for you; lit = on), and
   `−` keyboard `+`: size from 70 % to 150 %, the middle button hides or shows
   keyboard and hands. All remembered in your browser.
+- The red-on-click bin button resets everything: progress in all languages and
+  the settings saved in your browser, as on the very first visit. It needs a
+  second click (the first one turns it red), so it does not happen by accident.
 - Shortcuts: `Esc` new text · `Shift + Tab` type / stats · `Alt + 1…4` language.
 - The **keyboard / chart** icon switch at the top (or `Shift + Tab`) opens the statistics screen: totals,
   speed of every exercise, and every letter from weakest to strongest.
@@ -168,6 +171,6 @@ A new language = an entry in `data/languages.json`, a layout in
 
 ## Adding PostgreSQL later
 
-Write `internal/storage/postgres.go` with a type that has the same seven
+Write `internal/storage/postgres.go` with a type that has the same eight
 methods as `Store`, then change one line in `setup.go`. A schema sketch is in
 `docs/ARCHITECTURE.md`.

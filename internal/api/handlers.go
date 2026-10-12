@@ -55,6 +55,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/exercise", s.withLang(s.handleExercise))
 	mux.HandleFunc("POST /api/v1/results", s.withLang(s.handleResults))
 	mux.HandleFunc("POST /api/v1/progress", s.withLang(s.handleProgress))
+	mux.HandleFunc("POST /api/v1/reset", s.withLang(s.handleReset))
 	mux.HandleFunc("GET /api/v1/stats", s.withLang(s.handleStats))
 }
 
@@ -168,6 +169,19 @@ func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, l *Langua
 		newLetter = l.Gen.Order()[after-1]
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"unlocked": after, "newLetter": newLetter})
+}
+
+// POST /api/v1/reset?lang= -> deletes all statistics, unlocked letters and
+// history of the language. Used by the reset button while there are no user
+// accounts: the browser calls it once for every language.
+func (s *Server) handleReset(w http.ResponseWriter, r *http.Request, l *Language) {
+	s.writeMu.Lock()
+	defer s.writeMu.Unlock()
+	if err := s.store.Reset(l.Info.ID); err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
 
 // POST /api/v1/progress?lang= {"unlockAll": true} -> for people who can already

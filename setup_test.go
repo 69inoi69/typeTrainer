@@ -68,3 +68,24 @@ func TestApp_ResultsAreKeptPerLanguage(t *testing.T) {
 		t.Fatalf("latin letter in ru: got %d, want 400", code)
 	}
 }
+
+func TestApp_ResetClearsOneLanguage(t *testing.T) {
+	h, _, _ := newApp()
+	body := `{"samples":[{"char":"ж","errors":0,"ms":300},{"char":" ","errors":0,"ms":200}],"wpm":30,"accuracy":100}`
+	call(t, h, "POST", "/api/v1/results?lang=ru", body)
+	call(t, h, "POST", "/api/v1/results?lang=uk", body)
+	call(t, h, "POST", "/api/v1/progress?lang=ru", `{"unlockAll":true}`)
+	if code, out := call(t, h, "POST", "/api/v1/reset?lang=ru", ""); code != 200 {
+		t.Fatalf("reset: %d %v", code, out)
+	}
+	_, ru := call(t, h, "GET", "/api/v1/stats?lang=ru", "")
+	_, uk := call(t, h, "GET", "/api/v1/stats?lang=uk", "")
+	if ru["sessionCount"].(float64) != 0 || uk["sessionCount"].(float64) != 1 {
+		t.Fatalf("after reset ru=%v uk=%v", ru["sessionCount"], uk["sessionCount"])
+	}
+	// back to the first lesson, not all letters
+	_, ex := call(t, h, "GET", "/api/v1/exercise?lang=ru", "")
+	if len(ex["locked"].([]any)) == 0 {
+		t.Fatal("after reset all letters are still open")
+	}
+}

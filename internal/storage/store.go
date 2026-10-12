@@ -34,4 +34,7 @@ type Store interface {
 	AddSession(lang string, s Session) error
 	RecentSessions(lang string, limit int) ([]Session, error) // newest first
 	SessionCount(lang string) (int, error)                    // all finished exercises
+
+	// Reset deletes everything stored for the language: it is new again.
+	Reset(lang string) error
 }

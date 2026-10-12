@@ -95,3 +95,11 @@ func (m *MemoryStore) SessionCount(lang string) (int, error) {
 	defer m.mu.Unlock()
 	return len(m.data(lang).sessions), nil
 }
+
+// Reset forgets the language; the next call to data() starts it from zero.
+func (m *MemoryStore) Reset(lang string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.langs, lang)
+	return nil
+}
