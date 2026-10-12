@@ -58,16 +58,21 @@ on reload.
 
 - The app opens with a short start screen: the logo types itself, a random
   phrase in your language, then the page slides in. Any key or click skips it.
-- On the first visit a three-step intro explains the home position. At the end,
-  choose "I'm new to this" (start with 7 letters) or "I can already touch type"
-  (all letters open). You can reopen it with "how it works".
+- On the very first visit a short hands-on intro starts: put your fingers on
+  the home row and press those eight keys, press space with a thumb, then
+  "watch the screen". It reacts to the real keys (physical positions, so it
+  works with any system layout). `Esc` or "skip" closes it; the **?** button
+  reopens it. At the end: "Start" (a few letters) or "I can already touch type"
+  (all letters open). Before your first exercise the letters caption also has an
+  "open all letters" button.
 - Type the grey text. Wrong key = the letter turns red and you must press the
   right one before moving on.
 - The row of letters at the top shows your progress: open letters, the letter in
   **focus** (yellow, your weakest right now), mastered letters (green dot), and
   locked letters (outlined). Master every open letter and the next one opens.
 - The keyboard shows the next key in its finger color; keys you do not need yet
-  are dimmed. `Esc` or "new exercise" gives a new text without saving.
+  are dimmed. Above the keyboard two hands light up the finger that presses
+  it (space = both thumbs, AltGr letters = right thumb + the finger).
 - The **EN · PL · UK · RU** switch changes the language you practise **and the
   language of the interface** (remembered in your browser; the first time it
   follows your browser's language).
@@ -78,8 +83,11 @@ on reload.
 - The green **×N clean words** counter in the header counts words in a row typed
   without a single mistake. New records, mastered letters and new letters get
   a small celebration.
-- "keyboard" slider: size of the on-screen keyboard (0 = hidden). Remembered in
-  your browser. "heatmap" tints keys red by how hard they are for you.
+- Icon buttons under the keyboard (hover for a tooltip): new text, intro,
+  heatmap (tints keys red by how hard they are for you; lit = on), and
+  `−` keyboard `+`: size from 70 % to 150 %, the middle button hides or shows
+  keyboard and hands. All remembered in your browser.
+- Shortcuts: `Esc` new text · `Shift + Tab` type / stats · `Alt + 1…4` language.
 - The **type / stats** switch at the top opens the statistics screen: totals,
   speed of every exercise, and every letter from weakest to strongest.
 

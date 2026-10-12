@@ -17,7 +17,8 @@ const el = {
   letters: $("letters"), lettersCaption: $("letters-caption"),
   toast: $("toast"), tooltip: $("tooltip"),
   btnNew: $("btn-new"), btnIntro: $("btn-intro"), heat: $("heat-toggle"),
-  kbSize: $("kb-size"), kbSizeOut: $("kb-size-out"),
+  kbSmaller: $("kb-smaller"), kbLarger: $("kb-larger"), kbToggle: $("kb-toggle"),
+  kbSizeOut: $("kb-size-out"), hands: $("hands"),
   intro: $("intro"),
   switch: document.querySelector(".switch"), tabType: $("tab-type"), tabStats: $("tab-stats"),
   viewType: $("view-type"), viewStats: $("view-stats"),
@@ -122,32 +123,49 @@ function drawKeyboard() {
     }
     el.keyboard.appendChild(rowEl);
   });
-  // the intro shows the home row (A S D F ... ; ) with the same colors
-  const home = $("intro-home");
-  home.innerHTML = "";
-  for (const k of layout.rows[1].slice(0, 10)) home.appendChild(makeKey(k));
+  // the hands take the finger colors of this layout (both thumbs: "th")
+  handFingers = {};
+  for (const f of el.hands.querySelectorAll("i[data-f]")) {
+    const id = f.dataset.f;
+    f.style.setProperty("--fc", layout.fingers[id.startsWith("th") ? "th" : id].color);
+    handFingers[id] = f;
+  }
+  drawIntroKeys();
 }
 
 // The key that types ch: its own key, or the base key for an AltGr letter.
 const keyFor = (ch) => keyEls[ch] || keyEls[altBase[ch]] || null;
 
+// Which finger presses the next key: that finger lights up on the two
+// hands above the keyboard. Space = both thumbs; an AltGr letter = the right
+// thumb (holding AltGr) plus the finger of the base key. The same thing is
+// also written as a sentence, but only for screen readers.
 let nextKeyEl = null;
+let handFingers = {};      // finger id ("lp", ..., "thl", "thr") -> <i> on the hands
+let litFingers = [];       // fingers that are lit now
 function highlightNextKey() {
   if (nextKeyEl) nextKeyEl.classList.remove("next");
   if (altgrEl) altgrEl.classList.remove("next");
+  for (const f of litFingers) f.classList.remove("on");
+  litFingers = [];
   const ch = text[pos];
   const base = altBase[ch] ?? ch;      // "ą" is typed on the "a" key
   nextKeyEl = keyEls[base] || null;
   if (!nextKeyEl) { el.hint.innerHTML = "&nbsp;"; return; }
   nextKeyEl.classList.add("next");
   const fingerId = fingerOf[base];
-  el.hint.style.setProperty("--fc", layout.fingers[fingerId].color);
+  let ids = fingerId === "th" ? ["thl", "thr"] : [fingerId];
   const vars = { key: ch === " " ? t("key.space") : ch, base, finger: t(`finger.${fingerId}`) };
   if (altBase[ch]) {
     if (altgrEl) altgrEl.classList.add("next");
+    ids = [...ids, "thr"];
     el.hint.innerHTML = t("hint.alt", vars);
   } else {
     el.hint.innerHTML = t("hint.press", vars);
+  }
+  for (const id of ids) {
+    const f = handFingers[id];
+    if (f) { f.classList.add("on"); litFingers.push(f); }
   }
 }
 
@@ -165,21 +183,35 @@ function pulseKey(ch, ok) {
   }
 }
 
-// Keyboard size: 0 = hidden, 100 = default. Remembered in this browser.
-function applyKbSize(v) {
-  v = Number(v);
-  document.documentElement.style.setProperty("--kb-scale", Math.max(v, 10) / 100);
-  el.keyboard.classList.toggle("off", v === 0);
-  el.hint.style.visibility = v === 0 ? "hidden" : "";
-  el.kbSizeOut.textContent = v === 0 ? t("kb.off") : v + "%";
-  el.kbSize.value = v;
+// Keyboard size: 70 % ... 150 % in steps of 10 (smaller is unreadable), and a
+// separate on/off button for keyboard + hands. Both remembered in this browser.
+const KB_MIN = 70, KB_MAX = 150, KB_STEP = 10;
+let kbSize = 100, kbHidden = false;
+function applyKb() {
+  document.documentElement.style.setProperty("--kb-scale", kbSize / 100);
+  el.keyboard.classList.toggle("off", kbHidden);
+  el.hands.classList.toggle("off", kbHidden);
+  el.kbToggle.setAttribute("aria-pressed", String(!kbHidden));
+  el.kbSizeOut.textContent = kbHidden ? t("kb.off") : kbSize + "%";
+  el.kbSmaller.disabled = kbHidden || kbSize <= KB_MIN;
+  el.kbLarger.disabled = kbHidden || kbSize >= KB_MAX;
+  store.set("tt.kbSize", kbSize);
+  store.set("tt.kbHidden", kbHidden ? "1" : "");
 }
-el.kbSize.addEventListener("input", () => {
-  applyKbSize(el.kbSize.value);
-  store.set("tt.kbSize", el.kbSize.value);
+function resizeKb(delta) {
+  kbSize = Math.min(KB_MAX, Math.max(KB_MIN, kbSize + delta));
+  applyKb();
+  placeCaret(true);
+}
+el.kbSmaller.addEventListener("click", (e) => { e.currentTarget.blur(); resizeKb(-KB_STEP); });
+el.kbLarger.addEventListener("click", (e) => { e.currentTarget.blur(); resizeKb(KB_STEP); });
+el.kbToggle.addEventListener("click", (e) => {
+  e.currentTarget.blur();
+  kbHidden = !kbHidden;
+  applyKb();
+  FX.bump(el.kbToggle, 1.12);
   placeCaret(true);
 });
-el.kbSize.addEventListener("change", () => el.kbSize.blur()); // keys go back to typing
 
 // ---------- caret ----------
 // One caret element that slides to the current letter (CSS transition on
@@ -245,6 +277,7 @@ function renderLetters() {
     if (focusHasData) caption = t("caption.focus", { letter: exercise.focus }) + " · " + caption;
   }
   if (exercise.locked.length && started) caption += " · " + t("caption.next", { letter: exercise.locked[0] });
+  if (exercise.locked.length && !started) caption += " · " + t("openAll"); // a button inside the caption
   el.lettersCaption.innerHTML = caption;
   popLetter = null;
   justMastered = new Set();
@@ -538,6 +571,7 @@ function drawChart(sessions, target, total) {
       el.tooltip.innerHTML = `<span>#${first + i}</span> ${Math.round(x.wpm)} wpm <span>·</span> ${Math.round(x.accuracy)}%`;
       el.tooltip.style.left = e.clientX + "px";
       el.tooltip.style.top = e.clientY + "px";
+      el.tooltip.classList.remove("below");
       el.tooltip.classList.add("show");
     });
   });
@@ -566,47 +600,161 @@ function drawLetterGrid(keys) {
 }
 
 // ---------- intro ----------
-// Shown in full on the very first visit. For a language you have not used
-// yet, only the last step (new / can already type) is shown.
+// Shown once, on the very first visit (it can be reopened with the "?" button).
+// It is a short hands-on start, not a text to read: steps 0 and 1 wait for the
+// real keys. We look at the PHYSICAL key (e.code), so it works whatever the
+// system layout is: "KeyA" is the key under the left pinky on every keyboard.
+const HOME_CODES = ["KeyA", "KeyS", "KeyD", "KeyF", "KeyJ", "KeyK", "KeyL", "Semicolon"];
+const HOME_INDEX = [0, 1, 2, 3, 6, 7, 8, 9];   // positions of those keys in the home row
+const INTRO_LAST = 3;
 let introStep = 0;
-function showIntro(step = 0) {
-  introStep = step;
+let introKeys = {};        // e.code -> key element in the intro home row
+let introPressed = new Set();
+
+// The home row of the current layout (A S D F · J K L ; / Ф Ы В А · О Л Д Ж).
+function drawIntroKeys() {
+  const row = layout.rows[1];
+  const home = $("intro-home");
+  home.innerHTML = "";
+  introKeys = {};
+  HOME_INDEX.forEach((idx, i) => {
+    const key = makeKey(row[idx]);
+    if (i === 4) home.appendChild(Object.assign(document.createElement("span"), { className: "gap" }));
+    home.appendChild(key);
+    introKeys[HOME_CODES[i]] = key;
+  });
+  // a copy of the hands for step 2, with the fingers lighting up one by one
+  $("intro-hands").innerHTML = el.hands.innerHTML;
+  $("intro-hands").querySelectorAll("i").forEach((f, i) => {
+    f.classList.remove("on");
+    f.style.setProperty("--d", i);       // animation delay: finger after finger
+  });
+}
+
+function showIntro() {
+  introStep = 0;
+  introPressed = new Set();
+  Object.values(introKeys).forEach((k) => k.classList.remove("hit"));
+  $("intro-space").classList.remove("hit");
   const info = languages.find((l) => l.id === lang);
   $("intro-lang").textContent = info ? " · " + info.name : "";
   renderIntro();
   el.intro.classList.remove("hidden");
-  if (step < 2) $("intro-next").focus();
+  document.activeElement?.blur();
 }
 function renderIntro() {
   document.querySelectorAll(".intro-step").forEach((s, i) => s.classList.toggle("active", i === introStep));
   document.querySelectorAll("#intro-dots i").forEach((d, i) => d.classList.toggle("on", i === introStep));
-  const last = introStep === 2;
+  const last = introStep === INTRO_LAST;
   $("intro-next").style.visibility = last ? "hidden" : "visible";
   $("intro-skip").style.visibility = last ? "hidden" : "visible";
   if (last) $("intro-new").focus();
 }
+function nextIntroStep() {
+  if (introStep >= INTRO_LAST) return;
+  introStep++;
+  renderIntro();
+}
+// Advance after the key's little "pressed" animation has finished.
+function advanceAfter(node) {
+  const a = node.animate?.([{ scale: "1" }, { scale: "1.15" }, { scale: "1" }], { duration: 260, easing: "ease-out" });
+  const step = introStep;
+  const go = () => { if (introStep === step) nextIntroStep(); };
+  if (a) a.finished.then(go, go); else go();
+}
+// Key presses while the intro is open.
+function introKey(e) {
+  if (e.key === "Escape") { e.preventDefault(); closeIntro(); return; }
+  if (introStep === INTRO_LAST || e.key === "Tab") return; // Enter/Tab work on the buttons
+  if (["Shift", "Control", "Alt", "AltGraph", "Meta", "CapsLock"].includes(e.key)) return;
+  e.preventDefault();
+  if (introStep === 0) {
+    const key = introKeys[e.code];
+    if (!key) return;
+    key.classList.add("hit");
+    FX.anim(key, [{ transform: "translateY(2px) scale(.92)" }, { transform: "none" }], { duration: 160 });
+    introPressed.add(e.code);
+    if (introPressed.size === HOME_CODES.length) advanceAfter($("intro-home"));
+  } else if (introStep === 1) {
+    if (e.code !== "Space") return;
+    $("intro-space").classList.add("hit");
+    advanceAfter($("intro-space"));
+  } else {
+    nextIntroStep();
+  }
+}
+
+// unlockAll: true = "I can already touch type", false = "Start",
+// undefined = closed with skip / Esc (nothing changes).
 async function closeIntro(unlockAll) {
   el.intro.classList.add("hidden");
   store.set("tt.introDone", "1");
-  // remember the answer per language (skipping counts as "new")
-  store.set(`tt.level.${lang}`, unlockAll ? "pro" : "new");
-  if (unlockAll !== undefined) {
+  if (unlockAll) {
+    await openAllLetters();
+  } else if (unlockAll === false && store.get(`tt.level.${lang}`) === "pro") {
+    // reopened the intro and chose to start small after all
+    store.set(`tt.level.${lang}`, "new");
     try {
-      const res = await postJSON("/progress", { unlockAll });
-      // only swap the text if the set of letters really changed
-      if (res.unlocked !== exercise?.unlocked.length) {
-        await refreshStats();
-        await loadExercise();
-      }
+      await postJSON("/progress", { unlockAll: false });
+      await refreshStats();
+      await loadExercise();
     } catch (err) { console.error(err); }
   }
   focusText();
 }
-$("intro-next").addEventListener("click", () => { introStep++; renderIntro(); });
+$("intro-next").addEventListener("click", (e) => { e.currentTarget.blur(); nextIntroStep(); });
 $("intro-skip").addEventListener("click", () => closeIntro());
 $("intro-new").addEventListener("click", () => closeIntro(false));
 $("intro-pro").addEventListener("click", () => closeIntro(true));
 el.btnIntro.addEventListener("click", (e) => { e.currentTarget.blur(); showIntro(); });
+
+// "Already touch typing? open all letters": every letter of this language
+// opens at once. Remembered per language (the Pages version forgets progress
+// on reload, so loadLanguage applies it again).
+async function openAllLetters() {
+  store.set(`tt.level.${lang}`, "pro");
+  try {
+    await postJSON("/progress", { unlockAll: true });
+    await refreshStats();
+    await loadExercise();
+    FX.burstFrom(el.letters, 60);
+  } catch (err) { console.error(err); }
+}
+el.lettersCaption.addEventListener("click", (e) => {
+  if (e.target.id !== "open-all" || busy) return;
+  e.target.blur();
+  openAllLetters().then(focusText);
+});
+
+// ---------- tooltips ----------
+// Icon buttons have no text, so their meaning (and the shortcut) is shown in a
+// small tooltip: data-tip="key" in index.html, text from i18n.js.
+let tipFor = null;
+function showTip(node) {
+  tipFor = node;
+  const r = node.getBoundingClientRect();
+  el.tooltip.textContent = t(node.dataset.tip);
+  el.tooltip.style.left = r.left + r.width / 2 + "px";
+  const below = r.top < 60;                         // header: no room above
+  el.tooltip.classList.toggle("below", below);
+  el.tooltip.style.top = (below ? r.bottom : r.top) + "px";
+  el.tooltip.classList.add("show");
+}
+function hideTip() {
+  tipFor = null;
+  el.tooltip.classList.remove("show");
+}
+document.addEventListener("pointerover", (e) => {
+  if (e.pointerType === "touch") return;            // no sticky tooltips on phones
+  const node = e.target.closest?.("[data-tip]");
+  if (node && node !== tipFor) showTip(node);
+  else if (!node && tipFor) hideTip();
+});
+document.addEventListener("pointerdown", hideTip);
+// screen readers: the tooltip text is also the button's name
+function labelTips() {
+  document.querySelectorAll("button[data-tip]").forEach((b) => b.setAttribute("aria-label", t(b.dataset.tip)));
+}
 
 // ---------- languages ----------
 // The switch is built once; changing language only moves the yellow thumb
@@ -617,10 +765,13 @@ function buildLangSwitch() {
     languages.map((l) => `<button type="button" role="tab" data-lang="${l.id}" title="${l.name}">${l.label}</button>`).join("");
   el.langSwitch.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
     b.blur();
-    if (busy || b.dataset.lang === lang) return;
-    squishThumb(el.langSwitch);
-    loadLanguage(b.dataset.lang).catch((err) => console.error(err));
+    switchLanguage(b.dataset.lang);
   }));
+}
+function switchLanguage(id) {
+  if (busy || id === lang) return;
+  squishThumb(el.langSwitch);
+  loadLanguage(id).catch((err) => console.error(err));
 }
 function markLangSwitch() {
   el.langSwitch.style.setProperty("--i", Math.max(0, languages.findIndex((l) => l.id === lang)));
@@ -653,16 +804,17 @@ async function loadLanguage(id) {
     // home-row keys for the intro text ("bumps on F and J" / "on А and О")
     const home = layout.rows.flat().filter((k) => k.home).map((k) => k.char.toUpperCase());
     [i18nVars.f, i18nVars.j] = home;
+    const row = layout.rows[1].map((k) => k.char.toUpperCase());
+    i18nVars.l = row.slice(0, 4).join(" ");
+    i18nVars.r = row.slice(6, 10).join(" ");
     applyI18n();
-    applyKbSize(el.kbSize.value);           // re-translates "off"
+    labelTips();
+    applyKb();                              // re-translates "off"
     await refreshStats();
     await loadExercise();
     if (view === "stats") renderStats();
 
-    const level = store.get(`tt.level.${id}`);
-    if (!level) {
-      showIntro(store.get("tt.introDone") ? 2 : 0);
-    } else if (level === "pro" && exercise.locked.length && !lastStats.sessionCount) {
+    if (store.get(`tt.level.${id}`) === "pro" && exercise.locked.length && !lastStats.sessionCount) {
       // the GitHub Pages version forgets progress on reload: re-apply the choice
       await postJSON("/progress", { unlockAll: true });
       await refreshStats();
@@ -677,17 +829,26 @@ async function loadLanguage(id) {
 // Desktop: keydown gives us the real key. preventDefault stops the character
 // from ALSO arriving through the hidden input (and space from scrolling).
 document.addEventListener("keydown", (e) => {
-  if (introOpen()) {
-    if (e.key === "Escape") closeIntro();
-    return; // let Enter/Tab work on the intro buttons
+  if (introOpen()) { introKey(e); return; }
+  if (document.body.classList.contains("splashing")) return;
+  // shortcuts: Shift+Tab = type <-> stats, Alt+1...4 = language
+  if (e.key === "Tab" && e.shiftKey) {
+    e.preventDefault();
+    squishThumb(el.switch);
+    setView(view === "type" ? "stats" : "type");
+    return;
+  }
+  const altGr = e.getModifierState?.("AltGraph");
+  if (e.altKey && !e.ctrlKey && !e.metaKey && !altGr && /^Digit[1-9]$/.test(e.code)) {
+    const l = languages[Number(e.code.slice(5)) - 1];
+    if (l) { e.preventDefault(); switchLanguage(l.id); }
+    return;
   }
   if (view !== "type") return;
-  if (document.activeElement === el.kbSize) return;  // arrows move the slider
   if (e.key === "Escape") { e.preventDefault(); newExercise(); return; }
   if (e.key === "Tab") { e.preventDefault(); nudge(); return; }   // no restart, see nudge()
   // AltGr (Polish ą, ę, ...) is reported as Ctrl+Alt on Windows; let it through,
   // but keep real browser shortcuts like Ctrl+R working.
-  const altGr = e.getModifierState?.("AltGraph");
   if ((e.ctrlKey || e.metaKey || e.altKey) && !altGr) return;
   if (e.key.length !== 1) return;                     // Shift, Tab, "Unidentified"...
   e.preventDefault();
@@ -716,9 +877,15 @@ function newExercise() {
   loadExercise().catch(console.error);
 }
 el.btnNew.addEventListener("click", (e) => { e.currentTarget.blur(); newExercise(); });
-el.heat.addEventListener("change", () => {
-  el.keyboard.classList.toggle("show-heat", el.heat.checked);
+function applyHeat(on) {
+  el.keyboard.classList.toggle("show-heat", on);
+  el.heat.setAttribute("aria-pressed", String(on));
+  store.set("tt.heat", on ? "1" : "");
+}
+el.heat.addEventListener("click", () => {
   el.heat.blur();
+  applyHeat(el.heat.getAttribute("aria-pressed") !== "true");
+  FX.bump(el.heat, 1.15);
 });
 
 // ---------- start ----------
@@ -727,7 +894,13 @@ el.heat.addEventListener("change", () => {
   const guess = store.get("tt.lang") || (navigator.language || "").slice(0, 2).toLowerCase();
   uiLang = I18N[guess] ? guess : "en";
   const splash = Splash.start();
-  applyKbSize(store.get("tt.kbSize") ?? 100);
+  // keyboard size from last time (an old saved 0 meant "hidden")
+  const saved = Number(store.get("tt.kbSize") ?? 100) || 0;
+  kbHidden = store.get("tt.kbHidden") === "1" || saved === 0;
+  kbSize = saved ? Math.min(KB_MAX, Math.max(KB_MIN, Math.round(saved / KB_STEP) * KB_STEP)) : 100;
+  applyKb();
+  applyHeat(store.get("tt.heat") === "1");
+  labelTips();
   if (isTouch()) el.textBox.classList.add("blurred"); // phone: tap to open the keyboard
   if (location.protocol === "file:") {                 // opened by double-click, no server
     el.text.textContent = t("err.file");
@@ -743,4 +916,5 @@ el.heat.addEventListener("change", () => {
     el.text.textContent = t("err.load");
   }
   await splash.done();
+  if (!store.get("tt.introDone") && layout) showIntro();   // only the very first visit
 })();

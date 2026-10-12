@@ -20,13 +20,13 @@
     <!-- Type / Stats switch with the language switch right below it.
          The yellow pill slides between the options. -->
     <div class="switches">
-    <div class="switch" role="tablist" aria-label="View">
+    <div class="switch" role="tablist" aria-label="View" data-tip="tip.view">
       <span class="switch-thumb" aria-hidden="true"></span>
       <button type="button" role="tab" id="tab-type" aria-selected="true" aria-controls="view-type" data-i18n="tab.type">type</button>
       <button type="button" role="tab" id="tab-stats" aria-selected="false" aria-controls="view-stats" data-i18n="tab.stats">stats</button>
     </div>
     <!-- Buttons come from /api/v1/languages. -->
-    <div class="switch lang-switch" id="lang-switch" role="tablist" aria-label="Language"></div>
+    <div class="switch lang-switch" id="lang-switch" role="tablist" aria-label="Language" data-tip="tip.lang"></div>
     </div>
 
     <div class="live" id="live">
@@ -60,18 +60,30 @@
       <input id="hidden-input" class="hidden-input" autocomplete="off" autocapitalize="off"
              autocorrect="off" spellcheck="false" aria-hidden="true">
 
-      <div class="finger-hint" id="finger-hint">&nbsp;</div>
+      <!-- Which finger presses the next key: two hands, the finger lights up
+           in its color. The sentence below is for screen readers only. -->
+      <div class="hands" id="hands" aria-hidden="true">
+        <div class="hand left">
+          <i data-f="lp"></i><i data-f="lr"></i><i data-f="lm"></i><i data-f="li"></i><i class="thumb" data-f="thl"></i>
+        </div>
+        <div class="hand right">
+          <i class="thumb" data-f="thr"></i><i data-f="ri"></i><i data-f="rm"></i><i data-f="rr"></i><i data-f="rp"></i>
+        </div>
+      </div>
+      <div class="finger-hint sr-only" id="finger-hint" aria-live="off">&nbsp;</div>
 
       <div id="keyboard" class="keyboard" aria-label="On-screen keyboard"></div>
 
-      <div class="toolbar">
-        <button id="btn-new" type="button" data-i18n="btn.new">new exercise <kbd>esc</kbd></button>
-        <button id="btn-intro" type="button" data-i18n="btn.intro">how it works</button>
-        <label class="toggle"><input type="checkbox" id="heat-toggle"> <span data-i18n="toggle.heat">heatmap</span></label>
-        <label class="size" for="kb-size"><span data-i18n="kb.size">keyboard</span>
-          <input type="range" id="kb-size" min="0" max="140" step="10" value="100">
-          <output id="kb-size-out" for="kb-size">100%</output>
-        </label>
+      <!-- Icon buttons; the text of each lives in the tooltip (data-tip). -->
+      <div class="toolbar" role="toolbar">
+        <button id="btn-new" type="button" class="icon" data-tip="tip.new"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg></button>
+        <button id="btn-intro" type="button" class="icon" data-tip="tip.intro"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.6 2.2c-.8.4-1.2 1-1.2 1.8v.4"/><path d="M12 17.2v.1"/></svg></button>
+        <button id="heat-toggle" type="button" class="icon" aria-pressed="false" data-tip="tip.heat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c.8 3.2 4.5 4.8 4.5 9.2a4.5 4.5 0 0 1-9 0c0-1.9.8-3.2 1.9-4.2.1 1.5.8 2.4 1.9 2.8C10.8 8 11 5.4 12 3z"/></svg></button>
+        <div class="kb-size" role="group">
+          <button id="kb-smaller" type="button" class="icon small" data-tip="tip.smaller"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+          <button id="kb-toggle" type="button" class="icon" aria-pressed="true" data-tip="tip.kb"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="11" rx="2"/><path d="M7 10.5h.01M10 10.5h.01M13 10.5h.01M16 10.5h.01M8 14h8"/></svg><span id="kb-size-out">100%</span></button>
+          <button id="kb-larger" type="button" class="icon small" data-tip="tip.larger"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg></button>
+        </div>
       </div>
     </section>
 
@@ -100,40 +112,48 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="tooltip" class="tooltip" role="tooltip"></div>
 
-  <!-- Intro: three short steps, shown on the first visit. -->
+  <!-- Intro for the very first visit: a short hands-on start, not a text to read.
+       Steps 0 and 1 wait for real key presses (physical keys, so it works with
+       any system layout). -->
   <div id="intro" class="intro hidden" role="dialog" aria-modal="true" aria-labelledby="intro-title">
     <div class="intro-card">
       <div class="intro-steps" id="intro-steps">
         <section class="intro-step" data-step="0">
-          <p class="intro-kicker" data-i18n="intro.kicker0">touch typing, step by step</p>
-          <h2 id="intro-title" data-i18n="intro.title0">Type without looking down.</h2>
-          <p data-i18n="intro.p0">You type real words. The trainer watches which letters trip you up or slow you
-             down, and puts them into the next exercise more often. No settings, no modes.</p>
+          <p class="intro-kicker" data-i18n="intro.kicker0">1 / 3 · home row</p>
+          <h2 id="intro-title" data-i18n="intro.title0">Put your fingers on the middle row</h2>
+          <div class="home-row" id="intro-home" aria-hidden="true"></div>
+          <p data-i18n="intro.p0">Left hand on A S D F, right hand on J K L ;. Feel the bumps on F and J.</p>
+          <p class="intro-do" data-i18n="intro.do0">press all eight keys</p>
         </section>
         <section class="intro-step" data-step="1">
-          <p class="intro-kicker" data-i18n="intro.kicker1">home position</p>
-          <h2 data-i18n="intro.title1">Fingers on the middle row.</h2>
-          <div class="home-row" id="intro-home" aria-hidden="true"></div>
-          <p data-i18n="intro.p1">Feel the small bumps on <b>F</b> and <b>J</b>: your index fingers go there,
-             thumbs rest on space. Every key is colored by the finger that presses it.</p>
+          <p class="intro-kicker" data-i18n="intro.kicker1">2 / 3 · thumbs</p>
+          <h2 data-i18n="intro.title1">Thumbs rest on the space bar</h2>
+          <div class="intro-space" id="intro-space" aria-hidden="true"><span data-i18n="key.space">space</span></div>
+          <p data-i18n="intro.p1">Either thumb can press it.</p>
+          <p class="intro-do" data-i18n="intro.do1">press space</p>
         </section>
         <section class="intro-step" data-step="2">
-          <p class="intro-kicker"><span data-i18n="intro.kicker2">how you progress</span><span id="intro-lang"></span></p>
-          <h2 data-i18n="intro.title2">A few letters first, then more.</h2>
-          <p data-i18n="intro.p2">You start with the most common letters. Type each of them cleanly at
-             <b>30</b> words per minute and the next letter opens.
-             The highlighted letter is your weakest one right now.</p>
-          <p class="intro-small" data-i18n="intro.small">Accuracy first. Speed comes on its own.</p>
+          <p class="intro-kicker" data-i18n="intro.kicker2">3 / 3 · eyes up</p>
+          <h2 data-i18n="intro.title2">Watch the screen, not your hands</h2>
+          <div class="hands intro-hands" id="intro-hands" aria-hidden="true"></div>
+          <p data-i18n="intro.p2">The yellow key is the next one, and the hands show which finger presses it. Mistakes are fine: the trainer uses them to pick your next words.</p>
+          <p class="intro-do" data-i18n="intro.do2">press any key</p>
+        </section>
+        <section class="intro-step" data-step="3">
+          <p class="intro-kicker"><span data-i18n="intro.kicker3">ready</span><span id="intro-lang"></span></p>
+          <h2 data-i18n="intro.title3">Start with a few letters</h2>
+          <p data-i18n="intro.p3">New letters open when you type the current ones cleanly at {target} words per minute.</p>
           <div class="intro-choice">
-            <button id="intro-new" type="button" class="primary" data-i18n="intro.new">I'm new to this</button>
+            <button id="intro-new" type="button" class="primary" data-i18n="intro.new">Start <kbd>enter</kbd></button>
             <button id="intro-pro" type="button" data-i18n="intro.pro">I can already touch type</button>
           </div>
+          <p class="intro-small" data-i18n="intro.keys">Shortcuts: Shift+Tab statistics · Alt+1…4 language · Esc new text</p>
         </section>
       </div>
       <div class="intro-nav">
         <button id="intro-skip" type="button" class="link" data-i18n="intro.skip">skip</button>
-        <div class="dots" id="intro-dots"><i></i><i></i><i></i></div>
-        <button id="intro-next" type="button" class="primary" data-i18n="intro.next">next</button>
+        <div class="dots" id="intro-dots"><i></i><i></i><i></i><i></i></div>
+        <button id="intro-next" type="button" class="link" data-i18n="intro.next">next</button>
       </div>
     </div>
   </div>
