@@ -8,13 +8,19 @@ import "typingtrainer/internal/engine"
 type Config struct {
 	Addr      string // address the HTTP server listens on
 	MaxEvents int    // safety limit for one results request
-	Engine    engine.Params
+
+	MaxImportBytes    int // largest accepted import body (one language)
+	MaxImportSessions int // most history entries accepted in one import
+	Engine            engine.Params
 }
 
 func Default() Config {
 	return Config{
 		Addr:      "localhost:3000",
 		MaxEvents: 5000,
+
+		MaxImportBytes:    8 << 20, // 8 MB: years of history still fit
+		MaxImportSessions: 50000,
 		Engine: engine.Params{
 			Alpha:         0.1,  // EMA: roughly the last ~20 occurrences of a letter matter
 			MaxIntervalMs: 2000, // gaps over 2 s are pauses, ignored for speed

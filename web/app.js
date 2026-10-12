@@ -940,6 +940,71 @@ btnReset.addEventListener("click", async () => {
 btnReset.addEventListener("pointerleave", (e) => { if (e.pointerType !== "touch") disarmReset(); }); // a tap "leaves" at once
 btnReset.addEventListener("blur", disarmReset);
 
+// ---------- export / import ----------
+// All statistics of all languages as ONE json file. The server does the real
+// work (/export and /import per language); here we only join the pieces into a
+// file, and split a loaded file back into pieces. Import REPLACES the data.
+const FILE_APP = "typing-trainer", FILE_VERSION = 1;
+const importFile = $("import-file");
+
+$("btn-export").addEventListener("click", async (e) => {
+  e.currentTarget.blur();
+  try {
+    const out = { app: FILE_APP, version: FILE_VERSION, exportedAt: new Date().toISOString(), languages: {} };
+    for (const l of languages) {
+      const res = await fetch(`${API}/export?lang=${encodeURIComponent(l.id)}`);
+      if (!res.ok) throw new Error(`export ${l.id} -> ${res.status}`);
+      out.languages[l.id] = await res.json();
+    }
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(new Blob([JSON.stringify(out)], { type: "application/json" }));
+    link.download = `typing-trainer-${out.exportedAt.slice(0, 10)}.json`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(link.href), 5000); // cleanup only, not an animation
+    FX.toast(t("toast.exported"));
+  } catch (err) {
+    console.error(err);
+    FX.toast(t("toast.importFail"));
+  }
+});
+
+$("btn-import").addEventListener("click", (e) => {
+  e.currentTarget.blur();
+  if (!busy) importFile.click();
+});
+importFile.addEventListener("change", async () => {
+  const file = importFile.files[0];
+  importFile.value = "";                      // the same file can be chosen again
+  if (!file || busy) return;
+  busy = true;
+  try {
+    const data = JSON.parse(await file.text());
+    if (data.app !== FILE_APP || data.version !== FILE_VERSION || !data.languages || typeof data.languages !== "object") {
+      throw new Error("this is not a typing-trainer file");
+    }
+    const ids = languages.map((l) => l.id).filter((id) => data.languages[id]);
+    if (!ids.length) throw new Error("the file has none of our languages");
+    let exercises = 0;
+    for (const id of ids) {
+      const res = await fetch(`${API}/import?lang=${encodeURIComponent(id)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data.languages[id]),
+      });
+      if (!res.ok) throw new Error(`import ${id} -> ${res.status}`);
+      exercises += (await res.json()).sessions;
+    }
+    store.set("tt.flash", String(exercises)); // shown by init() after the reload
+    location.reload();
+  } catch (err) {
+    console.error(err);
+    busy = false;
+    FX.toast(t("toast.importFail"));
+  }
+});
+
 function applyHeat(on) {
   el.keyboard.classList.toggle("show-heat", on);
   el.heat.setAttribute("aria-pressed", String(on));
@@ -981,5 +1046,10 @@ el.heat.addEventListener("click", () => {
     el.text.textContent = t("err.load");
   }
   await splash.done();
+  const flash = store.get("tt.flash");                     // set by a finished import
+  if (flash) {
+    store.set("tt.flash", "");
+    FX.toast(t("toast.imported", { n: flash }));
+  }
   if (!store.get("tt.introDone") && layout) showIntro();   // only the very first visit
 })();

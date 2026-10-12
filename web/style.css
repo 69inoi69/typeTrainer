@@ -572,7 +572,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .toasts .toast:nth-child(n+3) { display: none; }
   .toolbar { gap: 6px; }
   button.icon { height: 34px; min-width: 34px; padding: 0 7px; }
-  .kb-size button.small { min-width: 26px; }
+  .kb-size button.small { display: none; } /* phone: the keyboard is hidden by default, no room for -/+ */
   #kb-size-out { min-width: 0; }
   #btn-reset { margin-left: 0; }
 }

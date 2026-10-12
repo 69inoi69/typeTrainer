@@ -71,11 +71,22 @@ All responses are JSON. Every route except `/languages` takes `?lang=<id>`
 | POST | `/api/v1/results` | `{samples: [{char, errors, ms}], wpm, accuracy}` | `{unlocked, newLetter}` |
 | POST | `/api/v1/progress` | `{unlockAll: true\|false}` | `{unlocked}` |
 | POST | `/api/v1/reset` | | `{ok: true}`; deletes all data of the language (reset button, until there are user accounts) |
+| GET | `/api/v1/export` | | `{unlocked, keys: {char: {count, mistakes, errEma, timeEma, timedCount}}, sessions: [all, OLDEST first]}`; everything stored for the language |
+| POST | `/api/v1/import` | the same JSON as `/export` | `{unlocked, sessions}`; REPLACES the language's data, or changes nothing if the data is invalid |
 | GET | `/api/v1/stats` | | `{keys: [{char, count, errorRate, avgMs, difficulty, mastered, unlocked}], sessions: [last 50, newest first], sessionCount, targetWpm}` |
 
 Validation on `/results`: 1–5000 samples, each with exactly one character that
 is a letter of the language or a space, `errors >= 0`, `ms >= 0`; WPM 0–400;
 accuracy 0–100. Body limit 1 MB.
+
+Validation on `/import`: `unlocked` between 0 and the number of letters; every key is
+one letter of the language or a space; per letter `0 <= mistakes <= count`,
+`0 <= timedCount <= count`, `0 <= errEma <= 1`, `timeEma >= 0`; per session WPM
+0–400, accuracy 0–100, `chars >= 0`. Limits (`MaxImportBytes`,
+`MaxImportSessions`) are in `internal/config/config.go`. The browser joins the
+languages into one file `{app, version, exportedAt, languages: {id: <export>}}`
+(see `web/app.js`, "export / import"). Import and export use only the existing
+`Store` methods, so the future PostgreSQL store needs nothing extra.
 
 Every `Store` method takes the language id, so each language has its own
 statistics, unlocked letters and history. Each language also has its own

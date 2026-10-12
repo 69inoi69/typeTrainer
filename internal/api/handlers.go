@@ -56,6 +56,8 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/results", s.withLang(s.handleResults))
 	mux.HandleFunc("POST /api/v1/progress", s.withLang(s.handleProgress))
 	mux.HandleFunc("POST /api/v1/reset", s.withLang(s.handleReset))
+	mux.HandleFunc("GET /api/v1/export", s.withLang(s.handleExport))
+	mux.HandleFunc("POST /api/v1/import", s.withLang(s.handleImport))
 	mux.HandleFunc("GET /api/v1/stats", s.withLang(s.handleStats))
 }
 
@@ -182,6 +184,114 @@ func (s *Server) handleReset(w http.ResponseWriter, r *http.Request, l *Language
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
+}
+
+// langExport is everything stored for one language, in a form that can be
+// saved to a file and loaded back (the same shape is used in both directions).
+type langExport struct {
+	Unlocked int                       `json:"unlocked"` // how many letters are open
+	Keys     map[string]engine.KeyStat `json:"keys"`     // the raw statistics per letter
+	Sessions []storage.Session         `json:"sessions"` // finished exercises, OLDEST first
+}
+
+// GET /api/v1/export?lang= -> all stored data of the language (nothing is cut:
+// the full history, not the last 50). The browser joins the languages in a file.
+func (s *Server) handleExport(w http.ResponseWriter, r *http.Request, l *Language) {
+	id := l.Info.ID
+	keys, err := s.store.KeyStats(id)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	unlocked, err := s.store.Unlocked(id)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	count, err := s.store.SessionCount(id)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	newestFirst, err := s.store.RecentSessions(id, count)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	sessions := make([]storage.Session, len(newestFirst))
+	for i, sess := range newestFirst {
+		sessions[len(newestFirst)-1-i] = sess // the file reads like a diary: oldest first
+	}
+	writeJSON(w, http.StatusOK, langExport{Unlocked: unlocked, Keys: keys, Sessions: sessions})
+}
+
+// POST /api/v1/import?lang= <the JSON from /export> -> REPLACES everything stored
+// for the language. The data is checked first; if anything is wrong nothing changes.
+func (s *Server) handleImport(w http.ResponseWriter, r *http.Request, l *Language) {
+	r.Body = http.MaxBytesReader(w, r.Body, int64(s.cfg.MaxImportBytes))
+	var in langExport
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		badRequest(w, "invalid JSON")
+		return
+	}
+	if msg := validateImport(in, s.cfg.MaxImportSessions, len(l.Gen.Order()), l.Info.Alphabet); msg != "" {
+		badRequest(w, msg)
+		return
+	}
+	if in.Keys == nil {
+		in.Keys = map[string]engine.KeyStat{}
+	}
+	id := l.Info.ID
+
+	s.writeMu.Lock()
+	defer s.writeMu.Unlock()
+	if err := s.store.Reset(id); err != nil {
+		serverError(w, err)
+		return
+	}
+	if err := s.store.SaveKeyStats(id, in.Keys); err != nil {
+		serverError(w, err)
+		return
+	}
+	if err := s.store.SetUnlocked(id, in.Unlocked); err != nil {
+		serverError(w, err)
+		return
+	}
+	for _, sess := range in.Sessions {
+		if err := s.store.AddSession(id, sess); err != nil {
+			serverError(w, err)
+			return
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]int{"unlocked": in.Unlocked, "sessions": len(in.Sessions)})
+}
+
+// validateImport makes sure a loaded file cannot put impossible numbers or
+// foreign letters into the statistics. letters = how many letters the
+// language's unlock order has.
+func validateImport(in langExport, maxSessions, letters int, alphabet string) string {
+	if in.Unlocked < 0 || in.Unlocked > letters {
+		return "unlocked: out of range"
+	}
+	for ch, k := range in.Keys {
+		if utf8.RuneCountInString(ch) != 1 || (ch != " " && !strings.Contains(alphabet, ch)) {
+			return "keys: " + ch + " is not a letter of this language"
+		}
+		if k.Count < 0 || k.Mistakes < 0 || k.Mistakes > k.Count ||
+			k.TimedCount < 0 || k.TimedCount > k.Count ||
+			k.ErrEMA < 0 || k.ErrEMA > 1 || k.TimeEMA < 0 {
+			return "keys: impossible numbers for " + ch
+		}
+	}
+	if len(in.Sessions) > maxSessions {
+		return "sessions: too many"
+	}
+	for _, sess := range in.Sessions {
+		if sess.WPM < 0 || sess.WPM > 400 || sess.Accuracy < 0 || sess.Accuracy > 100 || sess.Chars < 0 {
+			return "sessions: wpm, accuracy or chars out of range"
+		}
+	}
+	return ""
 }
 
 // POST /api/v1/progress?lang= {"unlockAll": true} -> for people who can already

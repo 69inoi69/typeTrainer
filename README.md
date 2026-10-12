@@ -96,6 +96,9 @@ on reload.
   heatmap (tints keys red by how hard they are for you; lit = on), and
   `−` keyboard `+`: size from 70 % to 150 %, the middle button hides or shows
   keyboard and hands. All remembered in your browser.
+- The two arrow buttons save your statistics (all languages, full history) to one
+  `.json` file and load such a file back. Loading **replaces** the current data.
+  Use it to keep progress across server restarts (or page reloads on the website).
 - The red-on-click bin button resets everything: progress in all languages and
   the settings saved in your browser, as on the very first visit. It needs a
   second click (the first one turns it red), so it does not happen by accident.
