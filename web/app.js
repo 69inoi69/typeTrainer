@@ -85,7 +85,7 @@ function makeKey(k) {
   key.style.setProperty("--fc", finger.color);
   if (k.width) key.style.width = `calc(var(--u) * ${k.width} + var(--u) * .12 * ${k.width - 1})`;
   key.innerHTML = `<span class="heat"></span><span class="lbl"></span>`;
-  key.querySelector(".lbl").textContent = k.label || k.char;
+  key.querySelector(".lbl").textContent = k.char === " " ? t("key.space") : (k.label || k.char);
   if (k.alt) {                         // second letter, typed with AltGr
     const alt = document.createElement("span");
     alt.className = "alt";
@@ -93,7 +93,7 @@ function makeKey(k) {
     key.appendChild(alt);
   }
   if (k.modifier) key.classList.add("mod");
-  key.title = finger.name;
+  key.title = t(`fingerName.${k.finger}`);
   return key;
 }
 
@@ -132,14 +132,14 @@ function highlightNextKey() {
   nextKeyEl = keyEls[base] || null;
   if (!nextKeyEl) { el.hint.innerHTML = "&nbsp;"; return; }
   nextKeyEl.classList.add("next");
-  const finger = layout.fingers[fingerOf[base]];
-  el.hint.style.setProperty("--fc", finger.color);
-  const name = ch === " " ? "space" : ch;
+  const fingerId = fingerOf[base];
+  el.hint.style.setProperty("--fc", layout.fingers[fingerId].color);
+  const vars = { key: ch === " " ? t("key.space") : ch, base, finger: t(`finger.${fingerId}`) };
   if (altBase[ch]) {
     if (altgrEl) altgrEl.classList.add("next");
-    el.hint.innerHTML = `press <b>${name}</b>: hold <b>altgr</b> with your right thumb, then <b>${base}</b> with your <b>${finger.name.toLowerCase()}</b>`;
+    el.hint.innerHTML = t("hint.alt", vars);
   } else {
-    el.hint.innerHTML = `press <b>${name}</b> with your <b>${finger.name.toLowerCase()}</b>`;
+    el.hint.innerHTML = t("hint.press", vars);
   }
 }
 
@@ -163,7 +163,7 @@ function applyKbSize(v) {
   document.documentElement.style.setProperty("--kb-scale", Math.max(v, 10) / 100);
   el.keyboard.classList.toggle("off", v === 0);
   el.hint.style.visibility = v === 0 ? "hidden" : "";
-  el.kbSizeOut.textContent = v === 0 ? "off" : v + "%";
+  el.kbSizeOut.textContent = v === 0 ? t("kb.off") : v + "%";
   el.kbSize.value = v;
 }
 el.kbSize.addEventListener("input", () => {
@@ -230,10 +230,12 @@ function renderLetters() {
   const mastered = exercise.unlocked.filter((c) => info[c]?.mastered).length;
   const started = (lastStats?.sessionCount ?? 0) > 0;
   let caption;
-  if (!started) caption = `${openCount} of ${all} letters open. Type the text to begin.`;
-  else if (focusHasData) caption = `focus: <b>${exercise.focus}</b> · mastered ${mastered} of ${openCount} open letters`;
-  else caption = `mastered ${mastered} of ${openCount} open letters`;
-  if (exercise.locked.length && started) caption += ` · master all to open <b>${exercise.locked[0]}</b>`;
+  if (!started) caption = t("caption.start", { open: openCount, all });
+  else {
+    caption = t("caption.mastered", { m: mastered, n: openCount });
+    if (focusHasData) caption = t("caption.focus", { letter: exercise.focus }) + " · " + caption;
+  }
+  if (exercise.locked.length && started) caption += " · " + t("caption.next", { letter: exercise.locked[0] });
   el.lettersCaption.innerHTML = caption;
   popLetter = null;
 }
@@ -318,9 +320,7 @@ function handleChar(ch) {
 
 function showWarn(kind) {
   const info = languages.find((l) => l.id === lang);
-  el.warn.innerHTML = kind === "caps"
-    ? "<b>Caps Lock</b> is on"
-    : `Your keyboard is typing in another language. Switch the system layout to <b>${info?.systemLayout ?? lang}</b> (Windows: <kbd>Win</kbd> + <kbd>Space</kbd>)`;
+  el.warn.innerHTML = kind === "caps" ? t("warn.caps") : t("warn.layout", { layout: info?.systemLayout ?? lang });
   el.warn.classList.add("show");
 }
 function hideWarn() {
@@ -356,13 +356,13 @@ async function finishExercise() {
     const res = await postJSON("/results", { samples, wpm, accuracy });
     if (res.newLetter) {
       popLetter = res.newLetter;
-      toast(`new letter: <b>${res.newLetter}</b> · find it on the keyboard before you start`);
+      toast(t("toast.newLetter", { letter: res.newLetter }));
     }
     await refreshStats();
     await loadExercise();   // generated from the UPDATED model
   } catch (err) {
     console.error(err);
-    el.hint.textContent = "could not reach the server. Is it running?";
+    el.hint.textContent = t("err.server");
   } finally {
     busy = false;
   }
@@ -378,7 +378,8 @@ function toast(html) {
 
 async function refreshStats() {
   lastStats = await getJSON("/stats");
-  $("intro-target").textContent = lastStats.targetWpm;
+  i18nVars.target = lastStats.targetWpm;
+  applyI18n(el.intro);
   const heat = new Map();               // one key can carry two letters (a, ą): show the harder
   for (const k of lastStats.keys) {
     const key = keyFor(k.char);
@@ -417,10 +418,10 @@ function renderStats() {
   const fmt = (v, suffix = "") => v === null ? "—" : Math.round(v) + suffix;
   const best = sessions.length ? Math.max(...sessions.map((x) => x.wpm)) : null;
   el.tiles.innerHTML = [
-    [s.sessionCount, "exercises"],
-    [fmt(best), "best wpm"],
-    [fmt(avg(last10, (x) => x.wpm)), "avg wpm, last 10"],
-    [fmt(avg(last10, (x) => x.accuracy), "%"), "avg accuracy, last 10"],
+    [s.sessionCount, t("tile.exercises")],
+    [fmt(best), t("tile.best")],
+    [fmt(avg(last10, (x) => x.wpm)), t("tile.avgWpm")],
+    [fmt(avg(last10, (x) => x.accuracy), "%"), t("tile.avgAcc")],
   ].map(([v, l]) => `<div class="tile"><b>${v}</b><small>${l}</small></div>`).join("");
 
   drawChart(sessions, s.targetWpm, s.sessionCount);
@@ -430,12 +431,13 @@ function renderStats() {
 // Bar chart of WPM per exercise, drawn as SVG by hand (no chart library).
 function drawChart(sessions, target, total) {
   if (!sessions.length) {
-    el.chart.innerHTML = `<div class="empty">finish an exercise and it shows up here</div>`;
+    el.chart.innerHTML = `<div class="empty">${t("chart.empty")}</div>`;
     el.chartNote.textContent = "";
     return;
   }
   const first = total - sessions.length + 1; // number of the oldest shown exercise
-  el.chartNote.textContent = `${sessions.length === total ? "all" : "last " + sessions.length} exercises · dashed line = goal ${target} wpm`;
+  const scope = sessions.length === total ? t("chart.all") : t("chart.last", { n: sessions.length });
+  el.chartNote.textContent = t("chart.note", { scope, target });
 
   // draw at the real pixel width, so text stays 11px on a phone too
   const W = Math.max(280, el.chart.clientWidth || 860), H = 200, padL = 34, padR = 8, padT = 10, padB = 22;
@@ -492,13 +494,14 @@ function drawLetterGrid(keys) {
   keys = [...keys.filter((k) => k.unlocked), ...keys.filter((k) => !k.unlocked)];
   el.letterGrid.innerHTML = keys.map((k) => {
     let meta;
-    if (!k.unlocked) meta = "locked";
-    else if (!k.count) meta = "no data yet";
-    else meta = `${Math.round(k.errorRate * 100)}% err` + (k.avgMs ? ` · ${Math.round(k.avgMs)} ms` : "");
+    if (!k.unlocked) meta = t("letter.locked");
+    else if (!k.count) meta = t("letter.noData");
+    else meta = t("letter.err", { e: Math.round(k.errorRate * 100) }) +
+      (k.avgMs ? " · " + t("letter.ms", { ms: Math.round(k.avgMs) }) : "");
     const width = k.count ? Math.round(k.difficulty * 100) : 0;
-    return `<div class="lcard${k.unlocked ? "" : " locked"}${k.mastered ? " mastered" : ""}" title="${k.mastered ? "mastered" : ""}">
+    return `<div class="lcard${k.unlocked ? "" : " locked"}${k.mastered ? " mastered" : ""}" title="${k.mastered ? t("letter.mastered") : ""}">
       <span class="ch">${k.char}</span>
-      <div class="meter" title="difficulty ${k.difficulty.toFixed(2)}"><i style="width:${width}%"></i></div>
+      <div class="meter" title="${t("letter.difficulty")} ${k.difficulty.toFixed(2)}"><i style="width:${width}%"></i></div>
       <div class="meta">${meta}</div>
     </div>`;
   }).join("");
@@ -582,13 +585,20 @@ async function loadLanguage(id) {
     const info = languages.find((l) => l.id === id);
     alphabet = new Set(info.alphabet);
     document.documentElement.lang = id;
+    uiLang = I18N[id] ? id : "en";        // the interface follows the typing language
     markLangSwitch();
     hideWarn();
     el.live.classList.remove("final");
     layout = await getJSON("/layout");
     drawKeyboard();
+    // home-row keys for the intro text ("bumps on F and J" / "on А and О")
+    const home = layout.rows.flat().filter((k) => k.home).map((k) => k.char.toUpperCase());
+    [i18nVars.f, i18nVars.j] = home;
+    applyI18n();
+    applyKbSize(el.kbSize.value);           // re-translates "off"
     await refreshStats();
     await loadExercise();
+    if (view === "stats") renderStats();
 
     const level = store.get(`tt.level.${id}`);
     if (!level) {
@@ -656,7 +666,7 @@ el.heat.addEventListener("change", () => {
   applyKbSize(store.get("tt.kbSize") ?? 100);
   if (isTouch()) el.textBox.classList.add("blurred"); // phone: tap to open the keyboard
   if (location.protocol === "file:") {                 // opened by double-click, no server
-    el.text.textContent = "Open this page through the server: run `go run .` and go to the address it prints (http://localhost:3000).";
+    el.text.textContent = t("err.file");
     return;
   }
   try {
@@ -665,6 +675,6 @@ el.heat.addEventListener("change", () => {
     await loadLanguage(initialLanguage());
   } catch (err) {
     console.error(err);
-    el.text.textContent = "Could not load from the server. Is the Go server running?";
+    el.text.textContent = t("err.load");
   }
 })();

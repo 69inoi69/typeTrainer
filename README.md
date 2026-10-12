@@ -66,8 +66,9 @@ on reload.
   locked letters (outlined). Master every open letter and the next one opens.
 - The keyboard shows the next key in its finger color; keys you do not need yet
   are dimmed. `Esc` or "new exercise" gives a new text without saving.
-- The **EN · PL · UK · RU** switch changes the language (remembered in your
-  browser; the first time it follows your browser's language).
+- The **EN · PL · UK · RU** switch changes the language you practise **and the
+  language of the interface** (remembered in your browser; the first time it
+  follows your browser's language).
 - "keyboard" slider: size of the on-screen keyboard (0 = hidden). Remembered in
   your browser. "heatmap" tints keys red by how hard they are for you.
 - The **type / stats** switch at the top opens the statistics screen: totals,
@@ -107,7 +108,7 @@ typing-trainer/
 │   ├── layout/layout.go          loads and validates layout JSON
 │   ├── language/language.go      loads languages.json, checks words against the alphabet
 │   └── api/handlers.go           HTTP JSON API under /api/v1/
-└── web/                          index.html, style.css, app.js
+└── web/                          index.html, style.css, app.js, i18n.js (interface texts)
 ```
 
 ## The algorithm in short

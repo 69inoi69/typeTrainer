@@ -145,6 +145,11 @@ button, input { font: inherit; }
 /* ---------- finger hint ---------- */
 .finger-hint { text-align: center; color: var(--sub); margin: 16px 0 10px; min-height: 1.4em; }
 .finger-hint b { color: var(--fc, var(--text)); font-weight: 600; transition: color var(--fast); }
+.finger-hint kbd.hk {                 /* the key to press, drawn as a small key cap */
+  display: inline-block; min-width: 1.6em; padding: 1px 6px; margin: 0 1px; text-align: center;
+  font-size: 1em; color: var(--fc, var(--text)); background: var(--panel);
+  border-bottom: 2px solid color-mix(in srgb, var(--fc, var(--sub)) 60%, transparent);
+}
 
 /* ---------- keyboard ---------- */
 .keyboard { display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * .12); user-select: none; }
