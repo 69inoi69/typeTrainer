@@ -13,7 +13,7 @@ const $ = (id) => document.getElementById(id);
 const el = {
   textBox: $("text-box"), text: $("text"), caret: $("caret"), input: $("hidden-input"),
   keyboard: $("keyboard"), hint: $("finger-hint"),
-  live: $("live"), wpm: $("wpm"), acc: $("acc"),
+  live: $("live"), wpm: $("wpm"), raw: $("raw"), acc: $("acc"), motto: $("logo-motto"),
   letters: $("letters"), lettersCaption: $("letters-caption"),
   tooltip: $("tooltip"),
   btnNew: $("btn-new"), btnIntro: $("btn-intro"), heatKb: $("heat-kb"),
@@ -53,6 +53,8 @@ let popLetter = null;      // letter that was just unlocked (for the animation)
 let view = "type";         // "type" or "stats"
 
 // Rewards (they change nothing in the statistics, they only feel nice)
+const MOTTOS = 8;           // motto.0 ... motto.7 in i18n.js
+const mottoIndex = Math.floor(Math.random() * MOTTOS);   // the small phrase over the logo
 let streak = 0;            // words in a row typed without a single mistake
 let wordClean = true;      // no mistake in the current word so far
 let tabsResisted = 0;      // Tab presses during this exercise (no restart here)
@@ -125,7 +127,7 @@ function drawKeyboard() {
   });
   // the hands take the finger colors of this layout (both thumbs: "th")
   handFingers = {};
-  for (const f of el.hands.querySelectorAll("i[data-f]")) {
+  for (const f of el.hands.querySelectorAll("[data-f]")) {
     const id = f.dataset.f;
     f.style.setProperty("--fc", layout.fingers[id.startsWith("th") ? "th" : id].color);
     handFingers[id] = f;
@@ -326,7 +328,7 @@ function showExercise(ex) {
   void el.text.offsetWidth;                  // restart the fade-in (once per exercise)
   el.text.classList.add("swap");
   el.textBox.classList.remove("typing");
-  if (!el.live.classList.contains("final")) { el.wpm.textContent = "0"; el.acc.textContent = "100"; }
+  if (!el.live.classList.contains("final")) { el.wpm.textContent = "0"; el.raw.textContent = "0"; el.acc.textContent = "100"; }
   highlightNextKey();
   renderLetters();
   placeCaret(true);
@@ -446,11 +448,19 @@ function currentWpm() {
   const minutes = (performance.now() - startTime) / 60000;
   return minutes > 0 ? (pos / 5) / minutes : 0;
 }
+// raw: every keypress counts, the wrong ones too (as on monkeytype).
+// Shown in the header only; never sent to the server.
+function currentRaw() {
+  if (startTime === null) return 0;
+  const minutes = (performance.now() - startTime) / 60000;
+  return minutes > 0 ? (presses / 5) / minutes : 0;
+}
 function currentAccuracy() {
   return presses ? (correctPresses / presses) * 100 : 100;
 }
 function updateLive() {
   el.wpm.textContent = Math.round(currentWpm());
+  el.raw.textContent = Math.round(currentRaw());
   el.acc.textContent = Math.round(currentAccuracy());
 }
 // keep WPM ticking while the user pauses
@@ -464,6 +474,7 @@ async function finishExercise() {
   // the numbers count up from zero, just because it feels good
   el.live.classList.add("final");
   FX.countUp(el.wpm, Math.round(wpm));
+  FX.countUp(el.raw, Math.round(currentRaw()));
   FX.countUp(el.acc, Math.round(accuracy));
   // remember the state before, to see what this exercise achieved
   const prevBest = Math.max(0, ...(lastStats?.sessions ?? []).map((x) => x.wpm));
@@ -707,7 +718,7 @@ function drawIntroKeys() {
   });
   // a copy of the hands for step 2, with the fingers lighting up one by one
   $("intro-hands").innerHTML = el.hands.innerHTML;
-  $("intro-hands").querySelectorAll("i").forEach((f, i) => {
+  $("intro-hands").querySelectorAll("[data-f]").forEach((f, i) => {
     f.classList.remove("on");
     f.style.setProperty("--d", i);       // animation delay: finger after finger
   });
@@ -894,6 +905,7 @@ async function loadLanguage(id) {
     // home-row keys for the intro text ("bumps on F and J" / "on А and О")
     const home = layout.rows.flat().filter((k) => k.home).map((k) => k.char.toUpperCase());
     [i18nVars.f, i18nVars.j] = home;
+    el.motto.innerHTML = t(`motto.${mottoIndex}`, i18nVars);   // after f / j are known
     const row = layout.rows[1].map((k) => k.char.toUpperCase());
     i18nVars.l = row.slice(0, 4).join(" ");
     i18nVars.r = row.slice(6, 10).join(" ");

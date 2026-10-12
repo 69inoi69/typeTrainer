@@ -94,8 +94,8 @@ on reload.
   animation: record (gold trophy), new letter (blue, the letter itself),
   mastered (green check), streak (orange flame), Tab urges beaten (violet
   shield), Tab message (small, grey).
-- Icon buttons under the keyboard (hover for a tooltip): new text, intro, and
-  `−` keyboard `+`: size from 70 % to 150 %, the middle button hides or shows
+- Buttons under the keyboard (hover for a tooltip): **beginner guide** (the
+  intro again), `−` keyboard `+`: size from 70 % to 150 %, the middle button hides or shows
   keyboard and hands. All remembered in your browser.
 - The two arrow buttons save your statistics (all languages, full history) to one
   `.json` file and load such a file back. Loading **replaces** the current data.
@@ -103,7 +103,12 @@ on reload.
 - The red-on-click bin button resets everything: progress in all languages and
   the settings saved in your browser, as on the very first visit. It needs a
   second click (the first one turns it red), so it does not happen by accident.
-- Shortcuts: `Esc` new text · `Shift + Tab` type / stats · `Alt + 1…4` language.
+- Shortcuts, also listed small at the bottom of the page: `Esc` new text ·
+  `Shift + Tab` type / stats · `Alt + 1…4` language. On phones (no Esc key) a
+  "new text" button is shown under the text instead.
+- The header shows **wpm**, **raw** (every keypress counts, wrong ones too, like
+  on monkeytype; only shown, never stored) and accuracy. Over the logo there is
+  a small random motto.
 - The **keyboard / chart** icon switch at the top (or `Shift + Tab`) opens the statistics screen: totals,
   speed of every exercise, a **difficulty keyboard** (grey keys, the redder the
   harder the letter is for you, dashed = no data yet; hover or tap a key for

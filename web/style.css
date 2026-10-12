@@ -46,15 +46,24 @@ button, input { font: inherit; }
 
 /* ---------- header ---------- */
 .top {
-  width: 100%; max-width: 900px; margin: 0 auto; padding: 22px 16px;
+  width: 100%; max-width: 1160px; margin: 0 auto; padding: 22px 16px;   /* wider than the page: room for the numbers */
   /* logo | switches | numbers. The side columns are equal (1fr), so the
      switches stay exactly in the middle whatever the language or the numbers */
   display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px 20px;
 }
-.logo { font-size: 1.4rem; color: var(--sub); }
-.logo span { color: var(--text); }
+.logo { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.logo-key { width: 34px; height: 34px; flex: none; }
+.logo-text { display: flex; flex-direction: column; line-height: 1; min-width: 0; }
+.logo-motto {                     /* small random phrase, like "monkey see" on monkeytype */
+  font-size: .62rem; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin: 0 0 3px 1px; letter-spacing: .02em;
+}
+.logo-name { font-size: 1.75rem; color: var(--accent); white-space: nowrap; }
+.logo-name span { color: var(--text); }
 .live { display: flex; gap: 14px; justify-content: flex-end; align-items: baseline; }
 .switches { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px; }
+.metric.raw span { color: color-mix(in srgb, var(--accent) 55%, var(--sub)); }   /* secondary number */
+.metric.raw { cursor: default; }
 .metric span { font-size: 1.6rem; color: var(--accent); font-variant-numeric: tabular-nums; transition: color var(--med); }
 .metric small { color: var(--sub); margin-left: 4px; white-space: nowrap; }
 .live.final .metric span { color: var(--text); }   /* result of the last exercise */
@@ -246,43 +255,26 @@ button, input { font: inherit; }
    and shrink with the keyboard. Lift and tilt use the separate CSS
    "translate" and "rotate" properties, so they never fight each other. */
 .hands {
-  display: flex; justify-content: center; align-items: flex-end; gap: calc(var(--u) * 1.4);
-  margin: 18px 0 14px; user-select: none; pointer-events: none;
+  display: flex; justify-content: center; align-items: flex-end; gap: calc(var(--u) * .9);
+  margin: 14px 0 12px; user-select: none; pointer-events: none;
 }
 .hands.off { display: none; }
-.hand { position: relative; display: flex; align-items: flex-end; gap: calc(var(--u) * .1); padding-bottom: calc(var(--u) * .22); }
-.hand::before {                       /* the palm under the four fingers */
-  content: ""; position: absolute; bottom: 0; height: calc(var(--u) * .3);
-  border-radius: calc(var(--u) * .08) calc(var(--u) * .08) calc(var(--u) * .2) calc(var(--u) * .2);
-  background: color-mix(in srgb, var(--sub) 22%, var(--panel));
+.hand { width: calc(var(--u) * 2.2); height: auto; overflow: visible; display: block; }
+.hand .palm {
+  fill: color-mix(in srgb, var(--sub) 16%, var(--bg));
+  stroke: color-mix(in srgb, var(--sub) 35%, transparent); stroke-width: 1.2;
 }
-.hand::before { left: calc(var(--u) * -.04); right: calc(var(--u) * -.04); }
-.hands i {
+/* each finger: tinted with its finger colour, outlined; the one to use fills
+   up and lifts a little along its own direction */
+.hand .finger {
   --fc: #888;
-  display: block; width: calc(var(--u) * .34); height: calc(var(--u) * .9);
-  border-radius: 999px 999px calc(var(--u) * .1) calc(var(--u) * .1);
-  background: color-mix(in srgb, var(--fc) 22%, var(--panel));
-  box-shadow: inset 0 calc(var(--u) * -.05) 0 color-mix(in srgb, var(--fc) 55%, transparent);
-  transition: background var(--fast), box-shadow var(--med), translate var(--med) var(--ease);
+  --fc-dim: color-mix(in srgb, var(--fc) 24%, var(--panel));
+  --fc-line: color-mix(in srgb, var(--fc) 50%, var(--panel));
+  fill: var(--fc-dim); stroke: var(--fc-line); stroke-width: 1.2;
+  transition: fill var(--fast), stroke var(--fast), translate var(--med) var(--ease);
 }
-/* pinky short, middle longest, like a real hand */
-.hands i[data-f$="p"] { height: calc(var(--u) * .62); }
-.hands i[data-f$="r"]:not(.thumb) { height: calc(var(--u) * .84); }
-.hands i[data-f$="m"] { height: calc(var(--u) * .96); }
-.hands i[data-f$="i"] { height: calc(var(--u) * .82); }
-/* thumbs grow out of the inner corner of the palm, tilted towards the space bar */
-.hands i.thumb {
-  position: absolute; bottom: calc(var(--u) * .1); height: calc(var(--u) * .62); width: calc(var(--u) * .32);
-  transform-origin: 50% 100%;
-}
-.hand.left .thumb { right: calc(var(--u) * -.2); rotate: 42deg; }
-.hand.right .thumb { left: calc(var(--u) * -.2); rotate: -42deg; }
-.hands i.on {
-  background: var(--fc); translate: 0 calc(var(--u) * -.12);
-  box-shadow: 0 0 calc(var(--u) * .35) color-mix(in srgb, var(--fc) 60%, transparent);
-  animation: finger-on 260ms cubic-bezier(.3, 1.6, .5, 1);
-}
-@keyframes finger-on { from { translate: 0 calc(var(--u) * .04); } }
+.hand .finger.on { fill: var(--fc); stroke: var(--fc); translate: 0 -6px; animation: finger-on 260ms cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes finger-on { from { translate: 0 1px; } }
 
 /* visually hidden, still read by screen readers (the finger sentence) */
 .sr-only {
@@ -325,6 +317,17 @@ button, input { font: inherit; }
 .key.locked.next { opacity: 1; }
 
 /* ---------- toolbar (icon buttons, the words are in tooltips) ---------- */
+/* "new text" only where there is no Esc key (phones, tablets) */
+@media (pointer: fine) { .touch-only { display: none !important; } }
+/* the guide button says what it is: for beginners */
+button.icon.guide { padding: 0 14px 0 11px; font-size: .8rem; }
+/* keyboard shortcuts at the bottom of the page */
+.hints {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 22px;
+  padding: 10px 16px 18px; color: color-mix(in srgb, var(--sub) 85%, transparent); font-size: .74rem;
+}
+.hints kbd { background: var(--panel); color: color-mix(in srgb, var(--text) 60%, var(--sub)); padding: 1px 6px; border-radius: 4px; }
+@media (pointer: coarse) { .hints { display: none; } }
 .toolbar { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; margin: 24px 0 8px; color: var(--sub); }
 button {
   color: var(--sub); background: var(--panel); border: 0;
@@ -576,10 +579,12 @@ button:disabled:active { transform: none; }
 button.primary kbd { background: rgba(0, 0, 0, .16); color: inherit; }
 /* step 2: the fingers light up one after another */
 .intro-hands { --u: min(44px, calc((100vw - 120px) / 9)); margin: 14px 0 22px; }
-.intro-hands i { animation: demo 3s calc(var(--d) * .3s) infinite; }
+.intro-hands .finger { animation: demo 3s calc(var(--d) * .3s) infinite; }
+/* both ends spelled out: with one end left implicit, Chrome mixes the
+   colours through odd neon shades */
 @keyframes demo {
-  0%, 9% { background: var(--fc); translate: 0 -5px; box-shadow: 0 0 14px color-mix(in srgb, var(--fc) 60%, transparent); }
-  12%, 100% { translate: 0 0; }
+  0%, 9% { fill: var(--fc); stroke: var(--fc); translate: 0 -6px; }
+  12%, 100% { fill: var(--fc-dim); stroke: var(--fc-line); translate: 0 0; }
 }
 button.inline { padding: 1px 8px; font-size: inherit; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); border-radius: 6px; }
 button.inline:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 20%, transparent); }
@@ -604,6 +609,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   :root { --ctl: 34px; }
   .switch button { padding: 0 14px; }
   .metric span, .streak span { font-size: 1.3rem; }
+  .metric.raw { display: none; }          /* phone: no room, wpm + acc are enough */
+  button.icon.guide span { display: none; } /* phone: icon only */
+  button.icon.guide { padding: 0 7px; }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .letter-row { gap: 4px; }
   .chip { font-size: .8rem; width: 1.6em; height: 1.6em; }
@@ -642,7 +650,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   position: fixed; inset: 0; z-index: 50; background: var(--bg);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
 }
-.splash-logo { font-size: clamp(2rem, 7vw, 3.4rem); color: var(--sub); transform-origin: top left; line-height: 1.2; }
+.splash-logo { font-size: clamp(2rem, 7vw, 3.4rem); color: var(--accent); transform-origin: top left; line-height: 1.2; }
 .splash-logo b { color: var(--text); font-weight: 400; }
 /* typewriter: the text is revealed in 11 steps (monospace: 1 step = 1 letter) */
 .splash-type {
@@ -657,7 +665,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   opacity: 0; animation: splash-phrase .5s var(--ease) 700ms forwards;
 }
 @keyframes splash-phrase { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-body.splashing .top .logo, body.landing .top .logo { visibility: hidden; }  /* the splash logo lands here */
+body.splashing .top .logo, body.landing .top .logo-name { visibility: hidden; }  /* the splash logo lands on the name */
 
 /* after the splash: the page slides in, piece by piece */
 body.entering .switches, body.entering .live, body.entering .letters, body.entering .text-box,

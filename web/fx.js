@@ -192,7 +192,7 @@ const Splash = (() => {
       // (scale by font size, line up the left edges and the vertical centres)
       const from = document.getElementById("splash-logo");
       const text = from.querySelector(".splash-type");
-      const to = document.querySelector(".top .logo");
+      const to = document.querySelector(".top .logo-name");
       const a = text.getBoundingClientRect(), b = to.getBoundingClientRect();
       if (b.width > 0) {
         const s = parseFloat(getComputedStyle(to).fontSize) / parseFloat(getComputedStyle(from).fontSize);

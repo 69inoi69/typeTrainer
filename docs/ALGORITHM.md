@@ -61,8 +61,12 @@ Exercise-level numbers, shown to the user:
 
 ```
 WPM      = (correct characters / 5) / minutes        (standard: 1 word = 5 characters)
+raw      = (all keypresses / 5) / minutes             (wrong presses count too)
 accuracy = correct keypresses / all keypresses * 100
 ```
+
+`raw` is only shown in the header (as on monkeytype); it is not sent to the
+server and the model does not use it.
 
 ## 4. Per-letter statistics: exponential moving average
 
