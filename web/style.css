@@ -4,11 +4,12 @@
 :root {
   color-scheme: dark;
   transition: --kb-scale 220ms cubic-bezier(.2, .8, .2, 1);
-  --bg: #1f2125;
-  --panel: #282b30;
-  --line: #34383e;      /* hairlines, chart grid */
-  --sub: #646a73;       /* text not typed yet, labels */
-  --text: #d9dde3;      /* typed correctly */
+  --bg: #121317;
+  --panel: #1b1d22;
+  --key: #1a1c21;       /* base of a keyboard key, before its finger tint */
+  --line: #282b32;      /* hairlines, chart grid */
+  --sub: #6b717c;       /* text not typed yet, labels */
+  --text: #dde1e7;      /* typed correctly */
   --accent: #e2b714;    /* caret, highlights */
   --on-accent: #15171a; /* text on the accent color */
   --error: #ca4754;
@@ -30,8 +31,8 @@
 
   /* controls: the switches on top and the buttons below share one look */
   --ctl: 38px;          /* outer height of every switch and button */
-  --track: color-mix(in srgb, var(--text) 8%, var(--panel));
-  --ring: inset 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent);
+  --track: color-mix(in srgb, var(--text) 5%, var(--panel));
+  --ring: inset 0 0 0 1px color-mix(in srgb, var(--text) 8%, transparent);
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; } /* no blue flash on tap (phones) */
 html, body { min-height: 100%; }
@@ -50,7 +51,7 @@ button, input { font: inherit; }
 
 /* ---------- header ---------- */
 .top {
-  width: 100%; max-width: 1160px; margin: 0 auto; padding: 22px 16px;   /* wider than the page: room for the numbers */
+  width: 100%; max-width: 1160px; margin: 0 auto; padding: 14px 16px;   /* wider than the page: room for the numbers */
   /* logo | switches | numbers. The side columns are equal (1fr), so the
      switches stay exactly in the middle whatever the language or the numbers */
   display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px 20px;
@@ -106,17 +107,22 @@ button, input { font: inherit; }
 }
 .switch button {
   position: relative; z-index: 1; border: 0; background: none; cursor: pointer; white-space: nowrap;
-  color: color-mix(in srgb, var(--text) 55%, var(--sub)); padding: 0 14px; border-radius: 999px;
+  color: color-mix(in srgb, var(--text) 50%, var(--sub)); padding: 0 14px; border-radius: 999px;
   height: 100%; display: grid; place-items: center;    /* same height in both switches */
-  transition: color var(--med) var(--ease);
+  /* labels: bold, no letter spacing (it adds space after the last letter and
+     pushes the text off centre), line-height 1 so the box is the glyphs */
+  font-size: .8rem; font-weight: 600; letter-spacing: 0; line-height: 1;
+  /* the new label lights up while the pill arrives, not before */
+  transition: color 180ms ease 90ms;
 }
 .switch button[aria-selected="true"] { color: var(--on-accent); }
 .switch button:not([aria-selected="true"]):hover { color: var(--text); }
 .switch-thumb {
   position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px);
   background: var(--accent); border-radius: 999px;
-  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 35%, transparent);
-  transition: transform 240ms cubic-bezier(.2, .8, .2, 1);   /* smooth, no bounce */
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .14);   /* a flat pill with a slight edge, no glow */
+  /* ease-in-out: starts softly, glides, settles softly (no jump at the start) */
+  transition: transform 300ms cubic-bezier(.65, 0, .35, 1);
 }
 .switch.stats .switch-thumb { transform: translateX(100%); }
 .view-switch button { padding: 0 16px; }
@@ -126,8 +132,8 @@ button, input { font: inherit; }
 }
 
 /* ---------- language switch (same look as type/stats, N options) ---------- */
-.lang-switch { grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); font-size: .82rem; }
-.lang-switch button { padding: 0 10px; letter-spacing: .05em; }
+.lang-switch { grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); }
+.lang-switch button { padding: 0 12px; }
 .lang-switch .switch-thumb {
   width: calc((100% - 8px) / var(--n, 4));
   transform: translateX(calc(var(--i, 0) * 100%));
@@ -144,9 +150,10 @@ button, input { font: inherit; }
 @keyframes view-in { from { opacity: 0; transform: translateY(6px); } }
 
 /* ---------- letters bar (unlock progress) ---------- */
-.letter-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; }
+.letter-row { display: flex; flex-wrap: nowrap; justify-content: center; gap: 4px; }
+/* always one row: with many letters (Polish, Ukrainian, Russian: 32) the chips get narrower */
 .chip {
-  width: 1.75em; height: 1.75em; display: grid; place-items: center;
+  flex: 0 1 1.75em; min-width: 0; height: 1.75em; display: grid; place-items: center;
   border-radius: 6px; font-size: .9rem; color: var(--sub);
   background: var(--panel); position: relative;
   transition: background var(--med), color var(--med), transform var(--med);
@@ -196,10 +203,18 @@ button, input { font: inherit; }
 .letters-caption .begin { padding: 0 4px; }
 
 /* ---------- text ---------- */
-.text-box { position: relative; padding: 22px 0 6px; outline: none; cursor: text; }
+.text-box {
+  position: relative; padding: 18px 0 4px; outline: none; cursor: text;
+  /* wider than the page, so 20 words fit in 2 lines (app.js, fitText) */
+  --tw: min(1240px, 100vw - 32px);
+  width: var(--tw); margin-inline: calc((100% - var(--tw)) / 2);
+}
 .text {
   position: relative;
   font-size: clamp(1.1rem, 3.6vw, 1.6rem); line-height: 1.7;
+  /* always room for 2 lines: the keyboard below keeps one size, whatever the
+     language or the length of the words */
+  min-height: calc(2 * 1.7em);
   letter-spacing: .02em; color: var(--sub); word-break: break-word;
   text-align: center;              /* every line centred, like "center" in Word */
   transition: filter var(--med), opacity var(--med);
@@ -214,12 +229,14 @@ button, input { font: inherit; }
 }
 .text-box.blurred .focus-hint { opacity: 1; }
 
-.text span { transition: color var(--fast) linear; }
-.text span.ok { color: var(--text); animation: ink 260ms ease-out; }
-@keyframes ink { from { color: var(--accent); text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 70%, transparent); } }
-.text span.fixed { color: var(--text); text-decoration: underline var(--error) 2px; text-underline-offset: 5px; }
-.text span.bad { color: var(--error); background: color-mix(in srgb, var(--error) 18%, transparent); border-radius: 3px; transition: none; animation: oops 220ms ease-out; }
-@keyframes oops { from { background: color-mix(in srgb, var(--error) 55%, transparent); } }
+/* Letters change colour at once, with no effect on every keypress: at speed
+   any per-letter animation flickers and makes typing feel slow. Only a
+   mistake gets a short red flash. */
+.text span.ok { color: var(--text); }
+.text span.bad { color: var(--error); border-radius: 3px; animation: oops 240ms ease-out; }
+@keyframes oops { from { background: color-mix(in srgb, var(--error) 35%, transparent); } }
+.text span.miss { color: color-mix(in srgb, var(--error) 45%, var(--sub)); }    /* skipped with space */
+.text span.extra { color: color-mix(in srgb, var(--error) 60%, var(--bg)); }   /* typed where the space was */
 
 /* The caret is ONE element moved with the CSS "translate" property (GPU), so
    it glides from letter to letter instead of jumping. JS sets its position
@@ -228,7 +245,7 @@ button, input { font: inherit; }
   position: absolute; left: 0; top: 0; width: 2px; height: 1.2em;
   background: var(--accent); border-radius: 1px; pointer-events: none;
   will-change: translate;
-  transition: translate 90ms var(--ease);
+  transition: translate 100ms cubic-bezier(.25, .8, .4, 1);   /* glides, no snapping */
   animation: blink 1s steps(1) infinite;
 }
 .caret.jump { transition: none; }                        /* new exercise: no glide */
@@ -260,14 +277,20 @@ button, input { font: inherit; }
    "translate" and "rotate" properties, so they never fight each other. */
 .hands {
   display: flex; justify-content: center; align-items: flex-end; gap: calc(var(--u) * .9);
-  margin: 10px 0 10px; user-select: none; pointer-events: none;
+  margin: 6px 0 8px; user-select: none; pointer-events: none;
 }
 .hands.off { display: none; }
-.hand { width: calc(var(--u) * 2); height: auto; overflow: visible; display: block; --skin: color-mix(in srgb, var(--text) 13%, var(--panel)); }
-/* no outlines, so palm and fingers read as one soft shape; every finger is
-   tinted in its finger colour (the same colours as the keys) */
-.hand .palm { fill: var(--skin); }
-.hand .finger { --fc: #888; --tint: color-mix(in srgb, var(--fc) 34%, var(--panel)); transition: translate var(--med) var(--ease); }
+.hand {
+  width: calc(var(--u) * 2); height: auto; overflow: visible; display: block;
+  --skin: color-mix(in srgb, var(--text) 11%, var(--bg));
+  /* the wrist fades out at the bottom instead of ending in a hard edge */
+  -webkit-mask-image: linear-gradient(to bottom, #000 74%, transparent);
+  mask-image: linear-gradient(to bottom, #000 74%, transparent);
+}
+/* no outlines; a soft shadow on the knuckle line, where the fingers go under
+   the palm. Every finger is tinted in its finger colour (the same as the keys) */
+.hand .palm { fill: var(--skin); filter: drop-shadow(0 -1px 1.2px rgba(0, 0, 0, .5)); }
+.hand .finger { --fc: #888; --tint: color-mix(in srgb, var(--fc) 26%, var(--skin)); transition: translate var(--med) var(--ease); }
 .hand .finger .skin { fill: var(--tint); transition: fill var(--fast); }
 /* the finger to use: fills with its full colour and lifts along its own direction */
 .hand .finger.on { translate: 0 -6px; animation: finger-on 260ms cubic-bezier(.3, 1.6, .5, 1); }
@@ -291,9 +314,9 @@ button, input { font: inherit; }
   display: flex; align-items: center; justify-content: center;
   border-radius: calc(var(--u) * .14); font-size: calc(var(--u) * .34); color: var(--text);
   background:
-    linear-gradient(to bottom, rgba(255, 255, 255, .045), transparent 60%),
-    color-mix(in srgb, var(--fc) 14%, var(--panel));
-  border-bottom: 3px solid color-mix(in srgb, var(--fc) 70%, transparent);
+    linear-gradient(to bottom, rgba(255, 255, 255, .04), transparent 60%),
+    color-mix(in srgb, var(--fc) 15%, var(--key));
+  border-bottom: 3px solid color-mix(in srgb, var(--fc) 80%, transparent);
   transition: transform var(--fast) var(--ease), background var(--fast), box-shadow var(--fast), color var(--fast), opacity var(--med);
   overflow: hidden;
 }
@@ -311,8 +334,11 @@ button, input { font: inherit; }
   background: var(--fc); color: var(--on-accent); transform: translateY(-2px);
   box-shadow: 0 5px 16px color-mix(in srgb, var(--fc) 40%, transparent);
 }
-.key.locked { opacity: .3; }
-.key.locked.next { opacity: 1; }
+/* locked: dark, with a faint edge and a dim label (not see-through: that looked washed out) */
+.key.locked:not(.next) {
+  background: color-mix(in srgb, var(--fc) 4%, var(--bg)); color: color-mix(in srgb, var(--sub) 65%, var(--bg));
+  border-bottom-color: color-mix(in srgb, var(--fc) 22%, transparent);
+}
 
 /* ---------- toolbar (icon buttons, the words are in tooltips) ---------- */
 /* "new text" only where there is no Esc key (phones, tablets) */
@@ -326,7 +352,7 @@ button.icon.guide { padding: 0 14px 0 11px; font-size: .8rem; }
 }
 .hints kbd { background: var(--panel); color: color-mix(in srgb, var(--text) 60%, var(--sub)); padding: 1px 6px; border-radius: 4px; }
 @media (pointer: coarse) { .hints { display: none; } }
-.toolbar { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; margin: 18px 0 4px; color: var(--sub); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; margin: 14px 0 4px; color: var(--sub); }
 button {
   color: var(--sub); background: var(--panel); border: 0;
   padding: 8px 14px; border-radius: 8px; cursor: pointer;
@@ -337,16 +363,28 @@ button:active { transform: scale(.95); }
 .switch button:hover { background: none; }
 kbd { font: inherit; font-size: .8em; padding: 1px 5px; border-radius: 4px; background: var(--bg); }
 
+/* Every round button has its own colour (--bc), all in one style: icon in
+   the colour, a faint tint behind it and a thin ring; brighter on hover */
 button.icon {
+  --bc: var(--sub);
   height: var(--ctl); min-width: var(--ctl); padding: 0 9px; border-radius: 999px;
-  background: var(--track); box-shadow: var(--ring);
+  color: var(--bc); background: color-mix(in srgb, var(--bc) 9%, var(--panel));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bc) 26%, transparent);
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
 }
+#btn-new { --bc: var(--accent); }
+#btn-intro { --bc: #7fa6e0; }      /* blue, like the "new letter" message */
+#btn-export { --bc: var(--ok); }
+#btn-import { --bc: #5fc4c4; }
+#btn-reset { --bc: var(--error); }
 button.icon svg {
   width: 20px; height: 20px; flex: none;
   fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
 }
-button.icon:hover { background: color-mix(in srgb, var(--text) 14%, var(--panel)); }
+button.icon:hover {
+  color: color-mix(in srgb, var(--bc) 75%, #fff); background: color-mix(in srgb, var(--bc) 18%, var(--panel));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bc) 50%, transparent);
+}
 /* switched on: accent color, tinted background and a thin ring */
 button.icon[aria-pressed="true"] {
   color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--panel));
@@ -355,15 +393,15 @@ button.icon[aria-pressed="true"] {
 /* reset: a small gap from the other buttons, red when armed */
 #btn-reset { margin-left: 8px; }
 #btn-reset.armed, #btn-reset.armed:hover {
-  color: var(--error); background: color-mix(in srgb, var(--error) 16%, var(--panel));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--error) 55%, transparent);
+  color: var(--on-accent); background: var(--error);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--error) 45%, transparent);
 }
 button:disabled { opacity: .35; cursor: default; }
 button:disabled:hover { color: var(--sub); background: none; }
 button:disabled:active { transform: none; }
 
 /* keyboard: [off | S | M | L], the same switch as in the header (--i = selected) */
-.kb-switch { grid-template-columns: repeat(4, minmax(0, 1fr)); font-size: .8rem; letter-spacing: .04em; }
+.kb-switch { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .kb-switch button { padding: 0 12px; }
 .kb-switch button[aria-checked="true"] { color: var(--on-accent); }
 .kb-switch .switch-thumb { width: calc((100% - 8px) / 4); transform: translateX(calc(var(--i, 2) * 100%)); }
@@ -596,10 +634,19 @@ button.primary:hover { color: var(--on-accent); filter: brightness(1.08); }
 button.link { background: none; padding: 8px 0; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+/* ---------- medium windows ---------- */
+/* logo, switches and numbers do not fit in one row: logo and numbers on top,
+   the switches in their own row under them (nothing overlaps) */
+@media (max-width: 1100px) {
+  .top { grid-template-columns: minmax(0, 1fr) auto; }
+  .switches { grid-column: 1 / -1; grid-row: 2; }
+}
+
 /* ---------- small screens ---------- */
 @media (max-width: 640px) {
   /* phone: switches on top (wrapping if they do not fit), numbers below */
   .top { grid-template-columns: 1fr; justify-items: center; padding-block: 14px; }
+  .switches { grid-row: auto; }            /* phone: switches first, numbers below */
   .switches { flex-wrap: wrap; gap: 8px; }
   .live { gap: 14px; flex-wrap: nowrap; justify-content: center; }
   .streak:not(.show) { display: none; }   /* no empty reserved space on a phone */
@@ -611,8 +658,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   button.icon.guide span { display: none; } /* phone: icon only */
   button.icon.guide { padding: 0 7px; }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .letter-row { gap: 4px; }
-  .chip { font-size: .8rem; width: 1.6em; height: 1.6em; }
+  .letter-row { gap: 4px; flex-wrap: wrap; }   /* phone: one row would make the chips tiny */
+  .chip { font-size: .8rem; flex: none; width: 1.6em; height: 1.6em; }
   /* phone: no vertical centring (it left a big hole under the header, and
      the phone keyboard covers the bottom anyway): content starts right
      under the header */

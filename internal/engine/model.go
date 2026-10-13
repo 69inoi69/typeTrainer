@@ -41,9 +41,10 @@ type Params struct {
 func (p Params) TargetMs() float64 { return 12000 / p.TargetWPM }
 
 // Sample is ONE occurrence of a character in an exercise, sent by the browser.
-//   - Errors: wrong keys pressed before the right one (0 = clean)
-//   - Ms:     time from the previous correct keypress; 0 = not measured
-//     (first character of the exercise)
+//   - Errors: wrong keys pressed at this position, also when later fixed
+//     with Backspace (0 = clean)
+//   - Ms:     time from the previous keypress to the first press here;
+//     0 = not measured (first press of the exercise, or right after a Backspace)
 type Sample struct {
 	Char   string  `json:"char"`
 	Errors int     `json:"errors"`

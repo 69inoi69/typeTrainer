@@ -34,8 +34,10 @@ Optional: `go build -o typing-trainer.exe .` makes one `.exe` to double-click.
   button reopens it. At the end: "Start" (a few letters) or "I can already touch type"
   (all letters open). Before your first exercise the letters caption also has an
   "open all letters" button.
-- Type the grey text. Wrong key = the letter turns red and you must press the
-  right one before moving on.
+- Type the grey text. Wrong key = the letter turns red and you keep going, as
+  on monkeytype. Backspace fixes the current word (Ctrl+Backspace: the whole
+  word); you can go back into a word you left with a mistake. Space in the middle of a word jumps to the next one. A fixed
+  mistake still counts for the letter's statistics.
 - The row of letters at the top shows your progress: open letters, the letter in
   **focus** (yellow, your weakest right now), mastered letters (green dot), and
   locked letters (outlined). Master every open letter and the next one opens.

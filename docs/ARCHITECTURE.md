@@ -49,8 +49,9 @@ the program runs the same from any folder.
 ## Request lifecycle: from a keypress to the next exercise
 
 1. `keydown` → `handleChar()` in `app.js` compares the key with the expected
-   character. Wrong: mark red, count the error, cursor stays. Right: push a sample
-   `{char, errors, ms}` and move on.
+   character and moves on either way (wrong = red). Each typed position keeps
+   one sample `{char, errors, ms}`; `backspace()` changes only the screen, never
+   the samples. Rules: `docs/ALGORITHM.md`, section 3.
 2. Last character typed → `POST /api/v1/results` with all samples, WPM and accuracy.
 3. The handler (under a mutex) reads the stats from the `Store`, calls
    `engine.Apply`, saves them, asks `Generator.NextUnlocked` whether a letter
