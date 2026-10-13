@@ -37,32 +37,51 @@ mode and no settings: the model alone decides what to practise.
 
 ## 3. What is measured
 
-For every **character occurrence** in the exercise the browser sends one sample:
+Typing never stops on a mistake (as on monkeytype, so the rhythm is kept):
+
+- a wrong letter turns red and the cursor moves on;
+- Backspace goes back inside the current word (Ctrl+Backspace: the whole
+  word), and into the previous word only if that word has a mistake;
+- space in the middle of a word jumps to the next word; the rest of the word is
+  **skipped**;
+- letters typed where a space belongs are **extra** letters, shown in red
+  after the word.
+
+For every **position of the text that was typed** the browser sends one sample:
 
 ```
 { char: "s", errors: 1, ms: 412 }
 ```
 
-- `errors` – how many wrong keys were pressed before the right one. The cursor
-  does not move on a wrong key, so each occurrence ends with the correct key.
-- `ms` – time between the previous correct keypress and this one, measured with
-  `keydown` and `performance.now()` (sub-millisecond resolution).
+- `errors` – how many wrong keys were pressed at this position, including new
+  attempts after a Backspace. Backspace changes only what the screen shows: a
+  mistake corrected with Backspace **still counts**, because the first attempt
+  was wrong. Extra letters count as errors of the space after the word.
+- `ms` – time from the previous keypress to the **first** press at this
+  position, measured with `keydown` and `performance.now()` (sub-millisecond
+  resolution).
+- **Skipped** letters were never typed, so they send no sample: a skip says
+  nothing about how well the user types that letter. They still lower the
+  accuracy (each skipped letter counts as one wrong press).
 
-Two kinds of time are **ignored** for speed (but still count for accuracy):
+Some times are **ignored** for speed (but still count for accuracy):
 
-1. the time of a press that came **after a mistake**, because it includes
-   noticing and correcting the error, not finger speed;
-2. gaps longer than `MaxIntervalMs = 2000 ms`, which are pauses.
+1. the time of a position whose sample has a mistake (`errors > 0`), because
+   the first attempt there was a wrong movement;
+2. gaps longer than `MaxIntervalMs = 2000 ms`, which are pauses;
+3. the first press of the exercise (no previous press) and the first press
+   after a Backspace (that time is spent correcting): both get `ms = 0`
+   (not measured).
 
-The first character of an exercise has no previous press, so it gets `ms = 0`
-(not measured).
+The press right after a wrong letter is measured normally: the cursor has
+already moved on, so it is an ordinary finger movement from the previous key.
 
 Exercise-level numbers, shown to the user:
 
 ```
-WPM      = (correct characters / 5) / minutes        (standard: 1 word = 5 characters)
+WPM      = (characters that are right / 5) / minutes  (standard: 1 word = 5 characters)
 raw      = (all keypresses / 5) / minutes             (wrong presses count too)
-accuracy = correct keypresses / all keypresses * 100
+accuracy = correct keypresses / all keypresses * 100  (a skipped letter = one wrong press)
 ```
 
 `raw` is only shown in the header (as on monkeytype); it is not sent to the

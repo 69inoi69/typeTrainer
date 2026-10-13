@@ -1,7 +1,7 @@
 // Typing trainer frontend. Plain JavaScript, no frameworks.
 //
 // Flow:  load layout -> load exercise -> user types (keydown) -> every
-// character becomes a "sample" {char, errors, ms} -> exercise done ->
+// typed position becomes a "sample" {char, errors, ms} -> exercise done ->
 // POST samples to /api/v1/results (server updates the model, maybe unlocks
 // a letter) -> GET a new exercise built from the updated model.
 "use strict";
@@ -42,10 +42,16 @@ let lastStats = null;      // last /stats answer
 let text = "";
 let spans = [];            // one <span> per character
 let pos = 0;               // index of the character to type next
-let wrongHere = 0;         // wrong presses at the current position
-let samples = [];          // one {char, errors, ms} per character typed
+// Typing never stops on a mistake (as on monkeytype): a wrong letter turns
+// red and the cursor moves on. Per position of the text we keep:
+let state = new Uint8Array(0); // what is on the screen now: 0 = not typed, 1 = right, 2 = wrong, 3 = skipped
+let records = [];          // the sample {char, errors, ms} of each position, or null if never typed.
+                           // Backspace changes `state`, never `records`: a mistake stays a mistake.
+let extras = new Map();    // index of a space -> extra letters typed before it (red <span>s)
+let correctChars = 0;      // positions that are right now (state 1), for WPM
 let startTime = null;      // performance.now() of the first keypress
-let lastTime = null;       // performance.now() of the previous correct keypress
+let lastTime = null;       // performance.now() of the previous keypress
+let afterBackspace = false; // the next press follows a Backspace: its time is not measured
 let presses = 0, correctPresses = 0;
 let busy = false;          // true while talking to the server between exercises
 let popLetter = null;      // letter that was just unlocked (for the animation)
@@ -175,12 +181,12 @@ function highlightNextKey() {
 function pulseKey(ch, ok) {
   const k = keyFor(ch);
   if (!k || !k.animate) return;
-  if (ok) {
-    k.animate([{ transform: "translateY(1px) scale(.93)" }, { transform: "none" }],
-      { duration: 130, easing: "cubic-bezier(.2,.8,.2,1)" });
-  } else {
-    k.animate([{ transform: "translateX(-3px)" }, { transform: "translateX(3px)" }, { transform: "none" }],
-      { duration: 160, easing: "ease-out" });
+  if (ok) {   // a short, soft press
+    k.animate([{ transform: "translateY(1px) scale(.95)" }, { transform: "none" }],
+      { duration: 110, easing: "cubic-bezier(.2,.8,.2,1)" });
+  } else {    // the wrong key flashes red for a moment (the colour of --error)
+    k.animate([{ boxShadow: "inset 0 0 0 999px rgba(202, 71, 84, .7)" }, { boxShadow: "inset 0 0 0 999px rgba(202, 71, 84, 0)" }],
+      { duration: 260, easing: "ease-out" });
   }
 }
 
@@ -225,7 +231,7 @@ const nearestKb = (n) => KB_SIZES.reduce((a, b) => (Math.abs(b - n) < Math.abs(a
 // Everything else is measured once (it does not depend on --u), and --u-fit
 // caps the unit so the rest fits. Runs on load, resize, a new text and a size
 // change: never on a keypress.
-const HANDS_KB_PER_U = 6.28;   // hands 1.92 u (2 u wide, 100:96) + keyboard 4.36 u (4 rows, 3 gaps of .12 u)
+const HANDS_KB_PER_U = 6.04;   // hands 1.68 u (2 u wide, 100:84) + keyboard 4.36 u (4 rows, 3 gaps of .12 u)
 let fitFrame = 0;
 function requestFit() {
   cancelAnimationFrame(fitFrame);
@@ -244,6 +250,24 @@ function fitKeyboard() {
   root.setProperty("--u-fit", fit + "px");
 }
 
+// The exercise text takes at most TEXT_LINES lines: the text box is wide, and
+// if the words are still too long the font gets a little smaller (down to
+// 80 %; below that, on a narrow window, the text may take more lines). Reads
+// the layout a few times, so it runs on a new text and on resize, never on a
+// keypress.
+const TEXT_LINES = 2;
+function fitText() {
+  if (!spans.length || view !== "type") return;
+  el.text.style.removeProperty("font-size");
+  const cs = getComputedStyle(el.text);
+  const base = parseFloat(cs.fontSize);
+  const lines = () => Math.round((spans.at(-1).offsetTop - spans[0].offsetTop) / parseFloat(cs.lineHeight)) + 1;
+  for (let size = base; lines() > TEXT_LINES && size > base * .8; ) {
+    size -= 1;
+    el.text.style.fontSize = size + "px";
+  }
+}
+
 // ---------- caret ----------
 // One caret element that slides to the current letter (CSS transition on
 // transform). We read the letter's position once per animation frame.
@@ -252,8 +276,10 @@ function placeCaret(jump) {
   cancelAnimationFrame(caretFrame);
   caretFrame = requestAnimationFrame(() => {
     if (!spans.length) return;
-    const atEnd = pos >= spans.length;
-    const s = spans[Math.min(pos, spans.length - 1)];
+    // after the extra letters of this word, if there are any
+    const extra = extras.get(pos)?.at(-1);
+    const atEnd = pos >= spans.length || !!extra;
+    const s = extra || spans[Math.min(pos, spans.length - 1)];
     const x = s.offsetLeft + (atEnd ? s.offsetWidth : 0);
     const h = s.offsetHeight;
     if (jump) el.caret.classList.add("jump");
@@ -265,6 +291,7 @@ function placeCaret(jump) {
   });
 }
 window.addEventListener("resize", () => {
+  fitText();
   requestFit();
   placeCaret(true);
   if (view === "stats") renderStats();
@@ -335,7 +362,9 @@ function renderLetters() {
 function showExercise(ex) {
   exercise = ex;
   text = ex.text;
-  pos = 0; wrongHere = 0; samples = []; wordClean = true; tabsResisted = 0;
+  pos = 0; wordClean = true; tabsResisted = 0;
+  state = new Uint8Array(text.length); records = new Array(text.length).fill(null);
+  extras = new Map(); correctChars = 0; afterBackspace = false;
   startTime = null; lastTime = null; presses = 0; correctPresses = 0;
 
   // build all spans at once with a fragment: one DOM update, not hundreds
@@ -347,7 +376,8 @@ function showExercise(ex) {
     return s;
   });
   el.text.replaceChildren(frag, el.caret);   // the caret lives inside the text
-  requestFit();                              // 2 or 3 lines of text: room for the keyboard changes
+  fitText();                                 // at most 2 lines
+  requestFit();                              // more lines (narrow window) leave less room for the keyboard
   el.text.classList.remove("swap");
   void el.text.offsetWidth;                  // restart the fade-in (once per exercise)
   el.text.classList.add("swap");
@@ -362,19 +392,64 @@ async function loadExercise() {
   showExercise(await getJSON("/exercise"));
 }
 
+// ---------- typing ----------
 // The core of the app, called once per typed character. Kept small on
 // purpose: it only flips classes on 1-2 spans; the caret is moved in the
 // next animation frame.
+//
+// Monkeytype rules: a wrong letter turns red and the cursor moves on; space
+// in the middle of a word jumps to the next word (the rest is "skipped");
+// letters typed where a space belongs are "extra" and appear in red after the
+// word; Backspace fixes the current word (see backspace()).
+//
+// What is measured: one sample {char, errors, ms} per position that was
+// typed. errors = wrong presses at that position (also after a Backspace);
+// ms = time from the previous press to the FIRST press at that position.
+const MAX_EXTRA = 10;      // extra letters shown after a word, more are only counted
+const canType = () => !(busy || pos >= text.length || introOpen() || view !== "type" || document.body.classList.contains("splashing"));
+
+// the word around position i is text[wordStart(i) .. wordEnd(i)); wordEnd is
+// the space after it (or the end of the text)
+function wordStart(i) { while (i > 0 && text[i - 1] !== " ") i--; return i; }
+function wordEnd(i) { while (i < text.length && text[i] !== " ") i++; return i; }
+
+// What one position shows. Keeps the number of right positions for WPM.
+function setState(i, s) {
+  if (state[i] === 1) correctChars--;
+  if (s === 1) correctChars++;
+  state[i] = s;
+  spans[i].className = ["", "ok", "bad", "miss"][s];
+}
+// The sample of position i. Created at the first press there and never
+// deleted, so a mistake fixed with Backspace still counts for the letter.
+function record(i, wrong, now) {
+  let r = records[i];
+  if (!r) {
+    // not measured: the first press of the exercise, and a press right after a
+    // Backspace (that time is spent correcting, not moving a finger)
+    const ms = lastTime === null || afterBackspace ? 0 : Math.round(now - lastTime);
+    r = records[i] = { char: text[i], errors: 0, ms };
+  }
+  if (wrong) r.errors++;
+}
+const wordHasError = (start, end) =>
+  state.subarray(start, end).some((s) => s >= 2) || (extras.get(end)?.length ?? 0) > 0;
+function mistake() {
+  if (wordClean) breakStreak();
+  wordClean = false;
+}
+
 function handleChar(ch) {
-  if (busy || pos >= text.length || introOpen() || view !== "type" || document.body.classList.contains("splashing")) return;
+  if (!canType()) return;
+  const expected = text[pos];
+  // space at the start of a word means nothing (as on monkeytype)
+  if (ch === " " && expected !== " " && pos === wordStart(pos)) return;
   const now = performance.now();
   if (startTime === null) {
     startTime = now;
     el.live.classList.remove("final");
   }
   el.textBox.classList.add("typing");
-
-  const expected = text[pos];
 
   // Not a typing mistake but a wrong keyboard setting: Caps Lock, or the
   // system layout is set to another language. Not counted, just explained.
@@ -385,32 +460,83 @@ function handleChar(ch) {
       return;
     }
   }
+  if (ch === expected && (wrongScript || el.warn.classList.contains("show"))) hideWarn();
   presses++;
 
-  if (ch === expected) {
-    if (wrongScript || el.warn.classList.contains("show")) hideWarn();
-    // ms = time since the previous correct press. Not measured (0) for the
-    // first character; after a mistake the server ignores the time anyway.
-    const ms = lastTime !== null ? now - lastTime : 0;
-    samples.push({ char: expected, errors: wrongHere, ms: Math.round(ms) });
-    correctPresses++;
-    const span = spans[pos];
-    span.classList.remove("bad");
-    span.classList.add(wrongHere ? "fixed" : "ok");
-    pos++; wrongHere = 0; lastTime = now;
-    pulseKey(expected, true);
-    highlightNextKey();
-    placeCaret(false);
-    if (expected === " " || pos === text.length) endWord();
-    if (pos === text.length) finishExercise();
-  } else {
-    wrongHere++;
-    spans[pos].classList.add("bad");
+  if (expected === " " && ch !== " ") {
+    // a letter where the space belongs: an "extra" letter, the cursor stays
+    record(pos, true, now);
+    const list = extras.get(pos) ?? [];
+    if (list.length < MAX_EXTRA) {
+      const s = document.createElement("span");
+      s.className = "extra";
+      s.textContent = ch;
+      el.text.insertBefore(s, spans[pos]);
+      list.push(s);
+      extras.set(pos, list);
+    }
     pulseKey(ch, false);
-    if (wordClean) breakStreak();
-    wordClean = false;
+    mistake();
+  } else {
+    if (ch === " " && expected !== " ") {
+      // space inside a word: skip the rest of it. Skipped letters were never
+      // typed, so they give no sample, but each counts as a wrong press.
+      const end = wordEnd(pos);
+      presses += end - pos;
+      while (pos < end) setState(pos++, 3);
+      mistake();
+    }
+    if (pos < text.length) {
+      const ok = ch === text[pos];
+      record(pos, !ok, now);
+      setState(pos, ok ? 1 : 2);
+      if (ok) correctPresses++;
+      else mistake();
+      pulseKey(ch, ok);
+      if (text[pos] === " ") endWord();
+      pos++;
+    }
   }
+  lastTime = now; afterBackspace = false;
+  highlightNextKey();
+  placeCaret(false);
   updateLive();
+  if (pos === text.length) {
+    endWord();
+    finishExercise();
+  }
+}
+
+// Backspace: one character back in the current word (extra letters go
+// first); with Ctrl the whole word. From the start of a word it goes back
+// into the previous word, but only if that word has a mistake. Only the
+// screen changes: the samples (records) keep every mistake.
+function backspace(wholeWord) {
+  if (!canType() || startTime === null) return;
+  if (pos === wordStart(pos)) {
+    const space = pos - 1;
+    if (pos === 0 || !wordHasError(wordStart(space), space)) return;
+    setState(space, 0);
+    pos = space;
+    while (pos > 0 && state[pos - 1] === 3) setState(--pos, 0);   // skipped = not typed
+    if (wholeWord) clearWord();
+  } else if (wholeWord) {
+    clearWord();
+  } else if (extras.get(pos)?.length) {
+    extras.get(pos).pop().remove();
+  } else {
+    setState(--pos, 0);
+  }
+  afterBackspace = true;
+  highlightNextKey();
+  placeCaret(false);
+  updateLive();
+}
+// Ctrl+Backspace: the cursor goes back to the start of its word, extra letters vanish
+function clearWord() {
+  (extras.get(pos) ?? []).splice(0).forEach((s) => s.remove());
+  const start = wordStart(pos);
+  while (pos > start) setState(--pos, 0);
 }
 
 // ---------- streak: clean words in a row ----------
@@ -470,7 +596,7 @@ function hideWarn() {
 function currentWpm() {
   if (startTime === null) return 0;
   const minutes = (performance.now() - startTime) / 60000;
-  return minutes > 0 ? (pos / 5) / minutes : 0;
+  return minutes > 0 ? (correctChars / 5) / minutes : 0;   // only what is right counts
 }
 // raw: every keypress counts, the wrong ones too (as on monkeytype).
 // Shown in the header only; never sent to the server.
@@ -505,7 +631,10 @@ async function finishExercise() {
   const hadSessions = (lastStats?.sessionCount ?? 0) > 0;
   const prevMastered = new Set((lastStats?.keys ?? []).filter((k) => k.mastered).map((k) => k.char));
   const resisted = tabsResisted;
+  // one sample per typed position, in text order (skipped letters have none)
+  const samples = records.filter(Boolean);
   try {
+    if (!samples.length) { await loadExercise(); return; }   // nothing typed: nothing to learn from
     const res = await postJSON("/results", { samples, wpm, accuracy });
     await refreshStats();
 
@@ -551,6 +680,7 @@ function setView(name) {
     refreshStats().catch(console.error);
     renderStats();
   } else {
+    fitText();
     requestFit();
     placeCaret(true);
     focusText();
@@ -973,6 +1103,7 @@ document.addEventListener("keydown", (e) => {
   if (view !== "type") return;
   if (e.key === "Escape") { e.preventDefault(); newExercise(); return; }
   if (e.key === "Tab") { e.preventDefault(); nudge(); return; }   // no restart, see nudge()
+  if (e.key === "Backspace") { e.preventDefault(); focusText(); backspace(e.ctrlKey || e.altKey); return; } // Alt = Option on a Mac
   // AltGr (Polish ą, ę, ...) is reported as Ctrl+Alt on Windows; let it through,
   // but keep real browser shortcuts like Ctrl+R working.
   if ((e.ctrlKey || e.metaKey || e.altKey) && !altGr) return;
@@ -984,6 +1115,11 @@ document.addEventListener("keydown", (e) => {
 
 // Phones: virtual keyboards often report "Unidentified" on keydown, so the
 // character only shows up here, in the hidden input. We read it and clear it.
+// Backspace on a phone keyboard: the input is empty, so it arrives only here.
+el.input.addEventListener("beforeinput", (e) => {
+  if (e.inputType === "deleteContentBackward") { e.preventDefault(); backspace(false); }
+  if (e.inputType === "deleteWordBackward") { e.preventDefault(); backspace(true); }
+});
 el.input.addEventListener("input", () => {
   for (const ch of el.input.value) handleChar(ch);
   el.input.value = "";
