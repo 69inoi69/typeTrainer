@@ -133,7 +133,8 @@ typing-trainer/
 │   ├── langs/<id>/words.txt      2000 most frequent words per language
 │   └── layouts/*.json            keyboard layouts + finger mapping (data, not code)
 ├── tools/wordlists/              script + block lists that build the word lists
-├── docs/                         algorithm, architecture, user guide, reading list
+├── tools/devlog/                 script that builds docs/DEVELOPMENT-LOG.pdf
+├── docs/                         algorithm, architecture, user guide, reading list, development log
 ├── internal/
 │   ├── config/config.go          all tunable numbers
 │   ├── engine/model.go           the math: EMA, difficulty, mastery, softmax
@@ -159,6 +160,7 @@ changed line in `setup.go`.
 | [Algorithm](docs/ALGORITHM.md) | the adaptive model: formulas, parameters, why it is built this way |
 | [Architecture](docs/ARCHITECTURE.md) | packages, data flow, API, how to add PostgreSQL |
 | [Reading list](docs/LITERATURE.md) | sources on typing, learning and adaptive practice |
+| [Development log](docs/DEVELOPMENT-LOG.pdf) (PDF) | how the project was built: decisions, reasons, workflow, every commit |
 
 ## Word lists and credits
 
