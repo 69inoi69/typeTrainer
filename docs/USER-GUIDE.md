@@ -3,6 +3,26 @@
 Everything the trainer does, screen by screen. For a quick overview see the
 [README](../README.md); for the math behind it see [ALGORITHM.md](ALGORITHM.md).
 
+## Running it on Windows (from zero)
+
+1. **Install Go** (once): download the Windows installer from
+   <https://go.dev/dl/> (1.22 or newer) and click Next until it finishes.
+2. **Check it works.** Open a *new* PowerShell window and run `go version`.
+3. **Go to the project folder**, for example
+   `cd C:\Users\YOUR_NAME\Desktop\typing-trainer`.
+4. **Start the server:** `go run .`. After a few seconds it prints
+   `Typing trainer running. Open http://localhost:3000 in your browser`.
+   If Windows asks about the firewall, "Allow" is fine.
+5. **Open** <http://localhost:3000>. Always use this address: double-clicking
+   `web/index.html` opens the page without the server, with no words and no
+   statistics. If the port is taken, change `Addr` in
+   `internal/config/config.go`.
+6. **Stop** the server with `Ctrl + C`. Save your progress first with the
+   export button (see below) and load it back next time.
+
+After `git pull` restart the server: the web files are built into the program.
+Optional: `go build -o typing-trainer.exe .` makes one `.exe` to double-click.
+
 ## Typing screen
 
 - The app opens with a short start screen: the logo types itself, a random
