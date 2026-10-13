@@ -16,6 +16,9 @@ exercises from real words around the user's weak letters.
 - Work in small steps. For anything bigger than one feature, show a short plan
   first and wait for my OK.
 - Do not run `git commit` or `git push` unless I ask. I commit myself.
+- `main` is protected: changes reach it only through a pull request. When I ask
+  you to commit, work in a separate branch, push it and open a pull request;
+  I merge it myself. Never push to `main` directly.
 
 ## Stack (do not change without asking)
 
