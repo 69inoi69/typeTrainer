@@ -38,7 +38,7 @@ func Default() Config {
 			PriorDifficulty: 0.7, // before we see a letter, assume it is fairly hard
 			PriorStrength:   5,   // the assumption is worth 5 real samples
 
-			Temperature: 0.25, // difficulty 1 vs 0 -> about 55x more likely
+			Temperature: 0.1, // difficulty 1 vs 0 -> e^10, about 22000x more likely (chosen by the simulation)
 
 			MasteryMinSamples: 20,   // at least 20 occurrences...
 			MasteryErrorRate:  0.05, // ...under 5% mistakes, and at TargetWPM

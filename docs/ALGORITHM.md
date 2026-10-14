@@ -177,11 +177,11 @@ Seven letters are open. The user is good at `e` and struggles with `s`:
 
 | Letter | n | ErrEMA | TimeEMA | errorPart | speedPart | raw | difficulty | weight `exp(d/T)` |
 |---|---|---|---|---|---|---|---|---|
-| e | 60 | 0.02 | 300 ms | 0.08 | 0 | 0.048 | 0.098 | 1.48 |
-| s | 30 | 0.12 | 520 ms | 0.48 | 0.20 | 0.368 | 0.415 | 5.27 |
+| e | 60 | 0.02 | 300 ms | 0.08 | 0 | 0.048 | 0.098 | 2.66 |
+| s | 30 | 0.12 | 520 ms | 0.48 | 0.20 | 0.368 | 0.415 | 63.4 |
 
 If the other five letters look like `e`, then `s` is chosen as the focus with
-probability `5.27 / (5.27 + 6 * 1.48) ≈ 37 %`, instead of `1/7 ≈ 14 %` for
+probability `63.4 / (63.4 + 6 * 2.66) ≈ 80 %`, instead of `1/7 ≈ 14 %` for
 uniform choice.
 
 ## 6. Unlocking letters
@@ -235,14 +235,15 @@ letters are allowed. Each word slot is filled in two steps.
 **Step 1, what to train: pick a focus letter.**
 
 ```
-P(letter) = exp(d_letter / T) / Σ exp(d_i / T)        T = Temperature = 0.25
+P(letter) = exp(d_letter / T) / Σ exp(d_i / T)        T = Temperature = 0.1
 ```
 
 This is the softmax (Boltzmann) distribution, used in the same way in
 reinforcement learning for choosing between actions. The **temperature** `T` is
 one knob for "how hard to push on weaknesses":
 
-- difficulty 1 against difficulty 0 gives a ratio of `e^(1/0.25) = e^4 ≈ 55`;
+- difficulty 1 against difficulty 0 gives a ratio of `e^(1/0.1) = e^10 ≈ 22000`;
+  a gap of 0.1 in difficulty already gives `e ≈ 2.7`;
 - with `T → 0` it always picks the single worst letter;
 - with a large `T` every letter is almost equally likely.
 
@@ -282,7 +283,7 @@ All in `internal/config/config.go`.
 | `ErrorWeight` / `SpeedWeight` | 0.6 / 0.4 | mix of the two parts | accuracy first, but speed matters |
 | `PriorDifficulty` | 0.7 | assumption about an unseen letter | new letters must get practised |
 | `PriorStrength` | 5 | how many samples the prior is worth | a few presses are not yet evidence |
-| `Temperature` | 0.25 | focus strength | strong focus (×55) without excluding anything |
+| `Temperature` | 0.1 | focus strength | chosen with the simulation (section 11.1): fastest learning at a small loss of variety; was 0.25 |
 | `MasteryMinSamples` | 20 | evidence needed for mastery | ≈ one EMA memory length |
 | `MasteryErrorRate` | 0.05 | max mistakes for mastery | 95 % accuracy, a common minimum goal |
 | `StartLetters` / `MinWords` | 6 / 30 | first lesson | enough variety from the first minute |
@@ -411,14 +412,14 @@ What this shows:
 
 - Any targeting beats random words by 5 to 10 times. Random words almost never
   practise rare letters (Russian `ъ`, `э`, `ф`): no Russian run reached the goal.
-- With the configured `Temperature = 0.25` the adaptive model loses to the
+- With the earlier value `Temperature = 0.25` the adaptive model loses to the
   simple best-of-20 rule in Polish and Ukrainian. Most of the time goes into
   unlocking (all letters open after ~430 exercises against ~240).
 - Best of 20 pays for its speed with repetition: in the first lessons only a
   third of the words in an exercise are different, against 85-90 % for the
   adaptive model. It also fails on Russian: once all letters are open, words
   with the rarest letters are seldom among 20 random words.
-- `T = 0.1` (tested only, not configured) makes the adaptive model the fastest
+- `T = 0.1` (the configured value since this result) makes the adaptive model the fastest
   in every language. The price is moderate: in the first lessons 5-9 points fewer
   different words and one letter pushed a bit harder (`top` +8..10 points);
   for an experienced typist the variety is practically the same.

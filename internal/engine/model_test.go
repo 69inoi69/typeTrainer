@@ -11,7 +11,7 @@ var testParams = Params{
 	Alpha: 0.1, MaxIntervalMs: 2000,
 	TargetWPM: 30, SlowMs: 1000, MaxErrorRate: 0.25, ErrorWeight: 0.6, SpeedWeight: 0.4,
 	PriorDifficulty: 0.7, PriorStrength: 5,
-	Temperature:       0.25,
+	Temperature:       0.1,
 	MasteryMinSamples: 20, MasteryErrorRate: 0.05,
 	StartLetters: 6, MinWords: 30, RepeatPenalty: 0.3, ExerciseWords: 20,
 }
@@ -114,8 +114,8 @@ func TestMastered(t *testing.T) {
 
 func TestSoftmaxWeight_TemperatureControlsFocus(t *testing.T) {
 	ratio := SoftmaxWeight(1, testParams) / SoftmaxWeight(0, testParams)
-	if !near(ratio, math.Exp(4)) {
-		t.Fatalf("ratio = %v, want e^4", ratio)
+	if !near(ratio/math.Exp(10), 1) {
+		t.Fatalf("ratio = %v, want e^10", ratio)
 	}
 	hot := testParams
 	hot.Temperature = 10
