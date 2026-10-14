@@ -5,9 +5,9 @@
 ```
  Browser (web/)                         Go server
  ┌───────────────────────┐   JSON    ┌─────────────────────────────────────────┐
- │ app.js                │ ───────▶  │ api        HTTP handlers, /api/v1/*      │
- │  keydown, timing,     │ ◀───────  │   │                                      │
- │  keyboard, intro      │           │   ├──▶ engine   model + word generator   │
+ │ ES modules: app.js,   │ ───────▶  │ api        HTTP handlers, /api/v1/*      │
+ │  typing.js (keydown,  │ ◀───────  │   │                                      │
+ │  timing), keyboard... │           │   ├──▶ engine   model + word generator   │
  └───────────────────────┘           │   └──▶ storage  Store interface          │
                                      │              └─ MemoryStore (now)        │
                                      │              └─ PostgresStore (later)    │
@@ -27,7 +27,7 @@ its own.
 | `setup.go` | Loads the embedded data files, creates the store, generator and API server (`newApp`). Shared by both entry points. |
 | `main.go` | Entry point for the normal server: calls `newApp` and starts HTTP. |
 | `main_wasm.go` | Entry point for the GitHub Pages build (see below). |
-| `pages/wasm-shim.js` | Pages only: routes `/api/v1/` requests from `app.js` to the Go code in the browser. |
+| `pages/wasm-shim.js` | Pages only: routes `/api/v1/` requests from the frontend to the Go code in the browser. |
 | `.github/workflows/pages.yml` | On every push to `main`: test, build WebAssembly, publish to Pages. |
 | `internal/config` | Every tunable number in one place. |
 | `internal/engine/model.go` | Per-letter statistics, EMA update, difficulty, mastery, softmax weight. |
@@ -41,14 +41,53 @@ its own.
 | `data/layouts/*.json` | Keys, rows, finger per key, AltGr letters, finger colors. |
 | `data/langs/<id>/words.txt` | Word list per language, most frequent first. |
 | `tools/wordlists/` | Python script + block lists that build the word lists (not part of the app). |
-| `web/` | Static frontend: `index.html`, `style.css`, `app.js`, `i18n.js` with every interface text in all four languages, and `fx.js` with the visual rewards (confetti, counters, the message queue shown in the status line; they never affect what is measured). The interface language always follows the practice language. |
+| `web/` | Static frontend: `index.html`, `style.css` and the JavaScript modules (see "Frontend modules" below). The interface language always follows the practice language. |
+| `webmodules_test.go` | Checks the import rule of the frontend modules. |
 
 The `web/` and `data/` folders are embedded into the binary (`//go:embed`), so
 the program runs the same from any folder.
 
+## Frontend modules
+
+The frontend is plain JavaScript split into native ES modules (`import` /
+`export`). Browsers load them directly: no npm, no bundler, no build step.
+`index.html` loads only `app.js`; each module loads the modules it needs.
+
+| Layer | File | Responsibility |
+|---|---|---|
+| bottom | `state.js` | Shared state `S`, page elements `el`, `store` (localStorage that may be blocked), small helpers. |
+| bottom | `i18n.js` | Every interface text in all four languages, `t()`, `applyI18n()`, `setUiLang()`. |
+| bottom | `fx.js` | Visual rewards: confetti, counters, the message queue in the status line, the start screen. They never affect what is measured. |
+| bottom | `api.js` | `getJSON` / `postJSON` for `/api/v1/`, with `?lang=` added. |
+| middle | `tools.js` | Tooltips of the icon buttons, reset, export / import of the statistics. |
+| middle | `keyboard.js` | On-screen keyboard and hands from the layout data, the next key and finger, the size switch, fitting into the window. |
+| middle | `stats.js` | The stats screen (tiles, WPM chart, heatmap keyboard, letter cards) and `refreshStats()`. |
+| middle | `typing.js` | The exercise text, the caret, `handleChar()` / `backspace()`, the streak, live WPM / accuracy, the letters bar, sending results. |
+| middle | `intro.js` | The first-visit intro and "open all letters". |
+| middle | `languages.js` | The language switch and `loadLanguage()`. |
+| top | `input.js` | Keydown and phone input, the Type / Stats switch, the keyboard size switch, window resize: sends each action to the module that handles it. |
+| top | `app.js` | Entry point: `init()`. |
+
+**Import rule:** imports only go down. `state.js` and `i18n.js` import
+nothing, `fx.js` only `i18n.js`, `api.js` only `state.js`. Middle modules import
+the bottom layer and each other in one direction only. Nothing imports the top
+layer (`app.js` loads `input.js`). There are no import cycles, so every module
+can be read and explained starting from the modules it uses.
+`webmodules_test.go` checks this on every `go test ./...`.
+
+A module can change a field of an object it imports, but it cannot assign to an
+imported variable. That is why the state that several modules share lives in
+one object, `S` (`S.pos`, `S.lang`, ...), while state used by only one module
+stays a plain variable inside it.
+
+`file-check.js` is a small plain script, not a module: browsers do not load
+ES modules from a `file://` address, so when `index.html` is opened by
+double-click it is the only script that runs and it says how to open the page.
+Its one sentence is the only interface text outside `i18n.js`.
+
 ## Request lifecycle: from a keypress to the next exercise
 
-1. `keydown` → `handleChar()` in `app.js` compares the key with the expected
+1. `keydown` (`input.js`) → `handleChar()` in `typing.js` compares the key with the expected
    character and moves on either way (wrong = red). Each typed position keeps
    one sample `{char, errors, ms}`; `backspace()` changes only the screen, never
    the samples. Rules: `docs/ALGORITHM.md`, section 3.
@@ -86,7 +125,7 @@ one letter of the language or a space; per letter `0 <= mistakes <= count`,
 0–400, accuracy 0–100, `chars >= 0`. Limits (`MaxImportBytes`,
 `MaxImportSessions`) are in `internal/config/config.go`. The browser joins the
 languages into one file `{app, version, exportedAt, languages: {id: <export>}}`
-(see `web/app.js`, "export / import"). Import and export use only the existing
+(see `web/tools.js`, "export / import"). Import and export use only the existing
 `Store` methods, so the future PostgreSQL store needs nothing extra.
 
 Every `Store` method takes the language id, so each language has its own
@@ -127,7 +166,7 @@ The same code runs in two places. Go build tags pick the entry point:
 | Entry point | `main.go` (`//go:build !(js && wasm)`) | `main_wasm.go` (`//go:build js && wasm`) |
 | Build | `go run .` | `GOOS=js GOARCH=wasm go build -o app.wasm .` |
 | Where Go runs | on your computer | in the visitor's browser (WebAssembly) |
-| How `app.js` reaches the API | HTTP to `localhost` | `pages/wasm-shim.js` replaces `fetch` for `/api/v1/` and calls `goApi(method, path, body)` |
+| How the frontend reaches the API | HTTP to `localhost` | `pages/wasm-shim.js` replaces `fetch` for `/api/v1/` and calls `goApi(method, path, body)` |
 | Statistics | until the server stops | until the tab is closed or reloaded |
 
 `main_wasm.go` does not listen on a port. It builds the same handler with
@@ -140,9 +179,10 @@ The workflow builds the site by copying `web/`, adding `app.wasm`,
 `wasm_exec.js` (the Go runtime for browsers, shipped with Go) and the shim,
 and inserting two `<script>` tags before `app.js` in `index.html`. The
 server version never loads them. Every file is linked with `?v=<commit>`
-(`app.wasm` too, through the shim), because GitHub Pages lets browsers cache
-files for 10 minutes: without it, a visitor right after a deploy could get the
-new page with an old `app.js` or `app.wasm`.
+(`app.wasm` too, through the shim, and every `import "./x.js"` inside the
+modules), because GitHub Pages lets browsers cache files for 10 minutes:
+without it, a visitor right after a deploy could get the new page with an old
+module or an old `app.wasm`.
 
 ## Adding a layout or language
 
