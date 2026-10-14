@@ -1,4 +1,6 @@
-// Typing trainer frontend. Plain JavaScript, no frameworks.
+// Typing trainer frontend. Plain JavaScript, no frameworks, no build step:
+// native ES modules (see the import rule at the top of state.js).
+// This is the entry point: it loads input.js and starts the app.
 //
 // Flow:  load layout -> load exercise -> user types (keydown) -> every
 // typed position becomes a "sample" {char, errors, ms} -> exercise done ->
@@ -7,107 +9,15 @@
 
 import { SPLASH_PHRASES, setUiLang, t } from "./i18n.js";
 import { FX, Splash } from "./fx.js";
-import { el, S, store, introOpen, isTouch, focusText } from "./state.js";
+import { el, S, store, isTouch } from "./state.js";
 import { getJSON } from "./api.js";
 import { labelTips } from "./tools.js";
-import { applyKb, nearestKb, requestFit } from "./keyboard.js";
-import { refreshStats, renderStats } from "./stats.js";
-import { fitText, placeCaret, loadExercise, handleChar, backspace, nudge } from "./typing.js";
-import { showIntro, introKey } from "./intro.js";
-import { buildLangSwitch, switchLanguage, initialLanguage, loadLanguage } from "./languages.js";
+import { applyKb, nearestKb } from "./keyboard.js";
+import { showIntro } from "./intro.js";
+import { buildLangSwitch, initialLanguage, loadLanguage } from "./languages.js";
 
-// the keyboard size switch
-el.kbSwitch.addEventListener("click", (e) => {
-  const b = e.target.closest("button[data-kb]");
-  if (!b) return;
-  b.blur();
-  const wasHidden = S.kbHidden;
-  S.kbHidden = b.dataset.kb === "off";
-  if (!S.kbHidden) S.kbSize = Number(b.dataset.kb);
-  applyKb(wasHidden !== S.kbHidden);           // fold / unfold only when that changed
-  placeCaret(true);
-});
-window.addEventListener("resize", () => {
-  fitText();
-  requestFit();
-  placeCaret(true);
-  if (S.view === "stats") renderStats();
-});
+import "./input.js";   // keys and buttons: it only adds event listeners
 
-// ---------- views: type / stats ----------
-function setView(name) {
-  S.view = name;
-  const stats = name === "stats";
-  el.switch.classList.toggle("stats", stats);
-  el.tabType.setAttribute("aria-selected", String(!stats));
-  el.tabStats.setAttribute("aria-selected", String(stats));
-  el.viewType.hidden = stats;
-  el.viewStats.hidden = !stats;
-  if (stats) {
-    refreshStats().catch(console.error);
-    renderStats();
-  } else {
-    fitText();
-    requestFit();
-    placeCaret(true);
-    focusText();
-  }
-}
-el.tabType.addEventListener("click", (e) => { e.currentTarget.blur(); setView("type"); });
-el.tabStats.addEventListener("click", (e) => { e.currentTarget.blur(); setView("stats"); });
-
-// ---------- input ----------
-// Desktop: keydown gives us the real key. preventDefault stops the character
-// from ALSO arriving through the hidden input (and space from scrolling).
-document.addEventListener("keydown", (e) => {
-  if (introOpen()) { introKey(e); return; }
-  if (document.body.classList.contains("splashing")) return;
-  // shortcuts: Shift+Tab = type <-> stats, Alt+1...4 = language
-  if (e.key === "Tab" && e.shiftKey) {
-    e.preventDefault();
-    setView(S.view === "type" ? "stats" : "type");
-    return;
-  }
-  const altGr = e.getModifierState?.("AltGraph");
-  if (e.altKey && !e.ctrlKey && !e.metaKey && !altGr && /^Digit[1-9]$/.test(e.code)) {
-    const l = S.languages[Number(e.code.slice(5)) - 1];
-    if (l) { e.preventDefault(); switchLanguage(l.id); }
-    return;
-  }
-  if (S.view !== "type") return;
-  if (e.key === "Escape") { e.preventDefault(); newExercise(); return; }
-  if (e.key === "Tab") { e.preventDefault(); nudge(); return; }   // no restart, see nudge()
-  if (e.key === "Backspace") { e.preventDefault(); focusText(); backspace(e.ctrlKey || e.altKey); return; } // Alt = Option on a Mac
-  // AltGr (Polish ą, ę, ...) is reported as Ctrl+Alt on Windows; let it through,
-  // but keep real browser shortcuts like Ctrl+R working.
-  if ((e.ctrlKey || e.metaKey || e.altKey) && !altGr) return;
-  if (e.key.length !== 1) return;                     // Shift, Tab, "Unidentified"...
-  e.preventDefault();
-  focusText();
-  handleChar(e.key);
-});
-
-// Phones: virtual keyboards often report "Unidentified" on keydown, so the
-// character only shows up here, in the hidden input. We read it and clear it.
-// Backspace on a phone keyboard: the input is empty, so it arrives only here.
-el.input.addEventListener("beforeinput", (e) => {
-  if (e.inputType === "deleteContentBackward") { e.preventDefault(); backspace(false); }
-  if (e.inputType === "deleteWordBackward") { e.preventDefault(); backspace(true); }
-});
-el.input.addEventListener("input", () => {
-  for (const ch of el.input.value) handleChar(ch);
-  el.input.value = "";
-});
-
-el.textBox.addEventListener("click", () => { el.input.focus({ preventScroll: true }); focusText(); });
-el.input.addEventListener("blur", () => { if (isTouch()) el.textBox.classList.add("blurred"); });
-
-function newExercise() {
-  if (S.busy) return;
-  el.live.classList.remove("final");
-  loadExercise().catch(console.error);
-}
-el.btnNew.addEventListener("click", (e) => { e.currentTarget.blur(); newExercise(); });
 // ---------- start ----------
 (async function init() {
   // interface language for the splash, before the server answers
