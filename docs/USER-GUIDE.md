@@ -9,7 +9,7 @@ Everything the trainer does, screen by screen. For a quick overview see the
    <https://go.dev/dl/> (1.22 or newer) and click Next until it finishes.
 2. **Check it works.** Open a *new* PowerShell window and run `go version`.
 3. **Go to the project folder**, for example
-   `cd C:\Users\YOUR_NAME\Desktop\typing-trainer`.
+   `cd C:\Users\YOUR_NAME\Desktop\typetrainer`.
 4. **Start the server:** `go run .`. After a few seconds it prints
    `Typing trainer running. Open http://localhost:3000 in your browser`.
    If Windows asks about the firewall, "Allow" is fine.
@@ -21,7 +21,7 @@ Everything the trainer does, screen by screen. For a quick overview see the
    export button (see below) and load it back next time.
 
 After `git pull` restart the server: the web files are built into the program.
-Optional: `go build -o typing-trainer.exe .` makes one `.exe` to double-click.
+Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
 
 ## Typing screen
 
