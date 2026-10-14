@@ -73,6 +73,19 @@ Some times are **ignored** for speed (but still count for accuracy):
    after a Backspace (that time is spent correcting): both get `ms = 0`
    (not measured).
 
+**Held keys are ignored.** When a key is held down, the operating system
+repeats it every ~30 ms (`keydown` with `repeat = true`). The trainer ignores
+these repeats (Backspace excepted, so holding it still deletes): in a word
+like `all` a repeated `l` would otherwise be recorded as a correct press
+10 times faster than any real finger movement.
+
+There is deliberately **no lower limit** on a single interval. keybr.com drops
+results under 40 ms, but it applies that to the *average* time of a letter in
+a whole lesson. Single intervals of a fast typist are often that short when the
+next key is pressed before the previous one is released (rollover, typical for
+letters typed with different hands), so a per-press limit would throw away
+exactly the fastest real presses and make fast typists look slower.
+
 The press right after a wrong letter is measured normally: the cursor has
 already moved on, so it is an ordinary finger movement from the previous key.
 
