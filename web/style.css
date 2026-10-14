@@ -203,11 +203,27 @@ button, input { font: inherit; }
 .letters-caption .begin { padding: 0 4px; }
 
 /* ---------- text ---------- */
+/* A dark terminal-like card: left-aligned mono text, a block caret and a
+   prompt sign in front. The card is a bit lighter than the page and gets a
+   faint accent edge while it has the focus. */
 .text-box {
-  position: relative; padding: 18px 0 4px; outline: none; cursor: text;
+  position: relative; outline: none; cursor: text;
+  padding: 22px 32px 22px 52px;    /* room on the left for the prompt sign */
+  background: color-mix(in srgb, var(--panel) 70%, var(--bg));
+  border-radius: 16px;
+  box-shadow: var(--ring), 0 10px 30px rgba(0, 0, 0, .22);
+  transition: box-shadow var(--med);
   /* wider than the page, so 20 words fit in 2 lines (app.js, fitText) */
   --tw: min(1240px, 100vw - 32px);
-  width: var(--tw); margin-inline: calc((100% - var(--tw)) / 2);
+  width: var(--tw); margin-inline: calc((100% - var(--tw)) / 2); margin-top: 12px;
+}
+.text-box:focus-within, .text-box:focus {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent), 0 10px 30px rgba(0, 0, 0, .22);
+}
+.text-box::before {                /* the prompt sign, like a shell waiting for input */
+  content: "❯"; position: absolute; left: 24px; top: 22px;
+  font-size: clamp(1.1rem, 3.6vw, 1.6rem); line-height: 1.7;
+  color: var(--accent); opacity: .8;
 }
 .text {
   position: relative;
@@ -216,7 +232,7 @@ button, input { font: inherit; }
      language or the length of the words */
   min-height: calc(2 * 1.7em);
   letter-spacing: .02em; color: var(--sub); word-break: break-word;
-  text-align: center;              /* every line centred, like "center" in Word */
+  text-align: left;                /* like a terminal: lines start at the prompt */
   transition: filter var(--med), opacity var(--med);
 }
 .text.swap { animation: text-in var(--med) var(--ease); }   /* new exercise fades in */
@@ -242,8 +258,12 @@ button, input { font: inherit; }
    it glides from letter to letter instead of jumping. JS sets its position
    and height. "scale" stays free for the Tab nudge and scales in place. */
 .caret {
-  position: absolute; left: 0; top: 0; width: 2px; height: 1.2em;
-  background: var(--accent); border-radius: 1px; pointer-events: none;
+  /* a block caret, one character wide (the font is monospace, so 1ch is
+     exactly one letter), drawn over the letter in a see-through accent */
+  position: absolute; left: 1px; top: 0; width: calc(1ch + .02em); height: 1.2em;
+  background: color-mix(in srgb, var(--accent) 38%, transparent);
+  border-bottom: 2px solid var(--accent);
+  border-radius: 3px; pointer-events: none;
   will-change: translate;
   transition: translate 100ms cubic-bezier(.25, .8, .4, 1);   /* glides, no snapping */
   animation: blink 1s steps(1) infinite;
@@ -672,6 +692,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   button.icon { padding: 0 7px; }
   .kb-switch button { padding: 0 9px; }
   #btn-reset { margin-left: 0; }
+  .text-box { padding: 14px 16px 14px 34px; border-radius: 12px; }
+  .text-box::before { left: 14px; top: 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
