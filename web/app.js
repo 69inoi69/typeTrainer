@@ -4,7 +4,8 @@
 // typed position becomes a "sample" {char, errors, ms} -> exercise done ->
 // POST samples to /api/v1/results (server updates the model, maybe unlocks
 // a letter) -> GET a new exercise built from the updated model.
-"use strict";
+import { t, applyI18n, setUiLang, i18nVars, SPLASH_PHRASES } from "./i18n.js";
+import { FX, Splash } from "./fx.js";
 
 const API = "/api/v1";
 
@@ -1052,7 +1053,7 @@ async function loadLanguage(id) {
     const info = S.languages.find((l) => l.id === id);
     S.alphabet = new Set(info.alphabet);
     document.documentElement.lang = id;
-    uiLang = I18N[id] ? id : "en";        // the interface follows the typing language
+    setUiLang(id);                        // the interface follows the typing language
     markLangSwitch();
     hideWarn();
     el.live.classList.remove("final");
@@ -1248,7 +1249,7 @@ importFile.addEventListener("change", async () => {
 (async function init() {
   // interface language for the splash, before the server answers
   const guess = store.get("tt.lang") || (navigator.language || "").slice(0, 2).toLowerCase();
-  uiLang = I18N[guess] ? guess : "en";
+  setUiLang(guess);
   const splash = Splash.start();
   if (splash.phrase !== undefined) S.mottoIndex = splash.phrase;   // the logo keeps the start phrase
   // keyboard size from last time (an old saved 0 meant "hidden")
@@ -1260,11 +1261,6 @@ importFile.addEventListener("change", async () => {
   applyKb();
   labelTips();
   if (isTouch()) el.textBox.classList.add("blurred"); // phone: tap to open the keyboard
-  if (location.protocol === "file:") {                 // opened by double-click, no server
-    el.text.textContent = t("err.file");
-    await splash.done();
-    return;
-  }
   try {
     S.languages = await getJSON("/languages", true);
     buildLangSwitch();

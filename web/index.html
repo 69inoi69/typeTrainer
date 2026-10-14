@@ -204,8 +204,9 @@
     </div>
   </div>
 
-  <script src="i18n.js"></script>
-  <script src="fx.js"></script>
-  <script src="app.js"></script>
+  <!-- file-check.js: a plain script, it runs even when the page is opened
+       from disk. app.js is an ES module: it loads the other modules itself. -->
+  <script src="file-check.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

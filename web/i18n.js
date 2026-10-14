@@ -8,7 +8,6 @@
 // Finger names are in the form the hint sentence needs ("press X with your
 // left pinky" / "naciśnij X lewym małym palcem"), so each language gets
 // grammatically correct sentences without code per language.
-"use strict";
 
 const I18N = {
   en: {
@@ -83,7 +82,6 @@ const I18N = {
     "warn.layout": "Wrong keyboard layout: switch to <b>{layout}</b> · <kbd>Win</kbd> + <kbd>Space</kbd>",
     "err.server": "could not reach the server. Is it running?",
     "err.load": "Could not load from the server. Is the Go server running?",
-    "err.file": "Open this page through the server: run `go run .` and go to the address it prints (http://localhost:3000).",
     "tile.exercises": "exercises", "tile.best": "best wpm",
     "tile.avgWpm": "avg wpm, last 10", "tile.avgAcc": "avg accuracy, last 10",
     "stats.speed": "speed per exercise", "stats.letters": "letters",
@@ -377,17 +375,22 @@ const I18N = {
   },
 };
 
-let uiLang = "en";        // set by app.js together with the typing language
-const SPLASH_PHRASES = 8; // splash.0 ... splash.7 in every language
-const i18nVars = {};      // placeholders used by static texts: {f}, {j}, {l}, {r}, {target}
+let uiLang = "en";        // the interface language, changed with setUiLang()
+export const SPLASH_PHRASES = 8; // splash.0 ... splash.7 in every language
+export const i18nVars = {};      // placeholders used by static texts: {f}, {j}, {l}, {r}, {target}
 
-function t(key, vars = {}) {
+// The interface follows the typing language; English if it has no texts.
+export function setUiLang(id) {
+  uiLang = I18N[id] ? id : "en";
+}
+
+export function t(key, vars = {}) {
   const text = I18N[uiLang]?.[key] ?? I18N.en[key] ?? key;
   return text.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? i18nVars[name] ?? ""));
 }
 
 // Fills every element that has data-i18n="key" (texts are our own, so
 // innerHTML is safe; it lets texts contain <b> and <kbd>).
-function applyI18n(root = document) {
+export function applyI18n(root = document) {
   root.querySelectorAll("[data-i18n]").forEach((node) => { node.innerHTML = t(node.dataset.i18n); });
 }
