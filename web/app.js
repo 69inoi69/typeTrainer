@@ -4,51 +4,11 @@
 // typed position becomes a "sample" {char, errors, ms} -> exercise done ->
 // POST samples to /api/v1/results (server updates the model, maybe unlocks
 // a letter) -> GET a new exercise built from the updated model.
-import { t, applyI18n, setUiLang, i18nVars, SPLASH_PHRASES } from "./i18n.js";
+import { SPLASH_PHRASES, i18nVars, setUiLang, t, applyI18n } from "./i18n.js";
 import { FX, Splash } from "./fx.js";
+import { $, el, S, store, introOpen, isTouch, focusText } from "./state.js";
 
 const API = "/api/v1";
-
-// ---------- page elements ----------
-const $ = (id) => document.getElementById(id);
-const el = {
-  textBox: $("text-box"), text: $("text"), caret: $("caret"), input: $("hidden-input"),
-  keyboard: $("keyboard"), hint: $("finger-hint"),
-  live: $("live"), wpm: $("wpm"), raw: $("raw"), acc: $("acc"), motto: $("logo-motto"),
-  letters: $("letters"), lettersCaption: $("letters-caption"),
-  tooltip: $("tooltip"),
-  btnNew: $("btn-new"), btnIntro: $("btn-intro"), heatKb: $("heat-kb"),
-  kbSwitch: $("kb-switch"), hands: $("hands"),
-  intro: $("intro"),
-  switch: document.querySelector(".switch"), tabType: $("tab-type"), tabStats: $("tab-stats"),
-  viewType: $("view-type"), viewStats: $("view-stats"),
-  tiles: $("tiles"), chart: $("chart"), chartNote: $("chart-note"), letterGrid: $("letter-grid"),
-  langSwitch: $("lang-switch"), warn: $("layout-warn"),
-  streak: $("streak"), streakN: $("streak-n"),
-};
-
-// ---------- state ----------
-// Shared state: everything that more than one part of the app reads or
-// changes lives in this one object, S.
-const S = {
-  languages: [],          // from /api/v1/languages
-  lang: "en",             // id of the current language
-  alphabet: new Set(),    // letters of the current language
-  layout: null,           // keyboard layout of the current language
-  keyEls: {},             // char -> key <div> (the letter printed on the key)
-  altBase: {},            // AltGr letter -> base key char ("ą" -> "a")
-  altgrEl: null,          // the AltGr key, if the layout has one
-  exercise: null,         // last /exercise answer: text, focus, unlocked, locked
-  lastStats: null,        // last /stats answer
-  text: "",               // the exercise text
-  pos: 0,                 // index of the character to type next
-  busy: false,            // true while talking to the server between exercises
-  view: "type",           // "type" or "stats"
-  kbSize: 100,            // keyboard size in %, one of KB_SIZES
-  kbHidden: false,        // keyboard and hands switched off
-  // the small phrase over the logo: the same one the start screen showed
-  mottoIndex: Math.floor(Math.random() * SPLASH_PHRASES),
-};
 
 // Typing state, used only by the typing code.
 let fingerOf = {};         // char -> finger id
@@ -73,13 +33,6 @@ let wordClean = true;      // no mistake in the current word so far
 let tabsResisted = 0;      // Tab presses during this exercise (no restart here)
 let tabMsg = 0;            // which of the Tab messages comes next
 let justMastered = new Set(); // letters mastered in the last exercise (chips shine)
-
-// ---------- small helpers ----------
-const store = { // localStorage can be blocked; the app must work without it
-  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
-  set(k, v) { try { localStorage.setItem(k, v); } catch { /* ignore */ } },
-};
-const introOpen = () => !el.intro.classList.contains("hidden") && !el.intro.classList.contains("closing");
 
 // ---------- server calls ----------
 // Every call except /languages is about one language: add ?lang= to it.
@@ -1132,11 +1085,6 @@ el.input.addEventListener("input", () => {
   el.input.value = "";
 });
 
-const isTouch = () => matchMedia("(pointer: coarse)").matches;
-function focusText() {
-  if (isTouch() && document.activeElement !== el.input) el.input.focus({ preventScroll: true });
-  el.textBox.classList.remove("blurred");
-}
 el.textBox.addEventListener("click", () => { el.input.focus({ preventScroll: true }); focusText(); });
 el.input.addEventListener("blur", () => { if (isTouch()) el.textBox.classList.add("blurred"); });
 
@@ -1250,6 +1198,8 @@ importFile.addEventListener("change", async () => {
   // interface language for the splash, before the server answers
   const guess = store.get("tt.lang") || (navigator.language || "").slice(0, 2).toLowerCase();
   setUiLang(guess);
+  // the small phrase over the logo: the same one the start screen showed
+  S.mottoIndex = Math.floor(Math.random() * SPLASH_PHRASES);
   const splash = Splash.start();
   if (splash.phrase !== undefined) S.mottoIndex = splash.phrase;   // the logo keeps the start phrase
   // keyboard size from last time (an old saved 0 meant "hidden")

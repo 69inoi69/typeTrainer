@@ -5,7 +5,7 @@
 // (element.animate, runs on the compositor) or a short canvas animation that
 // runs only at the END of an exercise, never per keystroke.
 // With "reduce motion" switched on in the OS, all of it is skipped.
-import { t, SPLASH_PHRASES } from "./i18n.js";
+import { SPLASH_PHRASES, t } from "./i18n.js";
 
 export const FX = (() => {
   const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
