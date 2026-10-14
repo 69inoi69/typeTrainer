@@ -7,8 +7,7 @@
 import { SPLASH_PHRASES, i18nVars, setUiLang, t, applyI18n } from "./i18n.js";
 import { FX, Splash } from "./fx.js";
 import { $, el, S, store, introOpen, isTouch, focusText } from "./state.js";
-
-const API = "/api/v1";
+import { API, getJSON, postJSON } from "./api.js";
 
 // Typing state, used only by the typing code.
 let fingerOf = {};         // char -> finger id
@@ -33,26 +32,6 @@ let wordClean = true;      // no mistake in the current word so far
 let tabsResisted = 0;      // Tab presses during this exercise (no restart here)
 let tabMsg = 0;            // which of the Tab messages comes next
 let justMastered = new Set(); // letters mastered in the last exercise (chips shine)
-
-// ---------- server calls ----------
-// Every call except /languages is about one language: add ?lang= to it.
-function withLang(path) {
-  return path + (path.includes("?") ? "&" : "?") + "lang=" + encodeURIComponent(S.lang);
-}
-async function getJSON(path, global = false) {
-  const res = await fetch(API + (global ? path : withLang(path)));
-  if (!res.ok) throw new Error(path + " -> " + res.status);
-  return res.json();
-}
-async function postJSON(path, body) {
-  const res = await fetch(API + withLang(path), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(path + " -> " + res.status);
-  return res.json();
-}
 
 // ---------- keyboard ----------
 function makeKey(k) {
