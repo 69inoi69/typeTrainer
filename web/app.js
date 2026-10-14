@@ -14,6 +14,7 @@ import { getJSON } from "./api.js";
 import { labelTips } from "./tools.js";
 import { applyKb, nearestKb } from "./keyboard.js";
 import { showIntro } from "./intro.js";
+import { renderProfile } from "./profile.js";
 import { buildLangSwitch, initialLanguage, loadLanguage } from "./languages.js";
 
 import "./input.js";   // keys and buttons: it only adds event listeners
@@ -23,6 +24,7 @@ import "./input.js";   // keys and buttons: it only adds event listeners
   // interface language for the splash, before the server answers
   const guess = store.get("tt.lang") || (navigator.language || "").slice(0, 2).toLowerCase();
   setUiLang(guess);
+  renderProfile();
   // the small phrase over the logo: the same one the start screen showed
   S.mottoIndex = Math.floor(Math.random() * SPLASH_PHRASES);
   const splash = Splash.start();

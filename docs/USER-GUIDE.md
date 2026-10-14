@@ -9,7 +9,7 @@ Everything the trainer does, screen by screen. For a quick overview see the
    <https://go.dev/dl/> (1.22 or newer) and click Next until it finishes.
 2. **Check it works.** Open a *new* PowerShell window and run `go version`.
 3. **Go to the project folder**, for example
-   `cd C:\Users\YOUR_NAME\Desktop\typing-trainer`.
+   `cd C:\Users\YOUR_NAME\Desktop\typetrainer`.
 4. **Start the server:** `go run .`. After a few seconds it prints
    `Typing trainer running. Open http://localhost:3000 in your browser`.
    If Windows asks about the firewall, "Allow" is fine.
@@ -21,7 +21,7 @@ Everything the trainer does, screen by screen. For a quick overview see the
    export button (see below) and load it back next time.
 
 After `git pull` restart the server: the web files are built into the program.
-Optional: `go build -o typing-trainer.exe .` makes one `.exe` to double-click.
+Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
 
 ## Typing screen
 
@@ -47,25 +47,36 @@ Optional: `go build -o typing-trainer.exe .` makes one `.exe` to double-click.
 - The keyboard shows the next key in its finger color; keys you do not need yet
   are dimmed. Above the keyboard two hands light up the finger that presses
   it (space = both thumbs, AltGr letters = right thumb + the finger).
+- The header is quiet, as on monkeytype: on the left the logo and two small
+  icons (typing / statistics), on the right the languages and the profile.
+  The chosen option has a short yellow line under it. From your first
+  keypress until the end of the exercise the header steps back: the logo turns
+  grey, the controls almost vanish (move the mouse over the header to bring
+  them back) and the small phrase over the logo turns into a "typing" one.
 - The **EN · PL · UK · RU** switch changes the language you practise **and the
   language of the interface** (remembered in your browser; the first time it
   follows your browser's language).
 - **Tab does not restart.** Restarting throws away exactly the mistakes the
   trainer learns from, so Tab only answers with a small animation and a kind
-  message; at the end you see how many times you resisted. `Esc` still gives a
-  new exercise.
-- The **flame + number** in the header counts clean words in a row (typed
-  without a single mistake; hover for the tooltip). It gets hotter as it grows:
-  green from 3, yellow from 10, orange with a flickering flame from 25, glowing
-  red from 50. New records, mastered letters and new letters get
-  a small celebration.
+  message; at the end you see how many times you resisted. `Esc` (restart)
+  still gives a new exercise.
+- The **bolt + number** at the right end of the numbers line counts clean words
+  in a row (typed without a single mistake; hover for the tooltip). It gets
+  hotter as it grows: green from 3, yellow from 10, orange with a zapping bolt
+  from 25, glowing red from 50. New records, mastered letters, new letters and
+  the streak at 10 and every 25 words get a small celebration.
 - Messages are part of the page, not pop-ups: a message takes the place of the
   status line under the letters for a few seconds, then the status line comes
   back. One at a time, the others wait their turn. The thin bar under each
-  message fills up while it is shown; hover pauses it, a click skips it. Every kind has its own color, icon and small
-  animation: record (gold trophy), new letter (blue, the letter itself),
-  mastered (green check), streak (orange flame), Tab urges beaten (violet
-  shield), Tab message (small, grey).
+  message fills up while it is shown; hover pauses it, a click skips it. All
+  messages look like the rest of the page; every kind has its own icon, small
+  animation and colour of the time bar: record (gold, trophy), new letter
+  (blue, the letter itself), mastered (green, check), streak (orange, bolt),
+  Tab urges beaten (violet, shield), tip (teal, light bulb), Tab message (grey).
+- The texts are picked at random from small pools, so they do not repeat all
+  the time: ironic records and streaks, a joke when a new letter opens (some
+  letters have their own, like q, ą or ъ), and now and then after an exercise
+  a typing tip.
 - Buttons under the keyboard (hover for a tooltip): **beginner guide** (the
   intro again) and the keyboard switch **off · S · M · L** (hides keyboard and
   hands, or picks a size; remembered in your browser). The keyboard never makes
@@ -77,13 +88,18 @@ Optional: `go build -o typing-trainer.exe .` makes one `.exe` to double-click.
 - The red-on-click bin button resets everything: progress in all languages and
   the settings saved in your browser, as on the very first visit. It needs a
   second click (the first one turns it red), so it does not happen by accident.
-- Shortcuts, also listed small at the bottom of the page: `Esc` new text ·
-  `Shift + Tab` type / stats · `Alt + 1…4` language. On phones (no Esc key) a
-  "new text" button is shown under the text instead.
-- The header shows **wpm**, **raw** (every keypress counts, wrong ones too, like
-  on monkeytype; only shown, never stored) and accuracy. Over the logo there is
-  a small phrase: the same one the start screen showed, it flies there with
-  the logo.
+- Shortcuts, also listed small at the bottom of the page: `Esc` restart ·
+  `Shift + Tab` type / stats · `Alt + 1…4` language · `Alt + K` keyboard and
+  hands on / off. On phones (no Esc key) a "restart" button is shown under
+  the text instead.
+- The top line of the text card shows **wpm**, **raw** (every keypress counts,
+  wrong ones too, like on monkeytype; only shown, never stored) and accuracy.
+  It is dim while you read and bright while you type; the digits roll like a
+  scoreboard. Over the logo there is a small phrase: the same one the start
+  screen showed, it flies there with the logo.
+- The **profile** in the top right corner is a placeholder for real accounts:
+  you can set a name and a picture (a colour, or your own image), kept only in
+  this browser. Nothing is sent to the server; "reset" forgets it too.
 - The **keyboard / chart** icon switch at the top (or `Shift + Tab`) opens the statistics screen: totals,
   speed of every exercise, a **difficulty keyboard** (grey keys, the redder the
   harder the letter is for you, dashed = no data yet; hover or tap a key for

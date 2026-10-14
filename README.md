@@ -7,7 +7,7 @@
 <p align="center">
   An adaptive touch-typing trainer that finds your weakest letters<br>
   and builds every exercise from real words around them.<br><br>
-  <a href="https://69inoi69.github.io/typing-trainer/"><b>Try it in your browser</b></a>
+  <a href="https://69inoi69.github.io/typetrainer/"><b>Try it in your browser</b></a>
 </p>
 
 ---

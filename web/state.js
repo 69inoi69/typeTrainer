@@ -3,7 +3,7 @@
 // Import rule of the frontend (three layers, imports only go down):
 //   bottom: state.js and i18n.js import nothing, fx.js only i18n.js,
 //           api.js only state.js
-//   middle: keyboard, typing, stats, intro, languages, tools import the bottom
+//   middle: keyboard, typing, stats, intro, languages, tools, profile import the bottom
 //           and each other in one direction only (no cycles)
 //   top:    input.js and app.js may import anything; nothing imports them
 //           (app.js loads input.js)

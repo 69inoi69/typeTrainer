@@ -58,15 +58,16 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | Layer | File | Responsibility |
 |---|---|---|
 | bottom | `state.js` | Shared state `S`, page elements `el`, `store` (localStorage that may be blocked), small helpers. |
-| bottom | `i18n.js` | Every interface text in all four languages, `t()`, `applyI18n()`, `setUiLang()`. |
-| bottom | `fx.js` | Visual rewards: confetti, counters, the message queue in the status line, the start screen. They never affect what is measured. |
+| bottom | `i18n.js` | Every interface text in all four languages, `t()`, `tPick()` (a random text from a pool), `applyI18n()`, `setUiLang()`. |
+| bottom | `fx.js` | Visual rewards: confetti, scoreboard digits, the message queue in the status line, the start screen. They never affect what is measured. |
 | bottom | `api.js` | `getJSON` / `postJSON` for `/api/v1/`, with `?lang=` added. |
 | middle | `tools.js` | Tooltips of the icon buttons, reset, export / import of the statistics. |
 | middle | `keyboard.js` | On-screen keyboard and hands from the layout data, the next key and finger, the size switch, fitting into the window. |
 | middle | `stats.js` | The stats screen (tiles, WPM chart, heatmap keyboard, letter cards) and `refreshStats()`. |
-| middle | `typing.js` | The exercise text, the caret, `handleChar()` / `backspace()`, the streak, live WPM / accuracy, the letters bar, sending results. |
+| middle | `typing.js` | The exercise text, the caret, `handleChar()` / `backspace()`, the streak, live WPM / accuracy, the "typing now" header mode, the letters bar, sending results. |
 | middle | `intro.js` | The first-visit intro and "open all letters". |
 | middle | `languages.js` | The language switch and `loadLanguage()`. |
+| middle | `profile.js` | The profile placeholder in the header: name and picture, kept only in the browser. |
 | top | `input.js` | Keydown and phone input, the Type / Stats switch, the keyboard size switch, window resize: sends each action to the module that handles it. |
 | top | `app.js` | Entry point: `init()`. |
 

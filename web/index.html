@@ -19,34 +19,44 @@
     <div class="splash-logo" id="splash-logo"><span class="splash-type">type<b>trainer</b></span></div>
   </div>
   <header class="top">
-    <!-- logo: the yellow key (same as the tab icon) + name + a small random motto -->
+    <!-- left: the logo and, right after it, the Type / Stats icons -->
+    <div class="top-side">
     <div class="logo">
       <svg class="logo-key" viewBox="0 0 64 64" aria-hidden="true"><rect x="9" y="12" width="46" height="44" rx="10" fill="#a8851a"/><rect x="9" y="8" width="46" height="42" rx="10" fill="#e2b714"/><rect x="22" y="38" width="20" height="5" rx="2.5" fill="#15171a"/></svg>
+      <!-- the small phrase over the name changes while you type (typing.js, setMotto) -->
       <div class="logo-text"><small class="logo-motto" id="logo-motto">&nbsp;</small><span class="logo-name">type<span>trainer</span></span></div>
     </div>
-
-    <!-- Type / Stats switch (icons) and the language switch, always in the
-         middle of the header. The yellow pill slides between the options. -->
-    <div class="switches">
-    <div class="switch view-switch" role="tablist" aria-label="View">
+    <!-- Type / Stats: two quiet icons; a short accent line slides under the chosen one -->
+    <nav class="switch mini view-switch" role="tablist" aria-label="View">
       <span class="switch-thumb" aria-hidden="true"></span>
       <button type="button" role="tab" id="tab-type" aria-selected="true" aria-controls="view-type" data-tip="tip.type"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="11" rx="2"/><path d="M7 10.5h.01M10 10.5h.01M13 10.5h.01M16 10.5h.01M8 14h8"/></svg></button>
       <button type="button" role="tab" id="tab-stats" aria-selected="false" aria-controls="view-stats" data-tip="tip.stats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16"/><path d="M7 16v-5M12 16V7M17 16v-8"/></svg></button>
-    </div>
-    <!-- Buttons come from /api/v1/languages. -->
-    <div class="switch lang-switch" id="lang-switch" role="tablist" aria-label="Language" data-tip="tip.lang"></div>
+    </nav>
     </div>
 
-    <div class="live" id="live">
-      <div class="metric"><span id="wpm">0</span><small>wpm</small></div>
-      <!-- raw: every keypress counts, wrong ones too (display only, never sent) -->
-      <div class="metric raw" data-tip="tip.raw"><span id="raw">0</span><small data-i18n="metric.raw">raw</small></div>
-      <div class="metric"><span id="acc">100</span><small data-i18n="metric.acc">% acc</small></div>
-      <!-- clean-word streak: words typed without a single mistake, in a row.
-           Same shape as the numbers next to it; data-tier makes it "hotter". -->
-      <div class="streak" id="streak" aria-live="polite" data-tier="0" data-tip="tip.streak">
-        <svg class="flame" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c.8 3.2 4.5 4.8 4.5 9.2a4.5 4.5 0 0 1-9 0c0-1.9.8-3.2 1.9-4.2.1 1.5.8 2.4 1.9 2.8C10.8 8 11 5.4 12 3z"/></svg><span id="streak-n">0</span><small class="sr-only" data-i18n="streak.label">clean words</small>
+    <!-- right: the language switch (same quiet look) and the profile -->
+    <div class="top-side right">
+    <!-- Buttons come from /api/v1/languages. -->
+    <div class="switch mini lang-switch" id="lang-switch" role="tablist" aria-label="Language" data-tip="tip.lang"></div>
+    <!-- Profile: a placeholder for real accounts later. Name and picture live
+         only in this browser (profile.js); nothing goes to the server. -->
+    <div class="profile" id="profile">
+      <button type="button" class="profile-btn" id="profile-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="profile-card">
+        <span class="avatar" id="avatar" aria-hidden="true"></span><span class="profile-name" id="profile-name"></span>
+      </button>
+      <div class="profile-card" id="profile-card" role="dialog" aria-labelledby="profile-title" hidden>
+        <p class="profile-title" id="profile-title" data-i18n="profile.title">profile</p>
+        <div class="profile-row">
+          <span class="avatar big" id="avatar-big" aria-hidden="true"></span>
+          <label class="profile-field"><small data-i18n="profile.name">name</small>
+            <input id="profile-input" type="text" maxlength="20" autocomplete="off" spellcheck="false"></label>
+        </div>
+        <small class="profile-label" data-i18n="profile.picture">picture</small>
+        <div class="avatar-picks" id="avatar-picks"></div>
+        <input id="avatar-file" type="file" accept="image/*" hidden>
+        <p class="profile-soon" data-i18n="profile.soon">accounts and sync: coming soon™</p>
       </div>
+    </div>
     </div>
   </header>
 
@@ -70,6 +80,19 @@
       <!-- The text to type. Each character is its own <span>; the caret is one
            separate element that slides to the current character. -->
       <div id="text-box" class="text-box" tabindex="0" aria-label="Exercise text">
+        <!-- Live numbers: the top line of the card, small and dim, brighter
+             while you type. Digits roll like a scoreboard (fx.js, FX.roll). -->
+        <div class="live" id="live">
+          <div class="metric"><span id="wpm">0</span><small>wpm</small></div>
+          <!-- raw: every keypress counts, wrong ones too (display only, never sent) -->
+          <div class="metric raw" data-tip="tip.raw"><span id="raw">0</span><small data-i18n="metric.raw">raw</small></div>
+          <div class="metric"><span id="acc">100</span><small data-i18n="metric.acc">% acc</small></div>
+          <!-- clean-word streak: words typed without a single mistake, in a row.
+               Same shape as the numbers next to it; data-tier makes it "hotter". -->
+          <div class="streak" id="streak" aria-live="polite" data-tier="0" data-tip="tip.streak">
+            <svg class="bolt" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2.5 5 13.5h6l-1 8 8.5-11h-6z"/></svg><span id="streak-n">0</span><small class="sr-only" data-i18n="streak.label">clean words</small>
+          </div>
+        </div>
         <div id="text" class="text">loading…</div>
         <div id="caret" class="caret" aria-hidden="true"></div>
         <div id="focus-hint" class="focus-hint" data-i18n="focusHint">tap here to start typing</div>
@@ -81,13 +104,14 @@
       <!-- Which finger presses the next key: two hands, the finger lights up
            in its color. The sentence below is for screen readers only. -->
       <div class="hands" id="hands" aria-hidden="true">
-        <!-- Drawn in SVG like a real hand seen from above: fingers grow out of the
+        <!-- Drawn in SVG, a hand seen from above: fingers grow out of the
              knuckle line (their bases are hidden under the palm), lengths as on a
-             real hand, the thumb comes out of the side of the palm. Every finger
+             real hand, the thumb comes out of the side of the palm. The palm is
+             a symmetric rounded shape, so the two hands look calm and even. Every finger
              is tinted in its finger colour; the one to use fills up. Every finger
              <g> has data-f. The right hand is the mirror image of the left one. -->
-        <svg class="hand left" viewBox="0 0 100 84" aria-hidden="true"><g transform="translate(0 6)"><g transform="rotate(-8 21 47)"><g class="finger" data-f="lp"><path class="skin" d="M14.8 60L15.9 25.1A5.1 5.1 0 0 1 26.1 25.1L27.2 60Z"/></g></g><g transform="rotate(-3 35.5 41)"><g class="finger" data-f="lr"><path class="skin" d="M28.5 54L29.8 12.7A5.7 5.7 0 0 1 41.2 12.7L42.5 54Z"/></g></g><g transform="rotate(0 50.5 38.5)"><g class="finger" data-f="lm"><path class="skin" d="M43.2 51.5L44.6 7.9A5.9 5.9 0 0 1 56.4 7.9L57.8 51.5Z"/></g></g><g transform="rotate(4 65.5 41)"><g class="finger" data-f="li"><path class="skin" d="M58.5 54L59.8 15.2A5.7 5.7 0 0 1 71.2 15.2L72.5 54Z"/></g></g><g transform="rotate(48 71 66)"><g class="finger thumb" data-f="thl"><path class="skin" d="M63.5 82L64.8 45.1A6.1 6.1 0 0 1 77.2 45.1L78.5 82Z"/></g></g><path class="palm" d="M15 56C14.5 50 16.5 46.5 21 45.5C25 41.5 30 40 35.5 39.8C40 37.5 45.5 36.8 50.5 36.8C56 36.8 61.5 37.8 65.5 39.6C70.5 40.2 73.5 42.5 74.5 46.5C76 50.5 78.5 54 79.5 58.5C80.5 66 75 73 68.5 76.5L67 84H25.5L24 77C18.5 72 15.5 64 15 56Z"/></g></svg>
-        <svg class="hand right" viewBox="0 0 100 84" aria-hidden="true"><g transform="translate(100 0) scale(-1 1)"><g transform="translate(0 6)"><g transform="rotate(-8 21 47)"><g class="finger" data-f="rp"><path class="skin" d="M14.8 60L15.9 25.1A5.1 5.1 0 0 1 26.1 25.1L27.2 60Z"/></g></g><g transform="rotate(-3 35.5 41)"><g class="finger" data-f="rr"><path class="skin" d="M28.5 54L29.8 12.7A5.7 5.7 0 0 1 41.2 12.7L42.5 54Z"/></g></g><g transform="rotate(0 50.5 38.5)"><g class="finger" data-f="rm"><path class="skin" d="M43.2 51.5L44.6 7.9A5.9 5.9 0 0 1 56.4 7.9L57.8 51.5Z"/></g></g><g transform="rotate(4 65.5 41)"><g class="finger" data-f="ri"><path class="skin" d="M58.5 54L59.8 15.2A5.7 5.7 0 0 1 71.2 15.2L72.5 54Z"/></g></g><g transform="rotate(48 71 66)"><g class="finger thumb" data-f="thr"><path class="skin" d="M63.5 82L64.8 45.1A6.1 6.1 0 0 1 77.2 45.1L78.5 82Z"/></g></g><path class="palm" d="M15 56C14.5 50 16.5 46.5 21 45.5C25 41.5 30 40 35.5 39.8C40 37.5 45.5 36.8 50.5 36.8C56 36.8 61.5 37.8 65.5 39.6C70.5 40.2 73.5 42.5 74.5 46.5C76 50.5 78.5 54 79.5 58.5C80.5 66 75 73 68.5 76.5L67 84H25.5L24 77C18.5 72 15.5 64 15 56Z"/></g></g></svg>
+        <svg class="hand left" viewBox="0 0 100 84" aria-hidden="true"><g transform="translate(0 6)"><g transform="rotate(-8 21 47)"><g class="finger" data-f="lp"><path class="skin" d="M14.8 60L15.9 25.1A5.1 5.1 0 0 1 26.1 25.1L27.2 60Z"/></g></g><g transform="rotate(-3 35.5 41)"><g class="finger" data-f="lr"><path class="skin" d="M28.5 54L29.8 12.7A5.7 5.7 0 0 1 41.2 12.7L42.5 54Z"/></g></g><g transform="rotate(0 50.5 38.5)"><g class="finger" data-f="lm"><path class="skin" d="M43.2 51.5L44.6 7.9A5.9 5.9 0 0 1 56.4 7.9L57.8 51.5Z"/></g></g><g transform="rotate(4 65.5 41)"><g class="finger" data-f="li"><path class="skin" d="M58.5 54L59.8 15.2A5.7 5.7 0 0 1 71.2 15.2L72.5 54Z"/></g></g><g transform="rotate(48 71 66)"><g class="finger thumb" data-f="thl"><path class="skin" d="M63.5 82L64.8 45.1A6.1 6.1 0 0 1 77.2 45.1L78.5 82Z"/></g></g><path class="palm" d="M14.5 50C14.5 43 20 39.5 28 38.8C34 38.2 39.5 37.8 44.5 37.8C49.5 37.8 55 38.2 61 38.8C69 39.5 74.5 43 74.5 50C74.5 60 71 68 66 74L64 84H25L23 74C18 68 14.5 60 14.5 50Z"/></g></svg>
+        <svg class="hand right" viewBox="0 0 100 84" aria-hidden="true"><g transform="translate(100 0) scale(-1 1)"><g transform="translate(0 6)"><g transform="rotate(-8 21 47)"><g class="finger" data-f="rp"><path class="skin" d="M14.8 60L15.9 25.1A5.1 5.1 0 0 1 26.1 25.1L27.2 60Z"/></g></g><g transform="rotate(-3 35.5 41)"><g class="finger" data-f="rr"><path class="skin" d="M28.5 54L29.8 12.7A5.7 5.7 0 0 1 41.2 12.7L42.5 54Z"/></g></g><g transform="rotate(0 50.5 38.5)"><g class="finger" data-f="rm"><path class="skin" d="M43.2 51.5L44.6 7.9A5.9 5.9 0 0 1 56.4 7.9L57.8 51.5Z"/></g></g><g transform="rotate(4 65.5 41)"><g class="finger" data-f="ri"><path class="skin" d="M58.5 54L59.8 15.2A5.7 5.7 0 0 1 71.2 15.2L72.5 54Z"/></g></g><g transform="rotate(48 71 66)"><g class="finger thumb" data-f="thr"><path class="skin" d="M63.5 82L64.8 45.1A6.1 6.1 0 0 1 77.2 45.1L78.5 82Z"/></g></g><path class="palm" d="M14.5 50C14.5 43 20 39.5 28 38.8C34 38.2 39.5 37.8 44.5 37.8C49.5 37.8 55 38.2 61 38.8C69 39.5 74.5 43 74.5 50C74.5 60 71 68 66 74L64 84H25L23 74C18 68 14.5 60 14.5 50Z"/></g></g></svg>
       </div>
       <div class="finger-hint sr-only" id="finger-hint" aria-live="off">&nbsp;</div>
 
@@ -151,9 +175,10 @@
 
   <!-- keyboard shortcuts, small and grey at the bottom (hidden on phones) -->
   <footer class="hints" aria-label="Shortcuts">
-    <span><kbd>esc</kbd> <span data-i18n="hint.new">new text</span></span>
+    <span><kbd>esc</kbd> <span data-i18n="hint.new">restart</span></span>
     <span><kbd>shift</kbd> + <kbd>tab</kbd> <span data-i18n="hint.view">typing / statistics</span></span>
     <span><kbd>alt</kbd> + <kbd>1</kbd>…<kbd>4</kbd> <span data-i18n="hint.lang">language</span></span>
+    <span><kbd>alt</kbd> + <kbd>k</kbd> <span data-i18n="hint.kb">keyboard</span></span>
   </footer>
 
   <div id="tooltip" class="tooltip" role="tooltip"></div>
@@ -193,7 +218,7 @@
             <button id="intro-new" type="button" class="primary" data-i18n="intro.new">Start <kbd>enter</kbd></button>
             <button id="intro-pro" type="button" data-i18n="intro.pro">I can already touch type</button>
           </div>
-          <p class="intro-small" data-i18n="intro.keys">Shortcuts: Shift+Tab statistics · Alt+1…4 language · Esc new text</p>
+          <p class="intro-small" data-i18n="intro.keys">Shortcuts: Shift+Tab statistics · Alt+1…4 language · Esc restart · Alt+K keyboard</p>
         </section>
       </div>
       <div class="intro-nav">
