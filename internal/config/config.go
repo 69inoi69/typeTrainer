@@ -3,7 +3,10 @@
 // it has this value is explained in docs/ALGORITHM.md ("Parameters").
 package config
 
-import "typingtrainer/internal/engine"
+import (
+	"typingtrainer/internal/engine"
+	"typingtrainer/internal/sim"
+)
 
 type Config struct {
 	Addr      string // address the HTTP server listens on
@@ -12,6 +15,7 @@ type Config struct {
 	MaxImportBytes    int // largest accepted import body (one language)
 	MaxImportSessions int // most history entries accepted in one import
 	Engine            engine.Params
+	Sim               sim.Params // only for the simulation tool (go run ./tools/sim)
 }
 
 func Default() Config {
@@ -43,6 +47,23 @@ func Default() Config {
 			MinWords:      30,  // ...and at least 30 real words to choose from
 			RepeatPenalty: 0.3, // each earlier use in the exercise multiplies weight by 0.3
 			ExerciseWords: 20,  // short exercises -> the model updates more often
+		},
+		// A made-up typist: assumptions of the simulation, not measured values.
+		// docs/ALGORITHM.md section 11 explains them.
+		Sim: sim.Params{
+			ErrMin: 0.03, ErrMax: 0.30, // some letters almost fine, some wrong every 3rd time
+			TimeMin: 350, TimeMax: 900, // from just above 30 WPM to hunting for the key
+			ErrFloor:  0.01, // nobody gets to exactly 0 mistakes
+			TimeFloor: 200,  // 60 WPM: the limit of this typist
+			LearnRate: 0.02, // ~100 presses take a bad letter to the mastery goal
+			TimeNoise: 0.25, // presses vary by up to ±25 %
+
+			Runs:         20,   // 20 different typists per strategy
+			MaxExercises: 3000, // about 30 hours of practice at 30 WPM: give up
+
+			BestOf:        20,   // monkeytype weak-spot.ts: wordSamples
+			MissPenaltyMs: 5000, // monkeytype weak-spot.ts: incorrectPenalty
+			ScoreWindow:   50,   // monkeytype weak-spot.ts: perCharCount
 		},
 	}
 }

@@ -101,6 +101,9 @@ func (g *Generator) NextUnlocked(stats map[string]KeyStat, unlocked int, p Param
 	return unlocked + 1
 }
 
+// Words returns the words that can appear when `unlocked` letters are open.
+func (g *Generator) Words(unlocked int) []string { return g.eligible(g.Clamp(unlocked)) }
+
 // letterRune turns a one-letter string ("e", "ą", "ж") into its rune.
 // (c[0] would only be the first BYTE, which is wrong for ą or Cyrillic,
 // because those letters take two bytes in UTF-8.)

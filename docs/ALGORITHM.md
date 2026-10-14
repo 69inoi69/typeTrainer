@@ -333,11 +333,71 @@ These are directions, not things that are built:
   twice as often (`TestNext_WeakLetterGetsFocus`), old mistakes fade
   (`TestUpdate_RecentDataWins`), one press is not evidence
   (`TestDifficulty_ShrinkageNeedsEvidence`), only open letters are used.
-- **Simulation.** A simulated typist with a hidden error probability per letter
-  that slowly improves when practised. Compare how fast the adaptive generator
-  and a uniform random generator bring all letters below 5 % errors.
+- **Simulation** (built, see section 11.1).
 - **Small user study.** Two groups (adaptive vs. random words), the same total
   practice time, compare WPM and accuracy before and after.
+
+### 11.1 Simulation
+
+Code: `internal/sim` (tests in `internal/sim/sim_test.go`), run with
+`go run ./tools/sim` (or `-lang en`) from the repository root. All numbers are
+in `internal/config/config.go` (`Sim`).
+
+**The simulated typist.** Every letter has a hidden error probability, drawn
+uniformly from 0.03..0.30, and a hidden time per press, drawn from
+350..900 ms. Each press of a letter improves it:
+
+```
+value = floor + (value - floor) * (1 - LearnRate)      LearnRate = 0.02
+```
+
+with floors of 1 % errors and 200 ms. A press is wrong with the hidden
+probability and takes the hidden time ±25 % (uniform). The goal is reached when
+every letter's **hidden** values meet the mastery goal (≤ 5 % errors,
+≤ 400 ms). The hidden values are used only to judge the result; the strategies
+see only what a real browser would send.
+
+**Three strategies,** all with the same statistics (`engine.Apply`), the same
+unlocking rule (`NextUnlocked`), 20 words per exercise, and for each run the
+same typist and the same random numbers:
+
+1. **random words:** any open word, uniformly;
+2. **best of 20 (monkeytype):** a copy of monkeytype's "weakspot" mode. Each
+   letter has an EMA of (press time + 5000 ms for a mistake) over about 50
+   presses; for every word slot 20 random open words are drawn and the one with
+   the highest mean letter score is taken;
+3. **adaptive (softmax):** this project's `Generator.Next`.
+
+**Result** (20 typists per strategy, exercises until the goal, mean; a run gives
+up after 3000 exercises):
+
+| Language | random words | best of 20 | adaptive, T = 0.25 | adaptive, T = 0.1 (test only) |
+|---|---|---|---|---|
+| en | 2447 | 292 | 299 | 173 |
+| pl | 1520 | 274 | 450 | 246 |
+| uk | 1818 | 286 | 464 | 247 |
+| ru | 3000 (none reached) | 1175 | 490 | 248 |
+
+What this shows:
+
+- Any targeting beats random words by 5 to 10 times. Random words almost never
+  practise rare letters (Russian `ъ`, `э`, `ф`): no Russian run reached the goal.
+- With the current `Temperature = 0.25` the adaptive model loses to the
+  simple best-of-20 rule in Polish and Ukrainian. Most of the time goes into
+  unlocking (all letters open after ~430 exercises against ~240). The likely
+  reason: the softmax still spends much practice on letters that are already
+  good, while best of 20 almost always takes a word with the weakest letter.
+- With `T = 0.1` the adaptive model is the best in every language. That column
+  was run only as an experiment: the configured value is still 0.25.
+- Best of 20 fails on Russian: once all letters are open, words with the
+  rarest letters are seldom among 20 random words, so they are seldom practised.
+  The adaptive model picks the letter first and then a word that contains it,
+  so even a letter with a handful of words gets practised.
+
+Limits: the typist is invented. Letters do not influence each other, there is
+no forgetting, and learning is the same exponential curve for every letter. The
+simulation compares strategies under the same assumptions; it does not predict
+how fast a real person learns.
 
 ## 12. Languages, layouts and word lists
 

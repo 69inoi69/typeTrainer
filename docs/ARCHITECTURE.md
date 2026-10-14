@@ -40,6 +40,8 @@ its own.
 | `data/languages.json` | The languages: id, name, label, layout, alphabet, OS layout name. |
 | `data/layouts/*.json` | Keys, rows, finger per key, AltGr letters, finger colors. |
 | `data/langs/<id>/words.txt` | Word list per language, most frequent first. |
+| `internal/sim` | Simulation for the evaluation chapter: a made-up typist and three word-choice strategies (docs/ALGORITHM.md, section 11.1). Not used by the app. |
+| `tools/sim/` | `go run ./tools/sim`: runs the simulation on the real word lists and prints the table. |
 | `tools/wordlists/` | Python script + block lists that build the word lists (not part of the app). |
 | `web/` | Static frontend: `index.html`, `style.css` and the JavaScript modules (see "Frontend modules" below). The interface language always follows the practice language. |
 | `webmodules_test.go` | Checks the import rule of the frontend modules. |

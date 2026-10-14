@@ -52,3 +52,18 @@ func (l Language) Allows(word string) bool {
 	}
 	return true
 }
+
+// Words splits a word list (one word per line, most frequent first),
+// lowercases it, keeps only words made of the language's letters and removes
+// duplicates. The order is kept: it is the frequency order of the source list.
+func (l Language) Words(list string) []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, w := range strings.Fields(strings.ToLower(list)) {
+		if !seen[w] && l.Allows(w) {
+			seen[w] = true
+			out = append(out, w)
+		}
+	}
+	return out
+}
