@@ -5,15 +5,16 @@
 // POST samples to /api/v1/results (server updates the model, maybe unlocks
 // a letter) -> GET a new exercise built from the updated model.
 
-import { SPLASH_PHRASES, i18nVars, setUiLang, t, applyI18n } from "./i18n.js";
+import { SPLASH_PHRASES, setUiLang, t } from "./i18n.js";
 import { FX, Splash } from "./fx.js";
 import { el, S, store, introOpen, isTouch, focusText } from "./state.js";
-import { getJSON, postJSON } from "./api.js";
+import { getJSON } from "./api.js";
 import { labelTips } from "./tools.js";
-import { drawKeyboard, applyKb, nearestKb, requestFit } from "./keyboard.js";
+import { applyKb, nearestKb, requestFit } from "./keyboard.js";
 import { refreshStats, renderStats } from "./stats.js";
-import { fitText, placeCaret, loadExercise, handleChar, backspace, nudge, hideWarn } from "./typing.js";
-import { drawIntroKeys, showIntro, introKey } from "./intro.js";
+import { fitText, placeCaret, loadExercise, handleChar, backspace, nudge } from "./typing.js";
+import { showIntro, introKey } from "./intro.js";
+import { buildLangSwitch, switchLanguage, initialLanguage, loadLanguage } from "./languages.js";
 
 // the keyboard size switch
 el.kbSwitch.addEventListener("click", (e) => {
@@ -54,81 +55,6 @@ function setView(name) {
 }
 el.tabType.addEventListener("click", (e) => { e.currentTarget.blur(); setView("type"); });
 el.tabStats.addEventListener("click", (e) => { e.currentTarget.blur(); setView("stats"); });
-
-// ---------- languages ----------
-// The switch is built once; changing language only moves the yellow thumb
-// (CSS variable --i), so the slide animation can run.
-function buildLangSwitch() {
-  el.langSwitch.style.setProperty("--n", S.languages.length);
-  el.langSwitch.innerHTML = `<span class="switch-thumb" aria-hidden="true"></span>` +
-    S.languages.map((l) => `<button type="button" role="tab" data-lang="${l.id}" title="${l.name}">${l.label}</button>`).join("");
-  el.langSwitch.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
-    b.blur();
-    switchLanguage(b.dataset.lang);
-  }));
-}
-function switchLanguage(id) {
-  if (S.busy || id === S.lang) return;
-  loadLanguage(id).catch((err) => console.error(err));
-}
-function markLangSwitch() {
-  el.langSwitch.style.setProperty("--i", Math.max(0, S.languages.findIndex((l) => l.id === S.lang)));
-  el.langSwitch.querySelectorAll("button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.lang === S.lang)));
-}
-
-// First choice: what was used last time, else the browser's language, else the first one.
-function initialLanguage() {
-  const ids = S.languages.map((l) => l.id);
-  const saved = store.get("tt.lang");
-  if (ids.includes(saved)) return saved;
-  const browser = (navigator.language || "").slice(0, 2).toLowerCase();
-  return ids.includes(browser) ? browser : ids[0];
-}
-
-async function loadLanguage(id) {
-  S.busy = true;
-  try {
-    S.lang = id;
-    store.set("tt.lang", id);
-    const info = S.languages.find((l) => l.id === id);
-    S.alphabet = new Set(info.alphabet);
-    document.documentElement.lang = id;
-    setUiLang(id);                        // the interface follows the typing language
-    markLangSwitch();
-    hideWarn();
-    el.live.classList.remove("final");
-    S.layout = await getJSON("/layout");
-    drawKeyboard();
-    drawIntroKeys();                        // the intro shows the home row of this layout
-    // switching language: the new keyboard and letters fade in (not at start)
-    if (S.languages.length && S.exercise) {
-      FX.anim(el.keyboard, [{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 260, easing: "cubic-bezier(.2,.8,.2,1)" });
-      FX.anim(el.letters, [{ opacity: 0 }, { opacity: 1 }], { duration: 260 });
-    }
-    // home-row keys for the intro text ("bumps on F and J" / "on А and О")
-    const home = S.layout.rows.flat().filter((k) => k.home).map((k) => k.char.toUpperCase());
-    [i18nVars.f, i18nVars.j] = home;
-    el.motto.textContent = t(`splash.${S.mottoIndex}`);   // in the interface language
-    const row = S.layout.rows[1].map((k) => k.char.toUpperCase());
-    i18nVars.l = row.slice(0, 4).join(" ");
-    i18nVars.r = row.slice(6, 10).join(" ");
-    applyI18n();
-    labelTips();
-    applyKb();                              // re-translates "off"
-    await refreshStats();
-    await loadExercise();
-    if (S.view === "stats") renderStats();
-
-    if (store.get(`tt.level.${id}`) === "pro" && S.exercise.locked.length && !S.lastStats.sessionCount) {
-      // the GitHub Pages version forgets progress on reload: re-apply the choice
-      await postJSON("/progress", { unlockAll: true });
-      await refreshStats();
-      await loadExercise();
-    }
-  } finally {
-    S.busy = false;
-  }
-}
 
 // ---------- input ----------
 // Desktop: keydown gives us the real key. preventDefault stops the character
