@@ -6,9 +6,10 @@
 import { el, S, introOpen, isTouch, focusText } from "./state.js";
 import { applyKb, requestFit } from "./keyboard.js";
 import { refreshStats, renderStats } from "./stats.js";
-import { fitText, placeCaret, loadExercise, handleChar, backspace, nudge } from "./typing.js";
+import { fitText, placeCaret, loadExercise, handleChar, backspace, nudge, setTyping } from "./typing.js";
 import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
+import { profileOpen, closeProfile } from "./profile.js";
 
 // the keyboard size switch
 el.kbSwitch.addEventListener("click", (e) => {
@@ -21,6 +22,12 @@ el.kbSwitch.addEventListener("click", (e) => {
   applyKb(wasHidden !== S.kbHidden);           // fold / unfold only when that changed
   placeCaret(true);
 });
+// Alt+K: keyboard and hands off, or back on at the size they had
+function toggleKb() {
+  S.kbHidden = !S.kbHidden;
+  applyKb(true);
+  placeCaret(true);
+}
 window.addEventListener("resize", () => {
   fitText();
   requestFit();
@@ -38,6 +45,7 @@ function setView(name) {
   el.viewType.hidden = stats;
   el.viewStats.hidden = !stats;
   if (stats) {
+    setTyping(false);                          // the header comes back
     refreshStats().catch(console.error);
     renderStats();
   } else {
@@ -55,8 +63,13 @@ el.tabStats.addEventListener("click", (e) => { e.currentTarget.blur(); setView("
 // from ALSO arriving through the hidden input (and space from scrolling).
 document.addEventListener("keydown", (e) => {
   if (introOpen()) { introKey(e); return; }
+  // the profile card is open: keys go to its name field, Esc closes it
+  if (profileOpen()) {
+    if (e.key === "Escape") { e.preventDefault(); closeProfile(); }
+    return;
+  }
   if (document.body.classList.contains("splashing")) return;
-  // shortcuts: Shift+Tab = type <-> stats, Alt+1...4 = language
+  // shortcuts: Shift+Tab = type <-> stats, Alt+1...4 = language, Alt+K = keyboard on / off
   if (e.key === "Tab" && e.shiftKey) {
     e.preventDefault();
     setView(S.view === "type" ? "stats" : "type");
@@ -66,6 +79,11 @@ document.addEventListener("keydown", (e) => {
   if (e.altKey && !e.ctrlKey && !e.metaKey && !altGr && /^Digit[1-9]$/.test(e.code)) {
     const l = S.languages[Number(e.code.slice(5)) - 1];
     if (l) { e.preventDefault(); switchLanguage(l.id); }
+    return;
+  }
+  if (e.altKey && !e.ctrlKey && !e.metaKey && !altGr && e.code === "KeyK") {   // e.code: any system layout
+    e.preventDefault();
+    toggleKb();
     return;
   }
   if (S.view !== "type") return;

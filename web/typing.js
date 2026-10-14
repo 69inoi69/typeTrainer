@@ -3,7 +3,7 @@
 // sending the result when the exercise is done.
 // Layer: middle. Imports the bottom layer, keyboard.js and stats.js.
 
-import { t } from "./i18n.js";
+import { t, tPick, hasText } from "./i18n.js";
 import { FX } from "./fx.js";
 import { $, el, S, introOpen } from "./state.js";
 import { getJSON, postJSON } from "./api.js";
@@ -30,7 +30,6 @@ let popLetter = null;      // letter that was just unlocked (for the animation)
 let streak = 0;            // words in a row typed without a single mistake
 let wordClean = true;      // no mistake in the current word so far
 let tabsResisted = 0;      // Tab presses during this exercise (no restart here)
-let tabMsg = 0;            // which of the Tab messages comes next
 let justMastered = new Set(); // letters mastered in the last exercise (chips shine)
 
 // The exercise text takes at most TEXT_LINES lines: the text box is wide, and
@@ -76,9 +75,11 @@ export function placeCaret(jump) {
 // ---------- letters bar ----------
 const STAT_ICONS = {
   open: '<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>',
-  focus: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/>',
+  // focus: a crosshair, the trainer has "locked on" this letter
+  focus: '<circle cx="12" cy="12" r="6.5"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
-  lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  // next: a key, the one that opens the next letter
+  key: '<circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M21 12v2.5"/>',
 };
 function renderLetters() {
   if (!S.exercise) return;
@@ -127,7 +128,7 @@ function renderLetters() {
     const pct = openCount ? Math.round((mastered / openCount) * 100) : 0;
     parts.push(pill("check", "ok", "tip.mastered", t("stat.mastered"),
       `<span class="mini"><i style="width:${pct}%"></i></span><b>${mastered}/${openCount}</b>`));
-    if (S.exercise.locked.length) parts.push(pill("lock", "next", "tip.next", t("stat.next"), `<b class="lt">${S.exercise.locked[0]}</b>`));
+    if (S.exercise.locked.length) parts.push(pill("key", "next", "tip.next", t("stat.next"), `<b class="lt">${S.exercise.locked[0]}</b>`));
   }
   el.lettersCaption.innerHTML = parts.join("");
   popLetter = null;
@@ -158,7 +159,8 @@ function showExercise(ex) {
   void el.text.offsetWidth;                  // restart the fade-in (once per exercise)
   el.text.classList.add("swap");
   el.textBox.classList.remove("typing");
-  if (!el.live.classList.contains("final")) { el.wpm.textContent = "0"; el.raw.textContent = "0"; el.acc.textContent = "100"; }
+  setTyping(false);
+  if (!el.live.classList.contains("final")) { FX.roll(el.wpm, 0); FX.roll(el.raw, 0); FX.roll(el.acc, 100); }
   highlightNextKey();
   renderLetters();
   placeCaret(true);
@@ -181,7 +183,8 @@ export async function loadExercise() {
 // What is measured: one sample {char, errors, ms} per position that was
 // typed. errors = wrong presses at that position (also after a Backspace);
 // ms = time from the previous press to the FIRST press at that position.
-const MAX_EXTRA = 10;      // extra letters shown after a word, more are only counted
+const MAX_EXTRA = 10;
+const ADVICE_CHANCE = 0.35; // after an exercise with no other message: chance of a tip      // extra letters shown after a word, more are only counted
 const canType = () => !(S.busy || S.pos >= S.text.length || introOpen() || S.view !== "type" || document.body.classList.contains("splashing"));
 
 // the word around position i is text[wordStart(i) .. wordEnd(i)); wordEnd is
@@ -226,6 +229,7 @@ export function handleChar(ch) {
     el.live.classList.remove("final");
   }
   el.textBox.classList.add("typing");
+  setTyping(true);                         // does nothing if it is on already
 
   // Not a typing mistake but a wrong keyboard setting: Caps Lock, or the
   // system layout is set to another language. Not counted, just explained.
@@ -327,9 +331,9 @@ function endWord() {
     renderStreak();
     if (streakTier(streak) > before) FX.bump(el.streak, 1.25);   // next tier: a bigger jump
     else if (streak >= 3) FX.bump(el.streakN);
-    if (streak % 25 === 0) {                 // every 25 clean words: a small party
+    if (streak === 10 || streak % 25 === 0) {   // at 10, then every 25 clean words: a small party
       FX.burstFrom(el.streak, 40);
-      FX.toast(t("toast.streak", { n: streak }), { kind: "streak" });
+      FX.toast(tPick("toast.streak", { n: streak }), { kind: "streak" });
     }
   }
   wordClean = true;
@@ -353,7 +357,7 @@ export function nudge() {
   if (startTime !== null) tabsResisted++;
   FX.anim(el.caret, [{ scale: "1 1" }, { scale: "2.2 1.3" }, { scale: "1 1" }], { duration: 380, easing: "cubic-bezier(.3,1.6,.5,1)" });
   FX.anim(el.text, [{ translate: "0" }, { translate: "6px" }, { translate: "-4px" }, { translate: "2px" }, { translate: "0" }], { duration: 420, easing: "ease-out" });
-  if (FX.idle()) FX.toast(t(`tab.${tabMsg++ % 4}`), { kind: "tab" }); // never pile up messages
+  if (FX.idle()) FX.toast(tPick("tab"), { kind: "tab" }); // never pile up messages
 }
 
 function showWarn(kind) {
@@ -385,9 +389,27 @@ function currentAccuracy() {
   return presses ? (correctPresses / presses) * 100 : 100;
 }
 function updateLive() {
-  el.wpm.textContent = Math.round(currentWpm());
-  el.raw.textContent = Math.round(currentRaw());
-  el.acc.textContent = Math.round(currentAccuracy());
+  FX.roll(el.wpm, currentWpm());
+  FX.roll(el.raw, currentRaw());
+  FX.roll(el.acc, currentAccuracy());
+}
+
+// ---------- "typing now": the header steps back ----------
+// From the first keypress to the end of the exercise the body has the class
+// "typing-now": the logo turns grey and the header controls almost vanish
+// (style.css), and the small phrase over the logo changes to a typing one.
+let typingNow = false;
+export function setTyping(on) {
+  if (on === typingNow) return;
+  typingNow = on;
+  document.body.classList.toggle("typing-now", on);
+  setMotto(on);
+}
+// The small phrase over the logo: a random "typing" one while you type, the
+// start phrase otherwise. Changes with a short fade.
+export function setMotto(typing = typingNow) {
+  el.motto.textContent = typing ? tPick("motto.typing") : t(`splash.${S.mottoIndex}`);
+  FX.anim(el.motto, [{ opacity: 0, transform: "translateY(3px)" }, { opacity: 1, transform: "none" }], { duration: 250, easing: "ease-out" });
 }
 // keep WPM ticking while the user pauses
 setInterval(() => { if (startTime !== null && S.pos < S.text.length) updateLive(); }, 500);
@@ -396,12 +418,13 @@ async function finishExercise() {
   S.busy = true;
   const wpm = Math.round(currentWpm() * 10) / 10;
   const accuracy = Math.round(currentAccuracy() * 10) / 10;
-  // the header keeps showing this result until the next exercise starts;
-  // the numbers count up from zero, just because it feels good
+  // the live line keeps showing this result (in white) until the next
+  // exercise starts
   el.live.classList.add("final");
-  FX.countUp(el.wpm, Math.round(wpm));
-  FX.countUp(el.raw, Math.round(currentRaw()));
-  FX.countUp(el.acc, Math.round(accuracy));
+  setTyping(false);
+  FX.roll(el.wpm, wpm);
+  FX.roll(el.raw, currentRaw());
+  FX.roll(el.acc, accuracy);
   // remember the state before, to see what this exercise achieved
   const prevBest = Math.max(0, ...(S.lastStats?.sessions ?? []).map((x) => x.wpm));
   const hadSessions = (S.lastStats?.sessionCount ?? 0) > 0;
@@ -415,17 +438,22 @@ async function finishExercise() {
     await refreshStats();
 
     if (hadSessions && wpm > prevBest) {
-      FX.toast(t("toast.best", { wpm: Math.round(wpm) }), { kind: "best" });
+      FX.toast(tPick("toast.best", { wpm: Math.round(wpm) }), { kind: "best" });
       FX.burstFrom(el.wpm, 80);
     }
     if (res.newLetter) {
       popLetter = res.newLetter;
-      FX.toast(t("toast.newLetter", { letter: res.newLetter }), { kind: "letter", badge: res.newLetter });
+      // a joke about this letter if there is one, else a random one
+      const l = res.newLetter;
+      const joke = hasText(`joke.${l}`) ? t(`joke.${l}`) : tPick("joke", { letter: l });
+      FX.toast(t("toast.newLetter", { letter: l, joke }), { kind: "letter", badge: l });
       FX.burstFrom(el.letters, 60);
     }
     justMastered = new Set(S.lastStats.keys.filter((k) => k.mastered && !prevMastered.has(k.char)).map((k) => k.char));
-    if (justMastered.size) FX.toast(t("toast.mastered", { letters: [...justMastered].join(" ") }), { kind: "mastered" });
-    if (resisted) FX.toast(t("toast.resisted", { n: resisted }), { kind: "resisted" });
+    if (justMastered.size) FX.toast(tPick("toast.mastered", { letters: [...justMastered].join(" ") }), { kind: "mastered" });
+    if (resisted) FX.toast(tPick("toast.resisted", { n: resisted }), { kind: "resisted" });
+    // now and then, when nothing else happened: a tip or a joke
+    if (FX.idle() && Math.random() < ADVICE_CHANCE) FX.toast(tPick("advice"), { kind: "tip" });
 
     await loadExercise();   // generated from the UPDATED model
   } catch (err) {
