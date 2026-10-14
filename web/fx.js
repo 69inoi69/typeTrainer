@@ -5,9 +5,10 @@
 // (element.animate, runs on the compositor) or a short canvas animation that
 // runs only at the END of an exercise, never per keystroke.
 // With "reduce motion" switched on in the OS, all of it is skipped.
-"use strict";
 
-const FX = (() => {
+import { SPLASH_PHRASES, t } from "./i18n.js";
+
+export const FX = (() => {
   const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
   const COLORS = ["#e2b714", "#8cc97a", "#7fa6e0", "#c98bd6", "#e59a62", "#5fc4c4", "#e57f8f"];
 
@@ -176,7 +177,7 @@ const FX = (() => {
 // loaded. The splash stays at least MIN_MS so the animation can play, and any
 // key or click skips the rest. The logo then flies into the header (FLIP:
 // measure both positions, animate the difference) and the page slides in.
-const Splash = (() => {
+export const Splash = (() => {
   const MIN_MS = 1300;
   function start() {
     const root = document.getElementById("splash");

@@ -46,11 +46,18 @@ jobs:
           # local .js/.css file ?v=<commit>, so a browser never mixes cached
           # files of two versions (GitHub Pages lets browsers cache 10 minutes).
           V="${GITHUB_SHA::8}"
-          sed -i 's|<script src="app.js"></script>|<script src="wasm_exec.js"></script>\n  <script src="wasm-shim.js"></script>\n  <script src="app.js"></script>|' site/index.html
+          sed -i 's|<script type="module" src="app.js"></script>|<script src="wasm_exec.js"></script>\n  <script src="wasm-shim.js"></script>\n  <script type="module" src="app.js"></script>|' site/index.html
           sed -i -E "s/(src|href)=\"([a-z0-9_.-]+\.(js|css))\"/\1=\"\2?v=$V\"/g" site/index.html
-          for f in style.css i18n.js fx.js wasm_exec.js wasm-shim.js app.js; do
+          for f in style.css file-check.js wasm_exec.js wasm-shim.js app.js; do
             grep -q "$f?v=$V" site/index.html || { echo "missing version on $f"; exit 1; }
           done
+          # The ES modules load each other (import ... from "./typing.js"):
+          # those addresses get the same ?v=<commit>, or a browser could take
+          # a new app.js together with an old cached module.
+          sed -i -E "s#(from |import )\"(\./[a-z0-9_-]+\.js)\"#\1\"\2?v=$V\"#g" site/*.js
+          if grep -nE "(from |import )\"\./[a-z0-9_-]+\.js\"" site/*.js; then
+            echo "an import above has no version"; exit 1
+          fi
 
       - uses: actions/upload-pages-artifact@v3
         with:
