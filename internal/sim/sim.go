@@ -21,6 +21,7 @@ package sim
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"strings"
 
@@ -35,6 +36,12 @@ type Params struct {
 	TimeFloor        float64 // the best time practice can reach, ms
 	LearnRate        float64 // each press closes this share of the gap to the floor
 	TimeNoise        float64 // a press takes time * (1 ± TimeNoise), uniform
+
+	// The experienced typist of RunOpen: starting values drawn from these ranges.
+	ExpertErrMax                 float64 // error probability: uniform in ErrFloor..ExpertErrMax
+	ExpertTimeMin, ExpertTimeMax float64 // time per press, ms
+	OpenExercises                int     // exercises RunOpen measures
+	FirstExercises               int     // Run measures variety over this many first exercises
 
 	Runs         int // simulated typists per strategy (different seeds)
 	MaxExercises int // give up after this many exercises
@@ -60,6 +67,16 @@ func NewTypist(letters []string, p Params, rng *rand.Rand) *Typist {
 		t.err[c] = p.ErrMin + rng.Float64()*(p.ErrMax-p.ErrMin)
 		t.time[c] = p.TimeMin + rng.Float64()*(p.TimeMax-p.TimeMin)
 	}
+	return t
+}
+
+// NewExpert draws an experienced typist: every letter already near the goal.
+func NewExpert(letters []string, p Params, rng *rand.Rand) *Typist {
+	q := p
+	q.ErrMin, q.ErrMax = p.ErrFloor, p.ExpertErrMax
+	q.TimeMin, q.TimeMax = p.ExpertTimeMin, p.ExpertTimeMax
+	t := NewTypist(letters, q, rng)
+	t.p = p
 	return t
 }
 
@@ -235,9 +252,10 @@ func pick(cands []string, n int, rng *rand.Rand, choose func([]string) string) s
 
 // Result of one simulated typist with one strategy.
 type Result struct {
-	Exercises int  // exercises until the typist was skilled at every letter
-	Reached   bool // false = gave up after MaxExercises
-	AllOpenAt int  // exercise after which every letter was unlocked (0 = never)
+	Exercises int     // exercises until the typist was skilled at every letter
+	Reached   bool    // false = gave up after MaxExercises
+	AllOpenAt int     // exercise after which every letter was unlocked (0 = never)
+	Variety   Variety // over the first FirstExercises exercises (the first lessons)
 }
 
 // Run lets one typist practise with one strategy until it is skilled at every
@@ -247,8 +265,13 @@ func Run(gen *engine.Generator, s Strategy, t *Typist, ep engine.Params, p Param
 	stats := map[string]engine.KeyStat{}
 	unlocked := gen.Start()
 	res := Result{}
+	var v variety
 	for ex := 1; ex <= p.MaxExercises; ex++ {
-		samples := t.Type(s.Text(stats, unlocked))
+		text := s.Text(stats, unlocked)
+		if ex <= p.FirstExercises {
+			v.add(text)
+		}
+		samples := t.Type(text)
 		s.Observe(samples)
 		stats = engine.Apply(stats, samples, ep)
 		unlocked = gen.NextUnlocked(stats, unlocked, ep)
@@ -257,9 +280,97 @@ func Run(gen *engine.Generator, s Strategy, t *Typist, ep engine.Params, p Param
 		}
 		if res.AllOpenAt > 0 && t.Skilled(ep) {
 			res.Exercises, res.Reached = ex, true
+			res.Variety = v.result()
 			return res
 		}
 	}
 	res.Exercises = p.MaxExercises
+	res.Variety = v.result()
 	return res
+}
+
+// Variety says how repetitive the exercises feel. All values are means over
+// exercises, from 0 to 1.
+type Variety struct {
+	Distinct float64 // share of different words in one exercise (1 = no word twice)
+	Repeated float64 // share of words that were also in the previous exercise
+	TopShare float64 // share of words that contain the exercise's most common letter
+}
+
+// RunOpen measures variety the way an experienced typist meets it: every
+// letter is open from the start (the "I can already touch type" choice), and
+// the typist practises n exercises. Here any repetition is the strategy's own
+// choice, not forced by a small alphabet.
+func RunOpen(gen *engine.Generator, s Strategy, t *Typist, ep engine.Params, n int) Variety {
+	stats := map[string]engine.KeyStat{}
+	all := len(gen.Order())
+	var v variety
+	for ex := 0; ex < n; ex++ {
+		text := s.Text(stats, all)
+		v.add(text)
+		samples := t.Type(text)
+		s.Observe(samples)
+		stats = engine.Apply(stats, samples, ep)
+	}
+	return v.result()
+}
+
+// variety sums the two variety numbers over exercises.
+type variety struct {
+	n                       int
+	distinct, repeated, top float64
+	prev                    map[string]bool
+}
+
+func (v *variety) add(text string) {
+	words := strings.Fields(text)
+	if len(words) == 0 {
+		return
+	}
+	cur := map[string]bool{}
+	again := 0
+	for _, w := range words {
+		cur[w] = true
+		if v.prev[w] {
+			again++
+		}
+	}
+	v.distinct += float64(len(cur)) / float64(len(words))
+	inWords := map[rune]int{} // how many words contain each letter
+	best := 0
+	for _, w := range words {
+		seen := map[rune]bool{}
+		for _, r := range w {
+			if !seen[r] {
+				seen[r] = true
+				inWords[r]++
+				if inWords[r] > best {
+					best = inWords[r]
+				}
+			}
+		}
+	}
+	v.top += float64(best) / float64(len(words))
+	if v.prev != nil {
+		v.repeated += float64(again) / float64(len(words))
+	}
+	v.n++
+	v.prev = cur
+}
+
+// result returns the averages (NaN without data). The first exercise has no
+// previous one, so Repeated is averaged over one exercise fewer.
+func (v *variety) result() Variety {
+	if v.n == 0 {
+		return Variety{math.NaN(), math.NaN(), math.NaN()}
+	}
+	out := Variety{
+		Distinct: v.distinct / float64(v.n),
+		Repeated: math.NaN(),
+		TopShare: v.top / float64(v.n),
+	}
+	if v.n > 1 {
+		out.Repeated = v.repeated / float64(v.n-1)
+	}
+	return out
 }

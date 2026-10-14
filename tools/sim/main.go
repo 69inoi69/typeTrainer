@@ -3,6 +3,7 @@
 //
 //	go run ./tools/sim              # all languages
 //	go run ./tools/sim -lang en     # one language
+//	go run ./tools/sim -temps 0.1,0.25   # try other temperatures (experiment only)
 //
 // It is a research tool, not part of the app: it reads data/ from disk.
 package main
@@ -13,6 +14,8 @@ import (
 	"math/rand"
 	"os"
 	"sort"
+	"strconv"
+	"strings"
 
 	"typingtrainer/internal/config"
 	"typingtrainer/internal/engine"
@@ -22,8 +25,22 @@ import (
 
 func main() {
 	only := flag.String("lang", "", "language id (en, pl, uk, ru); empty = all")
+	temps := flag.String("temps", "", "comma-separated temperatures to try for the adaptive\n"+
+		"strategy instead of the configured one, e.g. 0.1,0.25 (experiment only)")
 	flag.Parse()
 	cfg := config.Default()
+
+	ts := []float64{cfg.Engine.Temperature}
+	if *temps != "" {
+		ts = nil
+		for _, f := range strings.Split(*temps, ",") {
+			v, err := strconv.ParseFloat(strings.TrimSpace(f), 64)
+			if err != nil || v <= 0 {
+				fail(fmt.Errorf("bad temperature %q", f))
+			}
+			ts = append(ts, v)
+		}
+	}
 
 	data, err := os.ReadFile("data/languages.json")
 	if err != nil {
@@ -36,6 +53,10 @@ func main() {
 	p := cfg.Sim
 	fmt.Printf("%d simulated typists per strategy, %d words per exercise, give up after %d exercises\n",
 		p.Runs, cfg.Engine.ExerciseWords, p.MaxExercises)
+	fmt.Printf("beginner: exercises until every letter meets the goal; variety of the first %d exercises\n", p.FirstExercises)
+	fmt.Printf("expert: all letters open from the start, variety over %d exercises\n", p.OpenExercises)
+	fmt.Printf("variety: dist = share of different words in an exercise, rep = share of words also in\n" +
+		"the previous exercise, top = share of words containing the exercise's most common letter\n")
 	for _, l := range langs {
 		if *only != "" && l.ID != *only {
 			continue
@@ -44,44 +65,73 @@ func main() {
 		if err != nil {
 			fail(err)
 		}
-		runLanguage(l.ID, l.Words(string(list)), cfg)
+		runLanguage(l.ID, l.Words(string(list)), cfg, ts)
 	}
 }
 
-func runLanguage(id string, words []string, cfg config.Config) {
-	ep, p := cfg.Engine, cfg.Sim
+// strategy builds a fresh strategy for one run (k: 0 random, 1 best of N,
+// 2 adaptive with temperature t).
+func strategy(k int, t float64, gen *engine.Generator, cfg config.Config, rng *rand.Rand) sim.Strategy {
+	switch k {
+	case 0:
+		return &sim.Random{Gen: gen, Words: cfg.Engine.ExerciseWords, Rng: rng}
+	case 1:
+		return &sim.BestOfN{Gen: gen, Words: cfg.Engine.ExerciseWords, Rng: rng, P: cfg.Sim}
+	}
+	ep := cfg.Engine
+	ep.Temperature = t
+	return &sim.Adaptive{Gen: gen, EP: ep}
+}
+
+func runLanguage(id string, words []string, cfg config.Config, temps []float64) {
+	p := cfg.Sim
 	fmt.Printf("\n%s (%d words)\n", id, len(words))
-	fmt.Printf("%-26s %8s %8s %8s %12s\n", "strategy", "median", "mean", "reached", "all open at")
-	for k := 0; k < 3; k++ {
+	fmt.Printf("%-22s %6s %6s %7s %5s | %-17s | %-17s\n", "", "", "", "", "", "beginner, first", "expert")
+	fmt.Printf("%-22s %6s %6s %7s %5s | %5s %5s %5s | %5s %5s %5s\n",
+		"strategy", "median", "mean", "reached", "open", "dist", "rep", "top", "dist", "rep", "top")
+	type job struct {
+		k int
+		t float64
+	}
+	jobs := []job{{0, 0}, {1, 0}}
+	for _, t := range temps {
+		jobs = append(jobs, job{2, t})
+	}
+	for _, j := range jobs {
+		ep := cfg.Engine
+		if j.k == 2 {
+			ep.Temperature = j.t
+		}
 		var res []sim.Result
+		var vs []sim.Variety
 		name := ""
 		for run := 0; run < p.Runs; run++ {
 			seed := int64(run + 1)
 			// The same typist and the same random numbers for every strategy:
 			// only the word choice differs.
 			gen := engine.NewGenerator(words, rand.New(rand.NewSource(seed)), ep)
-			template := sim.NewTypist(gen.Order(), p, rand.New(rand.NewSource(seed)))
-			typist := template.Clone(rand.New(rand.NewSource(seed + 1000)))
-			rng := rand.New(rand.NewSource(seed + 2000))
-			var s sim.Strategy
-			switch k {
-			case 0:
-				s = &sim.Random{Gen: gen, Words: ep.ExerciseWords, Rng: rng}
-			case 1:
-				s = &sim.BestOfN{Gen: gen, Words: ep.ExerciseWords, Rng: rng, P: p}
-			case 2:
-				s = &sim.Adaptive{Gen: gen, EP: ep}
-			}
+			typist := sim.NewTypist(gen.Order(), p, rand.New(rand.NewSource(seed))).
+				Clone(rand.New(rand.NewSource(seed + 1000)))
+			s := strategy(j.k, j.t, gen, cfg, rand.New(rand.NewSource(seed+2000)))
 			name = s.Name()
 			res = append(res, sim.Run(gen, s, typist, ep, p))
+
+			gen = engine.NewGenerator(words, rand.New(rand.NewSource(seed)), ep)
+			expert := sim.NewExpert(gen.Order(), p, rand.New(rand.NewSource(seed))).
+				Clone(rand.New(rand.NewSource(seed + 1000)))
+			s = strategy(j.k, j.t, gen, cfg, rand.New(rand.NewSource(seed+2000)))
+			vs = append(vs, sim.RunOpen(gen, s, expert, ep, p.OpenExercises))
 		}
-		fmt.Println(row(name, res))
+		if j.k == 2 {
+			name = fmt.Sprintf("adaptive, T = %g", j.t)
+		}
+		fmt.Println(row(name, res, vs))
 	}
 }
 
 // row summarises the runs of one strategy. Runs that gave up count as
 // MaxExercises, so the mean is a lower bound when not every run reached the goal.
-func row(name string, res []sim.Result) string {
+func row(name string, res []sim.Result, vs []sim.Variety) string {
 	ex := make([]int, len(res))
 	sum, reached, open, openN := 0, 0, 0, 0
 	for i, r := range res {
@@ -104,8 +154,24 @@ func row(name string, res []sim.Result) string {
 	if openN > 0 {
 		openStr = fmt.Sprintf("%.0f", float64(open)/float64(openN))
 	}
-	return fmt.Sprintf("%-26s %8.0f %8.0f %5d/%-2d %12s",
-		name, median, float64(sum)/float64(len(res)), reached, len(res), openStr)
+	first := make([]sim.Variety, len(res))
+	for i, r := range res {
+		first[i] = r.Variety
+	}
+	return fmt.Sprintf("%-22s %6.0f %6.0f %4d/%-2d %5s | %s | %s",
+		name, median, float64(sum)/float64(len(res)), reached, len(res), openStr, pct(first), pct(vs))
+}
+
+// pct prints the mean variety of several runs in percent.
+func pct(vs []sim.Variety) string {
+	var d, r, t float64
+	for _, v := range vs {
+		d += v.Distinct
+		r += v.Repeated
+		t += v.TopShare
+	}
+	n := float64(len(vs)) / 100
+	return fmt.Sprintf("%4.0f%% %4.0f%% %4.0f%%", d/n, r/n, t/n)
 }
 
 func fail(err error) {

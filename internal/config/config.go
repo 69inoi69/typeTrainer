@@ -58,6 +58,12 @@ func Default() Config {
 			LearnRate: 0.02, // ~100 presses take a bad letter to the mastery goal
 			TimeNoise: 0.25, // presses vary by up to ±25 %
 
+			ExpertErrMax:   0.05, // experienced typist: at most 5 % mistakes per letter...
+			ExpertTimeMin:  150,  // ...and 150..350 ms per press (about 35..80 WPM)
+			ExpertTimeMax:  350,
+			OpenExercises:  100, // expert: variety is measured over 100 exercises
+			FirstExercises: 30,  // beginner: variety of the first 30 exercises (~20 minutes)
+
 			Runs:         20,   // 20 different typists per strategy
 			MaxExercises: 3000, // about 30 hours of practice at 30 WPM: give up
 

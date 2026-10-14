@@ -1,6 +1,7 @@
 package sim_test
 
 import (
+	"math"
 	"math/rand"
 	"strings"
 	"testing"
@@ -118,3 +119,54 @@ func TestRun_GivesUp(t *testing.T) {
 		t.Fatalf("one exercise cannot be enough: %+v", res)
 	}
 }
+
+// fixed returns the same texts in turn: a strategy for testing the variety numbers.
+type fixed struct {
+	texts []string
+	i     int
+}
+
+func (f *fixed) Name() string { return "fixed" }
+func (f *fixed) Text(map[string]engine.KeyStat, int) string {
+	t := f.texts[f.i%len(f.texts)]
+	f.i++
+	return t
+}
+func (f *fixed) Observe([]engine.Sample) {}
+
+func TestRunOpen_Variety(t *testing.T) {
+	words := []string{"ab", "ba", "bb", "aa"}
+	gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
+	s := &fixed{texts: []string{"ab ab ba bb", "ab aa aa aa"}}
+	v := sim.RunOpen(gen, s, newTypist(gen.Order(), 1), cfg.Engine, 2)
+	// exercise 1: 3 different of 4 words; exercise 2: 2 of 4
+	if !near(v.Distinct, (0.75+0.5)/2) {
+		t.Errorf("Distinct = %v", v.Distinct)
+	}
+	// exercise 2: only "ab" (1 of 4 words) was in exercise 1
+	if !near(v.Repeated, 0.25) {
+		t.Errorf("Repeated = %v", v.Repeated)
+	}
+	// exercise 1: b is in all 4 words; exercise 2: a is in all 4 words
+	if !near(v.TopShare, 1) {
+		t.Errorf("TopShare = %v", v.TopShare)
+	}
+}
+
+func TestRunOpen_NoExercisesIsNaN(t *testing.T) {
+	gen := engine.NewGenerator([]string{"ab"}, rand.New(rand.NewSource(1)), cfg.Engine)
+	v := sim.RunOpen(gen, &fixed{texts: []string{"ab"}}, newTypist(gen.Order(), 1), cfg.Engine, 0)
+	if !math.IsNaN(v.Distinct) || !math.IsNaN(v.Repeated) || !math.IsNaN(v.TopShare) {
+		t.Fatalf("no data must give NaN, got %+v", v)
+	}
+}
+
+func TestNewExpert_StartsNearTheGoal(t *testing.T) {
+	letters := []string{"a", "b", "c", "d", "e"}
+	ty := sim.NewExpert(letters, cfg.Sim, rand.New(rand.NewSource(1))).Clone(rand.New(rand.NewSource(2)))
+	if !ty.Skilled(cfg.Engine) {
+		t.Fatal("an expert drawn from the expert ranges meets the goal from the start")
+	}
+}
+
+func near(a, b float64) bool { return math.Abs(a-b) < 1e-9 }

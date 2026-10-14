@@ -368,36 +368,69 @@ same typist and the same random numbers:
    the highest mean letter score is taken;
 3. **adaptive (softmax):** this project's `Generator.Next`.
 
-**Result** (20 typists per strategy, exercises until the goal, mean; a run gives
-up after 3000 exercises):
+**Variety.** A faster strategy is useless if it is boring, so the simulation
+also measures how repetitive the exercises are (means over exercises):
 
-| Language | random words | best of 20 | adaptive, T = 0.25 | adaptive, T = 0.1 (test only) |
+- `dist`: share of different words in one exercise (100 % = no word twice);
+- `rep`: share of words that were also in the previous exercise;
+- `top`: share of words that contain the exercise's most common letter
+  (how hard one letter is pushed).
+
+They are measured twice: on the **first 30 exercises** of the beginner above
+(few open letters), and on an **experienced typist** who opens every letter in
+the intro (every letter starts at ≤ 5 % errors and 150..350 ms) over 100
+exercises.
+
+**Result** (20 typists per strategy; "exercises" = mean number of exercises
+until the goal, a run gives up after 3000; variety in the format
+dist / rep / top):
+
+| Language | Strategy | Exercises | Variety, first 30 | Variety, expert |
 |---|---|---|---|---|
-| en | 2447 | 292 | 299 | 173 |
-| pl | 1520 | 274 | 450 | 246 |
-| uk | 1818 | 286 | 464 | 247 |
-| ru | 3000 (none reached) | 1175 | 490 | 248 |
+| en | random words | 2447 | 87 / 28 / 73 | 100 / 1 / 60 |
+| en | best of 20 | 292 | 47 / 55 / 94 | 96 / 8 / 75 |
+| en | adaptive, T = 0.25 | 299 | 94 / 28 / 73 | 100 / 2 / 62 |
+| en | adaptive, T = 0.1 | 173 | 89 / 31 / 83 | 99 / 3 / 62 |
+| pl | random words | 1520 | 81 / 40 / 70 | 100 / 1 / 55 |
+| pl | best of 20 | 274 | 33 / 64 / 83 | 96 / 8 / 69 |
+| pl | adaptive, T = 0.25 | 450 | 86 / 50 / 71 | 100 / 1 / 55 |
+| pl | adaptive, T = 0.1 | 246 | 77 / 49 / 79 | 100 / 2 / 56 |
+| uk | random words | 1818 | 81 / 39 / 61 | 100 / 1 / 51 |
+| uk | best of 20 | 286 | 34 / 59 / 85 | 96 / 8 / 68 |
+| uk | adaptive, T = 0.25 | 464 | 90 / 44 / 66 | 100 / 2 / 53 |
+| uk | adaptive, T = 0.1 | 247 | 85 / 46 / 76 | 100 / 2 / 54 |
+| ru | random words | 3000 (none reached) | 83 / 38 / 60 | 100 / 1 / 56 |
+| ru | best of 20 | 1175 | 34 / 59 / 81 | 96 / 8 / 72 |
+| ru | adaptive, T = 0.25 | 490 | 91 / 42 / 67 | 99 / 4 / 58 |
+| ru | adaptive, T = 0.1 | 248 | 86 / 40 / 77 | 98 / 4 / 59 |
+
+`go run ./tools/sim -temps 0.1,0.15,0.2,0.25` prints the in-between values
+too: exercises fall steadily as T falls (en 299, 264, 229, 173).
 
 What this shows:
 
 - Any targeting beats random words by 5 to 10 times. Random words almost never
   practise rare letters (Russian `ъ`, `э`, `ф`): no Russian run reached the goal.
-- With the current `Temperature = 0.25` the adaptive model loses to the
+- With the configured `Temperature = 0.25` the adaptive model loses to the
   simple best-of-20 rule in Polish and Ukrainian. Most of the time goes into
-  unlocking (all letters open after ~430 exercises against ~240). The likely
-  reason: the softmax still spends much practice on letters that are already
-  good, while best of 20 almost always takes a word with the weakest letter.
-- With `T = 0.1` the adaptive model is the best in every language. That column
-  was run only as an experiment: the configured value is still 0.25.
-- Best of 20 fails on Russian: once all letters are open, words with the
-  rarest letters are seldom among 20 random words, so they are seldom practised.
-  The adaptive model picks the letter first and then a word that contains it,
-  so even a letter with a handful of words gets practised.
+  unlocking (all letters open after ~430 exercises against ~240).
+- Best of 20 pays for its speed with repetition: in the first lessons only a
+  third of the words in an exercise are different, against 85-90 % for the
+  adaptive model. It also fails on Russian: once all letters are open, words
+  with the rarest letters are seldom among 20 random words.
+- `T = 0.1` (tested only, not configured) makes the adaptive model the fastest
+  in every language. The price is moderate: in the first lessons 5-9 points fewer
+  different words and one letter pushed a bit harder (`top` +8..10 points);
+  for an experienced typist the variety is practically the same.
+- Most repetition in the first lessons comes from the **small alphabet**, not
+  from the strategy: even random words repeat 28-40 % of the previous exercise.
+  That part is controlled by `StartLetters` and `MinWords`, not by `T`.
 
 Limits: the typist is invented. Letters do not influence each other, there is
 no forgetting, and learning is the same exponential curve for every letter. The
 simulation compares strategies under the same assumptions; it does not predict
-how fast a real person learns.
+how fast a real person learns. The variety numbers are simple proxies; how
+boring an exercise feels can only be measured with real users.
 
 ## 12. Languages, layouts and word lists
 
