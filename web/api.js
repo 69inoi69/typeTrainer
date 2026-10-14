@@ -2,6 +2,7 @@
 // the same calls are answered by the Go code compiled to WebAssembly
 // (pages/wasm-shim.js replaces fetch), so nothing here knows the difference.
 // Layer: bottom. Imports only state.js (for the current language).
+
 import { S } from "./state.js";
 
 export const API = "/api/v1";
