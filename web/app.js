@@ -27,21 +27,32 @@ const el = {
 };
 
 // ---------- state ----------
-let languages = [];       // from /api/v1/languages
-let lang = "en";           // id of the current language
-let alphabet = new Set();  // letters of the current language
-let layout = null;         // keyboard layout of the current language
-let keyEls = {};           // char -> key <div> (the letter printed on the key)
-let fingerOf = {};         // char -> finger id
-let altBase = {};          // AltGr letter -> base key char ("ą" -> "a")
-let altgrEl = null;        // the AltGr key, if the layout has one
-let wrongScript = 0;       // presses in a row that came from another keyboard layout
+// Shared state: everything that more than one part of the app reads or
+// changes lives in this one object, S.
+const S = {
+  languages: [],          // from /api/v1/languages
+  lang: "en",             // id of the current language
+  alphabet: new Set(),    // letters of the current language
+  layout: null,           // keyboard layout of the current language
+  keyEls: {},             // char -> key <div> (the letter printed on the key)
+  altBase: {},            // AltGr letter -> base key char ("ą" -> "a")
+  altgrEl: null,          // the AltGr key, if the layout has one
+  exercise: null,         // last /exercise answer: text, focus, unlocked, locked
+  lastStats: null,        // last /stats answer
+  text: "",               // the exercise text
+  pos: 0,                 // index of the character to type next
+  busy: false,            // true while talking to the server between exercises
+  view: "type",           // "type" or "stats"
+  kbSize: 100,            // keyboard size in %, one of KB_SIZES
+  kbHidden: false,        // keyboard and hands switched off
+  // the small phrase over the logo: the same one the start screen showed
+  mottoIndex: Math.floor(Math.random() * SPLASH_PHRASES),
+};
 
-let exercise = null;       // last /exercise answer: text, focus, unlocked, locked
-let lastStats = null;      // last /stats answer
-let text = "";
+// Typing state, used only by the typing code.
+let fingerOf = {};         // char -> finger id
+let wrongScript = 0;       // presses in a row that came from another keyboard layout
 let spans = [];            // one <span> per character
-let pos = 0;               // index of the character to type next
 // Typing never stops on a mistake (as on monkeytype): a wrong letter turns
 // red and the cursor moves on. Per position of the text we keep:
 let state = new Uint8Array(0); // what is on the screen now: 0 = not typed, 1 = right, 2 = wrong, 3 = skipped
@@ -53,13 +64,9 @@ let startTime = null;      // performance.now() of the first keypress
 let lastTime = null;       // performance.now() of the previous keypress
 let afterBackspace = false; // the next press follows a Backspace: its time is not measured
 let presses = 0, correctPresses = 0;
-let busy = false;          // true while talking to the server between exercises
 let popLetter = null;      // letter that was just unlocked (for the animation)
-let view = "type";         // "type" or "stats"
 
 // Rewards (they change nothing in the statistics, they only feel nice)
-// the small phrase over the logo: the same one the start screen showed
-let mottoIndex = Math.floor(Math.random() * SPLASH_PHRASES);
 let streak = 0;            // words in a row typed without a single mistake
 let wordClean = true;      // no mistake in the current word so far
 let tabsResisted = 0;      // Tab presses during this exercise (no restart here)
@@ -76,7 +83,7 @@ const introOpen = () => !el.intro.classList.contains("hidden") && !el.intro.clas
 // ---------- server calls ----------
 // Every call except /languages is about one language: add ?lang= to it.
 function withLang(path) {
-  return path + (path.includes("?") ? "&" : "?") + "lang=" + encodeURIComponent(lang);
+  return path + (path.includes("?") ? "&" : "?") + "lang=" + encodeURIComponent(S.lang);
 }
 async function getJSON(path, global = false) {
   const res = await fetch(API + (global ? path : withLang(path)));
@@ -95,7 +102,7 @@ async function postJSON(path, body) {
 
 // ---------- keyboard ----------
 function makeKey(k) {
-  const finger = layout.fingers[k.finger];
+  const finger = S.layout.fingers[k.finger];
   const key = document.createElement("div");
   key.className = "key" + (k.home ? " home" : "");
   key.style.setProperty("--fc", finger.color);
@@ -115,18 +122,18 @@ function makeKey(k) {
 
 function drawKeyboard() {
   el.keyboard.innerHTML = "";
-  keyEls = {}; fingerOf = {}; altBase = {}; altgrEl = null; nextKeyEl = null;
-  layout.rows.forEach((row, i) => {
+  S.keyEls = {}; fingerOf = {}; S.altBase = {}; S.altgrEl = null; nextKeyEl = null;
+  S.layout.rows.forEach((row, i) => {
     const rowEl = document.createElement("div");
     rowEl.className = "kb-row";
-    rowEl.style.paddingLeft = `calc(var(--u) * ${layout.offsets?.[i] ?? 0})`;
+    rowEl.style.paddingLeft = `calc(var(--u) * ${S.layout.offsets?.[i] ?? 0})`;
     for (const k of row) {
       const key = makeKey(k);
       rowEl.appendChild(key);
-      if (k.modifier) { altgrEl = key; continue; }
-      keyEls[k.char] = key;
+      if (k.modifier) { S.altgrEl = key; continue; }
+      S.keyEls[k.char] = key;
       fingerOf[k.char] = k.finger;
-      if (k.alt) altBase[k.alt] = k.char;
+      if (k.alt) S.altBase[k.alt] = k.char;
     }
     el.keyboard.appendChild(rowEl);
   });
@@ -134,14 +141,14 @@ function drawKeyboard() {
   handFingers = {};
   for (const f of el.hands.querySelectorAll("[data-f]")) {
     const id = f.dataset.f;
-    f.style.setProperty("--fc", layout.fingers[id.startsWith("th") ? "th" : id].color);
+    f.style.setProperty("--fc", S.layout.fingers[id.startsWith("th") ? "th" : id].color);
     handFingers[id] = f;
   }
   drawIntroKeys();
 }
 
 // The key that types ch: its own key, or the base key for an AltGr letter.
-const keyFor = (ch) => keyEls[ch] || keyEls[altBase[ch]] || null;
+const keyFor = (ch) => S.keyEls[ch] || S.keyEls[S.altBase[ch]] || null;
 
 // Which finger presses the next key: that finger lights up on the two
 // hands above the keyboard. Space = both thumbs; an AltGr letter = the right
@@ -152,19 +159,19 @@ let handFingers = {};      // finger id ("lp", ..., "thl", "thr") -> <i> on the 
 let litFingers = [];       // fingers that are lit now
 function highlightNextKey() {
   if (nextKeyEl) nextKeyEl.classList.remove("next");
-  if (altgrEl) altgrEl.classList.remove("next");
+  if (S.altgrEl) S.altgrEl.classList.remove("next");
   for (const f of litFingers) f.classList.remove("on");
   litFingers = [];
-  const ch = text[pos];
-  const base = altBase[ch] ?? ch;      // "ą" is typed on the "a" key
-  nextKeyEl = keyEls[base] || null;
+  const ch = S.text[S.pos];
+  const base = S.altBase[ch] ?? ch;      // "ą" is typed on the "a" key
+  nextKeyEl = S.keyEls[base] || null;
   if (!nextKeyEl) { el.hint.innerHTML = "&nbsp;"; return; }
   nextKeyEl.classList.add("next");
   const fingerId = fingerOf[base];
   let ids = fingerId === "th" ? ["thl", "thr"] : [fingerId];
   const vars = { key: ch === " " ? t("key.space") : ch, base, finger: t(`finger.${fingerId}`) };
-  if (altBase[ch]) {
-    if (altgrEl) altgrEl.classList.add("next");
+  if (S.altBase[ch]) {
+    if (S.altgrEl) S.altgrEl.classList.add("next");
     ids = [...ids, "thr"];
     el.hint.innerHTML = t("hint.alt", vars);
   } else {
@@ -192,35 +199,34 @@ function pulseKey(ch, ok) {
 
 // Keyboard size: three presets (S / M / L, in % of the largest size that fits
 // the window) and "off" for keyboard + hands, in one switch. Remembered here.
-const KB_SIZES = [75, 88, 100];
-let kbSize = 100, kbHidden = false;
+const KB_SIZES = [75, 88, 100];   // current size: S.kbSize, S.kbHidden
 // animate = true on a click: the keyboard folds away / unfolds smoothly
 function applyKb(animate = false) {
-  document.documentElement.style.setProperty("--kb-scale", kbSize / 100); // CSS transitions it
+  document.documentElement.style.setProperty("--kb-scale", S.kbSize / 100); // CSS transitions it
   if (animate) {
-    FX.collapse(el.keyboard, kbHidden);
-    FX.collapse(el.hands, kbHidden);
+    FX.collapse(el.keyboard, S.kbHidden);
+    FX.collapse(el.hands, S.kbHidden);
   } else {
-    el.keyboard.classList.toggle("off", kbHidden);
-    el.hands.classList.toggle("off", kbHidden);
+    el.keyboard.classList.toggle("off", S.kbHidden);
+    el.hands.classList.toggle("off", S.kbHidden);
   }
-  const sel = kbHidden ? 0 : KB_SIZES.indexOf(kbSize) + 1;   // which option is on
+  const sel = S.kbHidden ? 0 : KB_SIZES.indexOf(S.kbSize) + 1;   // which option is on
   el.kbSwitch.style.setProperty("--i", sel);                 // the yellow thumb slides there
   el.kbSwitch.querySelectorAll("button").forEach((b, i) => b.setAttribute("aria-checked", String(i === sel)));
   el.kbSwitch.querySelector('[data-kb="off"]').setAttribute("aria-label", t("kb.off"));
-  document.body.classList.toggle("kb-hidden", kbHidden);   // phone CSS centres the text then
-  store.set("tt.kbSize", kbSize);
-  store.set("tt.kbHidden", kbHidden ? "1" : "");
+  document.body.classList.toggle("kb-hidden", S.kbHidden);   // phone CSS centres the text then
+  store.set("tt.kbSize", S.kbSize);
+  store.set("tt.kbHidden", S.kbHidden ? "1" : "");
   requestFit();
 }
 el.kbSwitch.addEventListener("click", (e) => {
   const b = e.target.closest("button[data-kb]");
   if (!b) return;
   b.blur();
-  const wasHidden = kbHidden;
-  kbHidden = b.dataset.kb === "off";
-  if (!kbHidden) kbSize = Number(b.dataset.kb);
-  applyKb(wasHidden !== kbHidden);           // fold / unfold only when that changed
+  const wasHidden = S.kbHidden;
+  S.kbHidden = b.dataset.kb === "off";
+  if (!S.kbHidden) S.kbSize = Number(b.dataset.kb);
+  applyKb(wasHidden !== S.kbHidden);           // fold / unfold only when that changed
   placeCaret(true);
 });
 // the preset closest to a saved size (older versions saved any 70...150)
@@ -242,7 +248,7 @@ function fitKeyboard() {
   // phones: the on-screen keyboard of the phone changes the window height all
   // the time, and the page may scroll there; no cap
   if (isTouch()) { root.removeProperty("--u-fit"); return; }
-  if (kbHidden || view !== "type") return;
+  if (S.kbHidden || S.view !== "type") return;
   const rest = document.querySelector(".top").offsetHeight + el.viewType.offsetHeight
     - el.hands.offsetHeight - el.keyboard.offsetHeight
     + document.querySelector(".hints").offsetHeight + 12;   // 12 = bottom padding of .views
@@ -257,7 +263,7 @@ function fitKeyboard() {
 // keypress.
 const TEXT_LINES = 2;
 function fitText() {
-  if (!spans.length || view !== "type") return;
+  if (!spans.length || S.view !== "type") return;
   el.text.style.removeProperty("font-size");
   const cs = getComputedStyle(el.text);
   const base = parseFloat(cs.fontSize);
@@ -277,9 +283,9 @@ function placeCaret(jump) {
   caretFrame = requestAnimationFrame(() => {
     if (!spans.length) return;
     // after the extra letters of this word, if there are any
-    const extra = extras.get(pos)?.at(-1);
-    const atEnd = pos >= spans.length || !!extra;
-    const s = extra || spans[Math.min(pos, spans.length - 1)];
+    const extra = extras.get(S.pos)?.at(-1);
+    const atEnd = S.pos >= spans.length || !!extra;
+    const s = extra || spans[Math.min(S.pos, spans.length - 1)];
     const x = s.offsetLeft + (atEnd ? s.offsetWidth : 0);
     const h = s.offsetHeight;
     if (jump) el.caret.classList.add("jump");
@@ -294,7 +300,7 @@ window.addEventListener("resize", () => {
   fitText();
   requestFit();
   placeCaret(true);
-  if (view === "stats") renderStats();
+  if (S.view === "stats") renderStats();
 });
 
 // ---------- letters bar ----------
@@ -305,10 +311,10 @@ const STAT_ICONS = {
   lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
 };
 function renderLetters() {
-  if (!exercise) return;
+  if (!S.exercise) return;
   const info = {};
-  for (const k of lastStats?.keys ?? []) info[k.char] = k;
-  const focusHasData = (info[exercise.focus]?.count ?? 0) > 0;
+  for (const k of S.lastStats?.keys ?? []) info[k.char] = k;
+  const focusHasData = (info[S.exercise.focus]?.count ?? 0) > 0;
 
   const frag = document.createDocumentFragment();
   const add = (c, cls) => {
@@ -319,25 +325,25 @@ function renderLetters() {
     if (justMastered.has(c)) chip.classList.add("shine");
     frag.appendChild(chip);
   };
-  for (const c of exercise.unlocked) {
+  for (const c of S.exercise.unlocked) {
     let cls = info[c]?.mastered ? "mastered" : "";
-    if (c === exercise.focus && (focusHasData || c === popLetter)) cls += " focus";
+    if (c === S.exercise.focus && (focusHasData || c === popLetter)) cls += " focus";
     add(c, cls);
   }
-  for (const c of exercise.locked) add(c, "locked");
+  for (const c of S.exercise.locked) add(c, "locked");
   el.letters.replaceChildren(frag);
 
   // every key you do not need yet is dimmed on the keyboard
-  const open = new Set([...exercise.unlocked, " "]);
-  const altOf = Object.fromEntries(Object.entries(altBase).map(([a, b]) => [b, a]));
-  for (const [c, key] of Object.entries(keyEls)) key.classList.toggle("locked", !open.has(c) && !open.has(altOf[c]));
-  if (altgrEl) altgrEl.classList.toggle("locked", !exercise.unlocked.some((c) => altBase[c]));
+  const open = new Set([...S.exercise.unlocked, " "]);
+  const altOf = Object.fromEntries(Object.entries(S.altBase).map(([a, b]) => [b, a]));
+  for (const [c, key] of Object.entries(S.keyEls)) key.classList.toggle("locked", !open.has(c) && !open.has(altOf[c]));
+  if (S.altgrEl) S.altgrEl.classList.toggle("locked", !S.exercise.unlocked.some((c) => S.altBase[c]));
 
   // status line: small pills with an icon each (details in their tooltips)
-  const openCount = exercise.unlocked.length;
-  const all = openCount + exercise.locked.length;
-  const mastered = exercise.unlocked.filter((c) => info[c]?.mastered).length;
-  const started = (lastStats?.sessionCount ?? 0) > 0;
+  const openCount = S.exercise.unlocked.length;
+  const all = openCount + S.exercise.locked.length;
+  const mastered = S.exercise.unlocked.filter((c) => info[c]?.mastered).length;
+  const started = (S.lastStats?.sessionCount ?? 0) > 0;
   const pill = (icon, cls, tip, label, value) =>
     `<span class="stat ${cls}" data-tip="${tip}"><svg viewBox="0 0 24 24" aria-hidden="true">${STAT_ICONS[icon]}</svg>` +
     `<span class="lbl">${label}</span>${value}</span>`;
@@ -345,13 +351,13 @@ function renderLetters() {
   if (!started) {
     parts.push(pill("open", "", "tip.open", t("stat.open"), `<b>${openCount}/${all}</b>`));
     parts.push(`<span class="begin">${t("stat.begin")}</span>`);
-    if (exercise.locked.length) parts.push(`<span class="begin">${t("openAll")}</span>`); // a button inside
+    if (S.exercise.locked.length) parts.push(`<span class="begin">${t("openAll")}</span>`); // a button inside
   } else {
-    if (focusHasData) parts.push(pill("focus", "focus", "tip.focus", t("stat.focus"), `<b class="lt">${exercise.focus}</b>`));
+    if (focusHasData) parts.push(pill("focus", "focus", "tip.focus", t("stat.focus"), `<b class="lt">${S.exercise.focus}</b>`));
     const pct = openCount ? Math.round((mastered / openCount) * 100) : 0;
     parts.push(pill("check", "ok", "tip.mastered", t("stat.mastered"),
       `<span class="mini"><i style="width:${pct}%"></i></span><b>${mastered}/${openCount}</b>`));
-    if (exercise.locked.length) parts.push(pill("lock", "next", "tip.next", t("stat.next"), `<b class="lt">${exercise.locked[0]}</b>`));
+    if (S.exercise.locked.length) parts.push(pill("lock", "next", "tip.next", t("stat.next"), `<b class="lt">${S.exercise.locked[0]}</b>`));
   }
   el.lettersCaption.innerHTML = parts.join("");
   popLetter = null;
@@ -360,16 +366,16 @@ function renderLetters() {
 
 // ---------- exercise ----------
 function showExercise(ex) {
-  exercise = ex;
-  text = ex.text;
-  pos = 0; wordClean = true; tabsResisted = 0;
-  state = new Uint8Array(text.length); records = new Array(text.length).fill(null);
+  S.exercise = ex;
+  S.text = ex.text;
+  S.pos = 0; wordClean = true; tabsResisted = 0;
+  state = new Uint8Array(S.text.length); records = new Array(S.text.length).fill(null);
   extras = new Map(); correctChars = 0; afterBackspace = false;
   startTime = null; lastTime = null; presses = 0; correctPresses = 0;
 
   // build all spans at once with a fragment: one DOM update, not hundreds
   const frag = document.createDocumentFragment();
-  spans = [...text].map((ch) => {
+  spans = [...S.text].map((ch) => {
     const s = document.createElement("span");
     s.textContent = ch;
     frag.appendChild(s);
@@ -406,12 +412,12 @@ async function loadExercise() {
 // typed. errors = wrong presses at that position (also after a Backspace);
 // ms = time from the previous press to the FIRST press at that position.
 const MAX_EXTRA = 10;      // extra letters shown after a word, more are only counted
-const canType = () => !(busy || pos >= text.length || introOpen() || view !== "type" || document.body.classList.contains("splashing"));
+const canType = () => !(S.busy || S.pos >= S.text.length || introOpen() || S.view !== "type" || document.body.classList.contains("splashing"));
 
 // the word around position i is text[wordStart(i) .. wordEnd(i)); wordEnd is
 // the space after it (or the end of the text)
-function wordStart(i) { while (i > 0 && text[i - 1] !== " ") i--; return i; }
-function wordEnd(i) { while (i < text.length && text[i] !== " ") i++; return i; }
+function wordStart(i) { while (i > 0 && S.text[i - 1] !== " ") i--; return i; }
+function wordEnd(i) { while (i < S.text.length && S.text[i] !== " ") i++; return i; }
 
 // What one position shows. Keeps the number of right positions for WPM.
 function setState(i, s) {
@@ -428,7 +434,7 @@ function record(i, wrong, now) {
     // not measured: the first press of the exercise, and a press right after a
     // Backspace (that time is spent correcting, not moving a finger)
     const ms = lastTime === null || afterBackspace ? 0 : Math.round(now - lastTime);
-    r = records[i] = { char: text[i], errors: 0, ms };
+    r = records[i] = { char: S.text[i], errors: 0, ms };
   }
   if (wrong) r.errors++;
 }
@@ -441,9 +447,9 @@ function mistake() {
 
 function handleChar(ch) {
   if (!canType()) return;
-  const expected = text[pos];
+  const expected = S.text[S.pos];
   // space at the start of a word means nothing (as on monkeytype)
-  if (ch === " " && expected !== " " && pos === wordStart(pos)) return;
+  if (ch === " " && expected !== " " && S.pos === wordStart(S.pos)) return;
   const now = performance.now();
   if (startTime === null) {
     startTime = now;
@@ -455,7 +461,7 @@ function handleChar(ch) {
   // system layout is set to another language. Not counted, just explained.
   if (ch !== expected && /\p{L}/u.test(ch)) {
     if (ch.toLowerCase() === expected) { showWarn("caps"); return; }
-    if (!alphabet.has(ch.toLowerCase())) {
+    if (!S.alphabet.has(ch.toLowerCase())) {
       if (++wrongScript >= 2) showWarn("layout");
       return;
     }
@@ -465,15 +471,15 @@ function handleChar(ch) {
 
   if (expected === " " && ch !== " ") {
     // a letter where the space belongs: an "extra" letter, the cursor stays
-    record(pos, true, now);
-    const list = extras.get(pos) ?? [];
+    record(S.pos, true, now);
+    const list = extras.get(S.pos) ?? [];
     if (list.length < MAX_EXTRA) {
       const s = document.createElement("span");
       s.className = "extra";
       s.textContent = ch;
-      el.text.insertBefore(s, spans[pos]);
+      el.text.insertBefore(s, spans[S.pos]);
       list.push(s);
-      extras.set(pos, list);
+      extras.set(S.pos, list);
     }
     pulseKey(ch, false);
     mistake();
@@ -481,27 +487,27 @@ function handleChar(ch) {
     if (ch === " " && expected !== " ") {
       // space inside a word: skip the rest of it. Skipped letters were never
       // typed, so they give no sample, but each counts as a wrong press.
-      const end = wordEnd(pos);
-      presses += end - pos;
-      while (pos < end) setState(pos++, 3);
+      const end = wordEnd(S.pos);
+      presses += end - S.pos;
+      while (S.pos < end) setState(S.pos++, 3);
       mistake();
     }
-    if (pos < text.length) {
-      const ok = ch === text[pos];
-      record(pos, !ok, now);
-      setState(pos, ok ? 1 : 2);
+    if (S.pos < S.text.length) {
+      const ok = ch === S.text[S.pos];
+      record(S.pos, !ok, now);
+      setState(S.pos, ok ? 1 : 2);
       if (ok) correctPresses++;
       else mistake();
       pulseKey(ch, ok);
-      if (text[pos] === " ") endWord();
-      pos++;
+      if (S.text[S.pos] === " ") endWord();
+      S.pos++;
     }
   }
   lastTime = now; afterBackspace = false;
   highlightNextKey();
   placeCaret(false);
   updateLive();
-  if (pos === text.length) {
+  if (S.pos === S.text.length) {
     endWord();
     finishExercise();
   }
@@ -513,19 +519,19 @@ function handleChar(ch) {
 // screen changes: the samples (records) keep every mistake.
 function backspace(wholeWord) {
   if (!canType() || startTime === null) return;
-  if (pos === wordStart(pos)) {
-    const space = pos - 1;
-    if (pos === 0 || !wordHasError(wordStart(space), space)) return;
+  if (S.pos === wordStart(S.pos)) {
+    const space = S.pos - 1;
+    if (S.pos === 0 || !wordHasError(wordStart(space), space)) return;
     setState(space, 0);
-    pos = space;
-    while (pos > 0 && state[pos - 1] === 3) setState(--pos, 0);   // skipped = not typed
+    S.pos = space;
+    while (S.pos > 0 && state[S.pos - 1] === 3) setState(--S.pos, 0);   // skipped = not typed
     if (wholeWord) clearWord();
   } else if (wholeWord) {
     clearWord();
-  } else if (extras.get(pos)?.length) {
-    extras.get(pos).pop().remove();
+  } else if (extras.get(S.pos)?.length) {
+    extras.get(S.pos).pop().remove();
   } else {
-    setState(--pos, 0);
+    setState(--S.pos, 0);
   }
   afterBackspace = true;
   highlightNextKey();
@@ -534,9 +540,9 @@ function backspace(wholeWord) {
 }
 // Ctrl+Backspace: the cursor goes back to the start of its word, extra letters vanish
 function clearWord() {
-  (extras.get(pos) ?? []).splice(0).forEach((s) => s.remove());
-  const start = wordStart(pos);
-  while (pos > start) setState(--pos, 0);
+  (extras.get(S.pos) ?? []).splice(0).forEach((s) => s.remove());
+  const start = wordStart(S.pos);
+  while (S.pos > start) setState(--S.pos, 0);
 }
 
 // ---------- streak: clean words in a row ----------
@@ -581,8 +587,8 @@ function nudge() {
 }
 
 function showWarn(kind) {
-  const info = languages.find((l) => l.id === lang);
-  el.warn.innerHTML = kind === "caps" ? t("warn.caps") : t("warn.layout", { layout: info?.systemLayout ?? lang });
+  const info = S.languages.find((l) => l.id === S.lang);
+  el.warn.innerHTML = kind === "caps" ? t("warn.caps") : t("warn.layout", { layout: info?.systemLayout ?? S.lang });
   el.warn.classList.add("show");
   $("caption-slot").classList.add("warning");   // the status line fades out under it
 }
@@ -614,10 +620,10 @@ function updateLive() {
   el.acc.textContent = Math.round(currentAccuracy());
 }
 // keep WPM ticking while the user pauses
-setInterval(() => { if (startTime !== null && pos < text.length) updateLive(); }, 500);
+setInterval(() => { if (startTime !== null && S.pos < S.text.length) updateLive(); }, 500);
 
 async function finishExercise() {
-  busy = true;
+  S.busy = true;
   const wpm = Math.round(currentWpm() * 10) / 10;
   const accuracy = Math.round(currentAccuracy() * 10) / 10;
   // the header keeps showing this result until the next exercise starts;
@@ -627,9 +633,9 @@ async function finishExercise() {
   FX.countUp(el.raw, Math.round(currentRaw()));
   FX.countUp(el.acc, Math.round(accuracy));
   // remember the state before, to see what this exercise achieved
-  const prevBest = Math.max(0, ...(lastStats?.sessions ?? []).map((x) => x.wpm));
-  const hadSessions = (lastStats?.sessionCount ?? 0) > 0;
-  const prevMastered = new Set((lastStats?.keys ?? []).filter((k) => k.mastered).map((k) => k.char));
+  const prevBest = Math.max(0, ...(S.lastStats?.sessions ?? []).map((x) => x.wpm));
+  const hadSessions = (S.lastStats?.sessionCount ?? 0) > 0;
+  const prevMastered = new Set((S.lastStats?.keys ?? []).filter((k) => k.mastered).map((k) => k.char));
   const resisted = tabsResisted;
   // one sample per typed position, in text order (skipped letters have none)
   const samples = records.filter(Boolean);
@@ -647,7 +653,7 @@ async function finishExercise() {
       FX.toast(t("toast.newLetter", { letter: res.newLetter }), { kind: "letter", badge: res.newLetter });
       FX.burstFrom(el.letters, 60);
     }
-    justMastered = new Set(lastStats.keys.filter((k) => k.mastered && !prevMastered.has(k.char)).map((k) => k.char));
+    justMastered = new Set(S.lastStats.keys.filter((k) => k.mastered && !prevMastered.has(k.char)).map((k) => k.char));
     if (justMastered.size) FX.toast(t("toast.mastered", { letters: [...justMastered].join(" ") }), { kind: "mastered" });
     if (resisted) FX.toast(t("toast.resisted", { n: resisted }), { kind: "resisted" });
 
@@ -656,20 +662,20 @@ async function finishExercise() {
     console.error(err);
     el.hint.textContent = t("err.server");
   } finally {
-    busy = false;
+    S.busy = false;
   }
 }
 
 async function refreshStats() {
-  lastStats = await getJSON("/stats");
-  i18nVars.target = lastStats.targetWpm;
+  S.lastStats = await getJSON("/stats");
+  i18nVars.target = S.lastStats.targetWpm;
   applyI18n(el.intro);
-  if (view === "stats") renderStats();
+  if (S.view === "stats") renderStats();
 }
 
 // ---------- views: type / stats ----------
 function setView(name) {
-  view = name;
+  S.view = name;
   const stats = name === "stats";
   el.switch.classList.toggle("stats", stats);
   el.tabType.setAttribute("aria-selected", String(!stats));
@@ -690,7 +696,7 @@ el.tabType.addEventListener("click", (e) => { e.currentTarget.blur(); setView("t
 el.tabStats.addEventListener("click", (e) => { e.currentTarget.blur(); setView("stats"); });
 
 function renderStats() {
-  const s = lastStats;
+  const s = S.lastStats;
   if (!s) return;
   const sessions = [...s.sessions].reverse(); // oldest first
   const last10 = sessions.slice(-10);
@@ -714,13 +720,13 @@ function renderStats() {
 // 1 = full red). Dashed = no data yet. Hover (or tap) a key for the numbers.
 // It lives only on the stats screen, so it never distracts while typing.
 function drawHeatKeyboard(keys) {
-  if (!layout) return;
+  if (!S.layout) return;
   const byChar = new Map(keys.map((k) => [k.char, k]));
   el.heatKb.innerHTML = "";
-  layout.rows.forEach((row, i) => {
+  S.layout.rows.forEach((row, i) => {
     const rowEl = document.createElement("div");
     rowEl.className = "kb-row";
-    rowEl.style.paddingLeft = `calc(var(--u) * ${layout.offsets?.[i] ?? 0})`;
+    rowEl.style.paddingLeft = `calc(var(--u) * ${S.layout.offsets?.[i] ?? 0})`;
     for (const k of row) {
       const key = document.createElement("div");
       key.className = "key hk" + (k.home ? " home" : "");
@@ -861,7 +867,7 @@ let introPressed = new Set();
 
 // The home row of the current layout (A S D F · J K L ; / Ф Ы В А · О Л Д Ж).
 function drawIntroKeys() {
-  const row = layout.rows[1];
+  const row = S.layout.rows[1];
   const home = $("intro-home");
   home.innerHTML = "";
   introKeys = {};
@@ -884,7 +890,7 @@ function showIntro() {
   introPressed = new Set();
   Object.values(introKeys).forEach((k) => k.classList.remove("hit"));
   $("intro-space").classList.remove("hit");
-  const info = languages.find((l) => l.id === lang);
+  const info = S.languages.find((l) => l.id === S.lang);
   $("intro-lang").textContent = info ? " · " + info.name : "";
   renderIntro();
   el.intro.classList.remove("hidden");
@@ -941,9 +947,9 @@ async function closeIntro(unlockAll) {
   store.set("tt.introDone", "1");
   if (unlockAll) {
     await openAllLetters();
-  } else if (unlockAll === false && store.get(`tt.level.${lang}`) === "pro") {
+  } else if (unlockAll === false && store.get(`tt.level.${S.lang}`) === "pro") {
     // reopened the intro and chose to start small after all
-    store.set(`tt.level.${lang}`, "new");
+    store.set(`tt.level.${S.lang}`, "new");
     try {
       await postJSON("/progress", { unlockAll: false });
       await refreshStats();
@@ -962,7 +968,7 @@ el.btnIntro.addEventListener("click", (e) => { e.currentTarget.blur(); showIntro
 // opens at once. Remembered per language (the Pages version forgets progress
 // on reload, so loadLanguage applies it again).
 async function openAllLetters() {
-  store.set(`tt.level.${lang}`, "pro");
+  store.set(`tt.level.${S.lang}`, "pro");
   try {
     await postJSON("/progress", { unlockAll: true });
     await refreshStats();
@@ -971,7 +977,7 @@ async function openAllLetters() {
   } catch (err) { console.error(err); }
 }
 el.lettersCaption.addEventListener("click", (e) => {
-  if (e.target.id !== "open-all" || busy) return;
+  if (e.target.id !== "open-all" || S.busy) return;
   e.target.blur();
   openAllLetters().then(focusText);
 });
@@ -1012,26 +1018,26 @@ function labelTips() {
 // The switch is built once; changing language only moves the yellow thumb
 // (CSS variable --i), so the slide animation can run.
 function buildLangSwitch() {
-  el.langSwitch.style.setProperty("--n", languages.length);
+  el.langSwitch.style.setProperty("--n", S.languages.length);
   el.langSwitch.innerHTML = `<span class="switch-thumb" aria-hidden="true"></span>` +
-    languages.map((l) => `<button type="button" role="tab" data-lang="${l.id}" title="${l.name}">${l.label}</button>`).join("");
+    S.languages.map((l) => `<button type="button" role="tab" data-lang="${l.id}" title="${l.name}">${l.label}</button>`).join("");
   el.langSwitch.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
     b.blur();
     switchLanguage(b.dataset.lang);
   }));
 }
 function switchLanguage(id) {
-  if (busy || id === lang) return;
+  if (S.busy || id === S.lang) return;
   loadLanguage(id).catch((err) => console.error(err));
 }
 function markLangSwitch() {
-  el.langSwitch.style.setProperty("--i", Math.max(0, languages.findIndex((l) => l.id === lang)));
-  el.langSwitch.querySelectorAll("button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.lang === lang)));
+  el.langSwitch.style.setProperty("--i", Math.max(0, S.languages.findIndex((l) => l.id === S.lang)));
+  el.langSwitch.querySelectorAll("button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.lang === S.lang)));
 }
 
 // First choice: what was used last time, else the browser's language, else the first one.
 function initialLanguage() {
-  const ids = languages.map((l) => l.id);
+  const ids = S.languages.map((l) => l.id);
   const saved = store.get("tt.lang");
   if (ids.includes(saved)) return saved;
   const browser = (navigator.language || "").slice(0, 2).toLowerCase();
@@ -1039,29 +1045,29 @@ function initialLanguage() {
 }
 
 async function loadLanguage(id) {
-  busy = true;
+  S.busy = true;
   try {
-    lang = id;
+    S.lang = id;
     store.set("tt.lang", id);
-    const info = languages.find((l) => l.id === id);
-    alphabet = new Set(info.alphabet);
+    const info = S.languages.find((l) => l.id === id);
+    S.alphabet = new Set(info.alphabet);
     document.documentElement.lang = id;
     uiLang = I18N[id] ? id : "en";        // the interface follows the typing language
     markLangSwitch();
     hideWarn();
     el.live.classList.remove("final");
-    layout = await getJSON("/layout");
+    S.layout = await getJSON("/layout");
     drawKeyboard();
     // switching language: the new keyboard and letters fade in (not at start)
-    if (languages.length && exercise) {
+    if (S.languages.length && S.exercise) {
       FX.anim(el.keyboard, [{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 260, easing: "cubic-bezier(.2,.8,.2,1)" });
       FX.anim(el.letters, [{ opacity: 0 }, { opacity: 1 }], { duration: 260 });
     }
     // home-row keys for the intro text ("bumps on F and J" / "on А and О")
-    const home = layout.rows.flat().filter((k) => k.home).map((k) => k.char.toUpperCase());
+    const home = S.layout.rows.flat().filter((k) => k.home).map((k) => k.char.toUpperCase());
     [i18nVars.f, i18nVars.j] = home;
-    el.motto.textContent = t(`splash.${mottoIndex}`);   // in the interface language
-    const row = layout.rows[1].map((k) => k.char.toUpperCase());
+    el.motto.textContent = t(`splash.${S.mottoIndex}`);   // in the interface language
+    const row = S.layout.rows[1].map((k) => k.char.toUpperCase());
     i18nVars.l = row.slice(0, 4).join(" ");
     i18nVars.r = row.slice(6, 10).join(" ");
     applyI18n();
@@ -1069,16 +1075,16 @@ async function loadLanguage(id) {
     applyKb();                              // re-translates "off"
     await refreshStats();
     await loadExercise();
-    if (view === "stats") renderStats();
+    if (S.view === "stats") renderStats();
 
-    if (store.get(`tt.level.${id}`) === "pro" && exercise.locked.length && !lastStats.sessionCount) {
+    if (store.get(`tt.level.${id}`) === "pro" && S.exercise.locked.length && !S.lastStats.sessionCount) {
       // the GitHub Pages version forgets progress on reload: re-apply the choice
       await postJSON("/progress", { unlockAll: true });
       await refreshStats();
       await loadExercise();
     }
   } finally {
-    busy = false;
+    S.busy = false;
   }
 }
 
@@ -1091,16 +1097,16 @@ document.addEventListener("keydown", (e) => {
   // shortcuts: Shift+Tab = type <-> stats, Alt+1...4 = language
   if (e.key === "Tab" && e.shiftKey) {
     e.preventDefault();
-    setView(view === "type" ? "stats" : "type");
+    setView(S.view === "type" ? "stats" : "type");
     return;
   }
   const altGr = e.getModifierState?.("AltGraph");
   if (e.altKey && !e.ctrlKey && !e.metaKey && !altGr && /^Digit[1-9]$/.test(e.code)) {
-    const l = languages[Number(e.code.slice(5)) - 1];
+    const l = S.languages[Number(e.code.slice(5)) - 1];
     if (l) { e.preventDefault(); switchLanguage(l.id); }
     return;
   }
-  if (view !== "type") return;
+  if (S.view !== "type") return;
   if (e.key === "Escape") { e.preventDefault(); newExercise(); return; }
   if (e.key === "Tab") { e.preventDefault(); nudge(); return; }   // no restart, see nudge()
   if (e.key === "Backspace") { e.preventDefault(); focusText(); backspace(e.ctrlKey || e.altKey); return; } // Alt = Option on a Mac
@@ -1134,7 +1140,7 @@ el.textBox.addEventListener("click", () => { el.input.focus({ preventScroll: tru
 el.input.addEventListener("blur", () => { if (isTouch()) el.textBox.classList.add("blurred"); });
 
 function newExercise() {
-  if (busy) return;
+  if (S.busy) return;
   el.live.classList.remove("final");
   loadExercise().catch(console.error);
 }
@@ -1158,10 +1164,10 @@ btnReset.addEventListener("click", async () => {
     showTip(btnReset);
     return;
   }
-  if (busy) return;
-  busy = true;
+  if (S.busy) return;
+  S.busy = true;
   try {
-    for (const l of languages) {
+    for (const l of S.languages) {
       await fetch(`${API}/reset?lang=${encodeURIComponent(l.id)}`, { method: "POST" });
     }
   } catch (err) { console.error(err); }
@@ -1184,7 +1190,7 @@ $("btn-export").addEventListener("click", async (e) => {
   e.currentTarget.blur();
   try {
     const out = { app: FILE_APP, version: FILE_VERSION, exportedAt: new Date().toISOString(), languages: {} };
-    for (const l of languages) {
+    for (const l of S.languages) {
       const res = await fetch(`${API}/export?lang=${encodeURIComponent(l.id)}`);
       if (!res.ok) throw new Error(`export ${l.id} -> ${res.status}`);
       out.languages[l.id] = await res.json();
@@ -1205,19 +1211,19 @@ $("btn-export").addEventListener("click", async (e) => {
 
 $("btn-import").addEventListener("click", (e) => {
   e.currentTarget.blur();
-  if (!busy) importFile.click();
+  if (!S.busy) importFile.click();
 });
 importFile.addEventListener("change", async () => {
   const file = importFile.files[0];
   importFile.value = "";                      // the same file can be chosen again
-  if (!file || busy) return;
-  busy = true;
+  if (!file || S.busy) return;
+  S.busy = true;
   try {
     const data = JSON.parse(await file.text());
     if (data.app !== FILE_APP || data.version !== FILE_VERSION || !data.languages || typeof data.languages !== "object") {
       throw new Error("this is not a typing-trainer file");
     }
-    const ids = languages.map((l) => l.id).filter((id) => data.languages[id]);
+    const ids = S.languages.map((l) => l.id).filter((id) => data.languages[id]);
     if (!ids.length) throw new Error("the file has none of our languages");
     let exercises = 0;
     for (const id of ids) {
@@ -1233,7 +1239,7 @@ importFile.addEventListener("change", async () => {
     location.reload();
   } catch (err) {
     console.error(err);
-    busy = false;
+    S.busy = false;
     FX.toast(t("toast.importFail"));
   }
 });
@@ -1244,13 +1250,13 @@ importFile.addEventListener("change", async () => {
   const guess = store.get("tt.lang") || (navigator.language || "").slice(0, 2).toLowerCase();
   uiLang = I18N[guess] ? guess : "en";
   const splash = Splash.start();
-  if (splash.phrase !== undefined) mottoIndex = splash.phrase;   // the logo keeps the start phrase
+  if (splash.phrase !== undefined) S.mottoIndex = splash.phrase;   // the logo keeps the start phrase
   // keyboard size from last time (an old saved 0 meant "hidden")
   const saved = Number(store.get("tt.kbSize") ?? 100) || 0;
   // never chosen yet: hidden on phones (no physical keys to look up), shown elsewhere
   const hiddenSaved = store.get("tt.kbHidden");
-  kbHidden = hiddenSaved === null ? isTouch() : hiddenSaved === "1" || saved === 0;
-  kbSize = saved ? nearestKb(saved) : 100;
+  S.kbHidden = hiddenSaved === null ? isTouch() : hiddenSaved === "1" || saved === 0;
+  S.kbSize = saved ? nearestKb(saved) : 100;
   applyKb();
   labelTips();
   if (isTouch()) el.textBox.classList.add("blurred"); // phone: tap to open the keyboard
@@ -1260,7 +1266,7 @@ importFile.addEventListener("change", async () => {
     return;
   }
   try {
-    languages = await getJSON("/languages", true);
+    S.languages = await getJSON("/languages", true);
     buildLangSwitch();
     await loadLanguage(initialLanguage());
   } catch (err) {
@@ -1273,5 +1279,5 @@ importFile.addEventListener("change", async () => {
     store.set("tt.flash", "");
     FX.toast(t("toast.imported", { n: flash }));
   }
-  if (!store.get("tt.introDone") && layout) showIntro();   // only the very first visit
+  if (!store.get("tt.introDone") && S.layout) showIntro();   // only the very first visit
 })();
