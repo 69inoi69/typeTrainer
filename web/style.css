@@ -26,7 +26,7 @@
   /* width of the text card (and of the header, so their edges line up): a
      little wider than the on-screen keyboard (13.4 key units, + 1.2) and
      growing with it, but never narrower than 760px, so the text keeps fitting
-     in 2 lines (typing.js, fitText) */
+     in its 3-line window (typing.js, fitText) */
   --tw: min(100vw - 32px, max(760px, calc(var(--u) * 14.6)));
 
   /* motion: one place to tune how "snappy" the app feels */
@@ -275,16 +275,19 @@ body.typing-now .top:hover .switch, body.typing-now .top:hover .profile { opacit
 .text-box:focus-within, .text-box:focus {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent), 0 10px 30px rgba(0, 0, 0, .22);
 }
-.text::before {                    /* the prompt sign, like a shell waiting for input */
-  content: "❯"; position: absolute; left: -28px; top: 0; font-size: 1em;
+.text-box::before {                /* the prompt sign, like a shell waiting for input */
+  /* next to the first line: card padding (16) + the live line (28 + 10) */
+  content: "❯"; position: absolute; left: 24px; top: 54px;
+  font-size: clamp(1.1rem, 3.6vw, 1.6rem); line-height: 1.7;
   color: var(--accent); opacity: .8; text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 50%, transparent);
 }
 .text {
   position: relative;
   font-size: clamp(1.1rem, 3.6vw, 1.6rem); line-height: 1.7;
-  /* always room for 2 lines: the keyboard below keeps one size, whatever the
-     language or the length of the words */
-  min-height: calc(2 * 1.7em);
+  /* A fixed window of 3 lines, like a screen: only its content changes, the
+     card never grows or shrinks between exercises. A longer text scrolls up
+     line by line while you type (typing.js, placeCaret). */
+  height: calc(3 * 1.7em); overflow: hidden; scroll-behavior: smooth;
   letter-spacing: .02em; color: var(--sub); word-break: break-word;
   text-align: left;                /* like a terminal: lines start at the prompt */
   transition: filter var(--med), opacity var(--med);
@@ -753,7 +756,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .kb-switch button { padding: 0 9px; }
   #btn-reset { margin-left: 0; }
   .text-box { padding: 14px 16px 14px 34px; border-radius: 12px; }
-  .text::before { left: -20px; }
+  .text-box::before { left: 14px; top: 48px; }   /* 14 + 28 + 6 */
 }
 
 @media (prefers-reduced-motion: reduce) {

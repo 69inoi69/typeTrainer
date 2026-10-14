@@ -32,22 +32,19 @@ let wordClean = true;      // no mistake in the current word so far
 let tabsResisted = 0;      // Tab presses during this exercise (no restart here)
 let justMastered = new Set(); // letters mastered in the last exercise (chips shine)
 
-// The exercise text takes at most TEXT_LINES lines: the text box is wide, and
-// if the words are still too long the font gets a little smaller (down to
-// 80 %; below that, on a narrow window, the text may take more lines). Reads
-// the layout a few times, so it runs on a new text and on resize, never on a
-// keypress.
-const TEXT_LINES = 2;
+// The text window always shows TEXT_LINES lines at one font size (style.css,
+// .text): it never changes size between exercises. A text that needs more
+// lines scrolls: the line you type stays the second one (as on monkeytype).
+// fitText runs on a new text and on resize, never on a keypress: it reads the
+// line height once and starts at the top.
+const TEXT_LINES = 3;
+let lineH = 0;
 export function fitText() {
-  if (!spans.length || S.view !== "type") return;
-  el.text.style.removeProperty("font-size");
-  const cs = getComputedStyle(el.text);
-  const base = parseFloat(cs.fontSize);
-  const lines = () => Math.round((spans.at(-1).offsetTop - spans[0].offsetTop) / parseFloat(cs.lineHeight)) + 1;
-  for (let size = base; lines() > TEXT_LINES && size > base * .8; ) {
-    size -= 1;
-    el.text.style.fontSize = size + "px";
-  }
+  if (S.view !== "type") return;
+  lineH = parseFloat(getComputedStyle(el.text).lineHeight) || 0;
+  el.text.style.scrollBehavior = "auto";     // a new text starts at the top at once
+  el.text.scrollTop = 0;
+  el.text.style.removeProperty("scroll-behavior");
 }
 
 // ---------- caret ----------
@@ -69,6 +66,13 @@ export function placeCaret(jump) {
     // position in the separate CSS "translate" property: the Tab nudge animates
     // "scale", and scale must not multiply the position (the caret flew away)
     el.caret.style.translate = `${x - 1}px ${s.offsetTop + h * 0.09}px`;
+    // keep the current line in view: from the third line on, scroll so that
+    // it is the second one (smooth, CSS scroll-behavior)
+    if (lineH) {
+      const line = Math.round(s.offsetTop / lineH);
+      const top = Math.max(0, Math.min(line - 1, Math.ceil(el.text.scrollHeight / lineH) - TEXT_LINES)) * lineH;
+      if (Math.abs(el.text.scrollTop - top) > 1) el.text.scrollTop = top;
+    }
     if (jump) requestAnimationFrame(() => el.caret.classList.remove("jump"));
   });
 }
@@ -153,7 +157,7 @@ function showExercise(ex) {
     return s;
   });
   el.text.replaceChildren(frag, el.caret);   // the caret lives inside the text
-  fitText();                                 // at most 2 lines
+  fitText();                                 // back to the first line
   requestFit();                              // more lines (narrow window) leave less room for the keyboard
   el.text.classList.remove("swap");
   void el.text.offsetWidth;                  // restart the fade-in (once per exercise)
