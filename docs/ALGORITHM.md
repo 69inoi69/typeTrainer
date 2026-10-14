@@ -73,6 +73,19 @@ Some times are **ignored** for speed (but still count for accuracy):
    after a Backspace (that time is spent correcting): both get `ms = 0`
    (not measured).
 
+**Held keys are ignored.** When a key is held down, the operating system
+repeats it every ~30 ms (`keydown` with `repeat = true`). The trainer ignores
+these repeats (Backspace excepted, so holding it still deletes): in a word
+like `all` a repeated `l` would otherwise be recorded as a correct press
+10 times faster than any real finger movement.
+
+There is deliberately **no lower limit** on a single interval. keybr.com drops
+results under 40 ms, but it applies that to the *average* time of a letter in
+a whole lesson. Single intervals of a fast typist are often that short when the
+next key is pressed before the previous one is released (rollover, typical for
+letters typed with different hands), so a per-press limit would throw away
+exactly the fastest real presses and make fast typists look slower.
+
 The press right after a wrong letter is measured normally: the cursor has
 already moved on, so it is an ordinary finger movement from the previous key.
 
@@ -164,11 +177,11 @@ Seven letters are open. The user is good at `e` and struggles with `s`:
 
 | Letter | n | ErrEMA | TimeEMA | errorPart | speedPart | raw | difficulty | weight `exp(d/T)` |
 |---|---|---|---|---|---|---|---|---|
-| e | 60 | 0.02 | 300 ms | 0.08 | 0 | 0.048 | 0.098 | 1.48 |
-| s | 30 | 0.12 | 520 ms | 0.48 | 0.20 | 0.368 | 0.415 | 5.27 |
+| e | 60 | 0.02 | 300 ms | 0.08 | 0 | 0.048 | 0.098 | 2.66 |
+| s | 30 | 0.12 | 520 ms | 0.48 | 0.20 | 0.368 | 0.415 | 63.4 |
 
 If the other five letters look like `e`, then `s` is chosen as the focus with
-probability `5.27 / (5.27 + 6 * 1.48) ≈ 37 %`, instead of `1/7 ≈ 14 %` for
+probability `63.4 / (63.4 + 6 * 2.66) ≈ 80 %`, instead of `1/7 ≈ 14 %` for
 uniform choice.
 
 ## 6. Unlocking letters
@@ -222,14 +235,15 @@ letters are allowed. Each word slot is filled in two steps.
 **Step 1, what to train: pick a focus letter.**
 
 ```
-P(letter) = exp(d_letter / T) / Σ exp(d_i / T)        T = Temperature = 0.25
+P(letter) = exp(d_letter / T) / Σ exp(d_i / T)        T = Temperature = 0.1
 ```
 
 This is the softmax (Boltzmann) distribution, used in the same way in
 reinforcement learning for choosing between actions. The **temperature** `T` is
 one knob for "how hard to push on weaknesses":
 
-- difficulty 1 against difficulty 0 gives a ratio of `e^(1/0.25) = e^4 ≈ 55`;
+- difficulty 1 against difficulty 0 gives a ratio of `e^(1/0.1) = e^10 ≈ 22000`;
+  a gap of 0.1 in difficulty already gives `e ≈ 2.7`;
 - with `T → 0` it always picks the single worst letter;
 - with a large `T` every letter is almost equally likely.
 
@@ -269,7 +283,7 @@ All in `internal/config/config.go`.
 | `ErrorWeight` / `SpeedWeight` | 0.6 / 0.4 | mix of the two parts | accuracy first, but speed matters |
 | `PriorDifficulty` | 0.7 | assumption about an unseen letter | new letters must get practised |
 | `PriorStrength` | 5 | how many samples the prior is worth | a few presses are not yet evidence |
-| `Temperature` | 0.25 | focus strength | strong focus (×55) without excluding anything |
+| `Temperature` | 0.1 | focus strength | chosen with the simulation (section 11.1): fastest learning at a small loss of variety; was 0.25 |
 | `MasteryMinSamples` | 20 | evidence needed for mastery | ≈ one EMA memory length |
 | `MasteryErrorRate` | 0.05 | max mistakes for mastery | 95 % accuracy, a common minimum goal |
 | `StartLetters` / `MinWords` | 6 / 30 | first lesson | enough variety from the first minute |
@@ -320,11 +334,104 @@ These are directions, not things that are built:
   twice as often (`TestNext_WeakLetterGetsFocus`), old mistakes fade
   (`TestUpdate_RecentDataWins`), one press is not evidence
   (`TestDifficulty_ShrinkageNeedsEvidence`), only open letters are used.
-- **Simulation.** A simulated typist with a hidden error probability per letter
-  that slowly improves when practised. Compare how fast the adaptive generator
-  and a uniform random generator bring all letters below 5 % errors.
+- **Simulation** (built, see section 11.1).
 - **Small user study.** Two groups (adaptive vs. random words), the same total
   practice time, compare WPM and accuracy before and after.
+
+### 11.1 Simulation
+
+Code: `internal/sim` (tests in `internal/sim/sim_test.go`), run with
+`go run ./tools/sim` (or `-lang en`) from the repository root. All numbers are
+in `internal/config/config.go` (`Sim`).
+
+**The simulated typist.** Every letter has a hidden error probability, drawn
+uniformly from 0.03..0.30, and a hidden time per press, drawn from
+350..900 ms. Each press of a letter improves it:
+
+```
+value = floor + (value - floor) * (1 - LearnRate)      LearnRate = 0.02
+```
+
+with floors of 1 % errors and 200 ms. A press is wrong with the hidden
+probability and takes the hidden time ±25 % (uniform). The goal is reached when
+every letter's **hidden** values meet the mastery goal (≤ 5 % errors,
+≤ 400 ms). The hidden values are used only to judge the result; the strategies
+see only what a real browser would send.
+
+**Three strategies,** all with the same statistics (`engine.Apply`), the same
+unlocking rule (`NextUnlocked`), 20 words per exercise, and for each run the
+same typist and the same random numbers:
+
+1. **random words:** any open word, uniformly;
+2. **best of 20 (monkeytype):** a copy of monkeytype's "weakspot" mode. Each
+   letter has an EMA of (press time + 5000 ms for a mistake) over about 50
+   presses; for every word slot 20 random open words are drawn and the one with
+   the highest mean letter score is taken;
+3. **adaptive (softmax):** this project's `Generator.Next`.
+
+**Variety.** A faster strategy is useless if it is boring, so the simulation
+also measures how repetitive the exercises are (means over exercises):
+
+- `dist`: share of different words in one exercise (100 % = no word twice);
+- `rep`: share of words that were also in the previous exercise;
+- `top`: share of words that contain the exercise's most common letter
+  (how hard one letter is pushed).
+
+They are measured twice: on the **first 30 exercises** of the beginner above
+(few open letters), and on an **experienced typist** who opens every letter in
+the intro (every letter starts at ≤ 5 % errors and 150..350 ms) over 100
+exercises.
+
+**Result** (20 typists per strategy; "exercises" = mean number of exercises
+until the goal, a run gives up after 3000; variety in the format
+dist / rep / top):
+
+| Language | Strategy | Exercises | Variety, first 30 | Variety, expert |
+|---|---|---|---|---|
+| en | random words | 2447 | 87 / 28 / 73 | 100 / 1 / 60 |
+| en | best of 20 | 292 | 47 / 55 / 94 | 96 / 8 / 75 |
+| en | adaptive, T = 0.25 | 299 | 94 / 28 / 73 | 100 / 2 / 62 |
+| en | adaptive, T = 0.1 | 173 | 89 / 31 / 83 | 99 / 3 / 62 |
+| pl | random words | 1520 | 81 / 40 / 70 | 100 / 1 / 55 |
+| pl | best of 20 | 274 | 33 / 64 / 83 | 96 / 8 / 69 |
+| pl | adaptive, T = 0.25 | 450 | 86 / 50 / 71 | 100 / 1 / 55 |
+| pl | adaptive, T = 0.1 | 246 | 77 / 49 / 79 | 100 / 2 / 56 |
+| uk | random words | 1818 | 81 / 39 / 61 | 100 / 1 / 51 |
+| uk | best of 20 | 286 | 34 / 59 / 85 | 96 / 8 / 68 |
+| uk | adaptive, T = 0.25 | 464 | 90 / 44 / 66 | 100 / 2 / 53 |
+| uk | adaptive, T = 0.1 | 247 | 85 / 46 / 76 | 100 / 2 / 54 |
+| ru | random words | 3000 (none reached) | 83 / 38 / 60 | 100 / 1 / 56 |
+| ru | best of 20 | 1175 | 34 / 59 / 81 | 96 / 8 / 72 |
+| ru | adaptive, T = 0.25 | 490 | 91 / 42 / 67 | 99 / 4 / 58 |
+| ru | adaptive, T = 0.1 | 248 | 86 / 40 / 77 | 98 / 4 / 59 |
+
+`go run ./tools/sim -temps 0.1,0.15,0.2,0.25` prints the in-between values
+too: exercises fall steadily as T falls (en 299, 264, 229, 173).
+
+What this shows:
+
+- Any targeting beats random words by 5 to 10 times. Random words almost never
+  practise rare letters (Russian `ъ`, `э`, `ф`): no Russian run reached the goal.
+- With the earlier value `Temperature = 0.25` the adaptive model loses to the
+  simple best-of-20 rule in Polish and Ukrainian. Most of the time goes into
+  unlocking (all letters open after ~430 exercises against ~240).
+- Best of 20 pays for its speed with repetition: in the first lessons only a
+  third of the words in an exercise are different, against 85-90 % for the
+  adaptive model. It also fails on Russian: once all letters are open, words
+  with the rarest letters are seldom among 20 random words.
+- `T = 0.1` (the configured value since this result) makes the adaptive model the fastest
+  in every language. The price is moderate: in the first lessons 5-9 points fewer
+  different words and one letter pushed a bit harder (`top` +8..10 points);
+  for an experienced typist the variety is practically the same.
+- Most repetition in the first lessons comes from the **small alphabet**, not
+  from the strategy: even random words repeat 28-40 % of the previous exercise.
+  That part is controlled by `StartLetters` and `MinWords`, not by `T`.
+
+Limits: the typist is invented. Letters do not influence each other, there is
+no forgetting, and learning is the same exponential curve for every letter. The
+simulation compares strategies under the same assumptions; it does not predict
+how fast a real person learns. The variety numbers are simple proxies; how
+boring an exercise feels can only be measured with real users.
 
 ## 12. Languages, layouts and word lists
 

@@ -12,7 +12,6 @@ import (
 	"io/fs"
 	"math/rand"
 	"net/http"
-	"strings"
 	"time"
 
 	"typingtrainer/internal/api"
@@ -81,25 +80,10 @@ func loadLanguage(info language.Language, cfg config.Config, seed int64) (*api.L
 	if err != nil {
 		return nil, err
 	}
-	words := uniqueWords(string(wordData), info)
+	words := info.Words(string(wordData))
 	if len(words) == 0 {
 		return nil, fmt.Errorf("word list is empty")
 	}
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(seed)), cfg.Engine)
 	return &api.Language{Info: info, Gen: gen, LayoutJSON: layoutJSON}, nil
-}
-
-// uniqueWords splits the word list (most frequent first), lowercases it,
-// keeps only words made of the language's letters and removes duplicates.
-// The order is kept: it is the frequency order of the source list.
-func uniqueWords(s string, l language.Language) []string {
-	seen := map[string]bool{}
-	var out []string
-	for _, w := range strings.Fields(strings.ToLower(s)) {
-		if !seen[w] && l.Allows(w) {
-			seen[w] = true
-			out = append(out, w)
-		}
-	}
-	return out
 }

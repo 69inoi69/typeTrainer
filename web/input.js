@@ -72,6 +72,9 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") { e.preventDefault(); newExercise(); return; }
   if (e.key === "Tab") { e.preventDefault(); nudge(); return; }   // no restart, see nudge()
   if (e.key === "Backspace") { e.preventDefault(); focusText(); backspace(e.ctrlKey || e.altKey); return; } // Alt = Option on a Mac
+  // A held key repeats every ~30 ms. Those are not finger movements: if the
+  // next letter is the same ("ll") a repeat would count as a super fast press.
+  if (e.repeat) { e.preventDefault(); return; }
   // AltGr (Polish ą, ę, ...) is reported as Ctrl+Alt on Windows; let it through,
   // but keep real browser shortcuts like Ctrl+R working.
   if ((e.ctrlKey || e.metaKey || e.altKey) && !altGr) return;

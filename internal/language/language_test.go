@@ -40,3 +40,20 @@ func TestParse(t *testing.T) {
 		}
 	}
 }
+
+func TestWords(t *testing.T) {
+	en := Language{Alphabet: "abcdefghijklmnopqrstuvwxyz"}
+	got := en.Words("The\nthe\ncafé\nand\n\nan't\na\n")
+	want := []string{"the", "and", "a"} // lowercased, deduplicated, foreign letters dropped, order kept
+	if len(got) != len(want) {
+		t.Fatalf("Words = %q, want %q", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("Words = %q, want %q", got, want)
+		}
+	}
+	if len(en.Words("")) != 0 {
+		t.Fatal("empty list must give no words")
+	}
+}
