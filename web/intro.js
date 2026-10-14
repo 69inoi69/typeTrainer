@@ -8,6 +8,7 @@ import { postJSON } from "./api.js";
 import { makeKey } from "./keyboard.js";
 import { refreshStats } from "./stats.js";
 import { loadExercise } from "./typing.js";
+import { maybeStartTour } from "./tour.js";
 
 // ---------- intro ----------
 // Shown once, on the very first visit (it can be reopened with the "?" button).
@@ -113,6 +114,7 @@ async function closeIntro(unlockAll) {
     } catch (err) { console.error(err); }
   }
   focusText();
+  maybeStartTour();                              // first visit: the tour of the page comes next
 }
 $("intro-next").addEventListener("click", (e) => { e.currentTarget.blur(); nextIntroStep(); });
 $("intro-skip").addEventListener("click", () => closeIntro());

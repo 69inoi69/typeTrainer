@@ -57,26 +57,29 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   language of the interface** (remembered in your browser; the first time it
   follows your browser's language).
 - **Tab does not restart.** Restarting throws away exactly the mistakes the
-  trainer learns from, so Tab only answers with a small animation and a kind
-  message; at the end you see how many times you resisted. `Esc` (restart)
+  trainer learns from, so Tab only answers with a small animation; the result
+  screen then says how many times you resisted. `Esc` (restart)
   still gives a new exercise.
 - The **bolt + number** at the right end of the numbers line counts clean words
   in a row (typed without a single mistake; hover for the tooltip). It gets
   hotter as it grows: green from 3, yellow from 10, orange with a zapping bolt
   from 25, glowing red from 50. New records, mastered letters, new letters and
-  the streak at 10 and every 25 words get a small celebration.
-- Messages are part of the page, not pop-ups: a message takes the place of the
-  status line under the letters for a few seconds, then the status line comes
-  back. One at a time, the others wait their turn. The thin bar under each
-  message fills up while it is shown; hover pauses it, a click skips it. All
-  messages look like the rest of the page; every kind has its own icon, small
-  animation and colour of the time bar: record (gold, trophy), new letter
-  (blue, the letter itself), mastered (green, check), streak (orange, bolt),
-  Tab urges beaten (violet, shield), tip (teal, light bulb), Tab message (grey).
-- The texts are picked at random from small pools, so they do not repeat all
-  the time: ironic records and streaks, a joke when a new letter opens (some
-  letters have their own, like q, ą or ъ), and now and then after an exercise
-  a typing tip.
+  the streak at 10 and every 25 words get a small confetti.
+- **While you type** the feedback is where your eyes already are: the letter
+  in focus is tinted in the text, the caret turns green while your speed is at
+  the goal, and the numbers line changes once per word (calm, not every key).
+- **When the text ends** the text window shows the result instead of the
+  text: one main line (a new letter with a joke about it, a new record,
+  mastered letters, or a short verdict on accuracy), which letters got faster
+  or slower, and now and then a tip. Space, Enter or any letter goes on at
+  once; otherwise the next text comes when the thin bar is full (hover pauses
+  it). The texts are picked at random from small pools in every language.
+- Small messages under the letters are only used outside typing (a file
+  saved or loaded).
+- **How this site works:** the **?** icon in the header starts a short tour:
+  each part of the page gets a light ring and a sentence or two about it
+  (Enter / → next, Esc closes). On the first visit it starts by itself after
+  the intro.
 - Buttons under the keyboard (hover for a tooltip): **beginner guide** (the
   intro again) and the keyboard switch **off · S · M · L** (hides keyboard and
   hands, or picks a size; remembered in your browser). The keyboard never makes
@@ -94,9 +97,11 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   the text instead.
 - The top line of the text card shows **wpm**, **raw** (every keypress counts,
   wrong ones too, like on monkeytype; only shown, never stored) and accuracy.
-  It is dim while you read and bright while you type; the digits roll like a
-  scoreboard. Over the logo there is a small phrase: the same one the start
-  screen showed, it flies there with the logo.
+  It is dim while you read and bright while you type. Over the logo there is a
+  small phrase: the same one the start screen showed, it flies there with the
+  logo.
+- The text window has one fixed size (3 lines): only its content changes. A
+  longer text scrolls up line by line, the line you type stays the second one.
 - The **profile** in the top right corner is a placeholder for real accounts:
   you can set a name and a picture (a colour, or your own image), kept only in
   this browser. Nothing is sent to the server; "reset" forgets it too.

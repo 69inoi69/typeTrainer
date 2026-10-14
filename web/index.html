@@ -32,6 +32,8 @@
       <button type="button" role="tab" id="tab-type" aria-selected="true" aria-controls="view-type" data-tip="tip.type"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="11" rx="2"/><path d="M7 10.5h.01M10 10.5h.01M13 10.5h.01M16 10.5h.01M8 14h8"/></svg></button>
       <button type="button" role="tab" id="tab-stats" aria-selected="false" aria-controls="view-stats" data-tip="tip.stats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16"/><path d="M7 16v-5M12 16V7M17 16v-8"/></svg></button>
     </nav>
+    <!-- "how does this site work?": a short tour that points at each part (tour.js) -->
+    <button type="button" class="tour-btn" id="btn-tour" data-tip="tip.tour"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.8"/><path d="M12 17h.01"/></svg></button>
     </div>
 
     <!-- right: the language switch (same quiet look) and the profile -->
@@ -96,6 +98,8 @@
         <div id="text" class="text">loading…</div>
         <div id="caret" class="caret" aria-hidden="true"></div>
         <div id="focus-hint" class="focus-hint" data-i18n="focusHint">tap here to start typing</div>
+        <!-- the result screen takes the place of the text when typing stops (result.js) -->
+        <div id="result" class="result" role="status" aria-live="polite" hidden></div>
       </div>
       <!-- Invisible input: lets phone keyboards open and send characters. -->
       <input id="hidden-input" class="hidden-input" autocomplete="off" autocapitalize="off"
@@ -182,6 +186,20 @@
   </footer>
 
   <div id="tooltip" class="tooltip" role="tooltip"></div>
+
+  <!-- The tour: a light ring around one part of the page (everything else
+       dims) and a small card that explains it. tour.js moves both. -->
+  <div class="tour" id="tour" role="dialog" aria-modal="true" aria-labelledby="tour-text" hidden>
+    <div class="tour-spot" id="tour-spot"></div>
+    <div class="tour-card" id="tour-card">
+      <p class="tour-step" id="tour-step"></p>
+      <p class="tour-text" id="tour-text"></p>
+      <div class="tour-nav">
+        <button type="button" class="link" id="tour-skip" data-i18n="tour.skip">skip</button>
+        <button type="button" class="primary" id="tour-next" data-i18n="tour.next">next</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Intro for the very first visit: a short hands-on start, not a text to read.
        Steps 0 and 1 wait for real key presses (physical keys, so it works with
