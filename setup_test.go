@@ -373,3 +373,94 @@ func TestApp_RawKeysKept(t *testing.T) {
 		t.Fatal("/freeplay/stats must not send raw keys")
 	}
 }
+
+// callAs is call with a login cookie ("" = a guest); it also returns the
+// login cookie the answer sets ("" if none).
+func callAs(t *testing.T, h http.Handler, cookie, method, path, body string) (int, map[string]any, string) {
+	t.Helper()
+	req := httptest.NewRequest(method, path, strings.NewReader(body))
+	if cookie != "" {
+		req.AddCookie(&http.Cookie{Name: "tt_login", Value: cookie})
+	}
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	var out map[string]any
+	json.Unmarshal(rec.Body.Bytes(), &out)
+	set := ""
+	for _, c := range rec.Result().Cookies() {
+		if c.Name == "tt_login" {
+			set = c.Value
+			if !c.HttpOnly || c.SameSite != http.SameSiteLaxMode {
+				t.Fatalf("login cookie must be HttpOnly and SameSite=Lax: %+v", c)
+			}
+		}
+	}
+	return rec.Code, out, set
+}
+
+// Sign up, log in, log out, and every account (and the guest) has its own data.
+func TestApp_Accounts(t *testing.T) {
+	h, _, _ := newApp()
+	_, me, _ := callAs(t, h, "", "GET", "/api/v1/auth/me", "")
+	if me["accounts"] != true || me["name"] != nil {
+		t.Fatalf("guest /me: %v", me)
+	}
+
+	code, out, ann := callAs(t, h, "", "POST", "/api/v1/auth/register", `{"name":" Ann ","password":"secret-ann"}`)
+	if code != 200 || out["name"] != "ann" || ann == "" {
+		t.Fatalf("register: %d %v cookie=%q", code, out, ann)
+	}
+	if _, me, _ := callAs(t, h, ann, "GET", "/api/v1/auth/me", ""); me["name"] != "ann" {
+		t.Fatalf("ann /me: %v", me)
+	}
+
+	// the rules: name taken (any case), bad name, short password
+	for body, want := range map[string]int{
+		`{"name":"ANN","password":"another-pw"}`:  409,
+		`{"name":"a","password":"secret-ann"}`:    400,
+		`{"name":"анна","password":"secret-ann"}`: 400,
+		`{"name":"bob","password":"short"}`:       400,
+		`not json`:                                400,
+	} {
+		if code, _, _ := callAs(t, h, "", "POST", "/api/v1/auth/register", body); code != want {
+			t.Errorf("register %s: %d, want %d", body, code, want)
+		}
+	}
+
+	// a round typed by ann is ann's only: the guest still has nothing
+	round := `{"samples":[{"char":"ж","errors":0,"ms":300}],"wpm":30,"accuracy":100}`
+	if code, _, _ := callAs(t, h, ann, "POST", "/api/v1/results?lang=ru", round); code != 200 {
+		t.Fatalf("ann's round: %d", code)
+	}
+	_, guest, _ := callAs(t, h, "", "GET", "/api/v1/stats?lang=ru", "")
+	_, mine, _ := callAs(t, h, ann, "GET", "/api/v1/stats?lang=ru", "")
+	if guest["sessionCount"].(float64) != 0 || mine["sessionCount"].(float64) != 1 {
+		t.Fatalf("guest=%v ann=%v", guest["sessionCount"], mine["sessionCount"])
+	}
+
+	// wrong password and unknown name get the same answer
+	for _, body := range []string{`{"name":"ann","password":"wrong-pass"}`, `{"name":"nobody","password":"secret-ann"}`} {
+		if code, out, c := callAs(t, h, "", "POST", "/api/v1/auth/login", body); code != 401 || c != "" || out["error"] != "wrong name or password" {
+			t.Errorf("login %s: %d %v", body, code, out)
+		}
+	}
+	code, _, ann2 := callAs(t, h, "", "POST", "/api/v1/auth/login", `{"name":"Ann","password":"secret-ann"}`)
+	if code != 200 || ann2 == "" || ann2 == ann {
+		t.Fatalf("login: %d, a new cookie expected", code)
+	}
+	if _, again, _ := callAs(t, h, ann2, "GET", "/api/v1/stats?lang=ru", ""); again["sessionCount"].(float64) != 1 {
+		t.Fatal("after logging in again ann's data is gone")
+	}
+
+	// logout ends that login only; an unknown cookie is just a guest
+	callAs(t, h, ann, "POST", "/api/v1/auth/logout", "")
+	if _, me, _ := callAs(t, h, ann, "GET", "/api/v1/auth/me", ""); me["name"] != nil {
+		t.Fatalf("after logout: %v", me)
+	}
+	if _, me, _ := callAs(t, h, ann2, "GET", "/api/v1/auth/me", ""); me["name"] != "ann" {
+		t.Fatal("logout ended the other login too")
+	}
+	if code, me, _ := callAs(t, h, "made-up", "GET", "/api/v1/auth/me", ""); code != 200 || me["name"] != nil {
+		t.Fatalf("unknown cookie: %d %v", code, me)
+	}
+}

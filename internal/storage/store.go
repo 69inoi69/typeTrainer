@@ -4,6 +4,7 @@
 package storage
 
 import (
+	"errors"
 	"time"
 
 	"typingtrainer/internal/engine"
@@ -38,9 +39,22 @@ func (s Session) Summary() Session {
 	return s
 }
 
-// LocalUser is the user id of everyone while there are no accounts: the
+// LocalUser is the user id of everyone who is not logged in (a guest): the
 // person sitting at this server or browser tab.
 const LocalUser = "local"
+
+// User is an account. The password is only kept as a hash (auth.HashPassword).
+type User struct {
+	ID           string    `json:"id"`   // never "local"; given by the store
+	Name         string    `json:"name"` // unique, already normalized (auth.NormalizeName)
+	PasswordHash string    `json:"-"`
+	CreatedAt    time.Time `json:"createdAt"`
+}
+
+var (
+	ErrNameTaken = errors.New("storage: name taken")
+	ErrNotFound  = errors.New("storage: not found")
+)
 
 // Store is every data operation the app needs. Nothing outside this
 // package should know how the data is actually stored.
@@ -75,4 +89,18 @@ type Store interface {
 	// Reset deletes everything the user has stored for the language, free
 	// practice included: it is new again. Other users and languages stay.
 	Reset(user, lang string) error
+
+	// Accounts. CreateUser fails with ErrNameTaken if the name exists;
+	// UserByName and UserByID with ErrNotFound if there is no such user.
+	CreateUser(name, passwordHash string, now time.Time) (User, error)
+	UserByName(name string) (User, error)
+	UserByID(id string) (User, error)
+
+	// Logins: which user a login cookie belongs to. The store keeps only
+	// the hash of the cookie's token (auth.HashToken), never the token.
+	// LoginUser returns the user id, or ErrNotFound for an unknown or
+	// expired login.
+	AddLogin(tokenHash, userID string, expires time.Time) error
+	LoginUser(tokenHash string, now time.Time) (string, error)
+	DeleteLogin(tokenHash string) error
 }

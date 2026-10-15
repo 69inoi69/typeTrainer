@@ -1,7 +1,9 @@
 package storage
 
 import (
+	"strconv"
 	"sync"
+	"time"
 
 	"typingtrainer/internal/engine"
 )
@@ -11,6 +13,16 @@ import (
 type MemoryStore struct {
 	mu    sync.Mutex
 	langs map[key]*langData
+
+	users  map[string]User   // by name
+	names  map[string]string // user id -> name
+	logins map[string]login  // by token hash
+}
+
+// login is one logged-in browser: whose it is and until when.
+type login struct {
+	userID  string
+	expires time.Time
 }
 
 // key says whose data it is and in which language.
@@ -27,7 +39,7 @@ type langData struct {
 }
 
 func NewMemoryStore() *MemoryStore {
-	return &MemoryStore{langs: map[key]*langData{}}
+	return &MemoryStore{langs: map[key]*langData{}, users: map[string]User{}, names: map[string]string{}, logins: map[string]login{}}
 }
 
 // data returns the record of a user in a language, creating it on first
@@ -146,5 +158,68 @@ func (m *MemoryStore) Reset(user, lang string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	delete(m.langs, key{user, lang})
+	return nil
+}
+
+// CreateUser gives the new account the id "u1", "u2", ... (a PostgreSQL
+// store would use the table's own counter). Ids never clash with LocalUser.
+func (m *MemoryStore) CreateUser(name, passwordHash string, now time.Time) (User, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.users[name]; ok {
+		return User{}, ErrNameTaken
+	}
+	u := User{ID: "u" + strconv.Itoa(len(m.users)+1), Name: name, PasswordHash: passwordHash, CreatedAt: now}
+	m.users[name] = u
+	m.names[u.ID] = name
+	return u, nil
+}
+
+func (m *MemoryStore) UserByName(name string) (User, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	u, ok := m.users[name]
+	if !ok {
+		return User{}, ErrNotFound
+	}
+	return u, nil
+}
+
+func (m *MemoryStore) UserByID(id string) (User, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	name, ok := m.names[id]
+	if !ok {
+		return User{}, ErrNotFound
+	}
+	return m.users[name], nil
+}
+
+func (m *MemoryStore) AddLogin(tokenHash, userID string, expires time.Time) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.logins[tokenHash] = login{userID: userID, expires: expires}
+	return nil
+}
+
+// LoginUser forgets an expired login when it sees one.
+func (m *MemoryStore) LoginUser(tokenHash string, now time.Time) (string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	l, ok := m.logins[tokenHash]
+	if !ok {
+		return "", ErrNotFound
+	}
+	if !now.Before(l.expires) {
+		delete(m.logins, tokenHash)
+		return "", ErrNotFound
+	}
+	return l.userID, nil
+}
+
+func (m *MemoryStore) DeleteLogin(tokenHash string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.logins, tokenHash)
 	return nil
 }

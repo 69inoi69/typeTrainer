@@ -30,7 +30,9 @@ its own.
 | `pages/wasm-shim.js` | Pages only: routes `/api/v1/` requests from the frontend to the Go code in the browser. |
 | `.github/workflows/pages.yml` | On every push to `main`: test, build WebAssembly, publish to Pages. |
 | `.github/workflows/tests.yml` | On every pull request: gofmt, vet, tests, WebAssembly build. |
+| `accounts_server.go`, `accounts_wasm.go` | `accountsOn`: accounts work on the normal server, not on GitHub Pages (picked by build tags). |
 | `internal/config` | Every tunable number in one place. |
+| `internal/auth` | Password hashing (PBKDF2-SHA256), random login tokens, the rules for account names and passwords. Knows nothing about HTTP or storage. |
 | `internal/engine/model.go` | Per-letter statistics, EMA update, difficulty, mastery, softmax weight. |
 | `internal/engine/generator.go` | Unlock order, first lesson size, unlocking rule, word selection. |
 | `internal/engine/consistency.go` | Consistency of a round's speed (a measurement shown to the user; the model does not use it). |
@@ -42,6 +44,7 @@ its own.
 | `internal/api/data.go` | `/reset`, `/export`, `/import` (learning and free practice data together). |
 | `internal/api/validate.go` | Request checks, so nothing impossible or foreign reaches the statistics. |
 | `internal/api/freeplay.go` | The `/api/v1/freeplay/*` routes. |
+| `internal/api/auth.go` | The `/api/v1/auth/*` routes (sign up, log in, log out, who am I) and `userOf`: which user a request belongs to. |
 | `internal/layout` | Parses and validates the keyboard layout JSON. |
 | `internal/language` | Parses `languages.json`; `Allows(word)` checks a word against the alphabet. |
 | `data/languages.json` | The languages: id, name, label, layout, alphabet, OS layout name. |
@@ -75,7 +78,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `letters.js` | The letters bar above the text, its status line, locked keys dimmed on the keyboard. |
 | middle | `intro.js` | The first-visit intro (home row, space, eyes up). |
 | middle | `languages.js` | The language switch and `loadLanguage()`. |
-| middle | `profile.js` | The profile placeholder in the header: name and picture, kept only in the browser. |
+| middle | `profile.js` | The profile in the header: the account (log in / sign up / log out; the page reloads after each), and a picture kept only in the browser. |
 | middle | `result.js` | The result screen in the text window: `showResult(r)` shows what changed and resolves when the user goes on; `compareStats()` works out what a learning round changed. |
 | middle | `modes.js` | The modes (learning / free practice / typing test), the switch in the header, `refreshFreeplay()` (`S.free`), the mode remembered per language. |
 | middle | `tour.js` | The "how this site works" tour: a ring around each part of the page and a short card. |
@@ -133,12 +136,16 @@ is `RoundPortions` portions (30 words).
 
 ## API
 
-All responses are JSON. Every route except `/languages` takes `?lang=<id>`
+All responses are JSON. Every route except `/languages` and `/auth/*` takes `?lang=<id>`
 (`en`, `pl`, `uk`, `ru`; default `en`). An unknown id is a 400 error.
 
 | Method | Path | Request | Response |
 |---|---|---|---|
 | GET | `/api/v1/languages` | | `[{id, name, label, layout, alphabet, systemLayout}]` |
+| POST | `/api/v1/auth/register` | `{name, password}` | `{name}` and a login cookie; 400 if a rule is broken, 409 if the name is taken, 404 where accounts are off |
+| POST | `/api/v1/auth/login` | `{name, password}` | `{name}` and a login cookie; 401 for a wrong name or password (one answer for both) |
+| POST | `/api/v1/auth/logout` | | `{ok: true}`; ends this login and deletes the cookie |
+| GET | `/api/v1/auth/me` | | `{accounts, name}`; `name` is null for a guest, `accounts` false where they cannot work (GitHub Pages) |
 | GET | `/api/v1/layout` | | layout JSON |
 | POST | `/api/v1/portion` | `{samples: [{char, errors, ms}], recent: [words], retry: [words], start: bool, last: bool}` | `{portions: [{words, focus, weakest, unlocked, locked}], newLetter, round}`; one portion, `AheadPortions + 1` with `start`, none with `last` |
 | POST | `/api/v1/results` | `{samples: [{char, errors, ms}], keys: [the same shape, the whole round], chars, wpm, accuracy, perSecond: [keypresses in each full second]}` | `{unlocked, newLetter, consistency}` (`consistency` 0–100, `null` for a round under `ConsistencyMinSeconds`); the round is over: one history entry |
@@ -184,10 +191,42 @@ History from before this has no keys (the field is missing). `/stats` and
 
 Every `Store` method takes the user id and the language id, so each user
 has their own statistics, unlocked letters and history in each language.
-There are no accounts yet: `userOf` in `internal/api/handlers.go` gives every
-request the same user, `storage.LocalUser` ("local"). When login is added,
-`userOf` reads the session instead, and nothing else in the API or the store
-has to change. Each language also has its own
+`userOf` (`internal/api/auth.go`) decides the user of every request: the
+owner of a valid login cookie, or `storage.LocalUser` ("local", a guest).
+
+## Accounts
+
+Standard library only. A user signs up or logs in with a name and a
+password; the answer sets a login cookie, and from then on every request of
+that browser works with that user's data.
+
+- **Names**: 3..20 characters of `a-z`, `0-9`, `_`, `-`, stored in lower
+  case (`auth.NormalizeName`, `auth.ValidName`). Latin only, so look-alike
+  letters from other alphabets cannot make two accounts that look the same.
+- **Passwords**: 8..128 characters (NIST SP 800-63B). Only a hash is stored:
+  `pbkdf2-sha256$<iterations>$<salt>$<key>` (`auth.HashPassword`), 600 000
+  rounds of PBKDF2-SHA256 (OWASP, 2023) with a random 16-byte salt. One check
+  takes about 0.3 s: nothing for a login, very slow for guessing millions of
+  passwords from a stolen database. The comparison is constant-time.
+- **Login cookie** `tt_login`: a random 256-bit token (`auth.NewToken`).
+  The store keeps only its SHA-256 (`AddLogin`, `LoginUser`), so the stored
+  data cannot be used to log in. The cookie is `HttpOnly` (page scripts
+  cannot read it), `SameSite=Lax` (other sites cannot send requests with it),
+  `Secure` over HTTPS, and lasts 30 days (`Auth.LoginDays`). Logging out
+  deletes that login on the server.
+- **Wrong name or wrong password** get the same 401 answer, and an unknown
+  name is still checked against a dummy hash, so neither the answer nor its
+  time tells which names exist.
+- **A new account starts empty.** The guest's progress stays with the guest;
+  to move it, export it as a guest and import it after logging in.
+- All numbers are in `internal/config/config.go` (`Auth`).
+
+Not yet (needed before the app is public, step 5 of the plan): every guest
+shares the one `local` user, so on a public server guests would see each
+other's progress (a per-browser guest id fixes this); no limit on login
+attempts; `Secure` is decided by `r.TLS`, which is not set behind a proxy
+that ends HTTPS. On GitHub Pages accounts are off (`accounts_wasm.go`):
+requests never leave the page there, so there are no cookies. Each language also has its own
 `Generator` (own unlock order and first lesson), built in `setup.go`.
 
 ## Modes
@@ -225,13 +264,15 @@ transaction (`SELECT ... FOR UPDATE`) instead.
 
 ## Adding PostgreSQL later
 
-Create `internal/storage/postgres.go` with a type that has the thirteen `Store`
+Create `internal/storage/postgres.go` with a type that has all the `Store`
 methods and change one line in `setup.go`. Every method already takes the
 user and the language, so every table is keyed by both. A possible schema:
 
 ```sql
 CREATE TABLE users     (id BIGSERIAL PRIMARY KEY, name TEXT UNIQUE NOT NULL,
-                        created_at TIMESTAMPTZ DEFAULT now());
+                        password_hash TEXT NOT NULL, created_at TIMESTAMPTZ DEFAULT now());
+CREATE TABLE logins    (token_hash TEXT PRIMARY KEY, user_id BIGINT REFERENCES users(id),
+                        expires TIMESTAMPTZ NOT NULL);
 CREATE TABLE progress  (user_id BIGINT REFERENCES users(id), lang TEXT,
                         unlocked INT NOT NULL DEFAULT 0, test_passed BOOLEAN NOT NULL DEFAULT false,
                         PRIMARY KEY (user_id, lang));
@@ -256,6 +297,7 @@ The same code runs in two places. Go build tags pick the entry point:
 | Where Go runs | on your computer | in the visitor's browser (WebAssembly) |
 | How the frontend reaches the API | HTTP to `localhost` | `pages/wasm-shim.js` replaces `fetch` for `/api/v1/` and calls `goApi(method, path, body)` |
 | Statistics | until the server stops | until the tab is closed or reloaded |
+| Accounts | yes | no (no cookies inside the page; `/auth/me` says `accounts: false`) |
 
 `main_wasm.go` does not listen on a port. It builds the same handler with
 `newApp()` and gives JavaScript one function, `goApi`, which runs a request

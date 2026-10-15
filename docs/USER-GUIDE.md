@@ -6,7 +6,7 @@ Everything the trainer does, screen by screen. For a quick overview see the
 ## Running it on Windows (from zero)
 
 1. **Install Go** (once): download the Windows installer from
-   <https://go.dev/dl/> (1.22 or newer) and click Next until it finishes.
+   <https://go.dev/dl/> (1.24 or newer) and click Next until it finishes.
 2. **Check it works.** Open a *new* PowerShell window and run `go version`.
 3. **Go to the project folder**, for example
    `cd C:\Users\YOUR_NAME\Desktop\typetrainer`.
@@ -119,9 +119,13 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   logo.
 - The text window has one fixed size (3 lines): only its content changes. A
   longer text scrolls up line by line, the line you type stays the second one.
-- The **profile** in the top right corner is a placeholder for real accounts:
-  you can set a name and a picture (a colour, or your own image), kept only in
-  this browser. Nothing is sent to the server; "reset" forgets it too.
+- The **profile** in the top right corner: with the local server (`go run .`)
+  you can **sign up** or **log in** there (name: 3–20 of a–z, 0–9, `_`, `-`;
+  password: at least 8 characters). Your progress is then kept under your
+  account; **log out** returns to the guest. A new account starts from the
+  first letters. The picture (a colour, or your own image) is kept only in
+  this browser. On the website (GitHub Pages) there are no accounts: you can
+  set a name and a picture, kept only in this browser; "reset" forgets them.
 - The **keyboard / chart** icon switch at the top (or `Shift + Tab`) opens the statistics screen: totals
   (with the average consistency of the last 10 rounds),
   speed of every exercise, a **difficulty keyboard** (grey keys, the redder the
@@ -137,9 +141,9 @@ Polish uses the standard "Polish (Programmers)" layout: ą, ę, ł... with AltGr
 
 ## Where your progress is kept
 
-- **Local server (`go run .`)**: in the server's memory. Stopping the server
-  forgets it, so save a file with the export button first and load it back
-  after the restart.
+- **Local server (`go run .`)**: in the server's memory, for the guest and
+  for every account. Stopping the server forgets it (accounts too), so save a
+  file with the export button first and load it back after the restart.
 - **Website (GitHub Pages)**: in the open browser tab. Reloading the page
   forgets it; the export button works the same way.
 - A database (PostgreSQL) comes later; then progress is kept automatically.

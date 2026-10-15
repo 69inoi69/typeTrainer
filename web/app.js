@@ -16,7 +16,7 @@ import { getJSON } from "./api.js";
 import { labelTips } from "./tools.js";
 import { restoreKb } from "./keyboard.js";
 import { showIntro } from "./intro.js";
-import { renderProfile } from "./profile.js";
+import { renderProfile, loadAccount } from "./profile.js";
 import { buildLangSwitch, initialLanguage, loadLanguage } from "./languages.js";
 
 import "./input.js";   // keys and buttons: it only adds event listeners
@@ -35,6 +35,7 @@ import "./input.js";   // keys and buttons: it only adds event listeners
   labelTips();
   if (isTouch()) el.textBox.classList.add("blurred"); // phone: tap to open the keyboard
   try {
+    await loadAccount();   // who is logged in: decides whose data the server sends
     S.languages = await getJSON("/languages", true);
     buildLangSwitch();
     await loadLanguage(initialLanguage());

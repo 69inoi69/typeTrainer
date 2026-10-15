@@ -29,10 +29,13 @@ Lublin University of Technology (2027).
   history, nothing shared with learning) opens when every letter is open, or
   after a one-time typing test. It is kept simple for now.
 - English, Polish, Ukrainian and Russian, each with its own progress.
+- **Accounts** (with the local server): sign up, log in, and your progress is
+  kept under your account. For now everything lives in the server's memory;
+  a database comes next.
 
 ## Run it locally
 
-Needs [Go](https://go.dev/dl/) 1.22 or newer. In the project folder:
+Needs [Go](https://go.dev/dl/) 1.24 or newer. In the project folder:
 
 ```
 go run .
