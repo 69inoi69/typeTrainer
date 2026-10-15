@@ -32,6 +32,7 @@ its own.
 | `internal/config` | Every tunable number in one place. |
 | `internal/engine/model.go` | Per-letter statistics, EMA update, difficulty, mastery, softmax weight. |
 | `internal/engine/generator.go` | Unlock order, first lesson size, unlocking rule, word selection. |
+| `internal/engine/consistency.go` | Consistency of a round's speed (a measurement shown to the user; the model does not use it). |
 | `internal/storage/store.go` | The `Store` interface. |
 | `internal/storage/memory.go` | In-memory `Store` (lost on restart). |
 | `internal/api/handlers.go` | JSON API, input validation, locking around read-modify-write. |
@@ -113,9 +114,10 @@ is `RoundPortions` portions (30 words).
    `last: true` and gets none. Backspace cannot go back into a portion that was sent.
 4. The last letter of the last word of the round (no space needed after it;
    right or wrong), or Esc, or 10 s without a key →
-   `POST /api/v1/results` with the samples not sent yet, WPM, accuracy and the
-   number of typed characters; the handler learns from the samples the same
-   way and stores a session summary. Then the next round starts (step 1).
+   `POST /api/v1/results` with the samples not sent yet, WPM, accuracy, the
+   number of typed characters and the keypresses per second; the handler
+   learns from the samples the same way, computes the consistency
+   (`engine.Consistency`) and stores a session summary. Then the next round starts (step 1).
 5. After each portion and each round the browser calls `GET /api/v1/stats`
    (letter chips, heatmap, history).
 
@@ -129,7 +131,7 @@ All responses are JSON. Every route except `/languages` takes `?lang=<id>`
 | GET | `/api/v1/languages` | | `[{id, name, label, layout, alphabet, systemLayout}]` |
 | GET | `/api/v1/layout` | | layout JSON |
 | POST | `/api/v1/portion` | `{samples: [{char, errors, ms}], recent: [words], retry: [words], start: bool, last: bool}` | `{portions: [{words, focus, weakest, unlocked, locked}], newLetter, round}`; one portion, `AheadPortions + 1` with `start`, none with `last` |
-| POST | `/api/v1/results` | `{samples: [{char, errors, ms}], chars, wpm, accuracy}` | `{unlocked, newLetter}`; the round is over: one history entry |
+| POST | `/api/v1/results` | `{samples: [{char, errors, ms}], chars, wpm, accuracy, perSecond: [keypresses in each full second]}` | `{unlocked, newLetter, consistency}` (`consistency` 0–100, `null` for a round under `ConsistencyMinSeconds`); the round is over: one history entry |
 | POST | `/api/v1/progress` | `{unlockAll: true\|false}` | `{unlocked}`; for development only, the interface no longer calls it |
 | POST | `/api/v1/reset` | | `{ok: true}`; deletes all data of the language (reset button, until there are user accounts) |
 | GET | `/api/v1/export` | | `{unlocked, keys: {char: {count, mistakes, errEma, timeEma, timedCount}}, sessions: [all, OLDEST first]}`; everything stored for the language |
@@ -139,14 +141,14 @@ All responses are JSON. Every route except `/languages` takes `?lang=<id>`
 Validation on `/portion` and `/results`: at most 5000 samples (zero is fine:
 nothing new to learn), each with exactly one character that is a letter of the
 language or a space, `errors >= 0`, `ms >= 0`. `/results` also needs
-`chars >= 1` (something was typed; 0 means "the number of samples"), WPM 0–400
-and accuracy 0–100. `recent` and `retry` hold at most 5000 words; a word that
+`chars >= 1` (something was typed; 0 means "the number of samples"), WPM 0–400,
+accuracy 0–100, and `perSecond` with at most 5000 entries, each between 0 and 5000. `recent` and `retry` hold at most 5000 words; a word that
 is not in the list or has a locked letter is simply ignored. Body limit 1 MB.
 
 Validation on `/import`: `unlocked` between 0 and the number of letters; every key is
 one letter of the language or a space; per letter `0 <= mistakes <= count`,
 `0 <= timedCount <= count`, `0 <= errEma <= 1`, `timeEma >= 0`; per session WPM
-0–400, accuracy 0–100, `chars >= 0`. Limits (`MaxImportBytes`,
+0–400, accuracy 0–100, `chars >= 0`, consistency 0–100 or missing (older files have none). Limits (`MaxImportBytes`,
 `MaxImportSessions`) are in `internal/config/config.go`. The browser joins the
 languages into one file `{app, version, exportedAt, languages: {id: <export>}}`
 (see `web/tools.js`, "export / import"). Import and export use only the existing
@@ -176,7 +178,7 @@ CREATE TABLE key_stats (user_id BIGINT REFERENCES users(id), char TEXT,
                         time_ema DOUBLE PRECISION, timed_count INT,
                         PRIMARY KEY (user_id, char));
 CREATE TABLE sessions  (id BIGSERIAL PRIMARY KEY, user_id BIGINT REFERENCES users(id),
-                        wpm REAL, accuracy REAL, chars INT, finished_at TIMESTAMPTZ DEFAULT now());
+                        wpm REAL, accuracy REAL, chars INT, consistency REAL NULL, finished_at TIMESTAMPTZ DEFAULT now());
 ```
 
 With accounts, every `Store` method gets a `userID` parameter.

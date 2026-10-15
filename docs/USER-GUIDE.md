@@ -77,7 +77,8 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
 - **When the round ends** the text window shows the result instead of the
   text: one main line (a new letter with a joke about it, a new record,
   mastered letters, or a short verdict on accuracy), which letters got faster
-  or slower, and now and then a tip. Space, Enter or any letter goes on at
+  or slower, the **consistency** of your speed (how even the pace was, 100 % =
+  every second the same; rounds under 5 seconds get none), and now and then a tip. Space, Enter or any letter goes on at
   once; otherwise the next text comes when the thin bar is full (hover pauses
   it). The texts are picked at random from small pools in every language.
 - Small messages under the letters are only used outside typing (a file
@@ -111,7 +112,8 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
 - The **profile** in the top right corner is a placeholder for real accounts:
   you can set a name and a picture (a colour, or your own image), kept only in
   this browser. Nothing is sent to the server; "reset" forgets it too.
-- The **keyboard / chart** icon switch at the top (or `Shift + Tab`) opens the statistics screen: totals,
+- The **keyboard / chart** icon switch at the top (or `Shift + Tab`) opens the statistics screen: totals
+  (with the average consistency of the last 10 rounds),
   speed of every exercise, a **difficulty keyboard** (grey keys, the redder the
   harder the letter is for you, dashed = no data yet; hover or tap a key for
   its numbers), and every letter from weakest to strongest.

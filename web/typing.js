@@ -27,6 +27,7 @@ let startTime = null;      // performance.now() of the first keypress
 let lastTime = null;       // performance.now() of the previous keypress
 let afterBackspace = false; // the next press follows a Backspace: its time is not measured
 let presses = 0, correctPresses = 0;
+let perSecond = [];        // keypresses in each second since startTime (for consistency)
 let popLetter = null;      // letter that was just unlocked (for the animation)
 
 // Rewards (they change nothing in the statistics, they only feel nice)
@@ -273,7 +274,7 @@ function resetStream() {
   state = new Uint8Array(0); focusMask = new Uint8Array(0); records = []; spans = [];
   portions = []; sentUpTo = 0; current = 0; roundNewLetter = "";
   extras = new Map(); correctChars = 0; afterBackspace = false;
-  startTime = null; lastTime = null; presses = 0; correctPresses = 0;
+  startTime = null; lastTime = null; presses = 0; correctPresses = 0; perSecond = [];
   el.text.replaceChildren(el.caret);          // the caret lives inside the text
 }
 
@@ -372,6 +373,8 @@ export function handleChar(ch) {
   }
   if (ch === expected && (wrongScript || el.warn.classList.contains("show"))) hideWarn();
   presses++;
+  const sec = Math.floor((now - startTime) / 1000);
+  perSecond[sec] = (perSecond[sec] ?? 0) + 1;   // real keys only: skipped letters are not presses
   let roundOver = false;
 
   if (expected === " " && ch !== " ") {
@@ -520,6 +523,13 @@ function currentRaw(end = performance.now()) {
   const minutes = (end - startTime) / 60000;
   return minutes > 0 ? (presses / 5) / minutes : 0;
 }
+// Keypresses in every FULL second up to `end`, a second without keys = 0.
+// The last, unfinished second is left out: it would always look slow. The
+// server turns the list into consistency (engine.Consistency).
+function fullSeconds(end) {
+  const n = startTime === null ? 0 : Math.floor((end - startTime) / 1000);
+  return Array.from({ length: n }, (_, i) => perSecond[i] ?? 0);
+}
 function currentAccuracy() {
   return presses ? (correctPresses / presses) * 100 : 100;
 }
@@ -609,14 +619,14 @@ async function finishRound() {
     await queue;                                       // portions still on their way
     streamId++;                                        // nothing more for this round
     if (!typed.length) { await loadExercise(); return; } // nothing typed: nothing to keep
-    const res = await postJSON("/results", { samples, chars: typed.length, wpm, accuracy });
+    const res = await postJSON("/results", { samples, chars: typed.length, wpm, accuracy, perSecond: fullSeconds(end) });
     await refreshStats();
     if (res.newLetter) newLetter(res.newLetter);
 
     const r = compareStats(roundBefore, S.lastStats, typed);
     justMastered = new Set(r.mastered);
     if (r.best) FX.burstFrom(el.wpm, 80);
-    await showResult({ wpm, accuracy, newLetter: roundNewLetter, resisted, ...r });
+    await showResult({ wpm, accuracy, consistency: res.consistency, newLetter: roundNewLetter, resisted, ...r });
     await loadExercise();   // built from the UPDATED model
   } catch (err) {
     console.error(err);

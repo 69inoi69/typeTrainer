@@ -100,6 +100,25 @@ accuracy = correct keypresses / all keypresses * 100  (a skipped letter = one wr
 `raw` is only shown in the header (as on monkeytype); it is not sent to the
 server and the model does not use it.
 
+**Consistency** (`internal/engine/consistency.go`) tells how even the speed
+was during a round. The browser counts the keypresses in every full second
+from the first keypress (a second without keys is a 0; the last, unfinished
+second is left out because it would always look slow). The server computes:
+
+```
+cv          = standard deviation / mean of the counts   (coefficient of variation)
+consistency = 100 * (1 - tanh(cv + cv^3/3 + cv^5/5))     (0..100 %)
+```
+
+`cv` has no unit, so keypresses per second and raw WPM per second (12 times
+more) give the same value. The `tanh` maps `cv` from `[0, ∞)` to `100 … 0 %`;
+the terms inside it are the start of the series of `artanh(cv)`, so for a small
+`cv` the result is close to `100 * (1 - cv)`, and it never goes below 0. The
+formula is the one monkeytype uses (`kogasa` in `packages/util/src/numbers.ts`),
+so the numbers can be compared with that site. A round shorter than
+`ConsistencyMinSeconds = 5` seconds gets none (too few values to judge). It is
+kept in the history and shown to the user; the model does **not** use it.
+
 ## 4. Per-letter statistics: exponential moving average
 
 For each letter we keep two smoothed values:
@@ -369,6 +388,7 @@ All in `internal/config/config.go`.
 | `RoundPortions` | 5 | portions per round (30 words), one result in the history | chosen by the owner: a clear end; about 1-2 minutes for a beginner, 20 seconds for a fast typist |
 | `RankStart` | 200 | words up to this frequency rank come without a penalty in the first lesson | the size of monkeytype's smallest list ("English 200"): the core words of a language |
 | `RankStep` | 200 | distance in ranks that halves a word's chance | one "200 words" block per halving: rank 1000 in the first lesson is 16 times rarer |
+| `ConsistencyMinSeconds` | 5 | shortest round that gets a consistency (section 3) | a standard deviation of 2-3 numbers says little; 5 s is a few words even for a beginner |
 | `RankPenalty` | 0.5 | weight multiplier per `RankStep` over the limit | halving is easy to explain; with `T = 0.1` one step equals about 0.07 of difficulty, so weak letters still decide first |
 
 The values were chosen by reasoning, not fitted to data. Tuning them on real
