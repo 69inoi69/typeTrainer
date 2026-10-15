@@ -47,23 +47,43 @@
     <div class="top-side right">
     <!-- Buttons come from /api/v1/languages. -->
     <div class="switch mini lang-switch" id="lang-switch" role="tablist" aria-label="Language" data-tip="tip.lang"></div>
-    <!-- Profile: a placeholder for real accounts later. Name and picture live
-         only in this browser (profile.js); nothing goes to the server. -->
+    <!-- Profile (profile.js): the account (log in / sign up, kept on the
+         server) and a picture that lives only in this browser. Without an
+         account the name lives only in this browser too. -->
     <div class="profile" id="profile">
       <button type="button" class="profile-btn" id="profile-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="profile-card">
         <span class="avatar" id="avatar" aria-hidden="true"></span><span class="profile-name" id="profile-name"></span>
       </button>
       <div class="profile-card" id="profile-card" role="dialog" aria-labelledby="profile-title" hidden>
-        <p class="profile-title" id="profile-title" data-i18n="profile.title">profile</p>
+        <p class="profile-title" id="profile-title">profile</p>
         <div class="profile-row">
           <span class="avatar big" id="avatar-big" aria-hidden="true"></span>
-          <label class="profile-field"><small data-i18n="profile.name">name</small>
+          <span class="profile-big-name" id="profile-big-name"></span>
+          <label class="profile-field" id="profile-field"><small data-i18n="profile.name">name</small>
             <input id="profile-input" type="text" maxlength="20" autocomplete="off" spellcheck="false"></label>
         </div>
         <small class="profile-label" data-i18n="profile.picture">picture</small>
         <div class="avatar-picks" id="avatar-picks"></div>
         <input id="avatar-file" type="file" accept="image/*" hidden>
-        <p class="profile-soon" data-i18n="profile.soon">accounts and sync: coming soon™</p>
+        <!-- the account: shown only where accounts work (not on GitHub Pages) -->
+        <div class="account" id="account" hidden>
+          <form class="account-form" id="account-form" novalidate>
+            <label class="profile-field"><small data-i18n="account.name">account name</small>
+              <input id="account-name" type="text" maxlength="20" autocomplete="username" spellcheck="false" autocapitalize="off"></label>
+            <label class="profile-field"><small data-i18n="account.password">password</small>
+              <input id="account-pass" type="password" maxlength="128" autocomplete="current-password"></label>
+            <p class="account-msg" id="account-msg" aria-live="polite"></p>
+            <div class="account-btns">
+              <button type="submit" data-act="login" data-i18n="account.login">log in</button>
+              <button type="submit" data-act="register" class="ghost" data-i18n="account.signup">sign up</button>
+            </div>
+          </form>
+          <div class="account-in" id="account-in" hidden>
+            <p class="account-as" id="account-as"></p>
+            <button type="button" id="account-out" data-i18n="account.logout">log out</button>
+          </div>
+        </div>
+        <p class="profile-soon" id="profile-soon" data-i18n="profile.soon">accounts and sync: coming soon™</p>
       </div>
     </div>
     </div>

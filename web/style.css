@@ -878,6 +878,20 @@ body.entering .toolbar { animation-delay: .48s; }
 .avatar-picks button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--panel), 0 0 0 3px var(--av); }
 .avatar-picks button.upload { --av: var(--sub); display: grid; place-items: center; color: var(--text); }
 .avatar-picks svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.profile-field[hidden], .profile-big-name[hidden] { display: none; }
+.profile-big-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1rem; color: var(--text); }
+.account { margin: 0 0 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.account[hidden], .account-in[hidden], .account-form[hidden], .profile-soon[hidden] { display: none; }
+.account-form { display: flex; flex-direction: column; gap: 8px; }
+.account-msg { margin: 0; min-height: 1.5em; color: var(--sub); font-size: .72rem; line-height: 1.5; }
+.account-msg.bad { color: var(--error); }
+.account-btns { display: flex; gap: 8px; }
+.account-btns button { flex: 1; padding: 6px 10px; font-size: .85rem; box-shadow: var(--ring); }
+.account-btns button.ghost { background: none; }
+.account-in { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.account-as { margin: 0; color: var(--sub); font-size: .8rem; overflow: hidden; text-overflow: ellipsis; }
+.account-as b { color: var(--text); font-weight: 600; }
+.account-in button { padding: 6px 12px; font-size: .85rem; box-shadow: var(--ring); }
 .profile-soon { margin: 0; padding-top: 10px; border-top: 1px solid var(--line); color: var(--sub); font-size: .72rem; line-height: 1.5; }
 
 /* ---------- tour (tour.js) ---------- */

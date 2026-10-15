@@ -22,8 +22,9 @@ exercises from real words around the user's weak letters.
 
 ## Stack (do not change without asking)
 
-- Backend: Go, **standard library only** (`net/http`), no frameworks, no
-  third-party modules.
+- Backend: Go 1.24+, **standard library only** (`net/http`), no frameworks, no
+  third-party modules. (Planned single exception: the PostgreSQL driver,
+  when the database comes.)
 - Frontend: plain HTML + CSS + vanilla JavaScript. **No frameworks, no npm,
   no build step.** Files in `web/` are served by the Go server.
 - Storage: in memory now, behind the `storage.Store` interface. PostgreSQL
@@ -49,9 +50,12 @@ exercises from real words around the user's weak letters.
   `web/state.js`, checked by `webmodules_test.go`): imports only go down, no
   cycles. State shared by several modules lives in the object `S`.
 
-- Every API route except `/languages` takes `?lang=`; every `Store` method
-  takes the user id and the language id. Each user has their own progress in
-  each language (the user is always `storage.LocalUser` until accounts exist).
+- Every API route except `/languages` and `/auth/*` takes `?lang=`; every
+  `Store` method takes the user id and the language id. Each user has their
+  own progress in each language; a request without a login is the guest,
+  `storage.LocalUser`. Password and token handling lives in `internal/auth`
+  (standard library only); never store a password or a login token itself,
+  only its hash.
 - Visual rewards (confetti, bumps, toasts) live in `web/fx.js` and must never
   change what is measured or sent to the server. Tab never restarts an
   exercise: that is a deliberate product decision.
@@ -98,8 +102,9 @@ Details: `docs/ALGORITHM.md`.
 
 ## Not now
 
-User accounts, leaderboards, profile pages, more languages, themes,
-frameworks. Structure code so they can be added later, but do not build them.
+Leaderboards, public profile pages, more languages, themes, frameworks.
+(Accounts exist: sign up / log in / log out on the normal server; the
+database is the next step.) Structure code so they can be added later, but do not build them.
 
 ## Commands
 

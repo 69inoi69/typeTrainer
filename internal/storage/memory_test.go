@@ -1,7 +1,9 @@
 package storage
 
 import (
+	"errors"
 	"testing"
+	"time"
 
 	"typingtrainer/internal/engine"
 )
@@ -149,5 +151,57 @@ func TestSession_Summary(t *testing.T) {
 	}
 	if len(s.Keys) != 1 {
 		t.Fatal("Summary changed the original session")
+	}
+}
+
+func TestMemoryStore_Users(t *testing.T) {
+	m := NewMemoryStore()
+	now := time.Now()
+	a, err := m.CreateUser("ann", "hash-a", now)
+	if err != nil || a.ID == "" || a.ID == LocalUser {
+		t.Fatalf("create: %+v %v", a, err)
+	}
+	if _, err := m.CreateUser("ann", "other", now); !errors.Is(err, ErrNameTaken) {
+		t.Fatalf("second ann: %v, want ErrNameTaken", err)
+	}
+	b, _ := m.CreateUser("bob", "hash-b", now)
+	if b.ID == a.ID {
+		t.Fatal("two users got the same id")
+	}
+	if got, err := m.UserByName("ann"); err != nil || got.PasswordHash != "hash-a" {
+		t.Fatalf("by name: %+v %v", got, err)
+	}
+	if got, err := m.UserByID(b.ID); err != nil || got.Name != "bob" {
+		t.Fatalf("by id: %+v %v", got, err)
+	}
+	if _, err := m.UserByID(LocalUser); !errors.Is(err, ErrNotFound) {
+		t.Fatal("the guest is not an account")
+	}
+	if _, err := m.UserByName("nobody"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("unknown name: %v, want ErrNotFound", err)
+	}
+}
+
+// A login works until it expires or is deleted.
+func TestMemoryStore_Logins(t *testing.T) {
+	m := NewMemoryStore()
+	now := time.Now()
+	m.AddLogin("t1", "u1", now.Add(time.Hour))
+	if id, err := m.LoginUser("t1", now); err != nil || id != "u1" {
+		t.Fatalf("login: %q %v", id, err)
+	}
+	if _, err := m.LoginUser("t1", now.Add(2*time.Hour)); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("expired login: %v, want ErrNotFound", err)
+	}
+	if _, err := m.LoginUser("t1", now); !errors.Is(err, ErrNotFound) {
+		t.Fatal("an expired login must be forgotten")
+	}
+	m.AddLogin("t2", "u1", now.Add(time.Hour))
+	m.DeleteLogin("t2")
+	if _, err := m.LoginUser("t2", now); !errors.Is(err, ErrNotFound) {
+		t.Fatal("a deleted login still works")
+	}
+	if _, err := m.LoginUser("never", now); !errors.Is(err, ErrNotFound) {
+		t.Fatal("an unknown login works")
 	}
 }

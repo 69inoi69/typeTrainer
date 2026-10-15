@@ -4,6 +4,7 @@
 package config
 
 import (
+	"typingtrainer/internal/auth"
 	"typingtrainer/internal/engine"
 	"typingtrainer/internal/freeplay"
 	"typingtrainer/internal/sim"
@@ -17,9 +18,13 @@ type Config struct {
 	MaxImportSessions int // most history entries accepted in one import
 
 	ConsistencyMinSeconds int // a round shorter than this gets no consistency (engine.Consistency)
-	Engine                engine.Params
-	Freeplay              freeplay.Params // free practice and the typing test that opens it
-	Sim                   sim.Params      // only for the simulation tool (go run ./tools/sim)
+	// Accounts: whether /api/v1/auth/* works. Set by setup.go, not here:
+	// on GitHub Pages (WebAssembly) there are no cookies, so it is off.
+	Accounts bool
+	Auth     auth.Params // accounts: passwords, login cookies, name rules
+	Engine   engine.Params
+	Freeplay freeplay.Params // free practice and the typing test that opens it
+	Sim      sim.Params      // only for the simulation tool (go run ./tools/sim)
 }
 
 func Default() Config {
@@ -31,6 +36,17 @@ func Default() Config {
 		MaxImportSessions: 50000,
 
 		ConsistencyMinSeconds: 5, // under 5 full seconds there is too little to judge the pace
+		Auth: auth.Params{
+			// PBKDF2-SHA256 rounds per password check: the OWASP recommendation
+			// (2023). About 0.3 s on a laptop: nothing for one login, very slow
+			// for someone trying millions of passwords from a stolen database.
+			Iterations:  600000,
+			LoginDays:   30,  // a login cookie lasts 30 days, then log in again
+			NameMin:     3,   // account names: 3..20 characters...
+			NameMax:     20,  // ...of a-z, 0-9, "_" and "-"
+			PasswordMin: 8,   // NIST SP 800-63B: at least 8 characters...
+			PasswordMax: 128, // ...and an upper limit, so nobody sends megabytes to hash
+		},
 		Engine: engine.Params{
 			Alpha:         0.1,  // EMA: roughly the last ~20 occurrences of a letter matter
 			MaxIntervalMs: 2000, // gaps over 2 s are pauses, ignored for speed

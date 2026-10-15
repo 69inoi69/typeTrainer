@@ -1,6 +1,6 @@
 // Package api is the HTTP layer: it turns JSON requests into calls to the
 // engine and the store, and turns the answers back into JSON.
-// All routes start with /api/v1/. Every route except /languages takes
+// All routes start with /api/v1/. Every route except /languages and /auth/* takes
 // ?lang=<id> (default: the first language in data/languages.json).
 // Every handler also knows whose data it works with (userOf).
 package api
@@ -50,6 +50,10 @@ func NewServer(cfg config.Config, store storage.Store, langs []*Language) *Serve
 // Register adds all API routes to the mux (Go 1.22+ "METHOD /path" patterns).
 func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/languages", s.handleLanguages)
+	mux.HandleFunc("POST /api/v1/auth/register", s.handleRegister)
+	mux.HandleFunc("POST /api/v1/auth/login", s.handleLogin)
+	mux.HandleFunc("POST /api/v1/auth/logout", s.handleLogout)
+	mux.HandleFunc("GET /api/v1/auth/me", s.handleMe)
 	mux.HandleFunc("GET /api/v1/layout", s.withLang(s.handleLayout))
 	mux.HandleFunc("POST /api/v1/portion", s.withLang(s.handlePortion))
 	mux.HandleFunc("POST /api/v1/results", s.withLang(s.handleResults))
@@ -82,15 +86,13 @@ func (s *Server) withLang(h langHandler) http.HandlerFunc {
 				return
 			}
 		}
-		h(w, r, s.userOf(r), l)
+		user, err := s.userOf(r)
+		if err != nil {
+			serverError(w, err)
+			return
+		}
+		h(w, r, user, l)
 	}
-}
-
-// userOf says whose data a request works with. There are no accounts yet,
-// so every request belongs to storage.LocalUser. When login is added, this
-// is the one place that reads the session and returns the logged-in user.
-func (s *Server) userOf(r *http.Request) string {
-	return storage.LocalUser
 }
 
 // GET /api/v1/languages -> the list for the language switch.
