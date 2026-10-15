@@ -430,7 +430,7 @@ function compareStats(before, after, samples) {
   const prev = Object.fromEntries((before?.keys ?? []).map((k) => [k.char, k]));
   const typed = new Set(samples.map((x) => x.char).filter((c) => c !== " "));
   const best = (before?.sessionCount ?? 0) > 0 &&
-    (after.sessions.at(-1)?.wpm ?? 0) > Math.max(0, ...before.sessions.map((x) => x.wpm));
+    (after.sessions[0]?.wpm ?? 0) > Math.max(0, ...before.sessions.map((x) => x.wpm));   // /stats: newest first
   const mastered = after.keys.filter((k) => k.mastered && !prev[k.char]?.mastered).map((k) => k.char);
   const change = after.keys
     .filter((k) => typed.has(k.char) && prev[k.char]?.count > 0 && prev[k.char].avgMs > 0)
