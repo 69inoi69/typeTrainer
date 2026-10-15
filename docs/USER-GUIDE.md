@@ -123,7 +123,9 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
 - The **profile** in the top right corner: with the local server (`go run .`)
   you can **sign up** or **log in** there (name: 3–20 of a–z, 0–9, `_`, `-`;
   password: at least 8 characters). Your progress is then kept under your
-  account; **log out** returns to the guest. A new account starts from the
+  account; **log out** returns to the guest. Without an account every
+  browser is its own guest, remembered by a cookie: clearing the browser's
+  cookies starts a new guest from zero. A new account starts from the
   first letters. Accounts survive a restart only with a database (see
   "Keeping progress in PostgreSQL"). The picture (a colour, or your own image) is kept only in
   this browser. On the website (GitHub Pages) there are no accounts: you can

@@ -33,6 +33,7 @@ var files embed.FS
 func newApp() (http.Handler, config.Config, error) {
 	cfg := config.Default()
 	cfg.Accounts = accountsOn // off in the WebAssembly build (build_wasm.go)
+	cfg.BehindProxy = behindProxy()
 
 	langData, err := files.ReadFile("data/languages.json")
 	if err != nil {
@@ -67,7 +68,7 @@ func newApp() (http.Handler, config.Config, error) {
 		return nil, cfg, err
 	}
 	mux.Handle("/", http.FileServerFS(webFS))
-	return mux, cfg, nil
+	return server.WithGuest(mux), cfg, nil
 }
 
 // loadLanguage reads one language's layout and word list and builds its

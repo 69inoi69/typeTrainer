@@ -145,8 +145,8 @@ All responses are JSON. Every route except `/languages` and `/auth/*` takes `?la
 | Method | Path | Request | Response |
 |---|---|---|---|
 | GET | `/api/v1/languages` | | `[{id, name, label, layout, alphabet, systemLayout}]` |
-| POST | `/api/v1/auth/register` | `{name, password}` | `{name}` and a login cookie; 400 if a rule is broken, 409 if the name is taken, 404 where accounts are off |
-| POST | `/api/v1/auth/login` | `{name, password}` | `{name}` and a login cookie; 401 for a wrong name or password (one answer for both) |
+| POST | `/api/v1/auth/register` | `{name, password}` | `{name}` and a login cookie; 400 if a rule is broken, 409 if the name is taken, 429 after too many attempts (Retry-After), 404 where accounts are off |
+| POST | `/api/v1/auth/login` | `{name, password}` | `{name}` and a login cookie; 401 for a wrong name or password (one answer for both), 429 after too many attempts |
 | POST | `/api/v1/auth/logout` | | `{ok: true}`; ends this login and deletes the cookie |
 | GET | `/api/v1/auth/me` | | `{accounts, name}`; `name` is null for a guest, `accounts` false where they cannot work (GitHub Pages) |
 | GET | `/api/v1/layout` | | layout JSON |
@@ -195,7 +195,8 @@ History from before this has no keys (the field is missing). `/stats` and
 Every `Store` method takes the user id and the language id, so each user
 has their own statistics, unlocked letters and history in each language.
 `userOf` (`internal/api/auth.go`) decides the user of every request: the
-owner of a valid login cookie, or `storage.LocalUser` ("local", a guest).
+owner of a valid login cookie, or else this browser's guest (see "Guests"
+below).
 
 ## Accounts
 
@@ -222,14 +223,35 @@ that browser works with that user's data.
   time tells which names exist.
 - **A new account starts empty.** The guest's progress stays with the guest;
   to move it, export it as a guest and import it after logging in.
+- **Guests**: every browser without a login is its own guest. `WithGuest`
+  (`internal/api/auth.go`) wraps the whole site: a request without the
+  cookie `tt_guest` gets a new random token in it (same kind as a login
+  token, `HttpOnly`, `SameSite=Lax`, a year: `Auth.GuestDays`). The page
+  itself (`index.html`) is the first request, so the cookie is there before
+  the scripts' API calls. The guest's user id is `g` + the SHA-256 of the
+  token (`storage.GuestPrefix`), so the database never holds the cookie that
+  opens a guest's data. A browser that refuses cookies falls back to the one
+  shared `storage.LocalUser` ("local"). Clearing cookies starts a new guest:
+  the old guest's data stays in the store, unreachable (not cleaned up yet).
+- **Limit on attempts** (`auth.Limiter`): per IP address, at most
+  `Auth.Attempts` (10) failed logins plus sign-ups in `Auth.AttemptWindow`
+  (15) minutes; then `429 Too Many Requests` with `Retry-After`, even for the
+  right password, until the window ends. Every sign-up counts (each costs a
+  slow hash); a successful login clears the count. The counts live in memory,
+  so a restart forgets them, and several server processes would each count
+  on their own. No background goroutine: old windows are dropped while
+  counting.
+- **Behind a proxy**: on a real server a reverse proxy (nginx, Caddy) ends
+  HTTPS and passes requests to this server over plain HTTP. Start it with
+  the environment variable `BEHIND_PROXY=1` there (`config.BehindProxy`):
+  cookies are then `Secure` when the proxy's `X-Forwarded-Proto` is `https`,
+  and the limit counts the last address in `X-Forwarded-For` (the one the
+  proxy added; earlier ones come from the client). Without the variable both
+  headers are ignored, because without a proxy anyone could write them.
 - All numbers are in `internal/config/config.go` (`Auth`).
 
-Not yet (needed before the app is public, step 5 of the plan): every guest
-shares the one `local` user, so on a public server guests would see each
-other's progress (a per-browser guest id fixes this); no limit on login
-attempts; `Secure` is decided by `r.TLS`, which is not set behind a proxy
-that ends HTTPS. On GitHub Pages accounts are off (`build_wasm.go`):
-requests never leave the page there, so there are no cookies. Each language also has its own
+On GitHub Pages accounts are off (`build_wasm.go`): requests never leave
+the page there, so there are no cookies, and the only guest is `local`. Each language also has its own
 `Generator` (own unlock order and first lesson), built in `setup.go`.
 
 ## Modes
@@ -285,8 +307,9 @@ in git. How to install PostgreSQL on Windows: USER-GUIDE.md.
   (token hashes), `progress` (unlocked letters, typing test), `key_stats`
   (the letter model) and `sessions` (the history of both modes, `mode`
   column; the raw keys as `JSONB`). Every data table is keyed by user and
-  language. `user_id` is text and not a foreign key, because the guest
-  (`local`) has data but no row in `users`; an account's id is `u` + `users.id`.
+  language. `user_id` is text and not a foreign key, because guests
+  (`g...`, `local`) have data but no row in `users`; an account's id is
+  `u` + `users.id`.
 - **Migrations**: at start `migrate` applies every file in `migrations/`
   that the table `schema_migrations` has not recorded yet, in number order,
   each in a transaction. A new version of the app updates an old database by

@@ -56,8 +56,8 @@ exercises from real words around the user's weak letters.
 
 - Every API route except `/languages` and `/auth/*` takes `?lang=`; every
   `Store` method takes the user id and the language id. Each user has their
-  own progress in each language; a request without a login is the guest,
-  `storage.LocalUser`. Password and token handling lives in `internal/auth`
+  own progress in each language; a request without a login is this
+  browser's guest (cookie `tt_guest`, `storage.IsGuest`). Password and token handling lives in `internal/auth`
   (standard library only); never store a password or a login token itself,
   only its hash.
 - Visual rewards (confetti, bumps, toasts) live in `web/fx.js` and must never

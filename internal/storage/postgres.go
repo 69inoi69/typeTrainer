@@ -317,7 +317,8 @@ func (p *PostgresStore) UserByName(name string) (User, error) {
 	return p.user("name = $1", name)
 }
 
-// UserByID: "local" and anything else that is not "u<number>" is no account.
+// UserByID: a guest ("local", "g...") or anything else that is not
+// "u<number>" is no account.
 func (p *PostgresStore) UserByID(id string) (User, error) {
 	n, err := strconv.ParseInt(strings.TrimPrefix(id, "u"), 10, 64)
 	if err != nil || !strings.HasPrefix(id, "u") {
