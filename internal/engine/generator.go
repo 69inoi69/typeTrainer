@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"math"
 	"math/rand"
 	"sort"
 	"strings"
@@ -18,15 +19,21 @@ import (
 //  2. Focus. Inside the open letters, weak letters are chosen more often
 //     (softmax over difficulty), and words that contain them are preferred.
 type Generator struct {
-	words []string // the dictionary, most frequent first
-	order []string // unlock order: letters sorted by frequency in the dictionary
-	start int      // how many letters the first lesson has
+	words []string       // the dictionary, most frequent first
+	rank  map[string]int // word -> its place in words (0 = the most frequent)
+	order []string       // unlock order: letters sorted by frequency in the dictionary
+	start int            // how many letters the first lesson has
 	rng   *rand.Rand
 }
 
 // NewGenerator computes the unlock order and the first lesson size once.
 func NewGenerator(words []string, rng *rand.Rand, p Params) *Generator {
-	g := &Generator{words: words, rng: rng}
+	g := &Generator{words: words, rng: rng, rank: map[string]int{}}
+	for i, w := range words {
+		if _, ok := g.rank[w]; !ok {
+			g.rank[w] = i
+		}
+	}
 	g.order = letterOrder(words)
 	g.start = g.firstLessonSize(p)
 	return g
@@ -144,14 +151,15 @@ type Exercise struct {
 
 // pool is what both Next and Portion need before they pick words: the
 // difficulty and softmax weight of every open letter, the open words grouped
-// by letter, and each word's base weight exp(meanDifficulty / T).
+// by letter, and each word's base weight
+// exp(meanDifficulty / T) * RankWeight.
 type pool struct {
 	open     []string
 	words    []string
 	index    map[string]int   // word -> its index in words
 	letterW  []float64        // softmax weight of open[i]
 	byLetter map[string][]int // letter -> indexes of the words that contain it
-	baseW    []float64        // base weight of words[i]
+	baseW    []float64        // base weight of words[i] (difficulty and frequency)
 	weakest  string           // the open letter with the highest difficulty
 }
 
@@ -169,6 +177,7 @@ func (g *Generator) newPool(stats map[string]KeyStat, unlocked int, p Params) *p
 		}
 	}
 	pl.baseW = make([]float64, len(pl.words))
+	maxRank := g.MaxRank(unlocked, p)
 	for i, w := range pl.words {
 		pl.index[w] = i
 		sum := 0.0
@@ -180,16 +189,64 @@ func (g *Generator) newPool(stats map[string]KeyStat, unlocked int, p Params) *p
 				pl.byLetter[string(r)] = append(pl.byLetter[string(r)], i)
 			}
 		}
-		pl.baseW[i] = SoftmaxWeight(sum/float64(len(w)), p)
+		pl.baseW[i] = SoftmaxWeight(sum/float64(len(w)), p) * RankWeight(g.rank[w], maxRank, p)
 	}
 	return pl
+}
+
+// Rank is a word's place in the frequency list (0 = the most frequent word);
+// -1 for a word that is not in the list.
+func (g *Generator) Rank(word string) int {
+	if r, ok := g.rank[word]; ok {
+		return r
+	}
+	return -1
+}
+
+// MaxRank is the frequency rank up to which words get no penalty when
+// `unlocked` letters are open. It goes in a straight line from RankStart in
+// the first lesson to the whole list when every letter is open:
+//
+//	MaxRank = RankStart + (words - RankStart) * progress   (never below RankStart)
+//	progress = (unlocked - Start) / (letters - Start)     (0..1)
+//
+// So, like monkeytype's "English 200 / 1k / 2k", the user starts with the
+// most common words and gets rarer ones step by step. A letter opens only
+// when every open letter is mastered, so `progress` measures real skill.
+func (g *Generator) MaxRank(unlocked int, p Params) float64 {
+	progress := 1.0
+	if all := len(g.order); all > g.start {
+		progress = float64(g.Clamp(unlocked)-g.start) / float64(all-g.start)
+	}
+	start, end := float64(p.RankStart), float64(len(g.words))
+	if end < start { // a short list: never lower the limit
+		end = start
+	}
+	return start + (end-start)*progress
+}
+
+// RankWeight is the frequency part of a word's weight:
+//
+//	RankPenalty ^ (max(0, rank - maxRank) / RankStep)
+//
+// 1 for a word that is common enough; every RankStep places further down the
+// list multiply the weight by RankPenalty (0.5 = half as likely). The weight
+// never becomes 0, so a rare word stays possible and a letter that only has
+// rare words still gets practised. A RankPenalty outside (0, 1) or a
+// RankStep <= 0 turns the penalty off.
+func RankWeight(rank int, maxRank float64, p Params) float64 {
+	over := float64(rank) - maxRank
+	if over <= 0 || p.RankStep <= 0 || p.RankPenalty <= 0 || p.RankPenalty >= 1 {
+		return 1
+	}
+	return math.Pow(p.RankPenalty, over/p.RankStep)
 }
 
 // pickFocus is step 1: a focus letter with P(letter) ~ exp(difficulty / T).
 func (pl *pool) pickFocus(r float64) string { return pl.open[WeightedPick(pl.letterW, r)] }
 
 // pickWord is step 2: a word that contains the focus letter, with
-// P(word) ~ exp(meanDifficulty / T) * RepeatPenalty^uses. Words in `avoid`
+// P(word) ~ exp(meanDifficulty / T) * RankWeight * RepeatPenalty^uses. Words in `avoid`
 // (the neighbours of this slot) are never picked, so no word appears twice
 // in a row. Returns an index into pl.words.
 func (pl *pool) pickWord(focus string, uses []int, p Params, r float64, avoid ...int) int {

@@ -58,7 +58,9 @@ func main() {
 	fmt.Printf("beginner: exercises until every letter meets the goal; variety of the first %d exercises\n", p.FirstExercises)
 	fmt.Printf("expert: all letters open from the start, variety over %d exercises\n", p.OpenExercises)
 	fmt.Printf("variety: dist = share of different words in an exercise, rep = share of words also in\n" +
-		"the previous exercise, top = share of words containing the exercise's most common letter\n")
+		"the previous exercise, top = share of words containing the exercise's most common letter,\n" +
+		"len = mean letters per word (before |: over the whole run until the goal),\n" +
+		"rank = mean place of the words in the frequency list (0 = most common)\n")
 	for _, l := range langs {
 		if *only != "" && l.ID != *only {
 			continue
@@ -72,7 +74,8 @@ func main() {
 }
 
 // strategy builds a fresh strategy for one run (k: 0 random, 1 best of N,
-// 2 adaptive with temperature t, 3 the stream with temperature t).
+// 2 adaptive with temperature t, 3 the stream with temperature t, 4 the
+// stream without the word frequency penalty, to show what the penalty changes).
 func strategy(k int, t float64, gen *engine.Generator, cfg config.Config, rng *rand.Rand) sim.Strategy {
 	switch k {
 	case 0:
@@ -80,20 +83,33 @@ func strategy(k int, t float64, gen *engine.Generator, cfg config.Config, rng *r
 	case 1:
 		return &sim.BestOfN{Gen: gen, Words: cfg.Engine.ExerciseWords, Rng: rng, P: cfg.Sim}
 	}
-	ep := cfg.Engine
-	ep.Temperature = t
-	if k == 3 {
+	ep := engineParams(k, t, cfg)
+	if k >= 3 {
 		return &sim.Stream{Gen: gen, EP: ep}
 	}
 	return &sim.Adaptive{Gen: gen, EP: ep}
 }
 
+// engineParams are the engine numbers of strategy k: the configured ones,
+// with temperature t for the engine strategies and no frequency penalty for 4.
+func engineParams(k int, t float64, cfg config.Config) engine.Params {
+	ep := cfg.Engine
+	if k >= 2 {
+		ep.Temperature = t
+	}
+	if k == 4 {
+		ep.RankPenalty = 0 // outside (0, 1) = off
+	}
+	return ep
+}
+
 func runLanguage(id string, words []string, cfg config.Config, temps []float64) {
 	p := cfg.Sim
 	fmt.Printf("\n%s (%d words)\n", id, len(words))
-	fmt.Printf("%-22s %6s %6s %7s %5s | %-17s | %-17s\n", "", "", "", "", "", "beginner, first", "expert")
-	fmt.Printf("%-22s %6s %6s %7s %5s | %5s %5s %5s | %5s %5s %5s\n",
-		"strategy", "median", "mean", "reached", "open", "dist", "rep", "top", "dist", "rep", "top")
+	fmt.Printf("%-22s %6s %6s %7s %5s %4s | %-29s | %-29s\n", "", "", "", "", "", "", "beginner, first", "expert")
+	fmt.Printf("%-22s %6s %6s %7s %5s %4s | %5s %5s %5s %5s %5s | %5s %5s %5s %5s %5s\n",
+		"strategy", "median", "mean", "reached", "open", "len",
+		"dist", "rep", "top", "len", "rank", "dist", "rep", "top", "len", "rank")
 	type job struct {
 		k int
 		t float64
@@ -105,11 +121,11 @@ func runLanguage(id string, words []string, cfg config.Config, temps []float64) 
 	for _, t := range temps {
 		jobs = append(jobs, job{3, t})
 	}
+	for _, t := range temps {
+		jobs = append(jobs, job{4, t})
+	}
 	for _, j := range jobs {
-		ep := cfg.Engine
-		if j.k >= 2 {
-			ep.Temperature = j.t
-		}
+		ep := engineParams(j.k, j.t, cfg)
 		var res []sim.Result
 		var vs []sim.Variety
 		name := ""
@@ -135,6 +151,9 @@ func runLanguage(id string, words []string, cfg config.Config, temps []float64) 
 		}
 		if j.k == 3 {
 			name = fmt.Sprintf("stream, T = %g", j.t)
+		}
+		if j.k == 4 {
+			name = fmt.Sprintf("stream, no freq, %g", j.t)
 		}
 		fmt.Println(row(name, res, vs))
 	}
@@ -166,23 +185,30 @@ func row(name string, res []sim.Result, vs []sim.Variety) string {
 		openStr = fmt.Sprintf("%.0f", float64(open)/float64(openN))
 	}
 	first := make([]sim.Variety, len(res))
+	letters := 0.0
 	for i, r := range res {
 		first[i] = r.Variety
+		letters += r.Letters
 	}
-	return fmt.Sprintf("%-22s %6.0f %6.0f %4d/%-2d %5s | %s | %s",
-		name, median, float64(sum)/float64(len(res)), reached, len(res), openStr, pct(first), pct(vs))
+	return fmt.Sprintf("%-22s %6.0f %6.0f %4d/%-2d %5s %4.1f | %s | %s",
+		name, median, float64(sum)/float64(len(res)), reached, len(res), openStr,
+		letters/float64(len(res)), pct(first), pct(vs))
 }
 
-// pct prints the mean variety of several runs in percent.
+// pct prints the mean variety of several runs in percent, and the mean
+// word length in letters.
 func pct(vs []sim.Variety) string {
-	var d, r, t float64
+	var d, r, t, l, k float64
 	for _, v := range vs {
 		d += v.Distinct
 		r += v.Repeated
 		t += v.TopShare
+		l += v.Letters
+		k += v.Rank
 	}
 	n := float64(len(vs)) / 100
-	return fmt.Sprintf("%4.0f%% %4.0f%% %4.0f%%", d/n, r/n, t/n)
+	m := float64(len(vs))
+	return fmt.Sprintf("%4.0f%% %4.0f%% %4.0f%% %5.1f %5.0f", d/n, r/n, t/n, l/m, k/m)
 }
 
 func fail(err error) {

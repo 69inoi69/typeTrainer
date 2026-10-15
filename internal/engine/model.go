@@ -42,6 +42,12 @@ type Params struct {
 	RecentWords   int // RepeatPenalty counts uses in the last this many words
 	RetryWords    int // at most this many mistyped words come back in a portion
 	RoundPortions int // a round (one result in the history) is this many portions
+
+	// Common words first (generator.go, RankWeight): the most frequent words
+	// of the list at the start, rarer ones as more letters open.
+	RankStart   int     // words up to this frequency rank come freely in the first lesson
+	RankStep    float64 // every RankStep ranks over the limit multiply the weight by RankPenalty
+	RankPenalty float64 // weight multiplier per RankStep over the limit; outside (0, 1) = no penalty
 }
 
 // TargetMs converts TargetWPM to milliseconds per character.

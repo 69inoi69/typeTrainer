@@ -154,12 +154,28 @@ func TestRunOpen_Variety(t *testing.T) {
 	if !near(v.TopShare, 1) {
 		t.Errorf("TopShare = %v", v.TopShare)
 	}
+	if !near(v.Letters, 2) { // every word has 2 letters
+		t.Errorf("Letters = %v", v.Letters)
+	}
+}
+
+// Run reports the mean word length over everything typed.
+func TestRun_Letters(t *testing.T) {
+	gen := engine.NewGenerator([]string{"ab", "ba", "abba"}, rand.New(rand.NewSource(1)), cfg.Engine)
+	p := cfg.Sim
+	p.MaxExercises = 1
+	ep := cfg.Engine
+	ep.ExerciseWords = 3
+	res := sim.Run(gen, &fixed{texts: []string{"ab abba ab"}}, newTypist(gen.Order(), 1), ep, p)
+	if !near(res.Letters, 8.0/3) {
+		t.Fatalf("Letters = %v, want 8/3", res.Letters)
+	}
 }
 
 func TestRunOpen_NoExercisesIsNaN(t *testing.T) {
 	gen := engine.NewGenerator([]string{"ab"}, rand.New(rand.NewSource(1)), cfg.Engine)
 	v := sim.RunOpen(gen, &fixed{texts: []string{"ab"}}, newTypist(gen.Order(), 1), cfg.Engine, 0)
-	if !math.IsNaN(v.Distinct) || !math.IsNaN(v.Repeated) || !math.IsNaN(v.TopShare) {
+	if !math.IsNaN(v.Distinct) || !math.IsNaN(v.Repeated) || !math.IsNaN(v.TopShare) || !math.IsNaN(v.Letters) {
 		t.Fatalf("no data must give NaN, got %+v", v)
 	}
 }
