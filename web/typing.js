@@ -561,8 +561,9 @@ async function finishRound() {
     streamId++;                                        // nothing more for this round
     if (!typed.length) { await loadExercise(); return; } // nothing typed: nothing to keep
     if (S.mode === "test") { await finishTest(wpm, accuracy, typed.length); return; }
-    if (S.mode === "free") { await finishFree(wpm, accuracy, typed.length, fullSeconds(end), resisted); return; }
-    const res = await postJSON("/results", { samples, chars: typed.length, wpm, accuracy, perSecond: fullSeconds(end) });
+    if (S.mode === "free") { await finishFree(wpm, accuracy, typed, fullSeconds(end), resisted); return; }
+    // keys: the whole round, kept by the server as its raw record (it learns only from samples)
+    const res = await postJSON("/results", { samples, keys: typed, chars: typed.length, wpm, accuracy, perSecond: fullSeconds(end) });
     await refreshStats();
     if (res.newLetter) newLetter(res.newLetter);
 
@@ -581,9 +582,9 @@ async function finishRound() {
 
 // The end of a free practice round: it goes to the free practice history
 // only (POST /freeplay/results), never to the letter statistics.
-async function finishFree(wpm, accuracy, chars, perSecond, resisted) {
+async function finishFree(wpm, accuracy, keys, perSecond, resisted) {
   const before = S.free?.sessions ?? [];
-  const res = await postJSON("/freeplay/results", { wpm, accuracy, chars, perSecond });
+  const res = await postJSON("/freeplay/results", { wpm, accuracy, chars: keys.length, perSecond, keys });
   await refreshFreeplay();
   const best = before.length > 0 && wpm > Math.max(...before.map((x) => x.wpm));
   if (best) FX.burstFrom(el.wpm, 80);
