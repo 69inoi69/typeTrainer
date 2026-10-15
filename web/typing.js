@@ -39,6 +39,11 @@ let perSecond = [];        // keypresses in each second since startTime (for con
 let streak = 0;            // words in a row typed without a single mistake
 let wordClean = true;      // no mistake in the current word so far
 let tabsResisted = 0;      // Tab presses during this round (no restart here)
+// One word back (Backspace at the start of a word): the start of the word
+// the caret went back into (-1: none), and the errors it had then. From
+// inside that word Backspace cannot go back another word.
+let backWord = -1, backErrors = 0;
+let fixedWords = new Set(); // starts of words that were gone back into and retyped without a mistake
 
 // The text window always shows TEXT_LINES lines at one font size (style.css,
 // .text): it never changes size between exercises. A text that needs more
@@ -175,7 +180,7 @@ function mistypedWords(por) {
     const end = wordEnd(i);
     let bad = false;
     for (let j = i; j <= end; j++) if (records[j] ? records[j].errors > 0 : j < end) bad = true;
-    if (bad) out.push(S.text.slice(i, end));
+    if (bad && !fixedWords.has(i)) out.push(S.text.slice(i, end));   // fixed in place: practised already
     i = end + 1;
   }
   return out;
@@ -247,6 +252,7 @@ function resetStream() {
   state = new Uint8Array(0); focusMask = new Uint8Array(0); records = []; spans = [];
   portions = []; sentUpTo = 0; current = 0; roundNewLetter = ""; wordsLoaded = 0; endAt = -1;
   extras = new Map(); correctChars = 0; afterBackspace = false;
+  backWord = -1; backErrors = 0; fixedWords = new Set();
   startTime = null; lastTime = null; presses = 0; correctPresses = 0; perSecond = [];
   el.text.replaceChildren(el.caret);          // the caret lives inside the text
 }
@@ -385,7 +391,7 @@ export function handleChar(ch) {
       else mistake();
       pulseKey(ch, ok);
       const space = S.text[S.pos] === " ";
-      if (space) endWord();
+      if (space) { leaveBackWord(); endWord(); }
       S.pos++;
       if (space && S.pos - 1 === endAt) roundOver = true;          // the last word, skipped with a space
       else if (space && S.pos - 1 === portions[current]?.end) portionDone(current);
@@ -401,17 +407,25 @@ export function handleChar(ch) {
 
 // Backspace: one character back in the current word (extra letters go
 // first); with Ctrl the whole word. From the start of a word it goes back
-// into the previous word, but only if that word has a mistake and its
-// portion was not sent to the server yet. Only the screen changes: the
-// samples (records) keep every mistake.
+// into the previous word of the round, at most ONE word back: from inside
+// that word it does nothing more. Only the screen changes: the samples
+// (records) keep every mistake of the first pass, and a letter is only
+// measured once (its first press), so nothing is counted twice. A word whose
+// portion was already sent to the server can be fixed on the screen too; its
+// new presses are not sent again.
 export function backspace(wholeWord) {
   if (!canType() || startTime === null) return;
   if (S.pos === wordStart(S.pos)) {
     const space = S.pos - 1;
-    if (S.pos <= sentUpTo || !wordHasError(wordStart(space), space)) return;
+    if (space < 0 || backWord >= 0) return;
     setState(space, 0);
     S.pos = space;
     while (S.pos > 0 && state[S.pos - 1] === 3) setState(--S.pos, 0);   // skipped = not typed
+    backWord = wordStart(space);
+    backErrors = wordErrors(backWord, space);
+    wordsTyped--;                            // it is finished again when its space is typed
+    renderProgress();
+    wordClean = false;                       // a word fixed afterwards does not extend the streak
     if (wholeWord) clearWord();
   } else if (wholeWord) {
     clearWord();
@@ -423,6 +437,21 @@ export function backspace(wholeWord) {
   afterBackspace = true;
   highlightNextKey();
   placeCaret(false);
+}
+// mistakes recorded for the word start..end (its space included: extra letters)
+function wordErrors(start, end) {
+  let n = 0;
+  for (let j = start; j <= end; j++) n += records[j]?.errors ?? 0;
+  return n;
+}
+// The space of a word is typed: if it was the word gone back into, the
+// one-word-back is over, and the word counts as fixed when the second pass
+// added no mistake and nothing on it is red or skipped. A fixed word does not
+// come back later as a mistyped word.
+function leaveBackWord() {
+  if (backWord < 0 || wordStart(S.pos) !== backWord) return;
+  if (wordErrors(backWord, S.pos) === backErrors && !wordHasError(backWord, S.pos)) fixedWords.add(backWord);
+  backWord = -1;
 }
 // Ctrl+Backspace: the cursor goes back to the start of its word, extra letters vanish
 function clearWord() {

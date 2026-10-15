@@ -36,7 +36,8 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   if you already type well, the next ones open quickly.
 - Type the grey text. Wrong key = the letter turns red and you keep going, as
   on monkeytype. Backspace fixes the current word (Ctrl+Backspace: the whole
-  word); you can go back into a word you left with a mistake. Space in the middle of a word jumps to the next one. A fixed
+  word); at the start of a word it takes you back into the previous word, one
+  word at most, so you can finish a word you skipped. Space in the middle of a word jumps to the next one. A fixed
   mistake still counts for the letter's statistics.
 - The row of letters at the top shows your progress: open letters, the letter in
   **focus** (yellow, your weakest right now), mastered letters (green dot), and

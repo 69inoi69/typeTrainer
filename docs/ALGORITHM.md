@@ -43,7 +43,8 @@ Typing never stops on a mistake (as on monkeytype, so the rhythm is kept):
 
 - a wrong letter turns red and the cursor moves on;
 - Backspace goes back inside the current word (Ctrl+Backspace: the whole
-  word), and into the previous word only if that word has a mistake;
+  word); at the start of a word it goes back into the previous word, at most
+  one word back (from inside that word it does nothing more);
 - space in the middle of a word jumps to the next word; the rest of the word is
   **skipped**;
 - letters typed where a space belongs are **extra** letters, shown in red
@@ -58,7 +59,11 @@ For every **position of the text that was typed** the browser sends one sample:
 - `errors` – how many wrong keys were pressed at this position, including new
   attempts after a Backspace. Backspace changes only what the screen shows: a
   mistake corrected with Backspace **still counts**, because the first attempt
-  was wrong. Extra letters count as errors of the space after the word.
+  was wrong. This also holds after going back one word: the samples of the
+  first pass stay, the retyped letters only add what was missing (skipped
+  letters) and new mistakes, and no letter is measured twice. If the
+  previous word's portion was already sent to the server, its new presses
+  are shown but not sent again. Extra letters count as errors of the space after the word.
 - `ms` – time from the previous keypress to the **first** press at this
   position, measured with `keydown` and `performance.now()` (sub-millisecond
   resolution).
@@ -377,7 +382,10 @@ are typed again: up to `RetryWords = 2` of them are put into the next portion
 that is built, at random places, instead of new words. They are not repeated
 right away, because of the waiting portions (below), but about 2 portions
 later. Repeating a missed item after a short gap is the idea of spaced
-practice; here it is the simplest version, one repetition.
+practice; here it is the simplest version, one repetition. A word the user
+went back into (Backspace, section 3) and retyped without a new mistake is
+already practised and does not come back, unless its portion was sent before
+the fix.
 
 **Focus shown to the user** is the focus letter of the portion being typed.
 
