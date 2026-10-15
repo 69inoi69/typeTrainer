@@ -28,12 +28,19 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
 
 - The app opens with a short start screen: the logo types itself, a random
   phrase in your language, then the page slides in. Any key or click skips it.
-- On the very first visit a short hands-on intro starts: put your fingers on
-  the home row and press those eight keys, press space with a thumb, then
-  "watch the screen". It reacts to the real keys (physical positions, so it
-  works with any system layout). `Esc` or "skip" closes it; **help → touch typing basics**
-  reopens it. At the end: "Start". Everyone starts with a few letters;
-  if you already type well, the next ones open quickly.
+- On the very first visit two short guides run, one after the other (both
+  can be skipped with `Esc` or "skip", and both open again from **help**):
+  - **touch typing basics**: what touch typing is (a small keyboard map where
+    every key has the colour of its finger, and one line on posture), then
+    put your fingers on the home row and press those eight keys, press space
+    with a thumb, and "watch the screen". It reacts to the real keys
+    (physical positions, so it works with any system layout). At the end:
+    "Start". Everyone starts with a few letters; if you already type well,
+    the next ones open quickly;
+  - **how this site works**: first the idea in three sentences (the trainer
+    watches every keypress and builds real-word practice around your
+    weakest letter; letters open one by one), then a light ring around the
+    letters, the text, the menu and the languages, with a sentence each.
 - Type the grey text. Wrong key = the letter turns red and you keep going, as
   on monkeytype. Backspace fixes the current word (Ctrl+Backspace: the whole
   word); at the start of a word it takes you back into the previous word, one
@@ -129,10 +136,8 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
 - Small messages under the letters are only used outside typing (a file
   saved or loaded).
 - **Help** (the **?** in the navigation) opens a small menu with the two
-  guides: **touch typing basics** (the first-visit intro again) and **how
-  this site works**, a short tour where each part of the page gets a light
-  ring and a sentence or two about it (Enter / → next, Esc closes). On the
-  first visit both start by themselves, one after the other.
+  guides, each with its own icon: **touch typing basics** and **how this
+  site works** (Enter / → next, Esc closes).
 - On a touch screen there is no `Esc`: a small square **stop** button at the
   end of the numbers line ends the round. The shortcut line is hidden there.
 - Shortcuts, also listed small at the bottom of the page: `Esc` stop ·

@@ -1,5 +1,7 @@
-// The short hands-on intro of the first visit (home row, space, fingers).
-// Everyone starts from the first letters: there is no "open all letters".
+// Guide A, "touch typing basics": what touch typing is, the home row, the
+// space bar, eyes up. It opens by itself on the very first visit and again
+// from Help. Everyone starts from the first letters: there is no "open all
+// letters". Guide B, "how this site works", is tour.js.
 // Layer: middle. Imports the bottom layer and keyboard.js.
 
 import { FX } from "./fx.js";
@@ -8,13 +10,14 @@ import { makeKey } from "./keyboard.js";
 import { maybeStartTour } from "./tour.js";
 
 // ---------- intro ----------
-// Shown once, on the very first visit (it can be reopened with the "?" button).
-// It is a short hands-on start, not a text to read: steps 0 and 1 wait for the
-// real keys. We look at the PHYSICAL key (e.code), so it works whatever the
+// A short hands-on start, not a text to read: the home row and space steps
+// wait for the real keys. We look at the PHYSICAL key (e.code), so it works whatever the
 // system layout is: "KeyA" is the key under the left pinky on every keyboard.
 const HOME_CODES = ["KeyA", "KeyS", "KeyD", "KeyF", "KeyJ", "KeyK", "KeyL", "Semicolon"];
 const HOME_INDEX = [0, 1, 2, 3, 6, 7, 8, 9];   // positions of those keys in the home row
-const INTRO_LAST = 3;
+// the steps, in the order of the <section data-step> in index.html
+// (0 = what touch typing is, 3 = eyes up: any key goes on)
+const STEP_HOME = 1, STEP_SPACE = 2, INTRO_LAST = 4;
 let introStep = 0;
 let introKeys = {};        // e.code -> key element in the intro home row
 let introPressed = new Set();
@@ -31,7 +34,18 @@ export function drawIntroKeys() {
     home.appendChild(key);
     introKeys[HOME_CODES[i]] = key;
   });
-  // a copy of the hands for step 2, with the fingers lighting up one by one
+  // step "what": the letter rows of the layout, small, every key in the
+  // colour of its finger (the same keys as on the big keyboard)
+  const map = $("intro-map");
+  map.innerHTML = "";
+  S.layout.rows.slice(0, 3).forEach((r, i) => {
+    const rowEl = document.createElement("div");
+    rowEl.className = "kb-row";
+    rowEl.style.paddingLeft = `calc(var(--u) * ${S.layout.offsets?.[i] ?? 0})`;
+    for (const k of r) rowEl.appendChild(makeKey(k));
+    map.appendChild(rowEl);
+  });
+  // a copy of the hands for the "eyes up" step, with the fingers lighting up one by one
   $("intro-hands").innerHTML = el.hands.innerHTML;
   $("intro-hands").querySelectorAll("[data-f]").forEach((f, i) => {
     f.classList.remove("on");
@@ -76,14 +90,14 @@ export function introKey(e) {
   if (introStep === INTRO_LAST || e.key === "Tab") return; // Enter/Tab work on the buttons
   if (["Shift", "Control", "Alt", "AltGraph", "Meta", "CapsLock"].includes(e.key)) return;
   e.preventDefault();
-  if (introStep === 0) {
+  if (introStep === STEP_HOME) {
     const key = introKeys[e.code];
     if (!key) return;
     key.classList.add("hit");
     FX.anim(key, [{ transform: "translateY(2px) scale(.92)" }, { transform: "none" }], { duration: 160 });
     introPressed.add(e.code);
     if (introPressed.size === HOME_CODES.length) advanceAfter($("intro-home"));
-  } else if (introStep === 1) {
+  } else if (introStep === STEP_SPACE) {
     if (e.code !== "Space") return;
     $("intro-space").classList.add("hit");
     advanceAfter($("intro-space"));
