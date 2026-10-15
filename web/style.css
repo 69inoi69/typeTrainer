@@ -1,9 +1,6 @@
 /* ---------- theme (all colors in one place) ---------- */
-/* registered, so the browser can animate it: the keyboard grows smoothly */
-@property --kb-scale { syntax: "<number>"; inherits: true; initial-value: 1; }
 :root {
   color-scheme: dark;
-  transition: --kb-scale 220ms cubic-bezier(.2, .8, .2, 1);
   --bg: #121317;
   --panel: #1b1d22;
   --key: #1a1c21;       /* base of a keyboard key, before its finger tint */
@@ -16,13 +13,11 @@
   --ok: #8cc97a;        /* mastered letter */
   --mono: ui-monospace, "Cascadia Mono", "JetBrains Mono", Consolas, "Roboto Mono", monospace;
 
-  /* keyboard size: --kb-scale is set by the - / + buttons (1 = 100 %, .7 ... 1.5) */
-  --kb-scale: 1;
-  /* one key unit: the chosen size, but never wider than the window allows, and
-     never taller than the room left on the screen. --u-fit (set by fitKeyboard)
-     is the largest unit that fits: L (scale 1) uses all of it, M and S a bit
-     less (.88, .75). 84px: even on a huge screen the keys stop growing */
-  --u: min(calc((100vw - 32px) / 13.6), calc(var(--u-fit, 56px) * var(--kb-scale)), calc(84px * var(--kb-scale)));
+  /* one key unit: the keyboard size is not a setting, it is always the largest
+     that fits: never wider than the window allows, never taller than the room
+     left on the screen (--u-fit, set by fitKeyboard in keyboard.js). 84px:
+     even on a huge screen the keys stop growing */
+  --u: min(calc((100vw - 32px) / 13.6), var(--u-fit, 56px), 84px);
   /* width of the text card (and of the header, so their edges line up): a
      little wider than the on-screen keyboard (13.4 key units, + 1.2) and
      growing with it, but never narrower than 760px, so the text keeps fitting
@@ -426,14 +421,21 @@ body.typing-now .top:hover .switch, body.typing-now .top:hover .profile { opacit
 @media (pointer: fine) { .touch-only { display: none !important; } }
 /* the guide button says what it is: for beginners */
 button.icon.guide { padding: 0 14px 0 11px; font-size: .8rem; }
-/* keyboard shortcuts at the bottom of the page */
+/* the bottom bar: buttons and keyboard shortcuts in one line when they fit
+   (a second line only on a narrow window): every pixel of height saved here
+   goes to the on-screen keyboard (fitKeyboard measures this bar) */
+.bottom {
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 34px;
+  padding: 4px 16px 12px;
+}
+/* keyboard shortcuts */
 .hints {
   display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 22px;
-  padding: 6px 16px 12px; color: color-mix(in srgb, var(--sub) 85%, transparent); font-size: .74rem;
+  color: color-mix(in srgb, var(--sub) 85%, transparent); font-size: .74rem;
 }
 .hints kbd { background: var(--panel); color: color-mix(in srgb, var(--text) 60%, var(--sub)); padding: 1px 6px; border-radius: 4px; }
 @media (pointer: coarse) { .hints { display: none; } }
-.toolbar { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; margin: 14px 0 4px; color: var(--sub); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; color: var(--sub); }
 button {
   color: var(--sub); background: var(--panel); border: 0;
   padding: 8px 14px; border-radius: 8px; cursor: pointer;
@@ -481,15 +483,10 @@ button:disabled { opacity: .35; cursor: default; }
 button:disabled:hover { color: var(--sub); background: none; }
 button:disabled:active { transform: none; }
 
-/* keyboard: [off | S | M | L], the same switch as in the header (--i = selected) */
-.kb-switch { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.kb-switch button { padding: 0 12px; }
-.kb-switch button[aria-checked="true"] { color: var(--on-accent); }
-.kb-switch .switch-thumb { width: calc((100% - 8px) / 4); transform: translateX(calc(var(--i, 2) * 100%)); }
-.kb-switch svg {
-  width: 17px; height: 17px; fill: none; stroke: currentColor;
-  stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
-}
+/* keyboard on / off: the keyboard icon, crossed out while it is off */
+#btn-kb { --bc: var(--sub); }
+#btn-kb .kb-strike { opacity: 0; transition: opacity var(--fast); }
+#btn-kb[aria-pressed="false"] .kb-strike { opacity: 1; }
 
 /* ---------- stats view ---------- */
 .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 8px; }
@@ -757,7 +754,6 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .note { font-size: .78rem; border-radius: 14px; }   /* phone: a long message may take two lines */
   .toolbar { gap: 6px; }
   button.icon { padding: 0 7px; }
-  .kb-switch button { padding: 0 9px; }
   #btn-reset { margin-left: 0; }
   .text-box { padding: 14px 16px 14px 34px; border-radius: 12px; }
   .text-box::before { left: 14px; top: 48px; }   /* 14 + 28 + 6 */

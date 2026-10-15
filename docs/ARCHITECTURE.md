@@ -62,7 +62,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | bottom | `fx.js` | Visual rewards: confetti, bumps, the message queue in the status line (outside typing), the start screen. They never affect what is measured. |
 | bottom | `api.js` | `getJSON` / `postJSON` for `/api/v1/`, with `?lang=` added. |
 | middle | `tools.js` | Tooltips of the icon buttons, reset, export / import of the statistics. |
-| middle | `keyboard.js` | On-screen keyboard and hands from the layout data, the next key and finger, the size switch, fitting into the window. |
+| middle | `keyboard.js` | On-screen keyboard and hands from the layout data, the next key and finger, the on / off button, the automatic size that fits the window. |
 | middle | `stats.js` | The stats screen (tiles, WPM chart, heatmap keyboard, letter cards) and `refreshStats()`. |
 | middle | `typing.js` | The exercise text, the caret, `handleChar()` / `backspace()`, the streak, live WPM / accuracy, the "typing now" header mode, the letters bar, sending results. |
 | middle | `intro.js` | The first-visit intro and "open all letters". |
@@ -70,7 +70,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `profile.js` | The profile placeholder in the header: name and picture, kept only in the browser. |
 | middle | `result.js` | The result screen in the text window: `showResult(r)` shows what changed and resolves when the user goes on. |
 | middle | `tour.js` | The "how this site works" tour: a ring around each part of the page and a short card. |
-| top | `input.js` | Keydown and phone input, the Type / Stats switch, the keyboard size switch, window resize: sends each action to the module that handles it. |
+| top | `input.js` | Keydown and phone input, the Type / Stats switch, the keyboard on / off button, window resize: sends each action to the module that handles it. |
 | top | `app.js` | Entry point: `init()`. |
 
 **Import rule:** imports only go down. `state.js` and `i18n.js` import

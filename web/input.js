@@ -1,6 +1,6 @@
 // Everything the user does with keys and buttons, sent to the module that
 // handles it: keydown and the phone input, the Type / Stats switch, the
-// keyboard size switch, window resize, the "new exercise" button.
+// keyboard on / off button, window resize, the "new exercise" button.
 // Layer: top. Imports anything; nothing imports it (app.js only loads it).
 
 import { el, S, introOpen, isTouch, focusText } from "./state.js";
@@ -13,23 +13,13 @@ import { profileOpen, closeProfile } from "./profile.js";
 import { resultOpen, closeResult } from "./result.js";
 import { tourOpen, tourKey } from "./tour.js";
 
-// the keyboard size switch
-el.kbSwitch.addEventListener("click", (e) => {
-  const b = e.target.closest("button[data-kb]");
-  if (!b) return;
-  b.blur();
-  const wasHidden = S.kbHidden;
-  S.kbHidden = b.dataset.kb === "off";
-  if (!S.kbHidden) S.kbSize = Number(b.dataset.kb);
-  applyKb(wasHidden !== S.kbHidden);           // fold / unfold only when that changed
-  placeCaret(true);
-});
-// Alt+K: keyboard and hands off, or back on at the size they had
+// the keyboard button and Alt+K: keyboard and hands off, or back on
 function toggleKb() {
   S.kbHidden = !S.kbHidden;
   applyKb(true);
   placeCaret(true);
 }
+el.btnKb.addEventListener("click", (e) => { e.currentTarget.blur(); toggleKb(); });
 window.addEventListener("resize", () => {
   fitText();
   requestFit();
