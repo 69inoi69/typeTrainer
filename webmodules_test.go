@@ -4,8 +4,8 @@ package main
 // import rule written at the top of web/state.js, so it cannot break
 // without anyone noticing:
 //
-//	bottom: state.js and i18n.js import nothing, fx.js only i18n.js,
-//	        api.js only state.js
+//	bottom: state.js, i18n.js and feel.js import nothing, fx.js only
+//	        i18n.js, api.js only state.js
 //	middle: everything else imports the bottom and each other, no cycles
 //	top:    app.js and input.js; nothing imports them (app.js loads input.js)
 
@@ -61,6 +61,7 @@ func TestWebModules_BottomLayer(t *testing.T) {
 	allowed := map[string][]string{
 		"state.js": {},
 		"i18n.js":  {},
+		"feel.js":  {},
 		"fx.js":    {"i18n.js"},
 		"api.js":   {"state.js"},
 	}

@@ -315,10 +315,11 @@ body[data-mode="free"] .learn-only { display: none; }
 }
 .text-box.blurred .focus-hint { opacity: 1; }
 
-/* Letters change colour at once, with no effect on every keypress: at speed
-   any per-letter animation flickers and makes typing feel slow. Only a
-   mistake gets a short red flash. */
-.text span.ok { color: var(--text); }
+/* Letters change colour at once. A letter typed right "settles" from a
+   slightly stronger glow (only text-shadow: nothing moves, nothing is laid
+   out again); the knobs are in web/feel.js (--feel-*). */
+.text span.ok { color: var(--text); animation: settle var(--feel-settle-ms, 0ms) ease-out; }
+@keyframes settle { from { text-shadow: 0 0 var(--feel-settle-glow, 10px) color-mix(in srgb, var(--text) 60%, transparent); } }
 /* the focus letter (the one being practised) is tinted until it is typed */
 .text span.fx { color: color-mix(in srgb, var(--accent) 50%, var(--sub)); }
 /* a soft glow on the text, just for looks: text-shadow does not move
@@ -328,8 +329,20 @@ body[data-mode="free"] .learn-only { display: none; }
 .text span.bad, .text span.extra { text-shadow: 0 0 10px color-mix(in srgb, var(--error) 45%, transparent); }
 .text span.bad { color: var(--error); border-radius: 3px; animation: oops 240ms ease-out; }
 @keyframes oops { from { background: color-mix(in srgb, var(--error) 35%, transparent); } }
-.text span.miss { color: color-mix(in srgb, var(--error) 45%, var(--sub)); }    /* skipped with space */
-.text span.extra { color: color-mix(in srgb, var(--error) 60%, var(--bg)); }   /* typed where the space was */
+/* The three kinds of mistake look different at a glance, by colour AND
+   shape: wrong = red letter; skipped = dim with a dotted underline (it was
+   never typed); extra = struck through (it does not belong there). Lines do
+   not change the layout. */
+.text span.miss {                                    /* skipped with space */
+  color: color-mix(in srgb, var(--error) 45%, var(--sub));
+  text-decoration: underline dotted var(--feel-mark-line, 2px); text-underline-offset: .22em;
+  text-decoration-color: color-mix(in srgb, var(--error) 55%, transparent);
+}
+.text span.extra {                                   /* typed where the space was */
+  color: color-mix(in srgb, var(--error) 60%, var(--bg));
+  text-decoration: line-through var(--feel-mark-line, 2px);
+  text-decoration-color: color-mix(in srgb, var(--error) 70%, transparent);
+}
 
 /* The caret is ONE element moved with the CSS "translate" property (GPU), so
    it glides from letter to letter instead of jumping. JS sets its position

@@ -3,6 +3,7 @@
 // fitting the keyboard into the window.
 // Layer: middle. Imports only the bottom layer.
 
+import { FEEL } from "./feel.js";
 import { t } from "./i18n.js";
 import { FX } from "./fx.js";
 import { el, S, store, isTouch } from "./state.js";
@@ -96,12 +97,12 @@ export function highlightNextKey() {
 export function pulseKey(ch, ok) {
   const k = keyFor(ch);
   if (!k || !k.animate) return;
-  if (ok) {   // a short, soft press
-    k.animate([{ transform: "translateY(1px) scale(.95)" }, { transform: "none" }],
-      { duration: 110, easing: "cubic-bezier(.2,.8,.2,1)" });
-  } else {    // the wrong key flashes red for a moment (the colour of --error)
-    k.animate([{ boxShadow: "inset 0 0 0 999px rgba(202, 71, 84, .7)" }, { boxShadow: "inset 0 0 0 999px rgba(202, 71, 84, 0)" }],
-      { duration: 260, easing: "ease-out" });
+  if (ok) {   // a short, soft press (knobs: FEEL.keyPress*)
+    k.animate([{ transform: `translateY(1px) scale(${FEEL.keyPressScale})` }, { transform: "none" }],
+      { duration: FEEL.keyPressMs, easing: "cubic-bezier(.2,.8,.2,1)" });
+  } else {    // the wrong key gets a quick red tint (the colour of --error; FEEL.keyMiss*)
+    k.animate([{ boxShadow: `inset 0 0 0 999px rgba(202, 71, 84, ${FEEL.keyMissAlpha})` }, { boxShadow: "inset 0 0 0 999px rgba(202, 71, 84, 0)" }],
+      { duration: FEEL.keyMissMs, easing: "ease-out" });
   }
 }
 
