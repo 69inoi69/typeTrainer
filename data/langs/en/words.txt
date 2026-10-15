@@ -1998,3 +1998,5 @@ capable
 passing
 result
 suffering
+zero
+magazine

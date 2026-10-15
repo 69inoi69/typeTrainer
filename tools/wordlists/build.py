@@ -22,6 +22,15 @@ Filtering, in this order, keeping the frequency order of the source:
   7. drop words from block_<lang>.txt (names, places, profanity, sound tags
      like "sighs", fragments like "don" from "don't"); built by hand
   8. keep the first N words (default 2000)
+  9. every letter of the alphabet that is in fewer than MIN_PER_LETTER of
+     those words gets its next most frequent words (that passed 1-7)
+     appended at the end, until it has MIN_PER_LETTER. Otherwise a rare
+     letter (Russian ъ: one word in the top 2000) would always be trained
+     on the same word. The added words keep their frequency order and come
+     after the N common ones, so the app treats them as the rarest.
+     Not for the letters in NO_FILL: they only occur in loan words and
+     names (Polish q v x, Ukrainian ґ), and filling them brings in names
+     (vincent, quinn, ґрегорі) and garbage.
 """
 import os
 import sys
@@ -35,6 +44,8 @@ ALPHABET = {
 ONE_LETTER = {"en": set("ai"), "pl": set("aiouwz"), "uk": set("явіузао"), "ru": set("явискуоа")}
 VOWELS = set("aeiouyąęóаеєиіїоуюяыэ")
 UK_KEEP = {"по"}  # short shared word that the Russian filter would drop
+MIN_PER_LETTER = 10  # the same number as FloorWords in internal/config/config.go
+NO_FILL = {"pl": set("qvx"), "uk": set("ґ")}
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -77,12 +88,23 @@ def build(src, out_root, n):
             if w in blocked:
                 continue
             words.append(w)
-            if len(words) >= n:
-                break
+        words = with_rare_letters(words, n, set(alphabet) - NO_FILL.get(lang, set()))
         os.makedirs(os.path.join(out_root, lang), exist_ok=True)
         with open(os.path.join(out_root, lang, "words.txt"), "w", encoding="utf-8") as f:
             f.write("\n".join(words) + "\n")
         print(lang, len(words), " ".join(words[:12]))
+
+
+def with_rare_letters(passed, n, alphabet):
+    """The first n words, plus words for letters that are in too few of them (step 9)."""
+    words = passed[:n]
+    count = {ch: sum(ch in w for w in words) for ch in alphabet}
+    for w in passed[n:]:
+        if any(count.get(ch, MIN_PER_LETTER) < MIN_PER_LETTER for ch in set(w)):
+            words.append(w)
+            for ch in set(w) & alphabet:
+                count[ch] += 1
+    return words
 
 
 if __name__ == "__main__":

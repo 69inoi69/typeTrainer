@@ -307,8 +307,8 @@ With `RankStart = 200`, `RankStep = 200` and `RankPenalty = 0.5`, every lesson
 before the full alphabet allows the 200 most common words freely, and every
 200 places further down the list halve a word's chance (rank 1000: 1/16).
 When the last letter opens, the limit grows in a straight line and reaches the
-whole list (2000) after `RampLetters = 10 000` letters, about 1700 words or
-an hour at 30 WPM; then the penalty is gone. Choices behind this:
+whole list (about 2000) after `RampLetters = 10 000` letters, about 1700-1900
+words or an hour at 30 WPM; then the penalty is gone. Choices behind this:
 
 - **Why it is needed.** Without it, words are drawn evenly from the whole
   list: whatever the open letters are, about half of the possible words are
@@ -355,7 +355,8 @@ an hour at 30 WPM; then the penalty is gone. Choices behind this:
   `q` 1823, `x` 851, `z` (8 words in all); pl `f` 1154, `ń` 1159, `ź` 683,
   `ć` 295, `ł` 250, `ó` 239, `ą` 217; uk `ф` 1797, `щ` 447, `ї` 450, `є` 291,
   `ц` 223, `х` 209, `ш` 205; ru `ф` 1410, `ц` 845, `щ` 807, `ю` 280, `х` 237,
-  `ш` 231, and `ъ`, which has a single word in the whole Russian list.
+  `ш` 231, and `ъ`, which had a single word in the Russian list before step 9 of
+  section 12 added more.
   The penalty only shapes which words of the focus letter are taken: the
   focus letter itself (step 1) does not depend on it, so a rare letter is
   never trained less because its words are rare.
@@ -726,4 +727,11 @@ documents every filtering step:
 6. Polish: drop words more frequent in the English list (untranslated names);
 7. hand-made block lists in `tools/wordlists/block_<id>.txt`: names, places,
    profanity, sound tags ("sighs") and fragments ("don" from "don't");
-8. keep the first 2000.
+8. keep the first 2000;
+9. a letter that is in fewer than 10 of them (the `FloorWords` of section 7)
+   gets its next most frequent words appended at the end, until it has 10.
+   This adds 9 Russian words (`ъ` was in a single word: `объяснить`) and 2
+   English ones (`z`: `zero`, `magazine`). The added words are the rarest
+   in the list for the app. Not for Polish `q`, `v`, `x` and Ukrainian `ґ`:
+   they occur only in loan words and names, and filling them brings in names
+   (`vincent`, `quinn`, `ґрегорі`).
