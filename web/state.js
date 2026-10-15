@@ -1,8 +1,8 @@
 // Shared state and small helpers that every other module uses.
 //
 // Import rule of the frontend (three layers, imports only go down):
-//   bottom: state.js and i18n.js import nothing, fx.js only i18n.js,
-//           api.js only state.js
+//   bottom: state.js, i18n.js and feel.js import nothing, fx.js only
+//           i18n.js, api.js only state.js
 //   middle: keyboard, typing, letters, stats, intro, languages, tools,
 //           profile, result, tour, modes, settings import the bottom
 //           and each other in one direction only (no cycles)

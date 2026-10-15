@@ -73,6 +73,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | bottom | `state.js` | Shared state `S`, page elements `el`, `store` (localStorage that may be blocked), small helpers. |
 | bottom | `i18n.js` | Every interface text in all four languages, `t()`, `tPick()` (a random text from a pool), `applyI18n()`, `setUiLang()`. |
 | bottom | `fx.js` | Visual rewards: confetti, bumps, the message queue in the status line (outside typing), the start screen. They never affect what is measured. |
+| bottom | `feel.js` | `FEEL`: every knob of how a keypress feels (letter settle, key dip, red tint of a wrong key, caret flinch, mistake marks), also given to the CSS as `--feel-*`. Tuning the feel = changing a number here. |
 | bottom | `api.js` | `getJSON` / `postJSON` for `/api/v1/`, with `?lang=` added. |
 | middle | `tools.js` | Tooltips of the icon buttons, reset, export / import of the statistics. |
 | middle | `keyboard.js` | On-screen keyboard and hands from the layout data, the next key and finger, the on / off button (remembered separately for learning and free practice), the automatic size that fits the window. |

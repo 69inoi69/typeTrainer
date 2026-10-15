@@ -7,6 +7,7 @@
 // Layer: middle. Imports the bottom layer, keyboard.js, stats.js, result.js,
 // letters.js, modes.js and settings.js.
 
+import { FEEL } from "./feel.js";
 import { t, tPick } from "./i18n.js";
 import { FX } from "./fx.js";
 import { $, el, S, introOpen } from "./state.js";
@@ -355,6 +356,14 @@ const wordHasError = (start, end) =>
 function mistake() {
   if (wordClean) breakStreak();
   wordClean = false;
+  flinchCaret();
+}
+// The caret flinches for an instant on a mistake (knobs: FEEL.caretFlinch*).
+// It animates "scale" only, so the glide ("translate") is not touched.
+function flinchCaret() {
+  if (!FEEL.caretFlinchMs || !el.caret.animate) return;
+  el.caret.animate([{ scale: `1 ${FEEL.caretFlinchScale}` }, { scale: "1 1" }],
+    { duration: FEEL.caretFlinchMs, easing: "ease-out" });
 }
 
 export function handleChar(ch) {

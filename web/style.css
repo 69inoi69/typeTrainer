@@ -315,10 +315,11 @@ body[data-mode="free"] .learn-only { display: none; }
 }
 .text-box.blurred .focus-hint { opacity: 1; }
 
-/* Letters change colour at once, with no effect on every keypress: at speed
-   any per-letter animation flickers and makes typing feel slow. Only a
-   mistake gets a short red flash. */
-.text span.ok { color: var(--text); }
+/* Letters change colour at once. A letter typed right "settles" from a
+   slightly stronger glow (only text-shadow: nothing moves, nothing is laid
+   out again); the knobs are in web/feel.js (--feel-*). */
+.text span.ok { color: var(--text); animation: settle var(--feel-settle-ms, 0ms) ease-out; }
+@keyframes settle { from { text-shadow: 0 0 var(--feel-settle-glow, 10px) color-mix(in srgb, var(--text) 60%, transparent); } }
 /* the focus letter (the one being practised) is tinted until it is typed */
 .text span.fx { color: color-mix(in srgb, var(--accent) 50%, var(--sub)); }
 /* a soft glow on the text, just for looks: text-shadow does not move
@@ -328,8 +329,20 @@ body[data-mode="free"] .learn-only { display: none; }
 .text span.bad, .text span.extra { text-shadow: 0 0 10px color-mix(in srgb, var(--error) 45%, transparent); }
 .text span.bad { color: var(--error); border-radius: 3px; animation: oops 240ms ease-out; }
 @keyframes oops { from { background: color-mix(in srgb, var(--error) 35%, transparent); } }
-.text span.miss { color: color-mix(in srgb, var(--error) 45%, var(--sub)); }    /* skipped with space */
-.text span.extra { color: color-mix(in srgb, var(--error) 60%, var(--bg)); }   /* typed where the space was */
+/* The three kinds of mistake look different at a glance, by colour AND
+   shape: wrong = red letter; skipped = dim with a dotted underline (it was
+   never typed); extra = struck through (it does not belong there). Lines do
+   not change the layout. */
+.text span.miss {                                    /* skipped with space */
+  color: color-mix(in srgb, var(--error) 45%, var(--sub));
+  text-decoration: underline dotted var(--feel-mark-line, 2px); text-underline-offset: .22em;
+  text-decoration-color: color-mix(in srgb, var(--error) 55%, transparent);
+}
+.text span.extra {                                   /* typed where the space was */
+  color: color-mix(in srgb, var(--error) 60%, var(--bg));
+  text-decoration: line-through var(--feel-mark-line, 2px);
+  text-decoration-color: color-mix(in srgb, var(--error) 70%, transparent);
+}
 
 /* The caret is ONE element moved with the CSS "translate" property (GPU), so
    it glides from letter to letter instead of jumping. JS sets its position
@@ -388,12 +401,12 @@ body:not(.caret-block) .caret.fast { background: var(--ok); box-shadow: 0 0 8px 
    and shrink with the keyboard. Lift and tilt use the separate CSS
    "translate" and "rotate" properties, so they never fight each other. */
 .hands {
-  display: flex; justify-content: center; align-items: flex-end; gap: calc(var(--u) * .9);
+  display: flex; justify-content: center; align-items: flex-end; gap: calc(var(--u) * .9 * var(--feel-hand, 1));
   margin: 6px 0 8px; user-select: none; pointer-events: none;
 }
 .hands.off { display: none; }
 .hand {
-  width: calc(var(--u) * 2); height: auto; overflow: visible; display: block;
+  width: calc(var(--u) * 2 * var(--feel-hand, 1)); height: auto; overflow: visible; display: block;
   --skin: color-mix(in srgb, var(--text) 11%, var(--bg));
   /* the wrist fades out at the bottom instead of ending in a hard edge */
   -webkit-mask-image: linear-gradient(to bottom, #000 74%, transparent);
@@ -404,9 +417,16 @@ body:not(.caret-block) .caret.fast { background: var(--ok); box-shadow: 0 0 8px 
 .hand .palm { fill: var(--skin); filter: drop-shadow(0 -1px 1.2px rgba(0, 0, 0, .5)); }
 .hand .finger { --fc: #888; --tint: color-mix(in srgb, var(--fc) 26%, var(--skin)); transition: translate var(--med) var(--ease); }
 .hand .finger .skin { fill: var(--tint); transition: fill var(--fast); }
-/* the finger to use: fills with its full colour and lifts along its own direction */
-.hand .finger.on { translate: 0 -6px; animation: finger-on 260ms cubic-bezier(.3, 1.6, .5, 1); }
-.hand .finger.on .skin { fill: var(--fc); }
+/* the finger to use: fills with its full colour, lifts and glows softly. It
+   is the main "which finger" signal; the key below is only hinted (.key.next).
+   Knobs: --feel-finger-* (web/feel.js). */
+.hand .finger.on { translate: 0 var(--feel-finger-lift, -6px); animation: finger-on 260ms cubic-bezier(.3, 1.6, .5, 1); }
+/* the glow is a wide see-through outline: a CSS drop-shadow would be cut at
+   the edges of the thin finger's filter area */
+.hand .finger.on .skin {
+  fill: var(--fc); paint-order: stroke;
+  stroke: color-mix(in srgb, var(--fc) 30%, transparent); stroke-width: var(--feel-finger-glow, 0);
+}
 @keyframes finger-on { from { translate: 0 1px; } }
 
 /* visually hidden, still read by screen readers (the finger sentence) */
@@ -424,11 +444,13 @@ body:not(.caret-block) .caret.fast { background: var(--ok); box-shadow: 0 0 8px 
   --fc: #888;                         /* finger color, set from JS */
   position: relative; height: var(--u); width: var(--u); flex: none;
   display: flex; align-items: center; justify-content: center;
-  border-radius: calc(var(--u) * .14); font-size: calc(var(--u) * .34); color: var(--text);
+  /* calm keys: rounder, a thinner coloured edge, a lighter and smaller label */
+  border-radius: calc(var(--u) * .2); font-size: calc(var(--u) * .3); font-weight: 300;
+  color: color-mix(in srgb, var(--text) 72%, var(--bg));
   background:
-    linear-gradient(to bottom, rgba(255, 255, 255, .04), transparent 60%),
-    color-mix(in srgb, var(--fc) 15%, var(--key));
-  border-bottom: 3px solid color-mix(in srgb, var(--fc) 80%, transparent);
+    linear-gradient(to bottom, rgba(255, 255, 255, .03), transparent 60%),
+    color-mix(in srgb, var(--fc) 12%, var(--key));
+  border-bottom: 2px solid color-mix(in srgb, var(--fc) 60%, transparent);
   transition: transform var(--fast) var(--ease), background var(--fast), box-shadow var(--fast), color var(--fast), opacity var(--med);
   overflow: hidden;
 }
@@ -442,9 +464,11 @@ body:not(.caret-block) .caret.fast { background: var(--ok); box-shadow: 0 0 8px 
 }
 .key.next .alt { opacity: 1; }
 .key.mod .lbl { font-size: .8em; }
+/* the next key is only hinted: a partial tint and a soft ring, no jump (the
+   hands above show which finger; the eyes should not go to the keys) */
 .key.next {
-  background: var(--fc); color: var(--on-accent); transform: translateY(-2px);
-  box-shadow: 0 5px 16px color-mix(in srgb, var(--fc) 40%, transparent);
+  background: color-mix(in srgb, var(--fc) var(--feel-next-tint, 100%), var(--key)); color: var(--text);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--fc) 55%, transparent);
 }
 /* locked: dark, with a faint edge and a dim label (not see-through: that looked washed out) */
 .key.locked:not(.next) {
@@ -738,7 +762,7 @@ button:disabled:active { transform: none; }
 .intro-choice button:not(.primary) { background: var(--bg); }
 button.primary kbd { background: rgba(0, 0, 0, .16); color: inherit; }
 /* step 2: the fingers light up one after another */
-.intro-hands { --u: min(44px, calc((100vw - 120px) / 9)); margin: 14px 0 22px; }
+.intro-hands { --u: min(44px, calc((100vw - 120px) / 9)); --feel-hand: 1; margin: 14px 0 22px; }   /* the intro keeps its own size */
 .intro-hands .finger { animation: demo-lift 3s calc(var(--d) * .3s) infinite; }
 .intro-hands .finger .skin { animation: demo-fill 3s calc(var(--d) * .3s) infinite; }
 /* intro: the fingers light up one after another. Both ends spelled out: with
