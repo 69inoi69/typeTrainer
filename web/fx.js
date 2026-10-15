@@ -1,4 +1,4 @@
-// Small visual rewards: confetti, counting numbers, bumps, a toast queue.
+// Small visual rewards: confetti, bumps, a queue of short messages.
 //
 // Nothing here changes what is measured or learned; it only makes actions
 // feel alive. Everything is either a CSS animation, the Web Animations API
@@ -61,31 +61,6 @@ export const FX = (() => {
     burst(r.left + r.width / 2, r.top + r.height / 2, n);
   }
 
-  // ---------- scoreboard numbers ----------
-  // roll(node, n) shows the whole number n in node like a scoreboard: every
-  // digit is a column 0...9 (class .odo-d) and CSS slides it to its digit
-  // (style.css, transition on transform). Called on every keypress, so it only
-  // sets a CSS variable on the digits that changed; the columns are rebuilt
-  // only when the number gets a digit more or less. Screen readers get the
-  // plain number from a hidden span.
-  const DIGITS = "<b>0</b><b>1</b><b>2</b><b>3</b><b>4</b><b>5</b><b>6</b><b>7</b><b>8</b><b>9</b>";
-  function roll(node, n) {
-    const str = String(Math.max(0, Math.round(n)));
-    if (node.dataset.v === str) return;
-    node.dataset.v = str;
-    let odo = node.querySelector(".odo");
-    if (!odo || odo.children.length !== str.length) {
-      odo = document.createElement("span");
-      odo.className = "odo";
-      odo.setAttribute("aria-hidden", "true");
-      odo.innerHTML = `<span class="odo-d"><i>${DIGITS}</i></span>`.repeat(str.length);
-      const label = Object.assign(document.createElement("span"), { className: "sr-only" });
-      node.replaceChildren(odo, label);
-    }
-    [...odo.children].forEach((d, i) => d.firstChild.style.setProperty("--v", str[i]));
-    node.lastChild.textContent = str;
-  }
-
   // ---------- small animations ----------
   // returns the Animation (or null), so callers can wait for .finished
   const anim = (node, frames, opts) => (node?.animate && !reduced() ? node.animate(frames, opts) : null);
@@ -124,33 +99,15 @@ export const FX = (() => {
   // back. One message at a time; the others wait in a queue. A thin bar under
   // the message fills up while it is shown: when it is full (CSS animation,
   // "animationend") the next one comes. Hover pauses it, a click skips it.
-  //
-  // All messages look like the rest of the page; every KIND has its own icon,
-  // a small icon animation and the colour of the time bar (style.css,
-  // .note.k-<kind>), so you can tell what happened at a glance:
-  //   best     new personal record       gold bar, trophy, shine
-  //   letter   a new letter opened       blue bar, the letter itself pops in
-  //   mastered letters mastered          green bar, a check that draws itself
-  //   streak   clean words in a row      orange bar, a zapping bolt
-  //   resisted Tab urges beaten          violet bar, shield
-  //   tab      message after Tab         grey bar, small and quick
-  //   tip      a typing tip or a joke    teal bar, a light bulb
-  const NOTE_MS = 3500;    // default time on screen
-  const ICONS = {
-    best: '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4"/><path d="M12 13v4M8 20h8"/>',
-    mastered: '<path class="draw" d="M5 12.5l4.5 4.5L19 7.5"/>',
-    streak: '<path d="M13.5 2.5 5 13.5h6l-1 8 8.5-11h-6z"/>',
-    resisted: '<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
-    tab: '<path d="M4 12h11M11 8l4 4-4 4M19 6v12"/>',
-    tip: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
-    info: '<circle cx="12" cy="12" r="8"/><path d="M12 11v5M12 8h.01"/>',
-  };
-  const KIND_MS = { best: 4500, letter: 6500, tab: 2400, tip: 6000 };
+  // They are only for things outside typing (a file saved or loaded): what
+  // happened while typing is shown on the result screen (result.js).
+  const NOTE_MS = 3500;    // time on screen
+  const INFO_ICON = '<circle cx="12" cy="12" r="8"/><path d="M12 11v5M12 8h.01"/>';
   const queue = [];
   let current = null;        // the message on screen, or null
-  // toast(html) or toast(html, {kind, ms, badge}); badge = a letter instead of the icon
-  function toast(html, opts = {}) {
-    queue.push({ html, opts });
+  // toast(html): queue a message
+  function toast(html) {
+    queue.push({ html });
     if (!current) showNext();
   }
   function showNext() {
@@ -162,14 +119,12 @@ export const FX = (() => {
       slot.classList.remove("noticing");
       return;
     }
-    const kind = item.opts.kind || "info";
     const node = document.createElement("div");
-    node.className = "note k-" + kind;
-    node.style.setProperty("--ms", (item.opts.ms ?? KIND_MS[kind] ?? NOTE_MS) + "ms");
+    node.className = "note";
+    node.style.setProperty("--ms", NOTE_MS + "ms");
     const mark = document.createElement("span");
     mark.className = "note-mark";
-    if (item.opts.badge) mark.textContent = item.opts.badge;
-    else mark.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[kind] || ICONS.info}</svg>`;
+    mark.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${INFO_ICON}</svg>`;
     node.innerHTML = `<span class="note-body">${item.html}</span><i class="note-bar"></i>`;
     node.prepend(mark);
     node.querySelector(".note-bar").addEventListener("animationend", () => closeNote(node));
@@ -184,10 +139,7 @@ export const FX = (() => {
     node.addEventListener("animationend", (e) => { if (e.target === node) { node.remove(); showNext(); } });
   }
 
-  // true when no message is shown or waiting (Tab messages never pile up)
-  const idle = () => !current && !queue.length;
-
-  return { burst, burstFrom, roll, bump, shake, toast, anim, idle, collapse, fadeOut };
+  return { burst, burstFrom, bump, shake, toast, anim, collapse, fadeOut };
 })();
 
 // ---------- start screen ----------

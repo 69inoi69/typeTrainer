@@ -10,6 +10,8 @@ import { fitText, placeCaret, loadExercise, handleChar, backspace, nudge, setTyp
 import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
+import { resultOpen, closeResult } from "./result.js";
+import { tourOpen, tourKey } from "./tour.js";
 
 // the keyboard size switch
 el.kbSwitch.addEventListener("click", (e) => {
@@ -63,6 +65,7 @@ el.tabStats.addEventListener("click", (e) => { e.currentTarget.blur(); setView("
 // from ALSO arriving through the hidden input (and space from scrolling).
 document.addEventListener("keydown", (e) => {
   if (introOpen()) { introKey(e); return; }
+  if (tourOpen()) { tourKey(e); return; }
   // the profile card is open: keys go to its name field, Esc closes it
   if (profileOpen()) {
     if (e.key === "Escape") { e.preventDefault(); closeProfile(); }
@@ -84,6 +87,13 @@ document.addEventListener("keydown", (e) => {
   if (e.altKey && !e.ctrlKey && !e.metaKey && !altGr && e.code === "KeyK") {   // e.code: any system layout
     e.preventDefault();
     toggleKb();
+    return;
+  }
+  // the result screen: any key (not a lone modifier) goes on to the next text
+  if (resultOpen()) {
+    if (["Shift", "Control", "Alt", "AltGraph", "Meta", "CapsLock", "Tab"].includes(e.key)) return;
+    e.preventDefault();
+    closeResult();
     return;
   }
   if (S.view !== "type") return;

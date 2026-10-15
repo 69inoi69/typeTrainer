@@ -26,7 +26,7 @@
   /* width of the text card (and of the header, so their edges line up): a
      little wider than the on-screen keyboard (13.4 key units, + 1.2) and
      growing with it, but never narrower than 760px, so the text keeps fitting
-     in 2 lines (typing.js, fitText) */
+     in its 3-line window (typing.js, fitText) */
   --tw: min(100vw - 32px, max(760px, calc(var(--u) * 14.6)));
 
   /* motion: one place to tune how "snappy" the app feels */
@@ -98,17 +98,7 @@ body.typing-now .top:hover .switch, body.typing-now .top:hover .profile { opacit
 .metric small { color: var(--sub); margin-left: 5px; white-space: nowrap; font-size: .78rem; }
 .live.final .metric > span { color: var(--text); }   /* result of the last exercise */
 
-/* Scoreboard digits (fx.js, FX.roll): every digit is a column 0...9 that
-   slides to its number with a CSS transition, so a changing number rolls
-   instead of blinking. */
-.odo { display: inline-flex; line-height: 1; height: 1em; overflow: hidden; vertical-align: baseline; }
-.odo-d { display: block; width: 1ch; height: 1em; overflow: hidden; }
-.odo-d > i {
-  display: flex; flex-direction: column; font-style: normal;
-  transform: translateY(calc(var(--v, 0) * -1em));
-  transition: transform 280ms cubic-bezier(.2, .8, .2, 1);
-}
-.odo-d > i > b { display: block; height: 1em; font-weight: inherit; text-align: center; }
+
 /* streak: looks like the numbers next to it (big number, small label on the
    same line). The longer the streak, the hotter the colour (data-tier). */
 .streak {
@@ -275,16 +265,19 @@ body.typing-now .top:hover .switch, body.typing-now .top:hover .profile { opacit
 .text-box:focus-within, .text-box:focus {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent), 0 10px 30px rgba(0, 0, 0, .22);
 }
-.text::before {                    /* the prompt sign, like a shell waiting for input */
-  content: "❯"; position: absolute; left: -28px; top: 0; font-size: 1em;
+.text-box::before {                /* the prompt sign, like a shell waiting for input */
+  /* next to the first line: card padding (16) + the live line (28 + 10) */
+  content: "❯"; position: absolute; left: 24px; top: 54px;
+  font-size: clamp(1.1rem, 3.6vw, 1.6rem); line-height: 1.7;
   color: var(--accent); opacity: .8; text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 50%, transparent);
 }
 .text {
   position: relative;
   font-size: clamp(1.1rem, 3.6vw, 1.6rem); line-height: 1.7;
-  /* always room for 2 lines: the keyboard below keeps one size, whatever the
-     language or the length of the words */
-  min-height: calc(2 * 1.7em);
+  /* A fixed window of 3 lines, like a screen: only its content changes, the
+     card never grows or shrinks between exercises. A longer text scrolls up
+     line by line while you type (typing.js, placeCaret). */
+  height: calc(3 * 1.7em); overflow: hidden; scroll-behavior: smooth;
   letter-spacing: .02em; color: var(--sub); word-break: break-word;
   text-align: left;                /* like a terminal: lines start at the prompt */
   transition: filter var(--med), opacity var(--med);
@@ -303,6 +296,8 @@ body.typing-now .top:hover .switch, body.typing-now .top:hover .profile { opacit
    any per-letter animation flickers and makes typing feel slow. Only a
    mistake gets a short red flash. */
 .text span.ok { color: var(--text); }
+/* the focus letter (the one being practised) is tinted until it is typed */
+.text span.fx { color: color-mix(in srgb, var(--accent) 50%, var(--sub)); }
 /* a soft glow on the text, just for looks: text-shadow does not move
    anything, so it costs nothing on a keypress */
 .text { text-shadow: 0 0 14px color-mix(in srgb, var(--sub) 22%, transparent); }
@@ -328,7 +323,13 @@ body.typing-now .top:hover .switch, body.typing-now .top:hover .profile { opacit
   transition: translate 100ms cubic-bezier(.25, .8, .4, 1);   /* glides, no snapping */
   animation: blink 1s steps(1) infinite;
 }
-.caret.jump { transition: none; }                        /* new exercise: no glide */
+.caret.jump { transition: none; }
+/* at or over the goal speed the caret turns green (typing.js, updateLive) */
+.caret { transition: translate 100ms cubic-bezier(.25, .8, .4, 1), background .6s, border-color .6s, box-shadow .6s; }
+.caret.fast {
+  background: color-mix(in srgb, var(--ok) 38%, transparent); border-bottom-color: var(--ok);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--ok) 40%, transparent);
+}                        /* new exercise: no glide */
 .text-box.typing .caret { animation: none; }             /* solid while typing */
 .text-box.blurred .caret { opacity: 0; }
 @keyframes blink { 50% { opacity: 0; } }
@@ -620,37 +621,43 @@ button:disabled:active { transform: none; }
 @keyframes note-bar { to { transform: scaleX(1); } }
 
 /* ----- each kind of message looks different ----- */
-/* Kinds differ by the colour of the time bar (--tc) and a small animation
-   of the icon; the pill itself always looks like the rest of the page. */
-/* new record: gold bar, the trophy jumps, a shine runs over the pill */
-.k-best .note-mark svg { animation: jump .6s cubic-bezier(.3, 1.6, .5, 1) .15s both; }
-.k-best::after {
-  content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(105deg, transparent 35%, color-mix(in srgb, var(--text) 10%, transparent) 50%, transparent 65%);
-  transform: translateX(-100%); animation: sweep 1.1s ease-out .25s forwards;
+/* ---------- result screen (result.js) ---------- */
+/* It takes the place of the text, in the same fixed window: the text hides,
+   the card keeps its size. */
+.text-box.resulting .text, .text-box.resulting::before { visibility: hidden; }
+.result {
+  position: absolute; left: 52px; right: 32px; top: 54px;    /* where the text is */
+  font-size: clamp(1.1rem, 3.6vw, 1.6rem); height: calc(3 * 1.7em);
+  display: flex; flex-direction: column; justify-content: center; gap: 8px;
+  cursor: pointer; animation: view-in .25s var(--ease);
 }
-@keyframes jump { 0% { transform: translateY(6px) scale(.6); } 60% { transform: translateY(-3px) scale(1.15); } }
-@keyframes sweep { to { transform: translateX(100%); } }
-/* new letter: blue bar, the letter itself pops in */
-.k-letter { --tc: #7fa6e0; }
-.k-letter .note-mark { animation: letter-pop .6s cubic-bezier(.2, 1.6, .4, 1) .1s both; }
+.result[hidden] { display: none; }
+.result p { margin: 0; }
+.r-body { display: flex; flex-direction: column; gap: 8px; }
+.r-main { font-size: 1.05rem; color: var(--text); line-height: 1.5; }
+.r-main b { color: var(--accent); font-weight: 500; }
+.r-badge {                         /* the new letter itself */
+  display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; margin-right: 10px; border-radius: 7px; vertical-align: middle;
+  background: var(--accent); color: var(--on-accent); font-weight: 600;
+  animation: letter-pop .6s cubic-bezier(.2, 1.6, .4, 1) .1s both;
+}
 @keyframes letter-pop { 0% { transform: scale(.3) rotate(-25deg); opacity: 0; } 70% { transform: scale(1.18) rotate(6deg); opacity: 1; } }
-/* mastered: green, the check draws itself */
-.k-mastered { --tc: var(--ok); }
-.k-mastered .draw { stroke-dasharray: 24; stroke-dashoffset: 24; animation: draw .45s ease-out .2s forwards; }
-@keyframes draw { to { stroke-dashoffset: 0; } }
-/* streak: orange bar, the bolt zaps while the message is shown */
-.k-streak { --tc: #e59a62; }
-.k-streak .note-mark svg { animation: zap .5s ease-in-out infinite alternate; }
-/* Tab urges beaten: violet bar, the shield "thumps" once */
-.k-resisted { --tc: #c98bd6; }
-.k-resisted .note-mark { animation: thump .5s ease-out .15s; }
-@keyframes thump { 40% { transform: scale(1.25); box-shadow: 0 0 0 5px color-mix(in srgb, var(--text) 10%, transparent); } }
-/* after Tab: grey and quiet, the arrow wiggles */
-.k-tab { --tc: var(--sub); color: color-mix(in srgb, var(--text) 75%, var(--sub)); }
-.k-tip { --tc: #5fc4c4; }
-.k-tab .note-mark svg { animation: wiggle .4s ease-in-out 2; }
-@keyframes wiggle { 50% { transform: translateX(3px); } }
+.r-letters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: .85rem; }
+.r-lbl { color: var(--sub); margin-right: 2px; }
+.r-sep { width: 14px; }
+.r-ch { display: inline-flex; gap: 5px; align-items: baseline; padding: 1px 8px; border-radius: 6px; background: var(--panel); font-variant-numeric: tabular-nums; }
+.r-ch b { font-weight: 500; color: var(--text); }
+.r-ch.up { color: var(--ok); }
+.r-ch.down { color: var(--error); }
+.r-facts { font-size: .8rem; color: color-mix(in srgb, var(--text) 65%, var(--sub)); }
+.r-next { position: absolute; right: 0; bottom: 2px; font-size: .72rem; color: var(--sub); }
+.r-next kbd { background: var(--panel); }
+.r-bar {                           /* time left; full = the next text */
+  position: absolute; left: 0; right: 0; bottom: -10px; height: 2px; border-radius: 2px;
+  background: color-mix(in srgb, var(--accent) 60%, transparent); transform-origin: left; transform: scaleX(0);
+  animation: note-bar var(--ms, 6000ms) linear forwards;
+}
+.result:hover .r-bar { animation-play-state: paused; }
 
 /* ---------- intro ---------- */
 .intro {
@@ -753,12 +760,13 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .kb-switch button { padding: 0 9px; }
   #btn-reset { margin-left: 0; }
   .text-box { padding: 14px 16px 14px 34px; border-radius: 12px; }
-  .text::before { left: -20px; }
+  .text-box::before { left: 14px; top: 48px; }   /* 14 + 28 + 6 */
+  .result { left: 34px; right: 16px; top: 48px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
-  .note-bar { animation-duration: var(--ms, 3500ms) !important; } /* it is a timer, not decoration */
+  .note-bar, .r-bar { animation-duration: var(--ms, 3500ms) !important; } /* it is a timer, not decoration */
 }
 
 /* confetti canvas (fx.js), above everything, never catches clicks */
@@ -847,3 +855,31 @@ body.entering .toolbar { animation-delay: .48s; }
 .avatar-picks button.upload { --av: var(--sub); display: grid; place-items: center; color: var(--text); }
 .avatar-picks svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .profile-soon { margin: 0; padding-top: 10px; border-top: 1px solid var(--line); color: var(--sub); font-size: .72rem; line-height: 1.5; }
+
+/* ---------- tour (tour.js) ---------- */
+.tour-btn {
+  height: var(--ctl); width: var(--ctl); padding: 0; display: grid; place-items: center;
+  background: none; color: var(--sub); border-radius: 999px;
+}
+.tour-btn:hover { background: none; color: var(--text); }
+.tour-btn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+body.typing-now .tour-btn { opacity: .15; }
+body.typing-now .top:hover .tour-btn { opacity: 1; }
+.tour { position: fixed; inset: 0; z-index: 40; }
+.tour[hidden] { display: none; }
+/* the ring: a rounded box with a huge shadow that dims everything around it */
+.tour-spot {
+  position: fixed; border-radius: 14px; pointer-events: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 70%, transparent), 0 0 0 9999px color-mix(in srgb, var(--bg) 78%, transparent);
+  transition: left .35s var(--ease), top .35s var(--ease), width .35s var(--ease), height .35s var(--ease);
+}
+.tour-card {
+  position: fixed; width: min(340px, calc(100vw - 16px)); padding: 14px 16px 10px;
+  background: var(--panel); border-radius: 14px; box-shadow: var(--ring), 0 18px 50px rgba(0, 0, 0, .45);
+  transition: left .35s var(--ease), top .35s var(--ease);
+}
+.tour-step { margin: 0 0 6px; color: var(--accent); font-size: .72rem; }
+.tour-text { margin: 0 0 10px; color: color-mix(in srgb, var(--text) 85%, var(--sub)); font-size: .86rem; line-height: 1.55; }
+.tour-text b { color: var(--text); font-weight: 500; }
+.tour-nav { display: flex; justify-content: space-between; align-items: center; }
+.tour-nav .primary { padding: 6px 14px; font-size: .82rem; }

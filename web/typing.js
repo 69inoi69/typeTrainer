@@ -1,18 +1,20 @@
 // The typing screen: the exercise text, the caret, what every keypress does,
 // the clean-word streak, the live WPM / accuracy, the letters bar, and
 // sending the result when the exercise is done.
-// Layer: middle. Imports the bottom layer, keyboard.js and stats.js.
+// Layer: middle. Imports the bottom layer, keyboard.js, stats.js and result.js.
 
-import { t, tPick, hasText } from "./i18n.js";
+import { t, tPick } from "./i18n.js";
 import { FX } from "./fx.js";
 import { $, el, S, introOpen } from "./state.js";
 import { getJSON, postJSON } from "./api.js";
 import { highlightNextKey, pulseKey, requestFit } from "./keyboard.js";
 import { refreshStats } from "./stats.js";
+import { showResult } from "./result.js";
 
 // Typing state, used only by the typing code.
 let wrongScript = 0;       // presses in a row that came from another keyboard layout
 let spans = [];            // one <span> per character
+let focusMask = new Uint8Array(0); // 1 = this position is the focus letter (tinted until typed)
 // Typing never stops on a mistake (as on monkeytype): a wrong letter turns
 // red and the cursor moves on. Per position of the text we keep:
 let state = new Uint8Array(0); // what is on the screen now: 0 = not typed, 1 = right, 2 = wrong, 3 = skipped
@@ -32,22 +34,19 @@ let wordClean = true;      // no mistake in the current word so far
 let tabsResisted = 0;      // Tab presses during this exercise (no restart here)
 let justMastered = new Set(); // letters mastered in the last exercise (chips shine)
 
-// The exercise text takes at most TEXT_LINES lines: the text box is wide, and
-// if the words are still too long the font gets a little smaller (down to
-// 80 %; below that, on a narrow window, the text may take more lines). Reads
-// the layout a few times, so it runs on a new text and on resize, never on a
-// keypress.
-const TEXT_LINES = 2;
+// The text window always shows TEXT_LINES lines at one font size (style.css,
+// .text): it never changes size between exercises. A text that needs more
+// lines scrolls: the line you type stays the second one (as on monkeytype).
+// fitText runs on a new text and on resize, never on a keypress: it reads the
+// line height once and starts at the top.
+const TEXT_LINES = 3;
+let lineH = 0;
 export function fitText() {
-  if (!spans.length || S.view !== "type") return;
-  el.text.style.removeProperty("font-size");
-  const cs = getComputedStyle(el.text);
-  const base = parseFloat(cs.fontSize);
-  const lines = () => Math.round((spans.at(-1).offsetTop - spans[0].offsetTop) / parseFloat(cs.lineHeight)) + 1;
-  for (let size = base; lines() > TEXT_LINES && size > base * .8; ) {
-    size -= 1;
-    el.text.style.fontSize = size + "px";
-  }
+  if (S.view !== "type") return;
+  lineH = parseFloat(getComputedStyle(el.text).lineHeight) || 0;
+  el.text.style.scrollBehavior = "auto";     // a new text starts at the top at once
+  el.text.scrollTop = 0;
+  el.text.style.removeProperty("scroll-behavior");
 }
 
 // ---------- caret ----------
@@ -69,6 +68,13 @@ export function placeCaret(jump) {
     // position in the separate CSS "translate" property: the Tab nudge animates
     // "scale", and scale must not multiply the position (the caret flew away)
     el.caret.style.translate = `${x - 1}px ${s.offsetTop + h * 0.09}px`;
+    // keep the current line in view: from the third line on, scroll so that
+    // it is the second one (smooth, CSS scroll-behavior)
+    if (lineH) {
+      const line = Math.round(s.offsetTop / lineH);
+      const top = Math.max(0, Math.min(line - 1, Math.ceil(el.text.scrollHeight / lineH) - TEXT_LINES)) * lineH;
+      if (Math.abs(el.text.scrollTop - top) > 1) el.text.scrollTop = top;
+    }
     if (jump) requestAnimationFrame(() => el.caret.classList.remove("jump"));
   });
 }
@@ -146,21 +152,25 @@ function showExercise(ex) {
 
   // build all spans at once with a fragment: one DOM update, not hundreds
   const frag = document.createDocumentFragment();
-  spans = [...S.text].map((ch) => {
+  // the focus letter is tinted in the text, so you see what you practise
+  focusMask = new Uint8Array(S.text.length);
+  spans = [...S.text].map((ch, i) => {
     const s = document.createElement("span");
     s.textContent = ch;
+    if (ch === ex.focus) { focusMask[i] = 1; s.className = "fx"; }
     frag.appendChild(s);
     return s;
   });
   el.text.replaceChildren(frag, el.caret);   // the caret lives inside the text
-  fitText();                                 // at most 2 lines
+  fitText();                                 // back to the first line
   requestFit();                              // more lines (narrow window) leave less room for the keyboard
   el.text.classList.remove("swap");
   void el.text.offsetWidth;                  // restart the fade-in (once per exercise)
   el.text.classList.add("swap");
   el.textBox.classList.remove("typing");
   setTyping(false);
-  if (!el.live.classList.contains("final")) { FX.roll(el.wpm, 0); FX.roll(el.raw, 0); FX.roll(el.acc, 100); }
+  el.caret.classList.remove("fast");
+  if (!el.live.classList.contains("final")) { el.wpm.textContent = "0"; el.raw.textContent = "0"; el.acc.textContent = "100"; }
   highlightNextKey();
   renderLetters();
   placeCaret(true);
@@ -183,8 +193,7 @@ export async function loadExercise() {
 // What is measured: one sample {char, errors, ms} per position that was
 // typed. errors = wrong presses at that position (also after a Backspace);
 // ms = time from the previous press to the FIRST press at that position.
-const MAX_EXTRA = 10;
-const ADVICE_CHANCE = 0.35; // after an exercise with no other message: chance of a tip      // extra letters shown after a word, more are only counted
+const MAX_EXTRA = 10;      // extra letters shown after a word, more are only counted
 const canType = () => !(S.busy || S.pos >= S.text.length || introOpen() || S.view !== "type" || document.body.classList.contains("splashing"));
 
 // the word around position i is text[wordStart(i) .. wordEnd(i)); wordEnd is
@@ -197,7 +206,7 @@ function setState(i, s) {
   if (state[i] === 1) correctChars--;
   if (s === 1) correctChars++;
   state[i] = s;
-  spans[i].className = ["", "ok", "bad", "miss"][s];
+  spans[i].className = s === 0 && focusMask[i] ? "fx" : ["", "ok", "bad", "miss"][s];
 }
 // The sample of position i. Created at the first press there and never
 // deleted, so a mistake fixed with Backspace still counts for the letter.
@@ -280,7 +289,6 @@ export function handleChar(ch) {
   lastTime = now; afterBackspace = false;
   highlightNextKey();
   placeCaret(false);
-  updateLive();
   if (S.pos === S.text.length) {
     endWord();
     finishExercise();
@@ -310,7 +318,6 @@ export function backspace(wholeWord) {
   afterBackspace = true;
   highlightNextKey();
   placeCaret(false);
-  updateLive();
 }
 // Ctrl+Backspace: the cursor goes back to the start of its word, extra letters vanish
 function clearWord() {
@@ -325,16 +332,14 @@ function clearWord() {
 const STREAK_TIERS = [10, 25, 50];
 const streakTier = (n) => STREAK_TIERS.filter((x) => n >= x).length;
 function endWord() {
+  updateLive();                              // the numbers change once per word: calm, readable
   if (wordClean) {
     const before = streakTier(streak);
     streak++;
     renderStreak();
     if (streakTier(streak) > before) FX.bump(el.streak, 1.25);   // next tier: a bigger jump
     else if (streak >= 3) FX.bump(el.streakN);
-    if (streak === 10 || streak % 25 === 0) {   // at 10, then every 25 clean words: a small party
-      FX.burstFrom(el.streak, 40);
-      FX.toast(tPick("toast.streak", { n: streak }), { kind: "streak" });
-    }
+    if (streak === 10 || streak % 25 === 0) FX.burstFrom(el.streak, 40);   // at 10, then every 25: a small party
   }
   wordClean = true;
 }
@@ -357,7 +362,6 @@ export function nudge() {
   if (startTime !== null) tabsResisted++;
   FX.anim(el.caret, [{ scale: "1 1" }, { scale: "2.2 1.3" }, { scale: "1 1" }], { duration: 380, easing: "cubic-bezier(.3,1.6,.5,1)" });
   FX.anim(el.text, [{ translate: "0" }, { translate: "6px" }, { translate: "-4px" }, { translate: "2px" }, { translate: "0" }], { duration: 420, easing: "ease-out" });
-  if (FX.idle()) FX.toast(tPick("tab"), { kind: "tab" }); // never pile up messages
 }
 
 function showWarn(kind) {
@@ -388,10 +392,16 @@ function currentRaw() {
 function currentAccuracy() {
   return presses ? (correctPresses / presses) * 100 : 100;
 }
+// Called once per word, not per keypress. The caret turns green while the
+// speed is at or over the goal of the trainer (targetWpm), so you can feel
+// the pace without looking at the numbers.
 function updateLive() {
-  FX.roll(el.wpm, currentWpm());
-  FX.roll(el.raw, currentRaw());
-  FX.roll(el.acc, currentAccuracy());
+  const wpm = currentWpm();
+  el.wpm.textContent = Math.round(wpm);
+  el.raw.textContent = Math.round(currentRaw());
+  el.acc.textContent = Math.round(currentAccuracy());
+  const goal = S.lastStats?.targetWpm;
+  el.caret.classList.toggle("fast", !!goal && wpm >= goal);
 }
 
 // ---------- "typing now": the header steps back ----------
@@ -411,8 +421,25 @@ export function setMotto(typing = typingNow) {
   el.motto.textContent = typing ? tPick("motto.typing") : t(`splash.${S.mottoIndex}`);
   FX.anim(el.motto, [{ opacity: 0, transform: "translateY(3px)" }, { opacity: 1, transform: "none" }], { duration: 250, easing: "ease-out" });
 }
-// keep WPM ticking while the user pauses
-setInterval(() => { if (startTime !== null && S.pos < S.text.length) updateLive(); }, 500);
+
+// What one exercise changed: a new record, letters mastered, and which
+// letters got faster or slower (smoothed time per letter, avgMs, before and
+// after). Only letters typed in this exercise count. Display only.
+const CHANGE_MIN = 0.03;   // a letter must change by 3 % or more to be named
+function compareStats(before, after, samples) {
+  const prev = Object.fromEntries((before?.keys ?? []).map((k) => [k.char, k]));
+  const typed = new Set(samples.map((x) => x.char).filter((c) => c !== " "));
+  const best = (before?.sessionCount ?? 0) > 0 &&
+    (after.sessions[0]?.wpm ?? 0) > Math.max(0, ...before.sessions.map((x) => x.wpm));   // /stats: newest first
+  const mastered = after.keys.filter((k) => k.mastered && !prev[k.char]?.mastered).map((k) => k.char);
+  const change = after.keys
+    .filter((k) => typed.has(k.char) && prev[k.char]?.count > 0 && prev[k.char].avgMs > 0)
+    .map((k) => ({ c: k.char, pct: Math.round((1 - k.avgMs / prev[k.char].avgMs) * 100) }))
+    .filter((x) => Math.abs(x.pct) >= CHANGE_MIN * 100);
+  const faster = change.filter((x) => x.pct > 0).sort((a, b) => b.pct - a.pct).slice(0, 3);
+  const slower = change.filter((x) => x.pct < 0).sort((a, b) => a.pct - b.pct).slice(0, 2);
+  return { best, mastered, faster, slower };
+}
 
 async function finishExercise() {
   S.busy = true;
@@ -422,13 +449,11 @@ async function finishExercise() {
   // exercise starts
   el.live.classList.add("final");
   setTyping(false);
-  FX.roll(el.wpm, wpm);
-  FX.roll(el.raw, currentRaw());
-  FX.roll(el.acc, accuracy);
-  // remember the state before, to see what this exercise achieved
-  const prevBest = Math.max(0, ...(S.lastStats?.sessions ?? []).map((x) => x.wpm));
-  const hadSessions = (S.lastStats?.sessionCount ?? 0) > 0;
-  const prevMastered = new Set((S.lastStats?.keys ?? []).filter((k) => k.mastered).map((k) => k.char));
+  el.wpm.textContent = Math.round(wpm);
+  el.raw.textContent = Math.round(currentRaw());
+  el.acc.textContent = Math.round(accuracy);
+  // remember the state before, to see what this exercise changed
+  const before = S.lastStats;
   const resisted = tabsResisted;
   // one sample per typed position, in text order (skipped letters have none)
   const samples = records.filter(Boolean);
@@ -436,26 +461,14 @@ async function finishExercise() {
     if (!samples.length) { await loadExercise(); return; }   // nothing typed: nothing to learn from
     const res = await postJSON("/results", { samples, wpm, accuracy });
     await refreshStats();
+    const next = getJSON("/exercise");     // built from the UPDATED model, loads while the result shows
 
-    if (hadSessions && wpm > prevBest) {
-      FX.toast(tPick("toast.best", { wpm: Math.round(wpm) }), { kind: "best" });
-      FX.burstFrom(el.wpm, 80);
-    }
-    if (res.newLetter) {
-      popLetter = res.newLetter;
-      // a joke about this letter if there is one, else a random one
-      const l = res.newLetter;
-      const joke = hasText(`joke.${l}`) ? t(`joke.${l}`) : tPick("joke", { letter: l });
-      FX.toast(t("toast.newLetter", { letter: l, joke }), { kind: "letter", badge: l });
-      FX.burstFrom(el.letters, 60);
-    }
-    justMastered = new Set(S.lastStats.keys.filter((k) => k.mastered && !prevMastered.has(k.char)).map((k) => k.char));
-    if (justMastered.size) FX.toast(tPick("toast.mastered", { letters: [...justMastered].join(" ") }), { kind: "mastered" });
-    if (resisted) FX.toast(tPick("toast.resisted", { n: resisted }), { kind: "resisted" });
-    // now and then, when nothing else happened: a tip or a joke
-    if (FX.idle() && Math.random() < ADVICE_CHANCE) FX.toast(tPick("advice"), { kind: "tip" });
-
-    await loadExercise();   // generated from the UPDATED model
+    const r = compareStats(before, S.lastStats, samples);
+    if (res.newLetter) { popLetter = res.newLetter; FX.burstFrom(el.letters, 60); }
+    justMastered = new Set(r.mastered);
+    if (r.best) FX.burstFrom(el.wpm, 80);
+    await showResult({ wpm, accuracy, newLetter: res.newLetter, resisted, ...r });
+    showExercise(await next);
   } catch (err) {
     console.error(err);
     el.hint.textContent = t("err.server");

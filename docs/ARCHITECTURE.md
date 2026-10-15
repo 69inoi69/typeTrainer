@@ -59,7 +59,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 |---|---|---|
 | bottom | `state.js` | Shared state `S`, page elements `el`, `store` (localStorage that may be blocked), small helpers. |
 | bottom | `i18n.js` | Every interface text in all four languages, `t()`, `tPick()` (a random text from a pool), `applyI18n()`, `setUiLang()`. |
-| bottom | `fx.js` | Visual rewards: confetti, scoreboard digits, the message queue in the status line, the start screen. They never affect what is measured. |
+| bottom | `fx.js` | Visual rewards: confetti, bumps, the message queue in the status line (outside typing), the start screen. They never affect what is measured. |
 | bottom | `api.js` | `getJSON` / `postJSON` for `/api/v1/`, with `?lang=` added. |
 | middle | `tools.js` | Tooltips of the icon buttons, reset, export / import of the statistics. |
 | middle | `keyboard.js` | On-screen keyboard and hands from the layout data, the next key and finger, the size switch, fitting into the window. |
@@ -68,6 +68,8 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `intro.js` | The first-visit intro and "open all letters". |
 | middle | `languages.js` | The language switch and `loadLanguage()`. |
 | middle | `profile.js` | The profile placeholder in the header: name and picture, kept only in the browser. |
+| middle | `result.js` | The result screen in the text window: `showResult(r)` shows what changed and resolves when the user goes on. |
+| middle | `tour.js` | The "how this site works" tour: a ring around each part of the page and a short card. |
 | top | `input.js` | Keydown and phone input, the Type / Stats switch, the keyboard size switch, window resize: sends each action to the module that handles it. |
 | top | `app.js` | Entry point: `init()`. |
 
