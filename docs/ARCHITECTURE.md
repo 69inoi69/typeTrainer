@@ -65,7 +65,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `keyboard.js` | On-screen keyboard and hands from the layout data, the next key and finger, the on / off button, the automatic size that fits the window. |
 | middle | `stats.js` | The stats screen (tiles, WPM chart, heatmap keyboard, letter cards) and `refreshStats()`. |
 | middle | `typing.js` | The text stream (portions added while you type), the caret, `handleChar()` / `backspace()`, the streak, live WPM / accuracy, the "typing now" header mode, the letters bar, sending results. |
-| middle | `intro.js` | The first-visit intro and "open all letters". |
+| middle | `intro.js` | The first-visit intro (home row, space, eyes up). |
 | middle | `languages.js` | The language switch and `loadLanguage()`. |
 | middle | `profile.js` | The profile placeholder in the header: name and picture, kept only in the browser. |
 | middle | `result.js` | The result screen in the text window: `showResult(r)` shows what changed and resolves when the user goes on. |
@@ -111,7 +111,8 @@ is `RoundPortions` portions (30 words).
    portion built from the updated statistics. The browser adds it at the end of
    the text. Once the round has all its portions the browser sends
    `last: true` and gets none. Backspace cannot go back into a portion that was sent.
-4. The last word of the round, or Esc, or 10 s without a key →
+4. The last letter of the last word of the round (no space needed after it;
+   right or wrong), or Esc, or 10 s without a key →
    `POST /api/v1/results` with the samples not sent yet, WPM, accuracy and the
    number of typed characters; the handler learns from the samples the same
    way and stores a session summary. Then the next round starts (step 1).
@@ -129,7 +130,7 @@ All responses are JSON. Every route except `/languages` takes `?lang=<id>`
 | GET | `/api/v1/layout` | | layout JSON |
 | POST | `/api/v1/portion` | `{samples: [{char, errors, ms}], recent: [words], retry: [words], start: bool, last: bool}` | `{portions: [{words, focus, weakest, unlocked, locked}], newLetter, round}`; one portion, `AheadPortions + 1` with `start`, none with `last` |
 | POST | `/api/v1/results` | `{samples: [{char, errors, ms}], chars, wpm, accuracy}` | `{unlocked, newLetter}`; the round is over: one history entry |
-| POST | `/api/v1/progress` | `{unlockAll: true\|false}` | `{unlocked}` |
+| POST | `/api/v1/progress` | `{unlockAll: true\|false}` | `{unlocked}`; for development only, the interface no longer calls it |
 | POST | `/api/v1/reset` | | `{ok: true}`; deletes all data of the language (reset button, until there are user accounts) |
 | GET | `/api/v1/export` | | `{unlocked, keys: {char: {count, mistakes, errEma, timeEma, timedCount}}, sessions: [all, OLDEST first]}`; everything stored for the language |
 | POST | `/api/v1/import` | the same JSON as `/export` | `{unlocked, sessions}`; REPLACES the language's data, or changes nothing if the data is invalid |

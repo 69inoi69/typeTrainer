@@ -32,7 +32,7 @@ mode and no settings: the model alone decides what to practise.
 | Statistics per letter | Per key pair (bigram), per word | Simplest unit that can be explained and shown on the keyboard. Bigrams are a natural extension (section 10). |
 | Smoothed recent statistics (EMA) | Lifetime totals | Skill changes. A lifetime error rate remembers mistakes from weeks ago forever. |
 | Probabilistic choice (softmax) | Always train the single worst letter | Always drilling one letter is boring and over-fits; probabilities give focus *and* variety. |
-| Gradual unlocking | All 26 letters from the start | A beginner cannot learn 26 finger positions at once. The same engine also serves experienced typists: they open everything in the intro. |
+| Gradual unlocking | All 26 letters from the start | A beginner cannot learn 26 finger positions at once. Experienced typists go through the same steps, only much faster. |
 | Statistics, not a neural network | ML model | No training data is needed, every decision can be explained with a formula, and it runs instantly on the server. |
 
 ## 3. What is measured
@@ -225,8 +225,10 @@ portion. A new letter
 starts at the prior difficulty 0.7, which is higher than the difficulty of the
 mastered letters, so it automatically becomes the focus.
 
-**Experienced typists** choose "I can already touch type" in the intro and get
-all letters at once. From then on the engine works only through focus.
+**Experienced typists** start from the first letters too (there is no "open
+all letters" choice, a decision of the owner): typing well, they master the
+open letters quickly and unlock the rest in a short time. Once every letter is
+open the engine works only through focus.
 
 ## 7. Choosing the words
 
@@ -327,7 +329,8 @@ a mistake on its first word changed the text only 20 to 40 words later.
 
 **The round.** The stream is cut into rounds of `RoundPortions = 5` portions
 (30 words), so the user always sees how much is left (a counter `12/30`) and
-gets a result at a clear point. The last word of a round ends it; Esc or
+gets a result at a clear point. The last letter of the last word ends it (no space after it is needed,
+right or wrong); Esc or
 10 seconds without a key end it early. The WPM and accuracy of the round go to
 the history, and the next round starts from scratch: new waiting portions, an
 empty list of recent words. Inside a round the words are still chosen portion
@@ -470,8 +473,8 @@ also measures how repetitive the exercises are (means over exercises):
   table below; quoted in the bullets).
 
 They are measured twice: on the **first 30 exercises** of the beginner above
-(few open letters), and on an **experienced typist** who opens every letter in
-the intro (every letter starts at ≤ 5 % errors and 150..350 ms) over 100
+(few open letters), and on an **experienced typist** with every letter
+already open (every letter starts at ≤ 5 % errors and 150..350 ms) over 100
 exercises.
 
 **Result** (20 typists per strategy; "exercises" = mean number of exercises

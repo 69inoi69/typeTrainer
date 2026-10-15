@@ -105,6 +105,15 @@ export function pulseKey(ch, ok) {
   }
 }
 
+// A letter just opened: its key glows once with a soft ring in the accent
+// colour (--accent), ~380 ms. One animation, no confetti.
+export function glowKey(ch) {
+  const k = keyFor(ch);
+  if (!k || !k.animate) return;
+  k.animate([{ boxShadow: "0 0 0 0 rgba(226, 183, 20, .75)" }, { boxShadow: "0 0 0 10px rgba(226, 183, 20, 0)" }],
+    { duration: 380, easing: "ease-out" });
+}
+
 // Keyboard on / off (the button in the bottom bar, or Alt+K): keyboard and
 // hands together. Its size is not a setting: it is always the largest that
 // fits the window (fitKeyboard below). Remembered in localStorage.

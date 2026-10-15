@@ -391,7 +391,7 @@ type Variety struct {
 }
 
 // RunOpen measures variety the way an experienced typist meets it: every
-// letter is open from the start (the "I can already touch type" choice), and
+// letter is open from the start (a typist who has unlocked everything), and
 // the typist practises n exercises (n * ExerciseWords words). Here any
 // repetition is the strategy's own choice, not forced by a small alphabet.
 func RunOpen(gen *engine.Generator, s Strategy, t *Typist, ep engine.Params, n int) Variety {

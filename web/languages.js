@@ -5,7 +5,7 @@
 import { i18nVars, setUiLang, t, applyI18n } from "./i18n.js";
 import { FX } from "./fx.js";
 import { el, S, store } from "./state.js";
-import { getJSON, postJSON } from "./api.js";
+import { getJSON } from "./api.js";
 import { labelTips } from "./tools.js";
 import { drawKeyboard, applyKb } from "./keyboard.js";
 import { refreshStats, renderStats } from "./stats.js";
@@ -77,13 +77,6 @@ export async function loadLanguage(id) {
     await refreshStats();
     await loadExercise();
     if (S.view === "stats") renderStats();
-
-    if (store.get(`tt.level.${id}`) === "pro" && S.exercise.locked.length && !S.lastStats.sessionCount) {
-      // the GitHub Pages version forgets progress on reload: re-apply the choice
-      await postJSON("/progress", { unlockAll: true });
-      await refreshStats();
-      await loadExercise();
-    }
   } finally {
     S.busy = false;
   }

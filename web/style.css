@@ -48,6 +48,12 @@ body {
   font-family: var(--mono);
 }
 button, input { font: inherit; }
+/* Nothing is selected by dragging the mouse over the text, keys, hands or
+   buttons (it looks broken while typing). Only what a user may want to copy
+   stays selectable: the result screen, the statistics and text fields. */
+body { user-select: none; -webkit-user-select: none; }
+.result, #view-stats, input, textarea { user-select: text; -webkit-user-select: text; }
+::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); color: var(--text); }
 
 /* ---------- header ---------- */
 .top {
@@ -207,7 +213,7 @@ body.typing-now .top:hover .switch, body.typing-now .top:hover .profile { opacit
 }
 .chip.focus { background: var(--accent); color: var(--on-accent); }
 .chip.locked { background: transparent; color: color-mix(in srgb, var(--sub) 55%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 30%, transparent); }
-.chip.pop { animation: pop .7s cubic-bezier(.2, 1.6, .4, 1); }
+.chip.pop { animation: pop 340ms cubic-bezier(.2, 1.6, .4, 1); }   /* a letter just opened */
 .chip.shine { animation: shine 1.1s ease-out; }
 @keyframes shine {
   0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 80%, transparent); transform: scale(1); }
@@ -215,7 +221,12 @@ body.typing-now .top:hover .switch, body.typing-now .top:hover .profile { opacit
   100% { box-shadow: 0 0 0 10px transparent; transform: scale(1); }
 }
 .chip:not(.locked):hover { transform: translateY(-2px); }
-@keyframes pop { 0% { transform: scale(.4); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+/* a small bounce and one soft ring that spreads out and fades (no confetti) */
+@keyframes pop {
+  0% { transform: scale(.7); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 70%, transparent); }
+  55% { transform: scale(1.15); }
+  100% { transform: scale(1); box-shadow: 0 0 0 9px transparent; }
+}
 /* status line under the letters: a fixed slot (it never changes height),
    the warning appears in the same place on top of it */
 .caption-slot { position: relative; margin-top: 8px; min-height: 26px; }
@@ -279,6 +290,10 @@ body.typing-now .top:hover .switch, body.typing-now .top:hover .profile { opacit
 }
 .text.swap { animation: text-in var(--med) var(--ease); }   /* new exercise fades in */
 @keyframes text-in { from { opacity: 0; transform: translateY(4px); } }
+/* words added while you type (typing.js, appendPortions): a soft fade-in,
+   opacity and blur only, so nothing on the screen moves */
+.text span.new { animation: word-in 350ms ease-out; }
+@keyframes word-in { from { opacity: .2; filter: blur(2px); } }
 .text-box.blurred .text { filter: blur(3px); opacity: .5; }
 .focus-hint {
   position: absolute; inset: 0; display: flex; opacity: 0; pointer-events: none;

@@ -31,9 +31,8 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   the home row and press those eight keys, press space with a thumb, then
   "watch the screen". It reacts to the real keys (physical positions, so it
   works with any system layout). `Esc` or "skip" closes it; the **beginner guide**
-  button reopens it. At the end: "Start" (a few letters) or "I can already touch type"
-  (all letters open). Before your first exercise the letters caption also has an
-  "open all letters" button.
+  button reopens it. At the end: "Start". Everyone starts with a few letters;
+  if you already type well, the next ones open quickly.
 - Type the grey text. Wrong key = the letter turns red and you keep going, as
   on monkeytype. Backspace fixes the current word (Ctrl+Backspace: the whole
   word); you can go back into a word you left with a mistake. Space in the middle of a word jumps to the next one. A fixed
@@ -65,7 +64,8 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   focus letter), and every new portion is chosen from your newest statistics.
   The two lines ahead never change under your eyes. A word you mistyped comes
   back a line or two later. The counter `12/30 words` shows how much of the
-  round is left; 10 seconds without a key also end the round.
+  round is left. The round ends as soon as the last letter of its last word is
+  typed (no space needed); 10 seconds without a key also end it.
 - The **bolt + number** at the right end of the numbers line counts clean words
   in a row (typed without a single mistake; hover for the tooltip). It gets
   hotter as it grows: green from 3, yellow from 10, orange with a zapping bolt

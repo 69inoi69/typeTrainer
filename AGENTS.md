@@ -73,6 +73,8 @@ Details: `docs/ARCHITECTURE.md`.
 
 - **Real words only.** No generated letter combinations like keybr.
 - **One mode.** No difficulty switches; the algorithm decides what to practise.
+- **Everyone starts from the first letters.** No "open all letters" in the
+  interface: experienced typists unlock the rest quickly by typing well.
 - **The math in `internal/engine/model.go` is the core of my thesis.** Do not
   change formulas or parameter values on your own. If you think something
   should change, explain it and ask.
