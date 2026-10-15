@@ -402,7 +402,8 @@ user data is a good subject for the evaluation chapter (section 11).
   previous key to this one, so a slow `s` after `t` may really be a slow `t→s`
   movement. It is assigned to `s`.
 - **One global user.** There are no accounts yet; all statistics belong to whoever
-  uses the server.
+  uses the server. The store already keeps data per user (`storage.LocalUser`
+  for everyone), so accounts can be added without changing the model.
 - **Word lists from subtitles.** The 2000 most frequent words per language,
   counted in film and TV subtitles (section 12). That is spoken, everyday
   language: good for typing practice, but some names or slang may remain after

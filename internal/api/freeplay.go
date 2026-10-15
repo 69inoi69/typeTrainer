@@ -16,12 +16,12 @@ import (
 // typing test is passed once.
 
 // freeplayOpen: may this language use free practice?
-func (s *Server) freeplayOpen(l *Language) (bool, error) {
-	passed, err := s.store.TestPassed(l.Info.ID)
+func (s *Server) freeplayOpen(user string, l *Language) (bool, error) {
+	passed, err := s.store.TestPassed(user, l.Info.ID)
 	if err != nil || passed {
 		return passed, err
 	}
-	unlocked, err := s.store.Unlocked(l.Info.ID)
+	unlocked, err := s.store.Unlocked(user, l.Info.ID)
 	if err != nil {
 		return false, err
 	}
@@ -36,7 +36,7 @@ type freeplayPortionRequest struct {
 // POST /api/v1/freeplay/portion?lang= -> {"portions": [{"words": [...]}], "round": 5}.
 // Also gives the words of the typing test, so it works while free practice
 // is still locked. Nothing is learned here: there are no samples.
-func (s *Server) handleFreeplayPortion(w http.ResponseWriter, r *http.Request, l *Language) {
+func (s *Server) handleFreeplayPortion(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	var req freeplayPortionRequest
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&req); err != nil {
 		badRequest(w, "invalid JSON")
@@ -68,7 +68,7 @@ func (s *Server) handleFreeplayPortion(w http.ResponseWriter, r *http.Request, l
 // POST /api/v1/freeplay/results?lang= {wpm, accuracy, chars, perSecond} ->
 // one entry in the free practice history. {"consistency": 81.4 | null}.
 // 403 while free practice is locked.
-func (s *Server) handleFreeplayResults(w http.ResponseWriter, r *http.Request, l *Language) {
+func (s *Server) handleFreeplayResults(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	var req resultsRequest
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&req); err != nil {
 		badRequest(w, "invalid JSON")
@@ -81,7 +81,7 @@ func (s *Server) handleFreeplayResults(w http.ResponseWriter, r *http.Request, l
 	}
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	open, err := s.freeplayOpen(l)
+	open, err := s.freeplayOpen(user, l)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -94,7 +94,7 @@ func (s *Server) handleFreeplayResults(w http.ResponseWriter, r *http.Request, l
 	if v, ok := engine.Consistency(req.PerSecond, s.cfg.ConsistencyMinSeconds); ok {
 		consistency = &v
 	}
-	err = s.store.AddFreeplaySession(l.Info.ID, storage.Session{
+	err = s.store.AddFreeplaySession(user, l.Info.ID, storage.Session{
 		WPM: req.WPM, Accuracy: req.Accuracy, Chars: req.Chars, Consistency: consistency, FinishedAt: time.Now(),
 	})
 	if err != nil {
@@ -109,7 +109,7 @@ func (s *Server) handleFreeplayResults(w http.ResponseWriter, r *http.Request, l
 // practice for good; a failed test changes nothing and can be retried. The
 // test is not stored in any history. The numbers come from the browser, as
 // every result does; the rule itself lives here, in one place.
-func (s *Server) handleFreeplayTest(w http.ResponseWriter, r *http.Request, l *Language) {
+func (s *Server) handleFreeplayTest(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	var req resultsRequest
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&req); err != nil {
 		badRequest(w, "invalid JSON")
@@ -124,12 +124,12 @@ func (s *Server) handleFreeplayTest(w http.ResponseWriter, r *http.Request, l *L
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 	if passed {
-		if err := s.store.SetTestPassed(l.Info.ID, true); err != nil {
+		if err := s.store.SetTestPassed(user, l.Info.ID, true); err != nil {
 			serverError(w, err)
 			return
 		}
 	}
-	open, err := s.freeplayOpen(l)
+	open, err := s.freeplayOpen(user, l)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -139,24 +139,24 @@ func (s *Server) handleFreeplayTest(w http.ResponseWriter, r *http.Request, l *L
 
 // GET /api/v1/freeplay/stats?lang= -> {"unlocked", "testPassed", "sessions"
 // (the last 50, newest first), "sessionCount", "testWpm", "testAccuracy"}.
-func (s *Server) handleFreeplayStats(w http.ResponseWriter, r *http.Request, l *Language) {
+func (s *Server) handleFreeplayStats(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	id := l.Info.ID
-	open, err := s.freeplayOpen(l)
+	open, err := s.freeplayOpen(user, l)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	passed, err := s.store.TestPassed(id)
+	passed, err := s.store.TestPassed(user, id)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	sessions, err := s.store.RecentFreeplaySessions(id, 50)
+	sessions, err := s.store.RecentFreeplaySessions(user, id, 50)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	count, err := s.store.FreeplaySessionCount(id)
+	count, err := s.store.FreeplaySessionCount(user, id)
 	if err != nil {
 		serverError(w, err)
 		return

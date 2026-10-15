@@ -50,7 +50,8 @@ exercises from real words around the user's weak letters.
   cycles. State shared by several modules lives in the object `S`.
 
 - Every API route except `/languages` takes `?lang=`; every `Store` method
-  takes the language id. Each language has its own progress.
+  takes the user id and the language id. Each user has their own progress in
+  each language (the user is always `storage.LocalUser` until accounts exist).
 - Visual rewards (confetti, bumps, toasts) live in `web/fx.js` and must never
   change what is measured or sent to the server. Tab never restarts an
   exercise: that is a deliberate product decision.

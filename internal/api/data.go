@@ -14,10 +14,10 @@ import (
 // POST /api/v1/reset?lang= -> deletes all statistics, unlocked letters and
 // history of the language. Used by the reset button while there are no user
 // accounts: the browser calls it once for every language.
-func (s *Server) handleReset(w http.ResponseWriter, r *http.Request, l *Language) {
+func (s *Server) handleReset(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	if err := s.store.Reset(l.Info.ID); err != nil {
+	if err := s.store.Reset(user, l.Info.ID); err != nil {
 		serverError(w, err)
 		return
 	}
@@ -50,39 +50,39 @@ func oldestFirst(newestFirst []storage.Session) []storage.Session {
 
 // GET /api/v1/export?lang= -> all stored data of the language (nothing is cut:
 // the full history, not the last 50). The browser joins the languages in a file.
-func (s *Server) handleExport(w http.ResponseWriter, r *http.Request, l *Language) {
+func (s *Server) handleExport(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	id := l.Info.ID
-	keys, err := s.store.KeyStats(id)
+	keys, err := s.store.KeyStats(user, id)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	unlocked, err := s.store.Unlocked(id)
+	unlocked, err := s.store.Unlocked(user, id)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	count, err := s.store.SessionCount(id)
+	count, err := s.store.SessionCount(user, id)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	newestFirst, err := s.store.RecentSessions(id, count)
+	newestFirst, err := s.store.RecentSessions(user, id, count)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	passed, err := s.store.TestPassed(id)
+	passed, err := s.store.TestPassed(user, id)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	freeCount, err := s.store.FreeplaySessionCount(id)
+	freeCount, err := s.store.FreeplaySessionCount(user, id)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	free, err := s.store.RecentFreeplaySessions(id, freeCount)
+	free, err := s.store.RecentFreeplaySessions(user, id, freeCount)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -95,7 +95,7 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request, l *Languag
 
 // POST /api/v1/import?lang= <the JSON from /export> -> REPLACES everything stored
 // for the language. The data is checked first; if anything is wrong nothing changes.
-func (s *Server) handleImport(w http.ResponseWriter, r *http.Request, l *Language) {
+func (s *Server) handleImport(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	r.Body = http.MaxBytesReader(w, r.Body, int64(s.cfg.MaxImportBytes))
 	var in langExport
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
@@ -113,31 +113,31 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request, l *Languag
 
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	if err := s.store.Reset(id); err != nil {
+	if err := s.store.Reset(user, id); err != nil {
 		serverError(w, err)
 		return
 	}
-	if err := s.store.SaveKeyStats(id, in.Keys); err != nil {
+	if err := s.store.SaveKeyStats(user, id, in.Keys); err != nil {
 		serverError(w, err)
 		return
 	}
-	if err := s.store.SetUnlocked(id, in.Unlocked); err != nil {
+	if err := s.store.SetUnlocked(user, id, in.Unlocked); err != nil {
 		serverError(w, err)
 		return
 	}
 	for _, sess := range in.Sessions {
-		if err := s.store.AddSession(id, sess); err != nil {
+		if err := s.store.AddSession(user, id, sess); err != nil {
 			serverError(w, err)
 			return
 		}
 	}
 	if f := in.Freeplay; f != nil {
-		if err := s.store.SetTestPassed(id, f.TestPassed); err != nil {
+		if err := s.store.SetTestPassed(user, id, f.TestPassed); err != nil {
 			serverError(w, err)
 			return
 		}
 		for _, sess := range f.Sessions {
-			if err := s.store.AddFreeplaySession(id, sess); err != nil {
+			if err := s.store.AddFreeplaySession(user, id, sess); err != nil {
 				serverError(w, err)
 				return
 			}

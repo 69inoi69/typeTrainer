@@ -166,8 +166,12 @@ languages into one file `{app, version, exportedAt, languages: {id: <export>}}`
 (see `web/tools.js`, "export / import"). Import and export use only the existing
 `Store` methods, so the future PostgreSQL store needs nothing extra.
 
-Every `Store` method takes the language id, so each language has its own
-statistics, unlocked letters and history. Each language also has its own
+Every `Store` method takes the user id and the language id, so each user
+has their own statistics, unlocked letters and history in each language.
+There are no accounts yet: `userOf` in `internal/api/handlers.go` gives every
+request the same user, `storage.LocalUser` ("local"). When login is added,
+`userOf` reads the session instead, and nothing else in the API or the store
+has to change. Each language also has its own
 `Generator` (own unlock order and first lesson), built in `setup.go`.
 
 ## Modes
@@ -206,20 +210,24 @@ transaction (`SELECT ... FOR UPDATE`) instead.
 ## Adding PostgreSQL later
 
 Create `internal/storage/postgres.go` with a type that has the thirteen `Store`
-methods and change one line in `setup.go`. A possible schema, once accounts exist:
+methods and change one line in `setup.go`. Every method already takes the
+user and the language, so every table is keyed by both. A possible schema:
 
 ```sql
 CREATE TABLE users     (id BIGSERIAL PRIMARY KEY, name TEXT UNIQUE NOT NULL,
-                        unlocked INT NOT NULL DEFAULT 0, created_at TIMESTAMPTZ DEFAULT now());
-CREATE TABLE key_stats (user_id BIGINT REFERENCES users(id), char TEXT,
+                        created_at TIMESTAMPTZ DEFAULT now());
+CREATE TABLE progress  (user_id BIGINT REFERENCES users(id), lang TEXT,
+                        unlocked INT NOT NULL DEFAULT 0, test_passed BOOLEAN NOT NULL DEFAULT false,
+                        PRIMARY KEY (user_id, lang));
+CREATE TABLE key_stats (user_id BIGINT REFERENCES users(id), lang TEXT, char TEXT,
                         count INT, mistakes INT, err_ema DOUBLE PRECISION,
                         time_ema DOUBLE PRECISION, timed_count INT,
-                        PRIMARY KEY (user_id, char));
+                        PRIMARY KEY (user_id, lang, char));
 CREATE TABLE sessions  (id BIGSERIAL PRIMARY KEY, user_id BIGINT REFERENCES users(id),
-                        wpm REAL, accuracy REAL, chars INT, consistency REAL NULL, finished_at TIMESTAMPTZ DEFAULT now());
+                        lang TEXT, mode TEXT, -- 'learning' or 'freeplay'
+                        wpm REAL, accuracy REAL, chars INT, consistency REAL NULL,
+                        finished_at TIMESTAMPTZ DEFAULT now());
 ```
-
-With accounts, every `Store` method gets a `userID` parameter.
 
 ## Two ways to run: server and GitHub Pages
 
