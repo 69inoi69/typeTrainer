@@ -148,7 +148,8 @@ func (t *Typist) Skilled(ep engine.Params) bool {
 // Strategy chooses the text of the next exercise.
 type Strategy interface {
 	Name() string
-	Text(stats map[string]engine.KeyStat, unlocked int) string
+	// typed: letters typed since every letter was open (engine.MaxRank)
+	Text(stats map[string]engine.KeyStat, unlocked, typed int) string
 	Observe(samples []engine.Sample) // sees what was typed (only BestOfN needs it)
 }
 
@@ -159,8 +160,8 @@ type Adaptive struct {
 }
 
 func (a *Adaptive) Name() string { return "adaptive (softmax)" }
-func (a *Adaptive) Text(stats map[string]engine.KeyStat, unlocked int) string {
-	return a.Gen.Next(stats, unlocked, a.EP).Text
+func (a *Adaptive) Text(stats map[string]engine.KeyStat, unlocked, typed int) string {
+	return a.Gen.Next(stats, unlocked, typed, a.EP).Text
 }
 func (a *Adaptive) Observe([]engine.Sample) {}
 
@@ -186,13 +187,13 @@ type Stream struct {
 func (s *Stream) RoundStart() bool { return s.typed == 1 }
 
 func (s *Stream) Name() string { return "stream (portions)" }
-func (s *Stream) Text(stats map[string]engine.KeyStat, unlocked int) string {
+func (s *Stream) Text(stats map[string]engine.KeyStat, unlocked, typed int) string {
 	if s.typed == s.EP.RoundPortions { // the round is over: a new one
 		s.queue, s.recent, s.retry, s.built, s.typed = nil, nil, nil, 0, 0
 	}
 	for len(s.queue) < s.EP.AheadPortions+1 && s.built < s.EP.RoundPortions {
 		s.built++
-		por := s.Gen.Portion(stats, unlocked, s.recent, s.retry, s.EP)
+		por := s.Gen.Portion(stats, unlocked, typed, s.recent, s.retry, s.EP)
 		s.retry = nil
 		s.recent = append(s.recent, por.Words...)
 		if len(s.recent) > 2*s.EP.RecentWords { // keep the list short; Portion uses the end only
@@ -229,7 +230,7 @@ type Random struct {
 }
 
 func (s *Random) Name() string { return "random words" }
-func (s *Random) Text(_ map[string]engine.KeyStat, unlocked int) string {
+func (s *Random) Text(_ map[string]engine.KeyStat, unlocked, _ int) string {
 	return pick(s.Gen.Words(unlocked), s.Words, s.Rng, func(cands []string) string {
 		return cands[s.Rng.Intn(len(cands))]
 	})
@@ -251,7 +252,7 @@ type BestOfN struct {
 
 func (s *BestOfN) Name() string { return fmt.Sprintf("best of %d (monkeytype)", s.P.BestOf) }
 
-func (s *BestOfN) Text(_ map[string]engine.KeyStat, unlocked int) string {
+func (s *BestOfN) Text(_ map[string]engine.KeyStat, unlocked, _ int) string {
 	return pick(s.Gen.Words(unlocked), s.Words, s.Rng, func(cands []string) string {
 		best, bestScore := "", -1.0
 		for i := 0; i < s.P.BestOf; i++ {
@@ -325,6 +326,9 @@ type Result struct {
 	AllOpenAt int     // exercise after which every letter was unlocked (0 = never)
 	Variety   Variety // over the first FirstExercises exercises (the first lessons)
 	Letters   float64 // mean letters per word over the whole run (NaN without words)
+	// RankAfter: mean place in the frequency list of the words typed after
+	// every letter was open (NaN if never): how rare the words got.
+	RankAfter float64
 }
 
 // typeNext lets the typist type the strategy's next text. Inside a round of
@@ -348,8 +352,11 @@ func Run(gen *engine.Generator, s Strategy, t *Typist, ep engine.Params, p Param
 	v := variety{size: ep.ExerciseWords, rankOf: gen.Rank}
 	exercises := func(words int) int { return (words + ep.ExerciseWords - 1) / ep.ExerciseWords }
 	letters := 0
+	typed := 0               // letters typed since every letter was open
+	rankSum, rankN := 0.0, 0 // ranks of the words typed then
+	all := len(gen.Order())
 	for words := 0; words < p.MaxExercises*ep.ExerciseWords; {
-		text := s.Text(stats, unlocked)
+		text := s.Text(stats, unlocked, typed)
 		if len(text) == 0 {
 			break
 		}
@@ -357,6 +364,13 @@ func Run(gen *engine.Generator, s Strategy, t *Typist, ep engine.Params, p Param
 			v.add(text)
 		}
 		samples := typeNext(s, t, text)
+		if unlocked == all {
+			typed += len(samples)
+			for _, w := range strings.Fields(text) {
+				rankSum += float64(gen.Rank(w))
+				rankN++
+			}
+		}
 		words += len(strings.Fields(text))
 		letters += len(samples) // one sample per letter
 		res.Letters = float64(letters) / float64(words)
@@ -368,12 +382,17 @@ func Run(gen *engine.Generator, s Strategy, t *Typist, ep engine.Params, p Param
 		}
 		if res.AllOpenAt > 0 && t.Skilled(ep) {
 			res.Exercises, res.Reached = exercises(words), true
-			res.Variety = v.result()
-			return res
+			break
 		}
 	}
-	res.Exercises = p.MaxExercises
+	if !res.Reached {
+		res.Exercises = p.MaxExercises
+	}
 	res.Variety = v.result()
+	res.RankAfter = math.NaN()
+	if rankN > 0 {
+		res.RankAfter = rankSum / float64(rankN)
+	}
 	if letters == 0 {
 		res.Letters = math.NaN()
 	}
@@ -398,13 +417,15 @@ func RunOpen(gen *engine.Generator, s Strategy, t *Typist, ep engine.Params, n i
 	stats := map[string]engine.KeyStat{}
 	all := len(gen.Order())
 	v := variety{size: ep.ExerciseWords, rankOf: gen.Rank}
+	typed := 0
 	for words := 0; words < n*ep.ExerciseWords; {
-		text := s.Text(stats, all)
+		text := s.Text(stats, all, typed)
 		if len(text) == 0 {
 			break
 		}
 		v.add(text)
 		samples := typeNext(s, t, text)
+		typed += len(samples)
 		words += len(strings.Fields(text))
 		s.Observe(samples)
 		stats = engine.Apply(stats, samples, ep)

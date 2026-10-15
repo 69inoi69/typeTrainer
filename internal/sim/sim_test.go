@@ -65,7 +65,7 @@ func TestBestOfN_PrefersWorstScore(t *testing.T) {
 			engine.Sample{Char: "z", Ms: 900, Errors: 1})
 	}
 	s.Observe(samples)
-	text := s.Text(nil, len(gen.Order()))
+	text := s.Text(nil, len(gen.Order()), 0)
 	withZ := 0
 	for _, w := range strings.Fields(text) {
 		if strings.Contains(w, "z") {
@@ -83,7 +83,7 @@ func TestBestOfN_UntimedPressesHaveNoScore(t *testing.T) {
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
 	s := &sim.BestOfN{Gen: gen, Words: 10, Rng: rand.New(rand.NewSource(2)), P: cfg.Sim}
 	s.Observe([]engine.Sample{{Char: "a", Ms: 0, Errors: 1}})
-	if got := s.Text(nil, 2); len(strings.Fields(got)) != 10 {
+	if got := s.Text(nil, 2, 0); len(strings.Fields(got)) != 10 {
 		t.Fatalf("want 10 words, got %q", got)
 	}
 }
@@ -128,7 +128,7 @@ type fixed struct {
 }
 
 func (f *fixed) Name() string { return "fixed" }
-func (f *fixed) Text(map[string]engine.KeyStat, int) string {
+func (f *fixed) Text(map[string]engine.KeyStat, int, int) string {
 	t := f.texts[f.i%len(f.texts)]
 	f.i++
 	return t
@@ -199,7 +199,7 @@ func TestStream_MistypedWordsComeBack(t *testing.T) {
 	words := strings.Fields("the then than tan ant net ten hen eat tea ate heat hat that")
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
 	s := &sim.Stream{Gen: gen, EP: cfg.Engine}
-	first := strings.Fields(s.Text(nil, len(gen.Order())))
+	first := strings.Fields(s.Text(nil, len(gen.Order()), 0))
 	// every letter of the first word wrong, the rest clean
 	var samples []engine.Sample
 	for i, w := range first {
@@ -214,7 +214,7 @@ func TestStream_MistypedWordsComeBack(t *testing.T) {
 	s.Observe(samples)
 	found := false
 	for i := 0; i < cfg.Engine.AheadPortions+1; i++ {
-		for _, w := range strings.Fields(s.Text(nil, len(gen.Order()))) {
+		for _, w := range strings.Fields(s.Text(nil, len(gen.Order()), 0)) {
 			found = found || w == first[0]
 		}
 	}
@@ -229,7 +229,7 @@ func TestStream_Rounds(t *testing.T) {
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
 	s := &sim.Stream{Gen: gen, EP: cfg.Engine}
 	for i := 0; i < 2*cfg.Engine.RoundPortions; i++ {
-		s.Text(nil, len(gen.Order()))
+		s.Text(nil, len(gen.Order()), 0)
 		if want := i%cfg.Engine.RoundPortions == 0; s.RoundStart() != want {
 			t.Fatalf("portion %d: RoundStart = %v, want %v", i, s.RoundStart(), want)
 		}

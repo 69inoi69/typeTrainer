@@ -23,7 +23,48 @@ type Generator struct {
 	rank  map[string]int // word -> its place in words (0 = the most frequent)
 	order []string       // unlock order: letters sorted by frequency in the dictionary
 	start int            // how many letters the first lesson has
+	wp    WordParams     // how the frequency limit grows (SetWordParams)
+	floor map[string]int // letter -> rank of its FloorWords-th most common word in the whole list
 	rng   *rand.Rand
+}
+
+// WordParams say how far down the frequency list the words may come from
+// (docs/ALGORITHM.md section 7). They live here and not in Params because
+// they only concern word choice, never the letter model of model.go.
+type WordParams struct {
+	// FloorWords: a letter that is rare among the common words (Russian
+	// "ф") gets its FloorWords most common words of the whole list without
+	// the frequency penalty when it is the focus, so it is not trained on
+	// one word again and again. 0 = off.
+	FloorWords int
+	// RampLetters: how many letters the user types in learning after the
+	// whole alphabet is open until MaxRank reaches the whole list. <= 0 =
+	// the whole list right away.
+	RampLetters float64
+}
+
+// SetWordParams sets the frequency limit numbers (zero values: no floor,
+// no ramp). Call it once, before the generator is used.
+func (g *Generator) SetWordParams(wp WordParams) {
+	g.wp = wp
+	g.floor = map[string]int{}
+	if wp.FloorWords <= 0 {
+		return
+	}
+	count := map[rune]int{}
+	for i, w := range g.words { // most frequent first
+		seen := map[rune]bool{}
+		for _, r := range w {
+			if seen[r] {
+				continue
+			}
+			seen[r] = true
+			if count[r] < wp.FloorWords {
+				count[r]++
+				g.floor[string(r)] = i // the last one counted is the FloorWords-th (or the last word)
+			}
+		}
+	}
 }
 
 // NewGenerator computes the unlock order and the first lesson size once.
@@ -151,20 +192,24 @@ type Exercise struct {
 
 // pool is what both Next and Portion need before they pick words: the
 // difficulty and softmax weight of every open letter, the open words grouped
-// by letter, and each word's base weight
-// exp(meanDifficulty / T) * RankWeight.
+// by letter, each word's difficulty weight exp(meanDifficulty / T) and its
+// place in the frequency list (for RankWeight).
 type pool struct {
 	open     []string
 	words    []string
 	index    map[string]int   // word -> its index in words
 	letterW  []float64        // softmax weight of open[i]
-	byLetter map[string][]int // letter -> indexes of the words that contain it
-	baseW    []float64        // base weight of words[i] (difficulty and frequency)
+	byLetter map[string][]int // letter -> indexes of the words that contain it, most common first
+	diffW    []float64        // difficulty weight of words[i]
+	rank     []int            // frequency rank of words[i]
+	maxRank  float64          // MaxRank of this pool
+	floor    map[string]int   // Generator.floor
 	weakest  string           // the open letter with the highest difficulty
 }
 
-func (g *Generator) newPool(stats map[string]KeyStat, unlocked int, p Params) *pool {
-	pl := &pool{open: g.order[:unlocked], words: g.eligible(unlocked), index: map[string]int{}, byLetter: map[string][]int{}}
+func (g *Generator) newPool(stats map[string]KeyStat, unlocked, typed int, p Params) *pool {
+	pl := &pool{open: g.order[:unlocked], words: g.eligible(unlocked), index: map[string]int{}, byLetter: map[string][]int{},
+		maxRank: g.MaxRank(unlocked, typed, p), floor: g.floor}
 	diff := map[rune]float64{}
 	pl.letterW = make([]float64, len(pl.open))
 	best := -1.0
@@ -176,8 +221,8 @@ func (g *Generator) newPool(stats map[string]KeyStat, unlocked int, p Params) *p
 			best, pl.weakest = d, c
 		}
 	}
-	pl.baseW = make([]float64, len(pl.words))
-	maxRank := g.MaxRank(unlocked, p)
+	pl.diffW = make([]float64, len(pl.words))
+	pl.rank = make([]int, len(pl.words))
 	for i, w := range pl.words {
 		pl.index[w] = i
 		sum := 0.0
@@ -189,9 +234,25 @@ func (g *Generator) newPool(stats map[string]KeyStat, unlocked int, p Params) *p
 				pl.byLetter[string(r)] = append(pl.byLetter[string(r)], i)
 			}
 		}
-		pl.baseW[i] = SoftmaxWeight(sum/float64(len(w)), p) * RankWeight(g.rank[w], maxRank, p)
+		pl.diffW[i] = SoftmaxWeight(sum/float64(len(w)), p)
+		pl.rank[i] = g.rank[w]
 	}
 	return pl
+}
+
+// letterMaxRank is MaxRank for the words of one focus letter: never below
+// the rank of the letter's FloorWords-th most common word in the whole list.
+// For most letters that word is far inside RankStart and nothing changes;
+// a letter with few common words (Russian "ф": its 10th word is at rank
+// ~1400) gets its most common words without the penalty. Counting in the
+// whole list, not only among open words, keeps the first lessons on common
+// words: there every letter has few open words.
+func (pl *pool) letterMaxRank(letter string) float64 {
+	floor, ok := pl.floor[letter]
+	if !ok {
+		return pl.maxRank
+	}
+	return max(pl.maxRank, float64(floor))
 }
 
 // Rank is a word's place in the frequency list (0 = the most frequent word);
@@ -203,24 +264,29 @@ func (g *Generator) Rank(word string) int {
 	return -1
 }
 
-// MaxRank is the frequency rank up to which words get no penalty when
-// `unlocked` letters are open. It goes in a straight line from RankStart in
-// the first lesson to the whole list when every letter is open:
+// MaxRank is the frequency rank up to which words get no penalty. It is
+// flat while the user is still learning the letters and grows only after
+// the whole alphabet is open:
 //
-//	MaxRank = RankStart + (words - RankStart) * progress   (never below RankStart)
-//	progress = (unlocked - Start) / (letters - Start)     (0..1)
+//	letters still locked:  MaxRank = RankStart
+//	every letter open:     MaxRank = RankStart + (words - RankStart) * min(1, typed / RampLetters)
 //
-// So, like monkeytype's "English 200 / 1k / 2k", the user starts with the
-// most common words and gets rarer ones step by step. A letter opens only
-// when every open letter is mastered, so `progress` measures real skill.
-func (g *Generator) MaxRank(unlocked int, p Params) float64 {
-	progress := 1.0
-	if all := len(g.order); all > g.start {
-		progress = float64(g.Clamp(unlocked)-g.start) / float64(all-g.start)
-	}
+// typed = letters typed in learning since every letter was open. So, like
+// monkeytype's "English 200 / 1k / 2k", the user meets only the most common
+// words while new letters keep coming (one difficulty at a time), and rarer
+// words enter step by step once the keyboard is known. The limit never goes
+// below RankStart, and never above the whole list.
+func (g *Generator) MaxRank(unlocked, typed int, p Params) float64 {
 	start, end := float64(p.RankStart), float64(len(g.words))
 	if end < start { // a short list: never lower the limit
 		end = start
+	}
+	if g.Clamp(unlocked) < len(g.order) {
+		return start
+	}
+	progress := 1.0
+	if g.wp.RampLetters > 0 {
+		progress = min(1, max(0, float64(typed)/g.wp.RampLetters))
 	}
 	return start + (end-start)*progress
 }
@@ -246,7 +312,8 @@ func RankWeight(rank int, maxRank float64, p Params) float64 {
 func (pl *pool) pickFocus(r float64) string { return pl.open[WeightedPick(pl.letterW, r)] }
 
 // pickWord is step 2: a word that contains the focus letter, with
-// P(word) ~ exp(meanDifficulty / T) * RankWeight * RepeatPenalty^uses. Words in `avoid`
+// P(word) ~ exp(meanDifficulty / T) * RankWeight * RepeatPenalty^uses, where
+// RankWeight uses the letter's own limit (letterMaxRank). Words in `avoid`
 // (the neighbours of this slot) are never picked, so no word appears twice
 // in a row. Returns an index into pl.words.
 func (pl *pool) pickWord(focus string, uses []int, p Params, r float64, avoid ...int) int {
@@ -259,6 +326,7 @@ func (pl *pool) pickWord(focus string, uses []int, p Params, r float64, avoid ..
 	// (with nothing else left, a repeat is allowed: one-word dictionary)
 	banned := func(idx int) bool { return n < len(pl.words) && contains(avoid, idx) }
 	cands := pl.byLetter[focus]
+	maxRank := pl.letterMaxRank(focus)
 	if len(cands) == 0 { // a letter with no open word: pick from all words
 		cands = make([]int, len(pl.words))
 		for i := range pl.words {
@@ -267,7 +335,7 @@ func (pl *pool) pickWord(focus string, uses []int, p Params, r float64, avoid ..
 	}
 	w := make([]float64, len(cands))
 	for j, idx := range cands {
-		w[j] = pl.baseW[idx]
+		w[j] = pl.diffW[idx] * RankWeight(pl.rank[idx], maxRank, p)
 		for u := 0; u < uses[idx]; u++ {
 			w[j] *= p.RepeatPenalty
 		}
@@ -305,11 +373,11 @@ func (g *Generator) letters(unlocked int) (open, locked []string) {
 //
 // The app now uses Portion (the stream); Next is kept as the earlier
 // strategy, so the simulation can compare the two.
-func (g *Generator) Next(stats map[string]KeyStat, unlocked int, p Params) Exercise {
+func (g *Generator) Next(stats map[string]KeyStat, unlocked, typed int, p Params) Exercise {
 	unlocked = g.Clamp(unlocked)
 	ex := Exercise{}
 	ex.Unlocked, ex.Locked = g.letters(unlocked)
-	pl := g.newPool(stats, unlocked, p)
+	pl := g.newPool(stats, unlocked, typed, p)
 	if len(pl.words) == 0 {
 		return ex
 	}
@@ -342,6 +410,7 @@ type Portion struct {
 // user types is a stream of portions, each built from the newest statistics,
 // see docs/ALGORITHM.md section 7).
 //
+//   - typed: letters typed in learning since every letter was open (MaxRank).
 //   - recent: the words already in the stream, oldest first. Only the last
 //     RecentWords count for RepeatPenalty, and the next word is never the
 //     same as the last one.
@@ -350,11 +419,11 @@ type Portion struct {
 //
 // The rest of the slots: ONE focus letter for the whole portion (step 1 of
 // Next, done once), then each word is step 2 of Next for that letter.
-func (g *Generator) Portion(stats map[string]KeyStat, unlocked int, recent, retry []string, p Params) Portion {
+func (g *Generator) Portion(stats map[string]KeyStat, unlocked, typed int, recent, retry []string, p Params) Portion {
 	unlocked = g.Clamp(unlocked)
 	por := Portion{}
 	por.Unlocked, por.Locked = g.letters(unlocked)
-	pl := g.newPool(stats, unlocked, p)
+	pl := g.newPool(stats, unlocked, typed, p)
 	if len(pl.words) == 0 || p.PortionWords <= 0 {
 		return por
 	}

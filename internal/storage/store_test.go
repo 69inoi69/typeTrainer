@@ -29,6 +29,7 @@ var storeTests = map[string]func(*testing.T, Store){
 	"SessionFields":             testSessionFields,
 	"KeyStatsFields":            testKeyStatsFields,
 	"Lengths":                   testLengths,
+	"LettersTyped":              testLettersTyped,
 }
 
 // runStoreTests runs every test on a fresh, empty store from newStore.
@@ -305,5 +306,27 @@ func testLengths(t *testing.T, m Store) {
 	}
 	if none, _ := m.SessionLengths(u, "pl"); none == nil || len(none) != 0 {
 		t.Fatalf("no history: lengths must be an empty list, got %#v", none)
+	}
+}
+
+func testLettersTyped(t *testing.T, m Store) {
+	if n, err := m.LettersTyped(u, "en", 26); err != nil || n != 0 {
+		t.Fatalf("no history: %d, %v; want 0", n, err)
+	}
+	m.AddSession(u, "en", Session{Chars: 100, Unlocked: 20}) // still learning letters
+	m.AddSession(u, "en", Session{Chars: 150, Unlocked: 26})
+	m.AddSession(u, "en", Session{Chars: 50, Unlocked: 26})
+	m.AddSession(u, "pl", Session{Chars: 999, Unlocked: 32})              // another language
+	m.AddSession("someone-else", "en", Session{Chars: 999, Unlocked: 26}) // another user
+	m.AddFreeplaySession(u, "en", Session{Chars: 999})                    // free practice never counts
+	if n, _ := m.LettersTyped(u, "en", 26); n != 200 {
+		t.Fatalf("all letters open: %d, want 200", n)
+	}
+	if n, _ := m.LettersTyped(u, "en", 20); n != 300 {
+		t.Fatalf("at least 20 open: %d, want 300", n)
+	}
+	m.Reset(u, "en")
+	if n, _ := m.LettersTyped(u, "en", 0); n != 0 {
+		t.Fatalf("after reset: %d, want 0", n)
 	}
 }

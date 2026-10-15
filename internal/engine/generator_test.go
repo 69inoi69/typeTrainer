@@ -66,7 +66,7 @@ func TestFirstLesson_HasEnoughRealWords(t *testing.T) {
 
 func TestNext_UsesOnlyOpenLetters(t *testing.T) {
 	g := newTestGen(2)
-	ex := g.Next(nil, 0, testParams) // brand new user: no stats, unlocked = 0
+	ex := g.Next(nil, 0, 0, testParams) // brand new user: no stats, unlocked = 0
 	open := strings.Join(ex.Unlocked, "") + " "
 	for _, r := range ex.Text {
 		if !strings.ContainsRune(open, r) {
@@ -84,7 +84,7 @@ func TestNext_UsesOnlyOpenLetters(t *testing.T) {
 func TestNext_NoWordTwiceInARow(t *testing.T) {
 	g := newTestGen(3)
 	for i := 0; i < 50; i++ {
-		w := strings.Fields(g.Next(nil, 0, testParams).Text)
+		w := strings.Fields(g.Next(nil, 0, 0, testParams).Text)
 		for j := 1; j < len(w); j++ {
 			if w[j] == w[j-1] {
 				t.Fatalf("repeated word %q in %v", w[j], w)
@@ -104,7 +104,7 @@ func TestNext_WeakLetterGetsFocus(t *testing.T) {
 		g := newTestGen(42)
 		hit, total := 0, 0
 		for i := 0; i < 200; i++ {
-			for _, r := range g.Next(stats, all, testParams).Text {
+			for _, r := range g.Next(stats, all, 0, testParams).Text {
 				if r != ' ' {
 					total++
 					if string(r) == letter {
@@ -130,7 +130,7 @@ func TestNext_WeakLetterGetsFocus(t *testing.T) {
 	if after < before*2 {
 		t.Fatalf("'w' share went from %.3f to %.3f, expected at least 2x", before, after)
 	}
-	if ex := newTestGen(1).Next(weak, all, testParams); ex.Focus != "w" {
+	if ex := newTestGen(1).Next(weak, all, 0, testParams); ex.Focus != "w" {
 		t.Fatalf("focus = %q, want w", ex.Focus)
 	}
 }
@@ -176,7 +176,7 @@ func TestNext_MultiByteLetters(t *testing.T) {
 				t.Fatalf("%s: %q is %d letters, want 1", name, c, n)
 			}
 		}
-		ex := g.Next(nil, 0, p)
+		ex := g.Next(nil, 0, 0, p)
 		if ex.Text == "" {
 			t.Fatalf("%s: empty exercise", name)
 		}
@@ -187,7 +187,7 @@ func TestNext_MultiByteLetters(t *testing.T) {
 			}
 		}
 		// with everything open, every word must be usable
-		all := g.Next(nil, len(g.Order()), p)
+		all := g.Next(nil, len(g.Order()), 0, p)
 		if len(strings.Fields(all.Text)) != p.ExerciseWords {
 			t.Fatalf("%s: got %q", name, all.Text)
 		}

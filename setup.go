@@ -90,6 +90,7 @@ func loadLanguage(info language.Language, cfg config.Config, seed int64) (*api.L
 		return nil, fmt.Errorf("word list is empty")
 	}
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(seed)), cfg.Engine)
+	gen.SetWordParams(cfg.Words)
 	free := freeplay.NewPicker(words, rand.New(rand.NewSource(seed+1)))
 	return &api.Language{Info: info, Gen: gen, Free: free, LayoutJSON: layoutJSON}, nil
 }

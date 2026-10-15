@@ -51,6 +51,13 @@ func (s *Server) handlePortion(w http.ResponseWriter, r *http.Request, user stri
 		serverError(w, err)
 		return
 	}
+	typed := 0 // letters typed since every letter was open: how far MaxRank has grown
+	if all := len(l.Gen.Order()); unlocked == all {
+		if typed, err = s.store.LettersTyped(user, l.Info.ID, all); err != nil {
+			serverError(w, err)
+			return
+		}
+	}
 	recent := append([]string{}, req.Recent...)
 	count := 1
 	if req.Last {
@@ -61,7 +68,7 @@ func (s *Server) handlePortion(w http.ResponseWriter, r *http.Request, user stri
 	out := make([]engine.Portion, count)
 	s.genMu.Lock()
 	for i := range out {
-		out[i] = l.Gen.Portion(stats, unlocked, recent, req.Retry, p)
+		out[i] = l.Gen.Portion(stats, unlocked, typed, recent, req.Retry, p)
 		recent = append(recent, out[i].Words...)
 		req.Retry = nil // mistyped words come back once, in the first portion
 	}

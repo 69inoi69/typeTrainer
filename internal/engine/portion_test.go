@@ -10,7 +10,7 @@ func newRng(seed int64) *rand.Rand { return rand.New(rand.NewSource(seed)) }
 
 func TestPortion_NewUserOpenLettersOnly(t *testing.T) {
 	g := newTestGen(2)
-	por := g.Portion(nil, 0, nil, nil, testParams) // no stats, nothing stored yet
+	por := g.Portion(nil, 0, 0, nil, nil, testParams) // no stats, nothing stored yet
 	if len(por.Words) != testParams.PortionWords {
 		t.Fatalf("got %d words, want %d", len(por.Words), testParams.PortionWords)
 	}
@@ -35,8 +35,8 @@ func TestPortion_EveryWordHasTheFocus(t *testing.T) {
 	g := newTestGen(5)
 	all := len(g.Order())
 	for i := 0; i < 100; i++ {
-		por := g.Portion(nil, all, nil, nil, testParams)
-		if len(g.newPool(nil, all, testParams).byLetter[por.Focus]) < 3 {
+		por := g.Portion(nil, all, 0, nil, nil, testParams)
+		if len(g.newPool(nil, all, 0, testParams).byLetter[por.Focus]) < 3 {
 			continue // a letter with very few words may borrow others
 		}
 		for _, w := range por.Words {
@@ -55,7 +55,7 @@ func TestPortion_NoWordTwiceInARow(t *testing.T) {
 		if len(stream) > 0 {
 			retry = stream[len(stream)-1:] // the very last word comes back
 		}
-		stream = append(stream, g.Portion(nil, 0, stream, retry, testParams).Words...)
+		stream = append(stream, g.Portion(nil, 0, 0, stream, retry, testParams).Words...)
 	}
 	for j := 1; j < len(stream); j++ {
 		if stream[j] == stream[j-1] {
@@ -68,7 +68,7 @@ func TestPortion_RetryWordsComeBack(t *testing.T) {
 	g := newTestGen(6)
 	all := len(g.Order())
 	retry := []string{"water", "people", "sentence"} // three, but RetryWords = 2
-	por := g.Portion(nil, all, nil, retry, testParams)
+	por := g.Portion(nil, all, 0, nil, retry, testParams)
 	got := 0
 	for _, w := range por.Words {
 		if w == "water" || w == "people" {
@@ -82,7 +82,7 @@ func TestPortion_RetryWordsComeBack(t *testing.T) {
 		t.Fatalf("want water and people in %v", por.Words)
 	}
 	// a word with a locked letter (or not in the list) never comes back
-	por = g.Portion(nil, 0, nil, []string{"zzz", "water"}, testParams) // w is locked at the start
+	por = g.Portion(nil, 0, 0, nil, []string{"zzz", "water"}, testParams) // w is locked at the start
 	for _, w := range por.Words {
 		if w == "zzz" || w == "water" {
 			t.Fatalf("not allowed word came back: %v", por.Words)
@@ -99,7 +99,7 @@ func TestPortion_RecentWindow(t *testing.T) {
 		hit := 0
 		for seed := int64(0); seed < 400; seed++ {
 			g := NewGenerator(words, newRng(seed), p)
-			if g.Portion(nil, 2, recent, nil, p).Words[0] == "aab" {
+			if g.Portion(nil, 2, 0, recent, nil, p).Words[0] == "aab" {
 				hit++
 			}
 		}
@@ -127,17 +127,17 @@ func make20(w string) []string {
 func TestPortion_ZeroAndEmpty(t *testing.T) {
 	p := testParams
 	p.PortionWords = 0
-	if por := newTestGen(1).Portion(nil, 0, nil, nil, p); len(por.Words) != 0 {
+	if por := newTestGen(1).Portion(nil, 0, 0, nil, nil, p); len(por.Words) != 0 {
 		t.Fatalf("PortionWords = 0: got %v", por.Words)
 	}
 	p.StartLetters, p.MinWords = 1, 0
 	g := NewGenerator(nil, newRng(1), p) // no dictionary at all
-	if por := g.Portion(nil, 0, nil, nil, p); len(por.Words) != 0 {
+	if por := g.Portion(nil, 0, 0, nil, nil, p); len(por.Words) != 0 {
 		t.Fatalf("no words: got %v", por.Words)
 	}
 	// a one-word dictionary: a repeat is the only choice, and must not hang
 	g = NewGenerator([]string{"aaa"}, newRng(1), p)
-	if por := g.Portion(nil, 1, []string{"aaa"}, []string{"aaa"}, testParams); len(por.Words) != testParams.PortionWords {
+	if por := g.Portion(nil, 1, 0, []string{"aaa"}, []string{"aaa"}, testParams); len(por.Words) != testParams.PortionWords {
 		t.Fatalf("one word: got %v", por.Words)
 	}
 }

@@ -106,6 +106,10 @@ type Store interface {
 	RecentSessions(user, lang, length string, limit int) ([]Session, error) // newest first
 	SessionCount(user, lang, length string) (int, error)                    // finished rounds
 	SessionLengths(user, lang string) ([]string, error)                     // lengths in the history, sorted
+	// LettersTyped: the letters (Session.Chars) of all learning rounds that
+	// ended with at least `unlocked` letters open. With the whole alphabet,
+	// it is how far the user is into the ramp of engine.MaxRank.
+	LettersTyped(user, lang string, unlocked int) (int, error)
 
 	// Free practice (internal/freeplay) is kept apart from learning: its
 	// own history, and a flag set once the typing test is passed. Its
