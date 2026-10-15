@@ -116,19 +116,35 @@ export function glowKey(ch) {
 
 // Keyboard on / off (the button in the bottom bar, or Alt+K): keyboard and
 // hands together. Its size is not a setting: it is always the largest that
-// fits the window (fitKeyboard below). Remembered in localStorage.
+// fits the window (fitKeyboard below). Remembered in localStorage, separately
+// for learning (tt.kbHidden) and for free practice and the test
+// (tt.kbHidden.free): someone who comes to free practice can already type
+// without looking, so there the keyboard starts hidden.
+const kbKey = () => (S.mode === "learn" ? "tt.kbHidden" : "tt.kbHidden.free");
+
+// Read the saved choice of the current mode and show / hide the keyboard.
+// Never chosen yet: learning hides it only on phones (no physical keys to
+// look up), free practice always hides it.
+// animate = true when the user switches the mode: it folds away smoothly.
+export function restoreKb(animate = false) {
+  const saved = store.get(kbKey());
+  const was = S.kbHidden;
+  if (S.mode === "learn") S.kbHidden = saved === null ? isTouch() : saved === "1";
+  else S.kbHidden = saved === null || saved === "1";
+  applyKb(animate && was !== S.kbHidden);
+}
+
 // animate = true on a click: the keyboard folds away / unfolds smoothly
 export function applyKb(animate = false) {
-  if (animate) {
-    FX.collapse(el.keyboard, S.kbHidden);
-    FX.collapse(el.hands, S.kbHidden);
+  if (animate) {   // measure again once the fold is over (fitKeyboard skips it while it runs)
+    Promise.all([FX.collapse(el.keyboard, S.kbHidden), FX.collapse(el.hands, S.kbHidden)]).then(requestFit);
   } else {
     el.keyboard.classList.toggle("off", S.kbHidden);
     el.hands.classList.toggle("off", S.kbHidden);
   }
   el.btnKb.setAttribute("aria-pressed", String(!S.kbHidden));
   document.body.classList.toggle("kb-hidden", S.kbHidden);   // phone CSS centres the text then
-  store.set("tt.kbHidden", S.kbHidden ? "1" : "");
+  store.set(kbKey(), S.kbHidden ? "1" : "");
   requestFit();
 }
 
@@ -149,6 +165,9 @@ function fitKeyboard() {
   // the time, and the page may scroll there; no cap
   if (isTouch()) { root.removeProperty("--u-fit"); return; }
   if (S.kbHidden || S.view !== "type") return;
+  // while the keyboard folds / unfolds its height and the margins of the hands
+  // are half-way: a measure now would give a wrong (too big) size
+  if (el.keyboard.getAnimations().length || el.hands.getAnimations().length) return;
   const rest = document.querySelector(".top").offsetHeight + el.viewType.offsetHeight
     - el.hands.offsetHeight - el.keyboard.offsetHeight
     + document.querySelector(".bottom").offsetHeight + 12;   // 12 = bottom padding of .views

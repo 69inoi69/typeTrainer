@@ -1,10 +1,11 @@
 // The typing screen: the text stream (portions of words added while you
 // type, in rounds of 30 words), the caret, what every keypress does, the
-// clean-word streak, the live WPM / accuracy, the letters bar, and sending
-// the result when a round ends. The same screen serves every mode
+// clean-word streak, the live WPM / accuracy, and sending the result when a
+// round ends. The letters bar is in letters.js, the result screen in result.js. The same screen serves every mode
 // (modes.js): learning talks to /portion and /results, free practice and the
 // typing test to /freeplay/*.
-// Layer: middle. Imports the bottom layer, keyboard.js, stats.js, result.js and modes.js.
+// Layer: middle. Imports the bottom layer, keyboard.js, stats.js, result.js,
+// letters.js and modes.js.
 
 import { t, tPick } from "./i18n.js";
 import { FX } from "./fx.js";
@@ -12,7 +13,8 @@ import { $, el, S, introOpen } from "./state.js";
 import { postJSON } from "./api.js";
 import { highlightNextKey, pulseKey, glowKey, requestFit } from "./keyboard.js";
 import { refreshStats } from "./stats.js";
-import { showResult } from "./result.js";
+import { showResult, compareStats } from "./result.js";
+import { renderLetters, markNewLetter, markMastered } from "./letters.js";
 import { learning, refreshFreeplay, setMode } from "./modes.js";
 
 // Typing state, used only by the typing code.
@@ -31,13 +33,11 @@ let lastTime = null;       // performance.now() of the previous keypress
 let afterBackspace = false; // the next press follows a Backspace: its time is not measured
 let presses = 0, correctPresses = 0;
 let perSecond = [];        // keypresses in each second since startTime (for consistency)
-let popLetter = null;      // letter that was just unlocked (for the animation)
 
 // Rewards (they change nothing in the statistics, they only feel nice)
 let streak = 0;            // words in a row typed without a single mistake
 let wordClean = true;      // no mistake in the current word so far
 let tabsResisted = 0;      // Tab presses during this round (no restart here)
-let justMastered = new Set(); // letters just mastered (their chips shine)
 
 // The text window always shows TEXT_LINES lines at one font size (style.css,
 // .text): it never changes size between exercises. A text that needs more
@@ -83,78 +83,6 @@ export function placeCaret(jump) {
     if (jump) requestAnimationFrame(() => el.caret.classList.remove("jump"));
   });
 }
-// ---------- letters bar ----------
-const STAT_ICONS = {
-  open: '<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>',
-  // focus: a crosshair, the trainer has "locked on" this letter
-  focus: '<circle cx="12" cy="12" r="6.5"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
-  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
-  // next: a key, the one that opens the next letter
-  key: '<circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M21 12v2.5"/>',
-};
-function renderLetters() {
-  if (!learning()) { renderFreeLetters(); return; }
-  if (!S.exercise) return;
-  const info = {};
-  for (const k of S.lastStats?.keys ?? []) info[k.char] = k;
-  const focusHasData = (info[S.exercise.focus]?.count ?? 0) > 0;
-
-  const frag = document.createDocumentFragment();
-  const add = (c, cls) => {
-    const chip = document.createElement("span");
-    chip.className = "chip " + cls;
-    chip.textContent = c;
-    if (c === popLetter) chip.classList.add("pop");
-    if (justMastered.has(c)) chip.classList.add("shine");
-    frag.appendChild(chip);
-  };
-  for (const c of S.exercise.unlocked) {
-    let cls = info[c]?.mastered ? "mastered" : "";
-    if (c === S.exercise.focus && (focusHasData || c === popLetter)) cls += " focus";
-    add(c, cls);
-  }
-  for (const c of S.exercise.locked) add(c, "locked");
-  el.letters.replaceChildren(frag);
-
-  // every key you do not need yet is dimmed on the keyboard
-  const open = new Set([...S.exercise.unlocked, " "]);
-  const altOf = Object.fromEntries(Object.entries(S.altBase).map(([a, b]) => [b, a]));
-  for (const [c, key] of Object.entries(S.keyEls)) key.classList.toggle("locked", !open.has(c) && !open.has(altOf[c]));
-  if (S.altgrEl) S.altgrEl.classList.toggle("locked", !S.exercise.unlocked.some((c) => S.altBase[c]));
-
-  // status line: small pills with an icon each (details in their tooltips)
-  const openCount = S.exercise.unlocked.length;
-  const all = openCount + S.exercise.locked.length;
-  const mastered = S.exercise.unlocked.filter((c) => info[c]?.mastered).length;
-  const started = (S.lastStats?.keys ?? []).some((k) => k.count > 0);   // anything typed yet
-  const pill = (icon, cls, tip, label, value) =>
-    `<span class="stat ${cls}" data-tip="${tip}"><svg viewBox="0 0 24 24" aria-hidden="true">${STAT_ICONS[icon]}</svg>` +
-    `<span class="lbl">${label}</span>${value}</span>`;
-  const parts = [];
-  if (!started) {
-    parts.push(pill("open", "", "tip.open", t("stat.open"), `<b>${openCount}/${all}</b>`));
-    parts.push(`<span class="begin">${t("stat.begin")}</span>`);
-  } else {
-    if (focusHasData) parts.push(pill("focus", "focus", "tip.focus", t("stat.focus"), `<b class="lt">${S.exercise.focus}</b>`));
-    const pct = openCount ? Math.round((mastered / openCount) * 100) : 0;
-    parts.push(pill("check", "ok", "tip.mastered", t("stat.mastered"),
-      `<span class="mini"><i style="width:${pct}%"></i></span><b>${mastered}/${openCount}</b>`));
-    if (S.exercise.locked.length) parts.push(pill("key", "next", "tip.next", t("stat.next"), `<b class="lt">${S.exercise.locked[0]}</b>`));
-  }
-  el.lettersCaption.innerHTML = parts.join("");
-  popLetter = null;
-  justMastered = new Set();
-}
-
-// Free practice and the test: no letters to learn. Every key is open, and the
-// status line says what this round is.
-function renderFreeLetters() {
-  el.letters.replaceChildren();
-  for (const key of Object.values(S.keyEls)) key.classList.remove("locked");
-  if (S.altgrEl) S.altgrEl.classList.remove("locked");
-  el.lettersCaption.innerHTML = `<span class="begin">${t(S.mode === "test" ? "mode.testCaption" : "mode.freeCaption")}</span>`;
-}
-
 // ---------- the stream ----------
 // The text is not built in one go: it is a stream of short portions (a few
 // words around one focus letter, Generator.Portion on the server). When the
@@ -293,7 +221,8 @@ const roundComplete = () => current === round - 1 && S.pos === portions[current]
 // its key glows once, and the result of the round names it. Calm on purpose:
 // a new letter is good news, not a party.
 function newLetter(l) {
-  popLetter = roundNewLetter = l;
+  roundNewLetter = l;
+  markNewLetter(l);
   glowKey(l);
 }
 
@@ -594,25 +523,6 @@ export function setMotto(typing = typingNow) {
   FX.anim(el.motto, [{ opacity: 0, transform: "translateY(3px)" }, { opacity: 1, transform: "none" }], { duration: 250, easing: "ease-out" });
 }
 
-// What one round changed: a new record, letters mastered, and which
-// letters got faster or slower (smoothed time per letter, avgMs, before and
-// after). Only letters typed in this round count. Display only.
-const CHANGE_MIN = 0.03;   // a letter must change by 3 % or more to be named
-function compareStats(before, after, samples) {
-  const prev = Object.fromEntries((before?.keys ?? []).map((k) => [k.char, k]));
-  const typed = new Set(samples.map((x) => x.char).filter((c) => c !== " "));
-  const best = (before?.sessionCount ?? 0) > 0 &&
-    (after.sessions[0]?.wpm ?? 0) > Math.max(0, ...before.sessions.map((x) => x.wpm));   // /stats: newest first
-  const mastered = after.keys.filter((k) => k.mastered && !prev[k.char]?.mastered).map((k) => k.char);
-  const change = after.keys
-    .filter((k) => typed.has(k.char) && prev[k.char]?.count > 0 && prev[k.char].avgMs > 0)
-    .map((k) => ({ c: k.char, pct: Math.round((1 - k.avgMs / prev[k.char].avgMs) * 100) }))
-    .filter((x) => Math.abs(x.pct) >= CHANGE_MIN * 100);
-  const faster = change.filter((x) => x.pct > 0).sort((a, b) => b.pct - a.pct).slice(0, 3);
-  const slower = change.filter((x) => x.pct < 0).sort((a, b) => a.pct - b.pct).slice(0, 2);
-  return { best, mastered, faster, slower };
-}
-
 // a long pause ends the round
 setInterval(() => {
   if (startTime !== null && !S.busy && performance.now() - lastTime > IDLE_STOP_MS) finishRound();
@@ -657,7 +567,7 @@ async function finishRound() {
     if (res.newLetter) newLetter(res.newLetter);
 
     const r = compareStats(roundBefore, S.lastStats, typed);
-    justMastered = new Set(r.mastered);
+    markMastered(r.mastered);
     if (r.best) FX.burstFrom(el.wpm, 80);
     await showResult({ wpm, accuracy, consistency: res.consistency, newLetter: roundNewLetter, resisted, ...r });
     await loadExercise();   // built from the UPDATED model

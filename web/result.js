@@ -8,6 +8,7 @@
 // letter, a click, or when its time bar is full (hover pauses the bar, so a
 // beginner can read in peace). It does not care WHY typing stopped (end of a
 // text, or a pause in an endless text): the caller passes what to show.
+// compareStats() works out what a learning round changed, for that screen.
 // Display only: nothing here changes what is measured or sent.
 // Layer: middle. Imports only the bottom layer.
 
@@ -86,3 +87,22 @@ export function closeResult() {
   resolve();
 }
 box.addEventListener("click", closeResult);
+
+// What one round changed: a new record, letters mastered, and which
+// letters got faster or slower (smoothed time per letter, avgMs, before and
+// after). Only letters typed in this round count. Display only.
+const CHANGE_MIN = 0.03;   // a letter must change by 3 % or more to be named
+export function compareStats(before, after, samples) {
+  const prev = Object.fromEntries((before?.keys ?? []).map((k) => [k.char, k]));
+  const typed = new Set(samples.map((x) => x.char).filter((c) => c !== " "));
+  const best = (before?.sessionCount ?? 0) > 0 &&
+    (after.sessions[0]?.wpm ?? 0) > Math.max(0, ...before.sessions.map((x) => x.wpm));   // /stats: newest first
+  const mastered = after.keys.filter((k) => k.mastered && !prev[k.char]?.mastered).map((k) => k.char);
+  const change = after.keys
+    .filter((k) => typed.has(k.char) && prev[k.char]?.count > 0 && prev[k.char].avgMs > 0)
+    .map((k) => ({ c: k.char, pct: Math.round((1 - k.avgMs / prev[k.char].avgMs) * 100) }))
+    .filter((x) => Math.abs(x.pct) >= CHANGE_MIN * 100);
+  const faster = change.filter((x) => x.pct > 0).sort((a, b) => b.pct - a.pct).slice(0, 3);
+  const slower = change.filter((x) => x.pct < 0).sort((a, b) => a.pct - b.pct).slice(0, 2);
+  return { best, mastered, faster, slower };
+}

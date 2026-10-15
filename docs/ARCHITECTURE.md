@@ -29,15 +29,19 @@ its own.
 | `main_wasm.go` | Entry point for the GitHub Pages build (see below). |
 | `pages/wasm-shim.js` | Pages only: routes `/api/v1/` requests from the frontend to the Go code in the browser. |
 | `.github/workflows/pages.yml` | On every push to `main`: test, build WebAssembly, publish to Pages. |
+| `.github/workflows/tests.yml` | On every pull request: gofmt, vet, tests, WebAssembly build. |
 | `internal/config` | Every tunable number in one place. |
 | `internal/engine/model.go` | Per-letter statistics, EMA update, difficulty, mastery, softmax weight. |
 | `internal/engine/generator.go` | Unlock order, first lesson size, unlocking rule, word selection. |
-| `internal/freeplay` | Free practice and the typing test: evenly drawn words from the whole list (`Picker.Portion`), the pass rule of the test (`Passed`). Imports nothing from the project; never touches the letter model. |
-| `internal/api/freeplay.go` | The `/api/v1/freeplay/*` routes. |
 | `internal/engine/consistency.go` | Consistency of a round's speed (a measurement shown to the user; the model does not use it). |
+| `internal/freeplay` | Free practice and the typing test: evenly drawn words from the whole list (`Picker.Portion`), the pass rule of the test (`Passed`). Imports nothing from the project; never touches the letter model. |
 | `internal/storage/store.go` | The `Store` interface. |
 | `internal/storage/memory.go` | In-memory `Store` (lost on restart). |
-| `internal/api/handlers.go` | JSON API, input validation, locking around read-modify-write. |
+| `internal/api/handlers.go` | The `Server`, the route list (`Register`), `?lang=`, JSON helpers, locking around read-modify-write. |
+| `internal/api/learning.go` | Learning routes: `/portion`, `/results`, `/stats`, `/progress`. |
+| `internal/api/data.go` | `/reset`, `/export`, `/import` (learning and free practice data together). |
+| `internal/api/validate.go` | Request checks, so nothing impossible or foreign reaches the statistics. |
+| `internal/api/freeplay.go` | The `/api/v1/freeplay/*` routes. |
 | `internal/layout` | Parses and validates the keyboard layout JSON. |
 | `internal/language` | Parses `languages.json`; `Allows(word)` checks a word against the alphabet. |
 | `data/languages.json` | The languages: id, name, label, layout, alphabet, OS layout name. |
@@ -65,13 +69,14 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | bottom | `fx.js` | Visual rewards: confetti, bumps, the message queue in the status line (outside typing), the start screen. They never affect what is measured. |
 | bottom | `api.js` | `getJSON` / `postJSON` for `/api/v1/`, with `?lang=` added. |
 | middle | `tools.js` | Tooltips of the icon buttons, reset, export / import of the statistics. |
-| middle | `keyboard.js` | On-screen keyboard and hands from the layout data, the next key and finger, the on / off button, the automatic size that fits the window. |
+| middle | `keyboard.js` | On-screen keyboard and hands from the layout data, the next key and finger, the on / off button (remembered separately for learning and free practice), the automatic size that fits the window. |
 | middle | `stats.js` | The stats screen (tiles, WPM chart, heatmap keyboard, letter cards) and `refreshStats()`. |
-| middle | `typing.js` | The text stream (portions added while you type), the caret, `handleChar()` / `backspace()`, the streak, live WPM / accuracy, the "typing now" header mode, the letters bar, sending results. |
+| middle | `typing.js` | The text stream (portions added while you type), the caret, `handleChar()` / `backspace()`, the streak, live WPM / accuracy, the "typing now" header mode, sending results. |
+| middle | `letters.js` | The letters bar above the text, its status line, locked keys dimmed on the keyboard. |
 | middle | `intro.js` | The first-visit intro (home row, space, eyes up). |
 | middle | `languages.js` | The language switch and `loadLanguage()`. |
 | middle | `profile.js` | The profile placeholder in the header: name and picture, kept only in the browser. |
-| middle | `result.js` | The result screen in the text window: `showResult(r)` shows what changed and resolves when the user goes on. |
+| middle | `result.js` | The result screen in the text window: `showResult(r)` shows what changed and resolves when the user goes on; `compareStats()` works out what a learning round changed. |
 | middle | `modes.js` | The modes (learning / free practice / typing test), the switch in the header, `refreshFreeplay()` (`S.free`), the mode remembered per language. |
 | middle | `tour.js` | The "how this site works" tour: a ring around each part of the page and a short card. |
 | top | `input.js` | Keydown and phone input, the Type / Stats switch, the mode switch, the keyboard on / off button, window resize: sends each action to the module that handles it. |
@@ -167,7 +172,11 @@ statistics, unlocked letters and history. Each language also has its own
 
 ## Modes
 
-The app has two modes and a test (`web/modes.js`, `internal/freeplay`):
+The app has two modes and a test (`web/modes.js`, `internal/freeplay`).
+Learning is the main mode and the subject of the thesis. Free practice is
+kept minimal for now and is meant to grow later into a Monkeytype-like mode;
+the typing test is provisional. The two modes share no data: free practice
+has its own storage methods, routes and history.
 
 - **Learning** is the adaptive trainer described in docs/ALGORITHM.md: the
   `/portion` and `/results` routes, the letter model, unlocking.
@@ -189,7 +198,7 @@ export / import carry both.
 
 ## Concurrency
 
-The random generator is not safe for parallel use, so `Next` runs under
+The random generators are not safe for parallel use, so `Portion` (learning and free practice) runs under
 `genMu`. "Read stats → update → save" must not interleave between two
 requests, so it runs under `writeMu`. A PostgreSQL store would use a
 transaction (`SELECT ... FOR UPDATE`) instead.

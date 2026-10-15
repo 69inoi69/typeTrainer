@@ -79,6 +79,12 @@ Details: `docs/ARCHITECTURE.md`.
   (`internal/freeplay`). It opens when every letter is unlocked, or after the
   one-time *typing test* (one 30-word round at 30 WPM and 97% accuracy). No
   self-declared skill level: the test is the only early way in.
+- **Where the work goes (2026-10).** Learning is the main focus until the
+  defense: the algorithm, word choice and how learning looks and feels.
+  Free practice is a deliberately minimal, separate mode (a future
+  Monkeytype-like mode with its own statistics) and grows only after the
+  defense. The typing test is provisional and will likely change. Keep the
+  two modes apart: nothing in free practice may touch learning data.
 - **Everyone starts from the first letters.** No "open all letters" in the
   interface: experienced typists unlock the rest quickly by typing well.
 - **The math in `internal/engine/model.go` is the core of my thesis.** Do not
@@ -103,9 +109,10 @@ gofmt -w .          # format
 go vet ./...        # static checks
 ```
 
-Every push to `main` also runs the tests and republishes GitHub Pages
-(`.github/workflows/pages.yml`). If that run fails, the site stays on the old
-version.
+Every pull request runs gofmt, vet, the tests and the WebAssembly build
+(`.github/workflows/tests.yml`). Every push to `main` runs the tests again and
+republishes GitHub Pages (`.github/workflows/pages.yml`). If that run fails,
+the site stays on the old version.
 
 ## Before you say a task is done
 

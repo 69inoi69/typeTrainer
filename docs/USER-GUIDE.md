@@ -98,7 +98,8 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   the intro.
 - Buttons in the bottom bar (hover for a tooltip): **beginner guide** (the
   intro again) and the **keyboard** button (hides or shows keyboard and hands,
-  same as `Alt + K`; remembered in your browser). There is no size setting:
+  same as `Alt + K`; remembered in your browser, separately for learning and
+  for free practice / the test, where it starts hidden). There is no size setting:
   the keyboard is always as big as the window allows without making the page
   scroll, and it grows or shrinks when the window changes.
 - The two arrow buttons save your statistics (all languages, full history) to one

@@ -208,7 +208,9 @@ body[data-mode="free"] .learn-only { display: none; }
 @keyframes view-in { from { opacity: 0; transform: translateY(6px); } }
 
 /* ---------- letters bar (unlock progress) ---------- */
-.letter-row { display: flex; flex-wrap: nowrap; justify-content: center; gap: 4px; }
+/* min-height = one chip: free practice shows no letters, and an empty row must
+   keep its height, or the keyboard below gets more room and grows (fitKeyboard) */
+.letter-row { display: flex; flex-wrap: nowrap; justify-content: center; gap: 4px; min-height: calc(.9rem * 1.75); }
 /* always one row: with many letters (Polish, Ukrainian, Russian: 32) the chips get narrower */
 .chip {
   flex: 0 1 1.75em; min-width: 0; height: 1.75em; display: grid; place-items: center;
