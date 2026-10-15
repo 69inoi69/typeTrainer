@@ -20,6 +20,9 @@ func validate(req resultsRequest, maxEvents int, alphabet string) string {
 	if msg := validateSamples(req.Samples, maxEvents, alphabet); msg != "" {
 		return msg
 	}
+	if msg := validateSamples(req.Keys, maxEvents, alphabet); msg != "" {
+		return "keys: " + msg
+	}
 	if req.WPM < 0 || req.WPM > 400 || req.Accuracy < 0 || req.Accuracy > 100 {
 		return "wpm or accuracy out of range"
 	}
@@ -54,7 +57,7 @@ func validateSamples(samples []engine.Sample, max int, alphabet string) string {
 // validateImport makes sure a loaded file cannot put impossible numbers or
 // foreign letters into the statistics. letters = how many letters the
 // language's unlock order has.
-func validateImport(in langExport, maxSessions, letters int, alphabet string) string {
+func validateImport(in langExport, maxSessions, maxEvents, letters int, alphabet string) string {
 	if in.Unlocked < 0 || in.Unlocked > letters {
 		return "unlocked: out of range"
 	}
@@ -68,19 +71,20 @@ func validateImport(in langExport, maxSessions, letters int, alphabet string) st
 			return "keys: impossible numbers for " + ch
 		}
 	}
-	if msg := validateSessions(in.Sessions, maxSessions); msg != "" {
+	if msg := validateSessions(in.Sessions, maxSessions, maxEvents, letters, alphabet); msg != "" {
 		return msg
 	}
 	if in.Freeplay != nil {
-		if msg := validateSessions(in.Freeplay.Sessions, maxSessions); msg != "" {
+		if msg := validateSessions(in.Freeplay.Sessions, maxSessions, maxEvents, letters, alphabet); msg != "" {
 			return "freeplay " + msg
 		}
 	}
 	return ""
 }
 
-// validateSessions: at most max entries, every number in its range.
-func validateSessions(sessions []storage.Session, max int) string {
+// validateSessions: at most max entries, every number in its range, raw
+// keys as in validateSamples (at most maxEvents per session).
+func validateSessions(sessions []storage.Session, max, maxEvents, letters int, alphabet string) string {
 	if len(sessions) > max {
 		return "sessions: too many"
 	}
@@ -90,6 +94,12 @@ func validateSessions(sessions []storage.Session, max int) string {
 		}
 		if c := sess.Consistency; c != nil && (*c < 0 || *c > 100) {
 			return "sessions: consistency out of range"
+		}
+		if sess.Unlocked < 0 || sess.Unlocked > letters {
+			return "sessions: unlocked out of range"
+		}
+		if msg := validateSamples(sess.Keys, maxEvents, alphabet); msg != "" {
+			return "sessions: keys: " + msg
 		}
 	}
 	return ""

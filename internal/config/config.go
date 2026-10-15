@@ -27,7 +27,7 @@ func Default() Config {
 		Addr:      "localhost:3000",
 		MaxEvents: 5000,
 
-		MaxImportBytes:    8 << 20, // 8 MB: years of history still fit
+		MaxImportBytes:    64 << 20, // 64 MB: a round with its raw keys is 5-7 KB, so ~10 000 rounds fit
 		MaxImportSessions: 50000,
 
 		ConsistencyMinSeconds: 5, // under 5 full seconds there is too little to judge the pace

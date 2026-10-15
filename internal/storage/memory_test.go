@@ -138,3 +138,16 @@ func TestMemoryStore_UsersAreSeparate(t *testing.T) {
 		t.Fatalf("ann not reset: unlocked=%d", n)
 	}
 }
+
+// Summary keeps the numbers and drops the raw keys, without changing the
+// stored session.
+func TestSession_Summary(t *testing.T) {
+	s := Session{WPM: 40, Unlocked: 7, Keys: []engine.Sample{{Char: "a", Ms: 200}}}
+	sum := s.Summary()
+	if sum.Keys != nil || sum.WPM != 40 || sum.Unlocked != 7 {
+		t.Fatalf("summary: %+v", sum)
+	}
+	if len(s.Keys) != 1 {
+		t.Fatal("Summary changed the original session")
+	}
+}

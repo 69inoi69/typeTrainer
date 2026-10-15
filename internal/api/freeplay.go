@@ -65,7 +65,7 @@ func (s *Server) handleFreeplayPortion(w http.ResponseWriter, r *http.Request, u
 	writeJSON(w, http.StatusOK, map[string]any{"portions": out, "round": p.RoundPortions})
 }
 
-// POST /api/v1/freeplay/results?lang= {wpm, accuracy, chars, perSecond} ->
+// POST /api/v1/freeplay/results?lang= {wpm, accuracy, chars, perSecond, keys} ->
 // one entry in the free practice history. {"consistency": 81.4 | null}.
 // 403 while free practice is locked.
 func (s *Server) handleFreeplayResults(w http.ResponseWriter, r *http.Request, user string, l *Language) {
@@ -96,6 +96,7 @@ func (s *Server) handleFreeplayResults(w http.ResponseWriter, r *http.Request, u
 	}
 	err = s.store.AddFreeplaySession(user, l.Info.ID, storage.Session{
 		WPM: req.WPM, Accuracy: req.Accuracy, Chars: req.Chars, Consistency: consistency, FinishedAt: time.Now(),
+		Keys: req.Keys, // kept as the raw record only, never learned from
 	})
 	if err != nil {
 		serverError(w, err)
@@ -162,7 +163,7 @@ func (s *Server) handleFreeplayStats(w http.ResponseWriter, r *http.Request, use
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"unlocked": open, "testPassed": passed, "sessions": sessions, "sessionCount": count,
+		"unlocked": open, "testPassed": passed, "sessions": summaries(sessions), "sessionCount": count,
 		"testWpm": s.cfg.Freeplay.TestWPM, "testAccuracy": s.cfg.Freeplay.TestAccuracy,
 	})
 }

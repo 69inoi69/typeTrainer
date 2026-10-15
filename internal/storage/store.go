@@ -9,7 +9,8 @@ import (
 	"typingtrainer/internal/engine"
 )
 
-// Session is the summary of one finished exercise.
+// Session is one finished round: its summary numbers and, since raw
+// results are kept, every keypress of the round.
 type Session struct {
 	WPM      float64 `json:"wpm"`
 	Accuracy float64 `json:"accuracy"` // 0..100
@@ -18,6 +19,23 @@ type Session struct {
 	// measured: a round too short to judge, or history from before it existed.
 	Consistency *float64  `json:"consistency,omitempty"`
 	FinishedAt  time.Time `json:"finishedAt"`
+
+	// Keys is the raw record of the round: every typed letter in order,
+	// with its mistakes and time, exactly as the browser measured it. The
+	// letter model can be replayed from it (engine.Apply), so parameters
+	// can be tested on real data later. Empty for history from before it
+	// was kept.
+	Keys []engine.Sample `json:"keys,omitempty"`
+	// Unlocked is how many letters were open after the round (learning
+	// only; 0 in free practice and in old history).
+	Unlocked int `json:"unlocked,omitempty"`
+}
+
+// Summary is the session without its raw keys: what lists of many
+// sessions (the stats pages) need.
+func (s Session) Summary() Session {
+	s.Keys = nil
+	return s
 }
 
 // LocalUser is the user id of everyone while there are no accounts: the

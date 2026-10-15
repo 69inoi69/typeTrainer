@@ -206,6 +206,8 @@ func TestApp_ImportRejectsBadDataAndKeepsOldData(t *testing.T) {
 		`{"sessions":[{"wpm":999,"accuracy":50}]}`,                  // impossible speed
 		`{"sessions":[{"wpm":30,"accuracy":150}]}`,                  // impossible accuracy
 		`{"sessions":[{"wpm":30,"accuracy":90,"consistency":101}]}`, // impossible consistency
+		`{"sessions":[{"wpm":30,"accuracy":90,"unlocked":9999}]}`,   // more letters than exist
+		`{"sessions":[{"wpm":30,"accuracy":90,"keys":[{"char":"ж","errors":0,"ms":300}]}]}`, // raw key not English
 	}
 	for _, b := range bad {
 		if code, _ := call(t, h, "POST", "/api/v1/import?lang=en", b); code != 400 {
@@ -309,5 +311,65 @@ func TestApp_FreeplayOpensWithAllLetters(t *testing.T) {
 	call(t, h, "POST", "/api/v1/progress?lang=uk", `{"unlockAll":true}`)
 	if _, st := call(t, h, "GET", "/api/v1/freeplay/stats?lang=uk", ""); st["unlocked"] != true || st["testPassed"] != false {
 		t.Fatalf("all letters open: %v", st)
+	}
+}
+
+// /results keeps every keypress of the round as its raw record, but the
+// model learns only from "samples": a key sent with /portion and again in
+// "keys" is counted once. The stats page gets the numbers only; the raw
+// keys come with /export and survive an import.
+func TestApp_RawKeysKept(t *testing.T) {
+	h, _, _ := newApp()
+	// "ж" was learned with /portion; /results sends the rest
+	call(t, h, "POST", "/api/v1/portion?lang=ru", `{"samples":[{"char":"ж","errors":1,"ms":300}],"last":true}`)
+	body := `{"samples":[{"char":" ","errors":0,"ms":200}],` +
+		`"keys":[{"char":"ж","errors":1,"ms":300},{"char":" ","errors":0,"ms":200}],"wpm":30,"accuracy":50}`
+	if code, out := call(t, h, "POST", "/api/v1/results?lang=ru", body); code != 200 {
+		t.Fatalf("results: %d %v", code, out)
+	}
+
+	_, exp := call(t, h, "GET", "/api/v1/export?lang=ru", "")
+	sess := exp["sessions"].([]any)[0].(map[string]any)
+	keys, _ := sess["keys"].([]any)
+	if len(keys) != 2 || keys[0].(map[string]any)["char"] != "ж" || sess["unlocked"].(float64) == 0 {
+		t.Fatalf("raw record not kept: %v", sess)
+	}
+	if n := exp["keys"].(map[string]any)["ж"].(map[string]any)["count"].(float64); n != 1 {
+		t.Fatalf("ж learned %v times, want 1 (keys must not be learned again)", n)
+	}
+
+	_, st := call(t, h, "GET", "/api/v1/stats?lang=ru", "")
+	if _, has := st["sessions"].([]any)[0].(map[string]any)["keys"]; has {
+		t.Fatal("/stats must not send raw keys")
+	}
+
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/api/v1/export?lang=ru", nil))
+	exported := rec.Body.String()
+	call(t, h, "POST", "/api/v1/reset?lang=ru", "")
+	call(t, h, "POST", "/api/v1/import?lang=ru", exported)
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/api/v1/export?lang=ru", nil))
+	if rec.Body.String() != exported {
+		t.Fatal("raw keys lost in an export/import round trip")
+	}
+
+	// free practice keeps its raw keys too, without touching the letters
+	call(t, h, "POST", "/api/v1/progress?lang=ru", `{"unlockAll":true}`)
+	free := `{"keys":[{"char":"ж","errors":0,"ms":250}],"chars":1,"wpm":60,"accuracy":100}`
+	if code, out := call(t, h, "POST", "/api/v1/freeplay/results?lang=ru", free); code != 200 {
+		t.Fatalf("freeplay results: %d %v", code, out)
+	}
+	_, exp = call(t, h, "GET", "/api/v1/export?lang=ru", "")
+	fs := exp["freeplay"].(map[string]any)["sessions"].([]any)[0].(map[string]any)
+	if k, _ := fs["keys"].([]any); len(k) != 1 {
+		t.Fatalf("freeplay raw keys not kept: %v", fs)
+	}
+	if n := exp["keys"].(map[string]any)["ж"].(map[string]any)["count"].(float64); n != 1 {
+		t.Fatalf("free practice changed the letter model: ж count %v", n)
+	}
+	_, fst := call(t, h, "GET", "/api/v1/freeplay/stats?lang=ru", "")
+	if _, has := fst["sessions"].([]any)[0].(map[string]any)["keys"]; has {
+		t.Fatal("/freeplay/stats must not send raw keys")
 	}
 }

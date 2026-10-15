@@ -441,6 +441,12 @@ These are directions, not things that are built:
 - **Simulation** (built, see section 11.1).
 - **Small user study.** Two groups (adaptive vs. random words), the same total
   practice time, compare WPM and accuracy before and after.
+- **Raw data.** Every round in the history keeps its raw keypresses
+  (`keys`: letter, mistakes, time, in order; ARCHITECTURE.md, "Raw round
+  records"), and `/export` writes them to the file. Replaying them through
+  `engine.Apply` rebuilds the letter statistics, so the same real data can be
+  run with other values of `Alpha` or the weights (section 10, point 4), and
+  learning curves per letter can be drawn for the evaluation chapter.
 
 ### 11.1 Simulation
 

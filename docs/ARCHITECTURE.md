@@ -122,10 +122,12 @@ is `RoundPortions` portions (30 words).
    `last: true` and gets none. Backspace cannot go back into a portion that was sent.
 4. The last letter of the last word of the round (no space needed after it;
    right or wrong), or Esc, or 10 s without a key →
-   `POST /api/v1/results` with the samples not sent yet, WPM, accuracy, the
-   number of typed characters and the keypresses per second; the handler
-   learns from the samples the same way, computes the consistency
-   (`engine.Consistency`) and stores a session summary. Then the next round starts (step 1).
+   `POST /api/v1/results` with the samples not sent yet, every keypress of
+   the round (`keys`), WPM, accuracy, the number of typed characters and the
+   keypresses per second; the handler learns from the samples the same way
+   (never from `keys`, so nothing is counted twice), computes the consistency
+   (`engine.Consistency`) and stores the round: its numbers plus its raw
+   keys (see "Raw round records" below). Then the next round starts (step 1).
 5. After each portion and each round the browser calls `GET /api/v1/stats`
    (letter chips, heatmap, history).
 
@@ -139,20 +141,20 @@ All responses are JSON. Every route except `/languages` takes `?lang=<id>`
 | GET | `/api/v1/languages` | | `[{id, name, label, layout, alphabet, systemLayout}]` |
 | GET | `/api/v1/layout` | | layout JSON |
 | POST | `/api/v1/portion` | `{samples: [{char, errors, ms}], recent: [words], retry: [words], start: bool, last: bool}` | `{portions: [{words, focus, weakest, unlocked, locked}], newLetter, round}`; one portion, `AheadPortions + 1` with `start`, none with `last` |
-| POST | `/api/v1/results` | `{samples: [{char, errors, ms}], chars, wpm, accuracy, perSecond: [keypresses in each full second]}` | `{unlocked, newLetter, consistency}` (`consistency` 0–100, `null` for a round under `ConsistencyMinSeconds`); the round is over: one history entry |
+| POST | `/api/v1/results` | `{samples: [{char, errors, ms}], keys: [the same shape, the whole round], chars, wpm, accuracy, perSecond: [keypresses in each full second]}` | `{unlocked, newLetter, consistency}` (`consistency` 0–100, `null` for a round under `ConsistencyMinSeconds`); the round is over: one history entry |
 | POST | `/api/v1/progress` | `{unlockAll: true\|false}` | `{unlocked}`; for development only, the interface no longer calls it |
 | POST | `/api/v1/reset` | | `{ok: true}`; deletes all data of the language (reset button, until there are user accounts) |
-| GET | `/api/v1/export` | | `{unlocked, keys: {char: {count, mistakes, errEma, timeEma, timedCount}}, sessions: [all, OLDEST first], freeplay: {testPassed, sessions}}`; everything stored for the language (`freeplay` is missing in older files) |
+| GET | `/api/v1/export` | | `{unlocked, keys: {char: {count, mistakes, errEma, timeEma, timedCount}}, sessions: [all, OLDEST first, each with its raw keys], freeplay: {testPassed, sessions}}`; everything stored for the language (`freeplay` is missing in older files) |
 | POST | `/api/v1/import` | the same JSON as `/export` | `{unlocked, sessions}`; REPLACES the language's data, or changes nothing if the data is invalid |
-| GET | `/api/v1/stats` | | `{keys: [{char, count, errorRate, avgMs, difficulty, mastered, unlocked}], sessions: [last 50, newest first], sessionCount, targetWpm}` |
+| GET | `/api/v1/stats` | | `{keys: [{char, count, errorRate, avgMs, difficulty, mastered, unlocked}], sessions: [last 50, newest first, without raw keys], sessionCount, targetWpm}` |
 | POST | `/api/v1/freeplay/portion` | `{recent: [words], start: bool}` | `{portions: [{words}], round}`; words drawn evenly from the whole list; works while free practice is locked (the test uses it) |
-| POST | `/api/v1/freeplay/results` | `{chars, wpm, accuracy, perSecond}` | `{consistency}`; one entry in the free practice history; 403 while locked |
+| POST | `/api/v1/freeplay/results` | `{chars, wpm, accuracy, perSecond, keys}` | `{consistency}`; one entry in the free practice history; 403 while locked |
 | POST | `/api/v1/freeplay/test` | `{chars, wpm, accuracy}` | `{passed, unlocked}`; a pass opens free practice for good; stored in no history |
-| GET | `/api/v1/freeplay/stats` | | `{unlocked, testPassed, sessions: [last 50, newest first], sessionCount, testWpm, testAccuracy}` |
+| GET | `/api/v1/freeplay/stats` | | `{unlocked, testPassed, sessions: [last 50, newest first, without raw keys], sessionCount, testWpm, testAccuracy}` |
 
 Validation on `/portion` and `/results`: at most 5000 samples (zero is fine:
 nothing new to learn), each with exactly one character that is a letter of the
-language or a space, `errors >= 0`, `ms >= 0`. `/results` also needs
+language or a space, `errors >= 0`, `ms >= 0`; `keys` follows the same rules. `/results` also needs
 `chars >= 1` (something was typed; 0 means "the number of samples"), WPM 0–400,
 accuracy 0–100, and `perSecond` with at most 5000 entries, each between 0 and 5000. `recent` and `retry` hold at most 5000 words; a word that
 is not in the list or has a locked letter is simply ignored. Body limit 1 MB.
@@ -165,6 +167,20 @@ one letter of the language or a space; per letter `0 <= mistakes <= count`,
 languages into one file `{app, version, exportedAt, languages: {id: <export>}}`
 (see `web/tools.js`, "export / import"). Import and export use only the existing
 `Store` methods, so the future PostgreSQL store needs nothing extra.
+
+### Raw round records
+
+Each history entry (`storage.Session`) keeps the round's numbers (WPM,
+accuracy, characters, consistency, letters open after it) and its raw
+record `keys`: every typed position of the round in order, with its
+mistakes and its time, exactly as the browser measured it (a skipped letter
+has no entry). Free practice rounds keep their keys too; they are never
+learned from. The letter model can be rebuilt from the keys by running
+`engine.Apply` over them round by round, so other parameter values can be
+tried on real data (ALGORITHM.md, section 11). A round with its keys is
+5-7 KB of JSON; `MaxImportBytes` allows about 10 000 rounds in one import.
+History from before this has no keys (the field is missing). `/stats` and
+`/freeplay/stats` drop the keys (`Session.Summary`), `/export` has them.
 
 Every `Store` method takes the user id and the language id, so each user
 has their own statistics, unlocked letters and history in each language.

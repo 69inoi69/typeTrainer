@@ -100,7 +100,13 @@ func (s *Server) learn(user string, l *Language, samples []engine.Sample) (stats
 }
 
 type resultsRequest struct {
-	Samples  []engine.Sample `json:"samples"`
+	// Samples: the keypresses not yet learned with /portion. The model
+	// learns from these.
+	Samples []engine.Sample `json:"samples"`
+	// Keys: every keypress of the round, in order (the raw record kept in
+	// the history; learned samples included). Optional: older pages do not
+	// send it. Never learned from, so no keypress is counted twice.
+	Keys     []engine.Sample `json:"keys"`
 	WPM      float64         `json:"wpm"`
 	Accuracy float64         `json:"accuracy"`
 	Chars    int             `json:"chars"` // characters typed in the round (0: len(samples))
@@ -109,7 +115,8 @@ type resultsRequest struct {
 }
 
 // POST /api/v1/results?lang= -> the round is over: stores it in the
-// history. Samples are the ones not yet sent with /portion (may be empty).
+// history. Samples are the ones not yet sent with /portion (may be empty);
+// keys are all keypresses of the round, kept as its raw record.
 // Answer: {"unlocked": 8, "newLetter": "s", "consistency": 81.4}
 // (newLetter is "" if nothing opened; consistency is null for a round too short to judge).
 func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, user string, l *Language) {
@@ -140,6 +147,7 @@ func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, user stri
 	}
 	err = s.store.AddSession(user, l.Info.ID, storage.Session{
 		WPM: req.WPM, Accuracy: req.Accuracy, Chars: req.Chars, Consistency: consistency, FinishedAt: time.Now(),
+		Keys: req.Keys, Unlocked: unlocked,
 	})
 	if err != nil {
 		serverError(w, err)
@@ -183,7 +191,7 @@ type keyInfo struct {
 }
 
 // GET /api/v1/stats?lang= -> every letter (hardest first), the last 50 sessions
-// (newest first) and the total number of finished exercises.
+// (newest first, without their raw keys) and the total number of finished exercises.
 func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	id := l.Info.ID
 	stats, err := s.store.KeyStats(user, id)
@@ -219,6 +227,6 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, user string
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"lang": id, "keys": keys, "sessions": sessions, "sessionCount": count, "targetWpm": p.TargetWPM,
+		"lang": id, "keys": keys, "sessions": summaries(sessions), "sessionCount": count, "targetWpm": p.TargetWPM,
 	})
 }

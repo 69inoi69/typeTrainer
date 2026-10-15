@@ -39,6 +39,16 @@ type freeplayExport struct {
 	Sessions   []storage.Session `json:"sessions"` // OLDEST first
 }
 
+// summaries drops the raw keys of every session: the stats pages show many
+// sessions and need only their numbers. The full record is in /export.
+func summaries(sessions []storage.Session) []storage.Session {
+	out := make([]storage.Session, len(sessions))
+	for i, sess := range sessions {
+		out[i] = sess.Summary()
+	}
+	return out
+}
+
 // oldestFirst turns a newest-first list around: the file reads like a diary.
 func oldestFirst(newestFirst []storage.Session) []storage.Session {
 	out := make([]storage.Session, len(newestFirst))
@@ -102,7 +112,7 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request, user strin
 		badRequest(w, "invalid JSON")
 		return
 	}
-	if msg := validateImport(in, s.cfg.MaxImportSessions, len(l.Gen.Order()), l.Info.Alphabet); msg != "" {
+	if msg := validateImport(in, s.cfg.MaxImportSessions, s.cfg.MaxEvents, len(l.Gen.Order()), l.Info.Alphabet); msg != "" {
 		badRequest(w, msg)
 		return
 	}
