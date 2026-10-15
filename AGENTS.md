@@ -77,6 +77,9 @@ exercises from real words around the user's weak letters.
   `setup.go`. Do not add anything that only works with a real server (files on
   disk, background goroutines tied to HTTP) without telling me.
 
+- Comments follow `docs/COMMENTING.md`: why, not what; every file says what
+  it is for and how it connects; extension points say "To add ...".
+
 Details: `docs/ARCHITECTURE.md`.
 
 ## Product decisions (do not change without asking)
