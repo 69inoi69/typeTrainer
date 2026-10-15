@@ -39,6 +39,11 @@ let perSecond = [];        // keypresses in each second since startTime (for con
 let streak = 0;            // words in a row typed without a single mistake
 let wordClean = true;      // no mistake in the current word so far
 let tabsResisted = 0;      // Tab presses during this round (no restart here)
+// One word back (Backspace at the start of a word): the start of the word
+// the caret went back into (-1: none), and the errors it had then. From
+// inside that word Backspace cannot go back another word.
+let backWord = -1, backErrors = 0;
+let fixedWords = new Set(); // starts of words that were gone back into and retyped without a mistake
 
 // The text window always shows TEXT_LINES lines at one font size (style.css,
 // .text): it never changes size between exercises. A text that needs more
@@ -111,6 +116,15 @@ let endAt = -1;              // a words round: position of the space after its l
 let wordsTyped = 0;          // words finished in this round
 let roundBefore = null;      // the statistics when the round started (for the result)
 let roundNewLetter = "";     // a letter that opened during the round
+// Words appear one at a time: the portions come from the server as before,
+// but only the words up to SHOWN_AHEAD after the current one are visible;
+// finishing a word reveals exactly one more (it fades in). Hidden words keep
+// their place in the line (visibility: hidden), so nothing visible ever moves.
+// 12 = two portions: the server always has that many words ready.
+const SHOWN_AHEAD = 12;
+let wordOf = new Int32Array(0); // position -> index of its word in the round
+let revealAt = 0;               // first position not shown yet
+let shownWords = 0;             // words shown so far
 
 // Adds portions at the end of the text: text, per-position arrays and spans.
 // The focus letter of each portion is tinted in that portion, so you see what
@@ -123,6 +137,11 @@ function appendPortions(list) {
   const grow = (a) => { const g = new Uint8Array(S.text.length); g.set(a); return g; };
   state = grow(state);
   focusMask = grow(focusMask);
+  const w = new Int32Array(S.text.length); w.set(wordOf); wordOf = w;
+  for (let i = old, n = old ? wordOf[old - 1] + 1 : 0; i < S.text.length; i++) {
+    wordOf[i] = n;
+    if (S.text[i] === " ") n++;              // the space belongs to the word before it
+  }
   for (let i = old; i < S.text.length; i++) records.push(null);
   let at = old;
   for (const p of list) {
@@ -137,21 +156,32 @@ function appendPortions(list) {
     wordsLoaded += p.words.length;
     at = end + 1;
   }
-  // words added while you type fade in softly (CSS animation .new, once);
-  // the first words of a round come with the fade of the whole text (.swap)
-  const fresh = old > 0 ? " new" : "";
+  // the words are hidden until reveal() shows them; the first words of a
+  // round come with the fade of the whole text (.swap)
   const frag = document.createDocumentFragment();   // one DOM update, not one per letter
   for (let i = old; i < S.text.length; i++) {
     const sp = document.createElement("span");
     sp.textContent = S.text[i];
     // words after the end of the round are never typed: not shown either
-    sp.className = (focusMask[i] ? "fx" : "") + fresh + (endAt >= 0 && i >= endAt ? " beyond" : "");
+    sp.className = (focusMask[i] ? "fx" : "") + " later" + (endAt >= 0 && i >= endAt ? " beyond" : "");
     frag.appendChild(sp);
     spans.push(sp);
   }
   el.text.insertBefore(frag, el.caret);
+  reveal(old > 0);
   const last = list.at(-1);
   if (last.unlocked) S.exercise = { ...(S.exercise ?? {}), unlocked: last.unlocked, locked: last.locked };  // learning only
+}
+
+// Shows the words up to SHOWN_AHEAD after the current one (never hides one
+// again). fade: the newly shown words fade in (not the first words of a
+// round: the whole text fades in then).
+function reveal(fade) {
+  shownWords = Math.max(shownWords, wordsTyped + SHOWN_AHEAD);
+  for (; revealAt < spans.length && wordOf[revealAt] < shownWords; revealAt++) {
+    spans[revealAt].classList.remove("later");
+    if (fade) spans[revealAt].classList.add("new");
+  }
 }
 
 // The letters bar shows the focus of the portion with the caret.
@@ -175,7 +205,7 @@ function mistypedWords(por) {
     const end = wordEnd(i);
     let bad = false;
     for (let j = i; j <= end; j++) if (records[j] ? records[j].errors > 0 : j < end) bad = true;
-    if (bad) out.push(S.text.slice(i, end));
+    if (bad && !fixedWords.has(i)) out.push(S.text.slice(i, end));   // fixed in place: practised already
     i = end + 1;
   }
   return out;
@@ -246,7 +276,9 @@ function resetStream() {
   S.text = ""; S.pos = 0; wordClean = true; tabsResisted = 0; wordsTyped = 0;
   state = new Uint8Array(0); focusMask = new Uint8Array(0); records = []; spans = [];
   portions = []; sentUpTo = 0; current = 0; roundNewLetter = ""; wordsLoaded = 0; endAt = -1;
+  wordOf = new Int32Array(0); revealAt = 0; shownWords = 0;
   extras = new Map(); correctChars = 0; afterBackspace = false;
+  backWord = -1; backErrors = 0; fixedWords = new Set();
   startTime = null; lastTime = null; presses = 0; correctPresses = 0; perSecond = [];
   el.text.replaceChildren(el.caret);          // the caret lives inside the text
 }
@@ -385,7 +417,7 @@ export function handleChar(ch) {
       else mistake();
       pulseKey(ch, ok);
       const space = S.text[S.pos] === " ";
-      if (space) endWord();
+      if (space) { leaveBackWord(); endWord(); }
       S.pos++;
       if (space && S.pos - 1 === endAt) roundOver = true;          // the last word, skipped with a space
       else if (space && S.pos - 1 === portions[current]?.end) portionDone(current);
@@ -401,17 +433,25 @@ export function handleChar(ch) {
 
 // Backspace: one character back in the current word (extra letters go
 // first); with Ctrl the whole word. From the start of a word it goes back
-// into the previous word, but only if that word has a mistake and its
-// portion was not sent to the server yet. Only the screen changes: the
-// samples (records) keep every mistake.
+// into the previous word of the round, at most ONE word back: from inside
+// that word it does nothing more. Only the screen changes: the samples
+// (records) keep every mistake of the first pass, and a letter is only
+// measured once (its first press), so nothing is counted twice. A word whose
+// portion was already sent to the server can be fixed on the screen too; its
+// new presses are not sent again.
 export function backspace(wholeWord) {
   if (!canType() || startTime === null) return;
   if (S.pos === wordStart(S.pos)) {
     const space = S.pos - 1;
-    if (S.pos <= sentUpTo || !wordHasError(wordStart(space), space)) return;
+    if (space < 0 || backWord >= 0) return;
     setState(space, 0);
     S.pos = space;
     while (S.pos > 0 && state[S.pos - 1] === 3) setState(--S.pos, 0);   // skipped = not typed
+    backWord = wordStart(space);
+    backErrors = wordErrors(backWord, space);
+    wordsTyped--;                            // it is finished again when its space is typed
+    renderProgress();
+    wordClean = false;                       // a word fixed afterwards does not extend the streak
     if (wholeWord) clearWord();
   } else if (wholeWord) {
     clearWord();
@@ -423,6 +463,21 @@ export function backspace(wholeWord) {
   afterBackspace = true;
   highlightNextKey();
   placeCaret(false);
+}
+// mistakes recorded for the word start..end (its space included: extra letters)
+function wordErrors(start, end) {
+  let n = 0;
+  for (let j = start; j <= end; j++) n += records[j]?.errors ?? 0;
+  return n;
+}
+// The space of a word is typed: if it was the word gone back into, the
+// one-word-back is over, and the word counts as fixed when the second pass
+// added no mistake and nothing on it is red or skipped. A fixed word does not
+// come back later as a mistyped word.
+function leaveBackWord() {
+  if (backWord < 0 || wordStart(S.pos) !== backWord) return;
+  if (wordErrors(backWord, S.pos) === backErrors && !wordHasError(backWord, S.pos)) fixedWords.add(backWord);
+  backWord = -1;
 }
 // Ctrl+Backspace: the cursor goes back to the start of its word, extra letters vanish
 function clearWord() {
@@ -438,6 +493,7 @@ const STREAK_TIERS = [10, 25, 50];
 const streakTier = (n) => STREAK_TIERS.filter((x) => n >= x).length;
 function endWord() {
   wordsTyped++;
+  reveal(true);                              // one word finished: one more appears
   renderProgress();
   updateLive();                              // the numbers change once per word: calm, readable
   if (wordClean) {

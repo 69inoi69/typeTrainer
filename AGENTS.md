@@ -100,6 +100,9 @@ Details: `docs/ARCHITECTURE.md`.
   Monkeytype-like mode with its own statistics) and grows only after the
   defense. The typing test is provisional and will likely change. Keep the
   two modes apart: nothing in free practice may touch learning data.
+- **A hidden control group for the thesis study.** `?group=random` makes
+  learning draw random open words instead of using the algorithm (every
+  round stores its group). It is never shown or offered in the interface.
 - **Everyone starts from the first letters.** No "open all letters" in the
   interface: experienced typists unlock the rest quickly by typing well.
 - **The math in `internal/engine/model.go` is the core of my thesis.** Do not

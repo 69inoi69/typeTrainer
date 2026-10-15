@@ -33,6 +33,7 @@ type key struct{ user, lang string }
 type langData struct {
 	stats    map[string]engine.KeyStat
 	unlocked int
+	group    string // study group ("" or GroupRandom)
 	sessions []Session
 
 	testPassed bool      // free practice opened by the typing test
@@ -167,6 +168,19 @@ func (m *MemoryStore) LettersTyped(user, lang string, unlocked int) (int, error)
 		}
 	}
 	return n, nil
+}
+
+func (m *MemoryStore) Group(user, lang string) (string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.data(user, lang).group, nil
+}
+
+func (m *MemoryStore) SetGroup(user, lang, group string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.data(user, lang).group = group
+	return nil
 }
 
 func (m *MemoryStore) TestPassed(user, lang string) (bool, error) {

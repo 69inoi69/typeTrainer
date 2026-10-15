@@ -9,8 +9,8 @@ export const API = "/api/v1";
 
 // ---------- server calls ----------
 // Every call except /languages and /auth/* is about one language: add ?lang= to it.
-function withLang(path) {
-  return path + (path.includes("?") ? "&" : "?") + "lang=" + encodeURIComponent(S.lang);
+function withLang(path, lang = S.lang) {
+  return path + (path.includes("?") ? "&" : "?") + "lang=" + encodeURIComponent(lang);
 }
 export async function getJSON(path, global = false) {
   const res = await fetch(API + (global ? path : withLang(path)));
@@ -28,8 +28,9 @@ export async function sendAuth(method, path, body) {
   });
   return { status: res.status, data: await res.json().catch(() => ({})) };
 }
-export async function postJSON(path, body) {
-  const res = await fetch(API + withLang(path), {
+// lang: another language than the current one (the study link sets all).
+export async function postJSON(path, body, lang = S.lang) {
+  const res = await fetch(API + withLang(path, lang), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

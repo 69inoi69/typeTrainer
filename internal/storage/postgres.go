@@ -177,6 +177,21 @@ func (p *PostgresStore) SetUnlocked(user, lang string, n int) error {
 	return err
 }
 
+func (p *PostgresStore) Group(user, lang string) (string, error) {
+	var g string
+	err := p.db.QueryRow(`SELECT study_group FROM progress WHERE user_id = $1 AND lang = $2`, user, lang).Scan(&g)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	return g, err
+}
+
+func (p *PostgresStore) SetGroup(user, lang, group string) error {
+	_, err := p.db.Exec(`INSERT INTO progress (user_id, lang, study_group) VALUES ($1, $2, $3)
+		ON CONFLICT (user_id, lang) DO UPDATE SET study_group = EXCLUDED.study_group`, user, lang, group)
+	return err
+}
+
 func (p *PostgresStore) TestPassed(user, lang string) (bool, error) {
 	var passed bool
 	err := p.db.QueryRow(`SELECT test_passed FROM progress WHERE user_id = $1 AND lang = $2`, user, lang).Scan(&passed)
@@ -209,15 +224,15 @@ func (p *PostgresStore) addSession(user, lang, mode string, s Session) error {
 	}
 	s = s.WithLength()
 	_, err := p.db.Exec(`INSERT INTO sessions
-		(user_id, lang, mode, wpm, accuracy, chars, consistency, unlocked, keys, finished_at, length)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-		user, lang, mode, s.WPM, s.Accuracy, s.Chars, s.Consistency, s.Unlocked, keys, s.FinishedAt, s.Length)
+		(user_id, lang, mode, wpm, accuracy, chars, consistency, unlocked, keys, finished_at, length, study_group)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+		user, lang, mode, s.WPM, s.Accuracy, s.Chars, s.Consistency, s.Unlocked, keys, s.FinishedAt, s.Length, s.Group)
 	return err
 }
 
 // In the queries below, length = ” means "every length".
 func (p *PostgresStore) recentSessions(user, lang, mode, length string, limit int) ([]Session, error) {
-	rows, err := p.db.Query(`SELECT wpm, accuracy, chars, consistency, unlocked, keys, finished_at, length
+	rows, err := p.db.Query(`SELECT wpm, accuracy, chars, consistency, unlocked, keys, finished_at, length, study_group
 		FROM sessions WHERE user_id = $1 AND lang = $2 AND mode = $3 AND ($4 = '' OR length = $4)
 		ORDER BY id DESC LIMIT $5`, user, lang, mode, length, limit)
 	if err != nil {
@@ -229,7 +244,7 @@ func (p *PostgresStore) recentSessions(user, lang, mode, length string, limit in
 		var s Session
 		var consistency sql.NullFloat64
 		var keys []byte
-		if err := rows.Scan(&s.WPM, &s.Accuracy, &s.Chars, &consistency, &s.Unlocked, &keys, &s.FinishedAt, &s.Length); err != nil {
+		if err := rows.Scan(&s.WPM, &s.Accuracy, &s.Chars, &consistency, &s.Unlocked, &keys, &s.FinishedAt, &s.Length, &s.Group); err != nil {
 			return nil, err
 		}
 		if consistency.Valid {

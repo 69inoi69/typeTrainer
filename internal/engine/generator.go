@@ -535,3 +535,29 @@ func WeightedPick(weights []float64, r float64) int {
 	}
 	return len(weights) - 1
 }
+
+// RandomPortion is the word choice of the control group of a user study
+// (docs/ALGORITHM.md section 11): PortionWords open words drawn uniformly
+// at random, never the same word twice in a row (last = the word before the
+// portion). Everything else stays as in learning (the same open letters,
+// the same statistics and unlocking), so a study compares only the word
+// choice. No focus letter, no frequency penalty, no mistyped words coming
+// back: those are part of the algorithm being tested.
+func (g *Generator) RandomPortion(unlocked int, last string, p Params) Portion {
+	unlocked = g.Clamp(unlocked)
+	por := Portion{}
+	por.Unlocked, por.Locked = g.letters(unlocked)
+	words := g.eligible(unlocked)
+	if len(words) == 0 || p.PortionWords <= 0 {
+		return por
+	}
+	for len(por.Words) < p.PortionWords {
+		w := words[g.rng.Intn(len(words))]
+		if w == last && len(words) > 1 {
+			continue
+		}
+		por.Words = append(por.Words, w)
+		last = w
+	}
+	return por
+}

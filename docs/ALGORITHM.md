@@ -43,7 +43,8 @@ Typing never stops on a mistake (as on monkeytype, so the rhythm is kept):
 
 - a wrong letter turns red and the cursor moves on;
 - Backspace goes back inside the current word (Ctrl+Backspace: the whole
-  word), and into the previous word only if that word has a mistake;
+  word); at the start of a word it goes back into the previous word, at most
+  one word back (from inside that word it does nothing more);
 - space in the middle of a word jumps to the next word; the rest of the word is
   **skipped**;
 - letters typed where a space belongs are **extra** letters, shown in red
@@ -58,7 +59,11 @@ For every **position of the text that was typed** the browser sends one sample:
 - `errors` – how many wrong keys were pressed at this position, including new
   attempts after a Backspace. Backspace changes only what the screen shows: a
   mistake corrected with Backspace **still counts**, because the first attempt
-  was wrong. Extra letters count as errors of the space after the word.
+  was wrong. This also holds after going back one word: the samples of the
+  first pass stay, the retyped letters only add what was missing (skipped
+  letters) and new mistakes, and no letter is measured twice. If the
+  previous word's portion was already sent to the server, its new presses
+  are shown but not sent again. Extra letters count as errors of the space after the word.
 - `ms` – time from the previous keypress to the **first** press at this
   position, measured with `keydown` and `performance.now()` (sub-millisecond
   resolution).
@@ -307,8 +312,8 @@ With `RankStart = 200`, `RankStep = 200` and `RankPenalty = 0.5`, every lesson
 before the full alphabet allows the 200 most common words freely, and every
 200 places further down the list halve a word's chance (rank 1000: 1/16).
 When the last letter opens, the limit grows in a straight line and reaches the
-whole list (2000) after `RampLetters = 10 000` letters, about 1700 words or
-an hour at 30 WPM; then the penalty is gone. Choices behind this:
+whole list (about 2000) after `RampLetters = 10 000` letters, about 1700-1900
+words or an hour at 30 WPM; then the penalty is gone. Choices behind this:
 
 - **Why it is needed.** Without it, words are drawn evenly from the whole
   list: whatever the open letters are, about half of the possible words are
@@ -355,7 +360,8 @@ an hour at 30 WPM; then the penalty is gone. Choices behind this:
   `q` 1823, `x` 851, `z` (8 words in all); pl `f` 1154, `ń` 1159, `ź` 683,
   `ć` 295, `ł` 250, `ó` 239, `ą` 217; uk `ф` 1797, `щ` 447, `ї` 450, `є` 291,
   `ц` 223, `х` 209, `ш` 205; ru `ф` 1410, `ц` 845, `щ` 807, `ю` 280, `х` 237,
-  `ш` 231, and `ъ`, which has a single word in the whole Russian list.
+  `ш` 231, and `ъ`, which had a single word in the Russian list before step 9 of
+  section 12 added more.
   The penalty only shapes which words of the focus letter are taken: the
   focus letter itself (step 1) does not depend on it, so a rare letter is
   never trained less because its words are rare.
@@ -376,7 +382,10 @@ are typed again: up to `RetryWords = 2` of them are put into the next portion
 that is built, at random places, instead of new words. They are not repeated
 right away, because of the waiting portions (below), but about 2 portions
 later. Repeating a missed item after a short gap is the idea of spaced
-practice; here it is the simplest version, one repetition.
+practice; here it is the simplest version, one repetition. A word the user
+went back into (Backspace, section 3) and retyped without a new mistake is
+already practised and does not come back, unless its portion was sent before
+the fix.
 
 **Focus shown to the user** is the focus letter of the portion being typed.
 
@@ -385,7 +394,8 @@ last word is typed, the portion's samples are sent, the statistics are
 updated (and maybe a letter opens), and the answer is one new portion built
 from the new values. It is added at the end of the text. `AheadPortions = 2`
 portions always wait after the one being typed, so the user can read ahead
-(about two lines) and **words already on the screen never change**. The cost
+(12 words, shown one more for each finished word) and **words already on the
+screen never change**. The cost
 is a delay: a new portion is typed about 12 words after the data it was built
 from. Before the stream, a whole exercise of 20 words was built in advance, so
 a mistake on its first word changed the text only 20 to 40 words later.
@@ -495,7 +505,20 @@ These are directions, not things that are built:
   (`TestDifficulty_ShrinkageNeedsEvidence`), only open letters are used.
 - **Simulation** (built, see section 11.1).
 - **Small user study.** Two groups (adaptive vs. random words), the same total
-  practice time, compare WPM and accuracy before and after.
+  practice time, compare WPM and accuracy before and after. The control group
+  is built in and hidden: opening the site with `?group=random` puts that
+  browser (or account) into it in every language, `?group=adaptive` takes it
+  back (`web/app.js`, `POST /api/v1/group`). In the control group learning
+  works as usual (the same letter model, the same unlocking, the same rounds
+  and history) except the word choice: `Generator.RandomPortion` draws the
+  open words uniformly, never the same word twice in a row, with no focus
+  letter, no frequency penalty and no mistyped words coming back, like the
+  "random words" strategy of the simulation (11.1). Every learning round
+  stores its group (`Session.Group`, in `/export` too), so the two groups'
+  rounds can be told apart in the data. The interface does not show the
+  group, so participants do not know which one they are in; the letters bar
+  only shows no focus letter. A reset or a new browser drops the group: open
+  the link again.
 - **Raw data.** Every round in the history keeps its raw keypresses
   (`keys`: letter, mistakes, time, in order; ARCHITECTURE.md, "Raw round
   records"), and `/export` writes them to the file. Replaying them through
@@ -726,4 +749,11 @@ documents every filtering step:
 6. Polish: drop words more frequent in the English list (untranslated names);
 7. hand-made block lists in `tools/wordlists/block_<id>.txt`: names, places,
    profanity, sound tags ("sighs") and fragments ("don" from "don't");
-8. keep the first 2000.
+8. keep the first 2000;
+9. a letter that is in fewer than 10 of them (the `FloorWords` of section 7)
+   gets its next most frequent words appended at the end, until it has 10.
+   This adds 9 Russian words (`ъ` was in a single word: `объяснить`) and 2
+   English ones (`z`: `zero`, `magazine`). The added words are the rarest
+   in the list for the app. Not for Polish `q`, `v`, `x` and Ukrainian `ґ`:
+   they occur only in loan words and names, and filling them brings in names
+   (`vincent`, `quinn`, `ґрегорі`).

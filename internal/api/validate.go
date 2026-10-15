@@ -58,6 +58,9 @@ func validLength(length string, maxWords, maxSeconds int) bool {
 	return false
 }
 
+// validGroup: "" (the normal app) or storage.GroupRandom.
+func validGroup(g string) bool { return g == "" || g == storage.GroupRandom }
+
 // validateSamples: at most max samples, every one a single letter of
 // the language's alphabet or a space, so junk keys never end up in the statistics.
 func validateSamples(samples []engine.Sample, max int, alphabet string) string {
@@ -81,6 +84,9 @@ func validateSamples(samples []engine.Sample, max int, alphabet string) string {
 func validateImport(in langExport, maxSessions, maxEvents, letters int, alphabet string, okLength func(string) bool) string {
 	if in.Unlocked < 0 || in.Unlocked > letters {
 		return "unlocked: out of range"
+	}
+	if !validGroup(in.Group) {
+		return "group: unknown"
 	}
 	for ch, k := range in.Keys {
 		if utf8.RuneCountInString(ch) != 1 || (ch != " " && !strings.Contains(alphabet, ch)) {
@@ -121,6 +127,9 @@ func validateSessions(sessions []storage.Session, max, maxEvents, letters int, a
 		}
 		if !okLength(sess.Length) {
 			return "sessions: unknown length " + sess.Length
+		}
+		if !validGroup(sess.Group) {
+			return "sessions: unknown group " + sess.Group
 		}
 		if msg := validateSamples(sess.Keys, maxEvents, alphabet); msg != "" {
 			return "sessions: keys: " + msg

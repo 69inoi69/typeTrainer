@@ -36,7 +36,8 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   if you already type well, the next ones open quickly.
 - Type the grey text. Wrong key = the letter turns red and you keep going, as
   on monkeytype. Backspace fixes the current word (Ctrl+Backspace: the whole
-  word); you can go back into a word you left with a mistake. Space in the middle of a word jumps to the next one. A fixed
+  word); at the start of a word it takes you back into the previous word, one
+  word at most, so you can finish a word you skipped. Space in the middle of a word jumps to the next one. A fixed
   mistake still counts for the letter's statistics.
 - The row of letters at the top shows your progress: open letters, the letter in
   **focus** (yellow, your weakest right now), mastered letters (green dot), and
@@ -149,6 +150,22 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   speed of every exercise, a **difficulty keyboard** (grey keys, the redder the
   harder the letter is for you, dashed = no data yet; hover or tap a key for
   its numbers), and every letter from weakest to strongest.
+
+## A user study (for the thesis)
+
+To compare the algorithm with random words on real people, give half of the
+participants this link (with your own address):
+
+```
+http://localhost:3000/?group=random
+```
+
+and the other half the normal address. In the "random" group the words are
+chosen at random from the open letters; everything else is the same, and
+nothing on the screen says which group it is. Every round remembers its
+group, and **Export** saves it, so you can compare the two groups later.
+`?group=adaptive` puts a browser back to normal. A reset clears the group:
+open the link again after one.
 
 ## Languages and layouts
 

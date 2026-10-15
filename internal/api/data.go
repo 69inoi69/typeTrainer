@@ -27,9 +27,10 @@ func (s *Server) handleReset(w http.ResponseWriter, r *http.Request, user string
 // langExport is everything stored for one language, in a form that can be
 // saved to a file and loaded back (the same shape is used in both directions).
 type langExport struct {
-	Unlocked int                       `json:"unlocked"` // how many letters are open
-	Keys     map[string]engine.KeyStat `json:"keys"`     // the raw statistics per letter
-	Sessions []storage.Session         `json:"sessions"` // finished exercises, OLDEST first
+	Unlocked int                       `json:"unlocked"`        // how many letters are open
+	Keys     map[string]engine.KeyStat `json:"keys"`            // the raw statistics per letter
+	Sessions []storage.Session         `json:"sessions"`        // finished exercises, OLDEST first
+	Group    string                    `json:"group,omitempty"` // study group ("" = the normal app)
 	// free practice: absent in files from before it existed
 	Freeplay *freeplayExport `json:"freeplay,omitempty"`
 }
@@ -87,6 +88,11 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request, user strin
 		serverError(w, err)
 		return
 	}
+	group, err := s.store.Group(user, id)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
 	freeCount, err := s.store.FreeplaySessionCount(user, id, "")
 	if err != nil {
 		serverError(w, err)
@@ -98,7 +104,7 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request, user strin
 		return
 	}
 	writeJSON(w, http.StatusOK, langExport{
-		Unlocked: unlocked, Keys: keys, Sessions: oldestFirst(newestFirst),
+		Unlocked: unlocked, Keys: keys, Sessions: oldestFirst(newestFirst), Group: group,
 		Freeplay: &freeplayExport{TestPassed: passed, Sessions: oldestFirst(free)},
 	})
 }
@@ -135,6 +141,10 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request, user strin
 		serverError(w, err)
 		return
 	}
+	if err := s.store.SetGroup(user, id, in.Group); err != nil {
+		serverError(w, err)
+		return
+	}
 	for _, sess := range in.Sessions {
 		if err := s.store.AddSession(user, id, sess); err != nil {
 			serverError(w, err)
@@ -154,4 +164,29 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request, user strin
 		}
 	}
 	writeJSON(w, http.StatusOK, map[string]int{"unlocked": in.Unlocked, "sessions": len(in.Sessions)})
+}
+
+// POST /api/v1/group?lang= {"group": "random"} -> puts the user into a group
+// of a user study for this language ("" = back to the normal app). Not in
+// the interface: the study link sets it (web/app.js, ?group=). See
+// docs/ALGORITHM.md section 11.
+func (s *Server) handleGroup(w http.ResponseWriter, r *http.Request, user string, l *Language) {
+	var req struct {
+		Group string `json:"group"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&req); err != nil {
+		badRequest(w, "invalid JSON")
+		return
+	}
+	if !validGroup(req.Group) {
+		badRequest(w, "group: unknown")
+		return
+	}
+	s.writeMu.Lock()
+	defer s.writeMu.Unlock()
+	if err := s.store.SetGroup(user, l.Info.ID, req.Group); err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"group": req.Group})
 }
