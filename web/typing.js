@@ -8,7 +8,7 @@ import { t, tPick } from "./i18n.js";
 import { FX } from "./fx.js";
 import { $, el, S, introOpen } from "./state.js";
 import { postJSON } from "./api.js";
-import { highlightNextKey, pulseKey, requestFit } from "./keyboard.js";
+import { highlightNextKey, pulseKey, glowKey, requestFit } from "./keyboard.js";
 import { refreshStats } from "./stats.js";
 import { showResult } from "./result.js";
 
@@ -27,6 +27,7 @@ let startTime = null;      // performance.now() of the first keypress
 let lastTime = null;       // performance.now() of the previous keypress
 let afterBackspace = false; // the next press follows a Backspace: its time is not measured
 let presses = 0, correctPresses = 0;
+let perSecond = [];        // keypresses in each second since startTime (for consistency)
 let popLetter = null;      // letter that was just unlocked (for the animation)
 
 // Rewards (they change nothing in the statistics, they only feel nice)
@@ -129,7 +130,6 @@ function renderLetters() {
   if (!started) {
     parts.push(pill("open", "", "tip.open", t("stat.open"), `<b>${openCount}/${all}</b>`));
     parts.push(`<span class="begin">${t("stat.begin")}</span>`);
-    if (S.exercise.locked.length) parts.push(`<span class="begin">${t("openAll")}</span>`); // a button inside
   } else {
     if (focusHasData) parts.push(pill("focus", "focus", "tip.focus", t("stat.focus"), `<b class="lt">${S.exercise.focus}</b>`));
     const pct = openCount ? Math.round((mastered / openCount) * 100) : 0;
@@ -150,7 +150,8 @@ function renderLetters() {
 // the UPDATED statistics and added at the end of the text. AheadPortions
 // portions are always waiting after the one being typed, so the words you can
 // already see never change. A round is RoundPortions portions (30 words); it
-// ends with its last word, or earlier with Esc or a long pause, see finishRound().
+// ends with the last letter of its last word (no space needed after it), or
+// earlier with Esc or a long pause, see finishRound().
 const IDLE_STOP_MS = 10000;  // no key for this long during a round = the user stopped
 const RECENT_SENT = 40;      // words of the round sent as "recent" (the server uses the last RecentWords)
 let portions = [];           // {start, end, focus}: positions of each portion; end = its last space
@@ -184,11 +185,14 @@ function appendPortions(list) {
     for (let i = at; i < end; i++) if (S.text[i] === p.focus) focusMask[i] = 1;
     at = end + 1;
   }
+  // words added while you type fade in softly (CSS animation .new, once);
+  // the first words of a round come with the fade of the whole text (.swap)
+  const fresh = old > 0 ? " new" : "";
   const frag = document.createDocumentFragment();   // one DOM update, not one per letter
   for (let i = old; i < S.text.length; i++) {
     const sp = document.createElement("span");
     sp.textContent = S.text[i];
-    if (focusMask[i]) sp.className = "fx";
+    sp.className = (focusMask[i] ? "fx" : "") + fresh;
     frag.appendChild(sp);
     spans.push(sp);
   }
@@ -225,9 +229,10 @@ function mistypedWords(por) {
 }
 
 // The last space of portion k was typed: send it, get the next portion
-// (none once the round has all of them). The last portion ends the round.
+// (none once the round has all of them). Returns true for the last portion
+// of the round: then the round is over (handleChar ends it).
 function portionDone(k) {
-  if (k === round - 1) { finishRound(); return; }
+  if (k === round - 1) return true;
   const por = portions[k];
   const samples = records.slice(sentUpTo, por.end + 1).filter(Boolean);
   sentUpTo = por.end + 1;
@@ -245,12 +250,20 @@ function portionDone(k) {
     if (res.newLetter) newLetter(res.newLetter);
     renderLetters();
   }).catch((err) => { console.error(err); el.hint.textContent = t("err.server"); });
+  return false;
 }
 
-// A letter opened: its chip pops now, the result of the round names it.
+// The caret is on the space after the last word of the round: every letter
+// of the round has been typed (right or wrong), so the round is over without
+// that space.
+const roundComplete = () => current === round - 1 && S.pos === portions[current]?.end;
+
+// A letter opened: its chip pops with a soft ring (renderLetters, .chip.pop),
+// its key glows once, and the result of the round names it. Calm on purpose:
+// a new letter is good news, not a party.
 function newLetter(l) {
   popLetter = roundNewLetter = l;
-  FX.burstFrom(el.letters, 60);
+  glowKey(l);
 }
 
 // A new round: an empty text, then AheadPortions + 1 portions at once.
@@ -261,7 +274,7 @@ function resetStream() {
   state = new Uint8Array(0); focusMask = new Uint8Array(0); records = []; spans = [];
   portions = []; sentUpTo = 0; current = 0; roundNewLetter = "";
   extras = new Map(); correctChars = 0; afterBackspace = false;
-  startTime = null; lastTime = null; presses = 0; correctPresses = 0;
+  startTime = null; lastTime = null; presses = 0; correctPresses = 0; perSecond = [];
   el.text.replaceChildren(el.caret);          // the caret lives inside the text
 }
 
@@ -360,6 +373,9 @@ export function handleChar(ch) {
   }
   if (ch === expected && (wrongScript || el.warn.classList.contains("show"))) hideWarn();
   presses++;
+  const sec = Math.floor((now - startTime) / 1000);
+  perSecond[sec] = (perSecond[sec] ?? 0) + 1;   // real keys only: skipped letters are not presses
+  let roundOver = false;
 
   if (expected === " " && ch !== " ") {
     // a letter where the space belongs: an "extra" letter, the cursor stays
@@ -394,10 +410,13 @@ export function handleChar(ch) {
       const space = S.text[S.pos] === " ";
       if (space) endWord();
       S.pos++;
-      if (space && S.pos - 1 === portions[current]?.end) portionDone(current);
+      if (space && S.pos - 1 === portions[current]?.end) roundOver = portionDone(current);
+      else if (!space && roundComplete()) { endWord(); roundOver = true; }  // the last letter of the round
     }
   }
   lastTime = now; afterBackspace = false;
+  // after lastTime: the time of the round ends with this keypress
+  if (roundOver) { finishRound(); return; }
   highlightNextKey();
   placeCaret(false);
 }
@@ -504,6 +523,13 @@ function currentRaw(end = performance.now()) {
   const minutes = (end - startTime) / 60000;
   return minutes > 0 ? (presses / 5) / minutes : 0;
 }
+// Keypresses in every FULL second up to `end`, a second without keys = 0.
+// The last, unfinished second is left out: it would always look slow. The
+// server turns the list into consistency (engine.Consistency).
+function fullSeconds(end) {
+  const n = startTime === null ? 0 : Math.floor((end - startTime) / 1000);
+  return Array.from({ length: n }, (_, i) => perSecond[i] ?? 0);
+}
 function currentAccuracy() {
   return presses ? (correctPresses / presses) * 100 : 100;
 }
@@ -570,8 +596,8 @@ export function stopRound() {
   } else finishRound();
 }
 
-// The round is over (its last word, Esc or a long pause): the numbers of the
-// round go to the history, the result screen shows what changed, then the
+// The round is over (the last letter of its last word, Esc or a long
+// pause): the numbers of the round go to the history, the result screen shows what changed, then the
 // next round starts. The time of the round ends at its last keypress, so the
 // pause that ended it early does not lower the WPM.
 async function finishRound() {
@@ -593,14 +619,14 @@ async function finishRound() {
     await queue;                                       // portions still on their way
     streamId++;                                        // nothing more for this round
     if (!typed.length) { await loadExercise(); return; } // nothing typed: nothing to keep
-    const res = await postJSON("/results", { samples, chars: typed.length, wpm, accuracy });
+    const res = await postJSON("/results", { samples, chars: typed.length, wpm, accuracy, perSecond: fullSeconds(end) });
     await refreshStats();
     if (res.newLetter) newLetter(res.newLetter);
 
     const r = compareStats(roundBefore, S.lastStats, typed);
     justMastered = new Set(r.mastered);
     if (r.best) FX.burstFrom(el.wpm, 80);
-    await showResult({ wpm, accuracy, newLetter: roundNewLetter, resisted, ...r });
+    await showResult({ wpm, accuracy, consistency: res.consistency, newLetter: roundNewLetter, resisted, ...r });
     await loadExercise();   // built from the UPDATED model
   } catch (err) {
     console.error(err);

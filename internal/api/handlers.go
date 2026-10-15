@@ -186,11 +186,14 @@ type resultsRequest struct {
 	WPM      float64         `json:"wpm"`
 	Accuracy float64         `json:"accuracy"`
 	Chars    int             `json:"chars"` // characters typed in the round (0: len(samples))
+	// keypresses in each full second of the round, for engine.Consistency
+	PerSecond []int `json:"perSecond"`
 }
 
 // POST /api/v1/results?lang= -> the round is over: stores it in the
 // history. Samples are the ones not yet sent with /portion (may be empty).
-// Answer: {"unlocked": 8, "newLetter": "s"} (newLetter is "" if nothing opened).
+// Answer: {"unlocked": 8, "newLetter": "s", "consistency": 81.4}
+// (newLetter is "" if nothing opened; consistency is null for a round too short to judge).
 func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, l *Language) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20) // 1 MB is plenty
 	var req resultsRequest
@@ -213,14 +216,18 @@ func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, l *Langua
 		serverError(w, err)
 		return
 	}
+	var consistency *float64
+	if v, ok := engine.Consistency(req.PerSecond, s.cfg.ConsistencyMinSeconds); ok {
+		consistency = &v
+	}
 	err = s.store.AddSession(l.Info.ID, storage.Session{
-		WPM: req.WPM, Accuracy: req.Accuracy, Chars: req.Chars, FinishedAt: time.Now(),
+		WPM: req.WPM, Accuracy: req.Accuracy, Chars: req.Chars, Consistency: consistency, FinishedAt: time.Now(),
 	})
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"unlocked": unlocked, "newLetter": newLetter})
+	writeJSON(w, http.StatusOK, map[string]any{"unlocked": unlocked, "newLetter": newLetter, "consistency": consistency})
 }
 
 // POST /api/v1/reset?lang= -> deletes all statistics, unlocked letters and
@@ -340,6 +347,9 @@ func validateImport(in langExport, maxSessions, letters int, alphabet string) st
 		if sess.WPM < 0 || sess.WPM > 400 || sess.Accuracy < 0 || sess.Accuracy > 100 || sess.Chars < 0 {
 			return "sessions: wpm, accuracy or chars out of range"
 		}
+		if c := sess.Consistency; c != nil && (*c < 0 || *c > 100) {
+			return "sessions: consistency out of range"
+		}
 	}
 	return ""
 }
@@ -379,6 +389,14 @@ func validate(req resultsRequest, maxEvents int, alphabet string) string {
 	}
 	if req.WPM < 0 || req.WPM > 400 || req.Accuracy < 0 || req.Accuracy > 100 {
 		return "wpm or accuracy out of range"
+	}
+	if len(req.PerSecond) > maxEvents {
+		return "perSecond: too many seconds"
+	}
+	for _, c := range req.PerSecond {
+		if c < 0 || c > maxEvents {
+			return "perSecond: each count must be between 0 and the number of events"
+		}
 	}
 	return ""
 }

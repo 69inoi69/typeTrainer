@@ -22,7 +22,7 @@ let done = null;           // resolves the promise of the open result
 
 export const resultOpen = () => done !== null;
 
-// r: { wpm, accuracy, newLetter, best, mastered: [chars], resisted,
+// r: { wpm, accuracy, consistency (null = too short), newLetter, best, mastered: [chars], resisted,
 //      faster: [{c, pct}], slower: [{c, pct}] }
 export function showResult(r) {
   const lines = [];
@@ -52,8 +52,11 @@ export function showResult(r) {
   if (r.faster?.length) changed.push(`<span class="r-lbl">${t("result.faster")}</span>${r.faster.map((x) => chip(x, "up")).join("")}`);
   if (r.slower?.length) changed.push(`<span class="r-lbl">${t("result.slower")}</span>${r.slower.map((x) => chip(x, "down")).join("")}`);
   if (changed.length) lines.push(`<p class="r-letters">${changed.join('<span class="r-sep"></span>')}</p>`);
+  // a tip only when nothing else happened (consistency is always there, so it does not count)
+  const advice = !facts.length && !changed.length && Math.random() < ADVICE_CHANCE;
+  if (r.consistency != null) facts.push(t("result.consistency", { pct: Math.round(r.consistency) }));
+  if (advice) facts.push(tPick("advice"));
   if (facts.length) lines.push(`<p class="r-facts">${facts.join(" · ")}</p>`);
-  else if (!changed.length && Math.random() < ADVICE_CHANCE) lines.push(`<p class="r-facts">${tPick("advice")}</p>`);
 
   box.innerHTML = `<div class="r-body">${lines.join("")}</div>` +
     `<p class="r-next">${t("result.next")}</p><i class="r-bar" style="--ms:${RESULT_MS}ms"></i>`;

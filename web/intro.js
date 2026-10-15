@@ -1,13 +1,10 @@
-// The short hands-on intro of the first visit (home row, space, fingers) and
-// "open all letters" for people who can already touch type.
-// Layer: middle. Imports the bottom layer, keyboard.js, stats.js, typing.js.
+// The short hands-on intro of the first visit (home row, space, fingers).
+// Everyone starts from the first letters: there is no "open all letters".
+// Layer: middle. Imports the bottom layer and keyboard.js.
 
 import { FX } from "./fx.js";
 import { $, el, S, store, introOpen, focusText } from "./state.js";
-import { postJSON } from "./api.js";
 import { makeKey } from "./keyboard.js";
-import { refreshStats } from "./stats.js";
-import { loadExercise } from "./typing.js";
 import { maybeStartTour } from "./tour.js";
 
 // ---------- intro ----------
@@ -95,47 +92,16 @@ export function introKey(e) {
   }
 }
 
-// unlockAll: true = "I can already touch type", false = "Start",
-// undefined = closed with skip / Esc (nothing changes).
-async function closeIntro(unlockAll) {
+// Closed with "Start", skip or Esc.
+function closeIntro() {
   if (!introOpen() || el.intro.classList.contains("closing")) return;
   el.intro.classList.add("closing");             // fade out, then hide
   FX.fadeOut(el.intro).then(() => el.intro.classList.add("hidden"), () => {}).finally(() => el.intro.classList.remove("closing"));
   store.set("tt.introDone", "1");
-  if (unlockAll) {
-    await openAllLetters();
-  } else if (unlockAll === false && store.get(`tt.level.${S.lang}`) === "pro") {
-    // reopened the intro and chose to start small after all
-    store.set(`tt.level.${S.lang}`, "new");
-    try {
-      await postJSON("/progress", { unlockAll: false });
-      await refreshStats();
-      await loadExercise();
-    } catch (err) { console.error(err); }
-  }
   focusText();
   maybeStartTour();                              // first visit: the tour of the page comes next
 }
 $("intro-next").addEventListener("click", (e) => { e.currentTarget.blur(); nextIntroStep(); });
 $("intro-skip").addEventListener("click", () => closeIntro());
-$("intro-new").addEventListener("click", () => closeIntro(false));
-$("intro-pro").addEventListener("click", () => closeIntro(true));
+$("intro-new").addEventListener("click", () => closeIntro());
 el.btnIntro.addEventListener("click", (e) => { e.currentTarget.blur(); showIntro(); });
-
-// "Already touch typing? open all letters": every letter of this language
-// opens at once. Remembered per language (the Pages version forgets progress
-// on reload, so loadLanguage applies it again).
-async function openAllLetters() {
-  store.set(`tt.level.${S.lang}`, "pro");
-  try {
-    await postJSON("/progress", { unlockAll: true });
-    await refreshStats();
-    await loadExercise();
-    FX.burstFrom(el.letters, 60);
-  } catch (err) { console.error(err); }
-}
-el.lettersCaption.addEventListener("click", (e) => {
-  if (e.target.id !== "open-all" || S.busy) return;
-  e.target.blur();
-  openAllLetters().then(focusText);
-});

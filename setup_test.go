@@ -198,13 +198,14 @@ func TestApp_ImportRejectsBadDataAndKeepsOldData(t *testing.T) {
 		`not json`,
 		`{"unlocked":-1}`,
 		`{"unlocked":9999}`,
-		`{"keys":{"ж":{"count":1}}}`,               // not an English letter
-		`{"keys":{"ab":{"count":1}}}`,              // not one character
-		`{"keys":{"a":{"count":1,"mistakes":2}}}`,  // more mistakes than presses
-		`{"keys":{"a":{"count":1,"errEma":1.5}}}`,  // probability above 1
-		`{"keys":{"a":{"count":-1}}}`,              // negative count
-		`{"sessions":[{"wpm":999,"accuracy":50}]}`, // impossible speed
-		`{"sessions":[{"wpm":30,"accuracy":150}]}`, // impossible accuracy
+		`{"keys":{"ж":{"count":1}}}`,                                // not an English letter
+		`{"keys":{"ab":{"count":1}}}`,                               // not one character
+		`{"keys":{"a":{"count":1,"mistakes":2}}}`,                   // more mistakes than presses
+		`{"keys":{"a":{"count":1,"errEma":1.5}}}`,                   // probability above 1
+		`{"keys":{"a":{"count":-1}}}`,                               // negative count
+		`{"sessions":[{"wpm":999,"accuracy":50}]}`,                  // impossible speed
+		`{"sessions":[{"wpm":30,"accuracy":150}]}`,                  // impossible accuracy
+		`{"sessions":[{"wpm":30,"accuracy":90,"consistency":101}]}`, // impossible consistency
 	}
 	for _, b := range bad {
 		if code, _ := call(t, h, "POST", "/api/v1/import?lang=en", b); code != 400 {
@@ -214,5 +215,30 @@ func TestApp_ImportRejectsBadDataAndKeepsOldData(t *testing.T) {
 	_, st := call(t, h, "GET", "/api/v1/stats?lang=en", "")
 	if st["sessionCount"].(float64) != 1 {
 		t.Fatalf("a refused import changed the data: %v", st["sessionCount"])
+	}
+}
+
+// /results measures consistency from the keypresses per second, keeps it in
+// the history and answers with it; a round too short to judge gets null.
+func TestApp_ResultsConsistency(t *testing.T) {
+	h, _, _ := newApp()
+	code, out := call(t, h, "POST", "/api/v1/results?lang=en", `{"samples":[],"chars":30,"wpm":30,"accuracy":95,"perSecond":[5,5,5,5,5,5]}`)
+	if code != 200 || out["consistency"] != 100.0 {
+		t.Fatalf("even pace: %d %v, want consistency 100", code, out)
+	}
+	_, st := call(t, h, "GET", "/api/v1/stats?lang=en", "")
+	if c := st["sessions"].([]any)[0].(map[string]any)["consistency"]; c != 100.0 {
+		t.Fatalf("history: consistency %v, want 100", c)
+	}
+	_, out = call(t, h, "POST", "/api/v1/results?lang=en", `{"samples":[],"chars":10,"wpm":30,"accuracy":95,"perSecond":[5,5]}`)
+	if c, there := out["consistency"]; !there || c != nil {
+		t.Fatalf("short round: consistency %v, want null", c)
+	}
+	_, st = call(t, h, "GET", "/api/v1/stats?lang=en", "")
+	if _, there := st["sessions"].([]any)[0].(map[string]any)["consistency"]; there {
+		t.Fatal("short round: the history entry must have no consistency")
+	}
+	if code, _ := call(t, h, "POST", "/api/v1/results?lang=en", `{"samples":[],"chars":10,"wpm":30,"accuracy":95,"perSecond":[5,-1,5,5,5]}`); code != 400 {
+		t.Fatal("a negative count per second must be rejected")
 	}
 }

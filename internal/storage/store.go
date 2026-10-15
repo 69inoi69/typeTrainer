@@ -11,10 +11,13 @@ import (
 
 // Session is the summary of one finished exercise.
 type Session struct {
-	WPM        float64   `json:"wpm"`
-	Accuracy   float64   `json:"accuracy"` // 0..100
-	Chars      int       `json:"chars"`
-	FinishedAt time.Time `json:"finishedAt"`
+	WPM      float64 `json:"wpm"`
+	Accuracy float64 `json:"accuracy"` // 0..100
+	Chars    int     `json:"chars"`
+	// Consistency of the speed, 0..100 (engine.Consistency). nil = not
+	// measured: a round too short to judge, or history from before it existed.
+	Consistency *float64  `json:"consistency,omitempty"`
+	FinishedAt  time.Time `json:"finishedAt"`
 }
 
 // Store is every data operation the app needs. Nothing outside this

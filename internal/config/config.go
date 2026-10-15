@@ -14,8 +14,10 @@ type Config struct {
 
 	MaxImportBytes    int // largest accepted import body (one language)
 	MaxImportSessions int // most history entries accepted in one import
-	Engine            engine.Params
-	Sim               sim.Params // only for the simulation tool (go run ./tools/sim)
+
+	ConsistencyMinSeconds int // a round shorter than this gets no consistency (engine.Consistency)
+	Engine                engine.Params
+	Sim                   sim.Params // only for the simulation tool (go run ./tools/sim)
 }
 
 func Default() Config {
@@ -25,6 +27,8 @@ func Default() Config {
 
 		MaxImportBytes:    8 << 20, // 8 MB: years of history still fit
 		MaxImportSessions: 50000,
+
+		ConsistencyMinSeconds: 5, // under 5 full seconds there is too little to judge the pace
 		Engine: engine.Params{
 			Alpha:         0.1,  // EMA: roughly the last ~20 occurrences of a letter matter
 			MaxIntervalMs: 2000, // gaps over 2 s are pauses, ignored for speed

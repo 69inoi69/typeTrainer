@@ -21,6 +21,7 @@ export function renderStats() {
   const sessions = [...s.sessions].reverse(); // oldest first
   const last10 = sessions.slice(-10);
   const avg = (arr, f) => arr.length ? arr.reduce((a, x) => a + f(x), 0) / arr.length : null;
+  const measured = last10.filter((x) => x.consistency != null);   // short rounds and old history have none
   const fmt = (v, suffix = "") => v === null ? "—" : Math.round(v) + suffix;
   const best = sessions.length ? Math.max(...sessions.map((x) => x.wpm)) : null;
   el.tiles.innerHTML = [
@@ -28,6 +29,7 @@ export function renderStats() {
     [fmt(best), t("tile.best")],
     [fmt(avg(last10, (x) => x.wpm)), t("tile.avgWpm")],
     [fmt(avg(last10, (x) => x.accuracy), "%"), t("tile.avgAcc")],
+    [fmt(avg(measured, (x) => x.consistency), "%"), t("tile.avgCons")],
   ].map(([v, l]) => `<div class="tile"><b>${v}</b><small>${l}</small></div>`).join("");
 
   drawChart(sessions, s.targetWpm, s.sessionCount);
@@ -142,7 +144,8 @@ function drawChart(sessions, target, total) {
     h.addEventListener("pointerenter", () => bars[i].classList.add("hover"));
     h.addEventListener("pointerleave", () => { bars[i].classList.remove("hover"); el.tooltip.classList.remove("show"); });
     h.addEventListener("pointermove", (e) => {
-      el.tooltip.innerHTML = `<span>#${first + i}</span> ${Math.round(x.wpm)} wpm <span>·</span> ${Math.round(x.accuracy)}%`;
+      const cons = x.consistency != null ? ` <span>·</span> ${t("chart.cons", { pct: Math.round(x.consistency) })}` : "";
+      el.tooltip.innerHTML = `<span>#${first + i}</span> ${Math.round(x.wpm)} wpm <span>·</span> ${Math.round(x.accuracy)}%${cons}`;
       el.tooltip.style.left = e.clientX + "px";
       el.tooltip.style.top = e.clientY + "px";
       el.tooltip.classList.remove("below");

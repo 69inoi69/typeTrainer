@@ -32,7 +32,7 @@ mode and no settings: the model alone decides what to practise.
 | Statistics per letter | Per key pair (bigram), per word | Simplest unit that can be explained and shown on the keyboard. Bigrams are a natural extension (section 10). |
 | Smoothed recent statistics (EMA) | Lifetime totals | Skill changes. A lifetime error rate remembers mistakes from weeks ago forever. |
 | Probabilistic choice (softmax) | Always train the single worst letter | Always drilling one letter is boring and over-fits; probabilities give focus *and* variety. |
-| Gradual unlocking | All 26 letters from the start | A beginner cannot learn 26 finger positions at once. The same engine also serves experienced typists: they open everything in the intro. |
+| Gradual unlocking | All 26 letters from the start | A beginner cannot learn 26 finger positions at once. Experienced typists go through the same steps, only much faster. |
 | Statistics, not a neural network | ML model | No training data is needed, every decision can be explained with a formula, and it runs instantly on the server. |
 
 ## 3. What is measured
@@ -99,6 +99,25 @@ accuracy = correct keypresses / all keypresses * 100  (a skipped letter = one wr
 
 `raw` is only shown in the header (as on monkeytype); it is not sent to the
 server and the model does not use it.
+
+**Consistency** (`internal/engine/consistency.go`) tells how even the speed
+was during a round. The browser counts the keypresses in every full second
+from the first keypress (a second without keys is a 0; the last, unfinished
+second is left out because it would always look slow). The server computes:
+
+```
+cv          = standard deviation / mean of the counts   (coefficient of variation)
+consistency = 100 * (1 - tanh(cv + cv^3/3 + cv^5/5))     (0..100 %)
+```
+
+`cv` has no unit, so keypresses per second and raw WPM per second (12 times
+more) give the same value. The `tanh` maps `cv` from `[0, ∞)` to `100 … 0 %`;
+the terms inside it are the start of the series of `artanh(cv)`, so for a small
+`cv` the result is close to `100 * (1 - cv)`, and it never goes below 0. The
+formula is the one monkeytype uses (`kogasa` in `packages/util/src/numbers.ts`),
+so the numbers can be compared with that site. A round shorter than
+`ConsistencyMinSeconds = 5` seconds gets none (too few values to judge). It is
+kept in the history and shown to the user; the model does **not** use it.
 
 ## 4. Per-letter statistics: exponential moving average
 
@@ -225,8 +244,10 @@ portion. A new letter
 starts at the prior difficulty 0.7, which is higher than the difficulty of the
 mastered letters, so it automatically becomes the focus.
 
-**Experienced typists** choose "I can already touch type" in the intro and get
-all letters at once. From then on the engine works only through focus.
+**Experienced typists** start from the first letters too (there is no "open
+all letters" choice, a decision of the owner): typing well, they master the
+open letters quickly and unlock the rest in a short time. Once every letter is
+open the engine works only through focus.
 
 ## 7. Choosing the words
 
@@ -327,7 +348,8 @@ a mistake on its first word changed the text only 20 to 40 words later.
 
 **The round.** The stream is cut into rounds of `RoundPortions = 5` portions
 (30 words), so the user always sees how much is left (a counter `12/30`) and
-gets a result at a clear point. The last word of a round ends it; Esc or
+gets a result at a clear point. The last letter of the last word ends it (no space after it is needed,
+right or wrong); Esc or
 10 seconds without a key end it early. The WPM and accuracy of the round go to
 the history, and the next round starts from scratch: new waiting portions, an
 empty list of recent words. Inside a round the words are still chosen portion
@@ -366,6 +388,7 @@ All in `internal/config/config.go`.
 | `RoundPortions` | 5 | portions per round (30 words), one result in the history | chosen by the owner: a clear end; about 1-2 minutes for a beginner, 20 seconds for a fast typist |
 | `RankStart` | 200 | words up to this frequency rank come without a penalty in the first lesson | the size of monkeytype's smallest list ("English 200"): the core words of a language |
 | `RankStep` | 200 | distance in ranks that halves a word's chance | one "200 words" block per halving: rank 1000 in the first lesson is 16 times rarer |
+| `ConsistencyMinSeconds` | 5 | shortest round that gets a consistency (section 3) | a standard deviation of 2-3 numbers says little; 5 s is a few words even for a beginner |
 | `RankPenalty` | 0.5 | weight multiplier per `RankStep` over the limit | halving is easy to explain; with `T = 0.1` one step equals about 0.07 of difficulty, so weak letters still decide first |
 
 The values were chosen by reasoning, not fitted to data. Tuning them on real
@@ -470,8 +493,8 @@ also measures how repetitive the exercises are (means over exercises):
   table below; quoted in the bullets).
 
 They are measured twice: on the **first 30 exercises** of the beginner above
-(few open letters), and on an **experienced typist** who opens every letter in
-the intro (every letter starts at ≤ 5 % errors and 150..350 ms) over 100
+(few open letters), and on an **experienced typist** with every letter
+already open (every letter starts at ≤ 5 % errors and 150..350 ms) over 100
 exercises.
 
 **Result** (20 typists per strategy; "exercises" = mean number of exercises
