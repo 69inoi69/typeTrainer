@@ -72,7 +72,13 @@ Details: `docs/ARCHITECTURE.md`.
 ## Product decisions (do not change without asking)
 
 - **Real words only.** No generated letter combinations like keybr.
-- **One mode.** No difficulty switches; the algorithm decides what to practise.
+- **Two modes and a test.** *Learning* is the adaptive trainer: all the
+  algorithm work lives there, with no difficulty switches (the algorithm
+  decides what to practise). *Free practice* draws words evenly from the whole
+  list, has its own history and never feeds the letter model
+  (`internal/freeplay`). It opens when every letter is unlocked, or after the
+  one-time *typing test* (one 30-word round at 30 WPM and 97% accuracy). No
+  self-declared skill level: the test is the only early way in.
 - **Everyone starts from the first letters.** No "open all letters" in the
   interface: experienced typists unlock the rest quickly by typing well.
 - **The math in `internal/engine/model.go` is the core of my thesis.** Do not

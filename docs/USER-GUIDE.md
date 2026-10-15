@@ -52,6 +52,15 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   keypress until the end of the round the header steps back: the logo turns
   grey, the controls almost vanish (move the mouse over the header to bring
   them back) and the small phrase over the logo turns into a "typing" one.
+- **learning · free** in the header chooses the mode. **Learning** is the
+  trainer: it picks words for your weak letters and opens new ones.
+  **Free practice** gives words from the whole list, keeps its own history
+  (the statistics screen shows it while free practice is chosen) and changes
+  nothing in learning. Free practice opens when every letter is open, or
+  right away if you pass the **typing test**: while it is locked (a small
+  lock on the tab), clicking it starts the test, one round of 30 words at
+  30 wpm with 97% accuracy. Only a full round counts (`Esc` stops the test);
+  you can take it again any time. The mode is remembered per language.
 - The **EN · PL · UK · RU** switch changes the language you practise **and the
   language of the interface** (remembered in your browser; the first time it
   follows your browser's language).

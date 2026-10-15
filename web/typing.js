@@ -1,8 +1,10 @@
 // The typing screen: the text stream (portions of words added while you
 // type, in rounds of 30 words), the caret, what every keypress does, the
 // clean-word streak, the live WPM / accuracy, the letters bar, and sending
-// the result when a round ends.
-// Layer: middle. Imports the bottom layer, keyboard.js, stats.js and result.js.
+// the result when a round ends. The same screen serves every mode
+// (modes.js): learning talks to /portion and /results, free practice and the
+// typing test to /freeplay/*.
+// Layer: middle. Imports the bottom layer, keyboard.js, stats.js, result.js and modes.js.
 
 import { t, tPick } from "./i18n.js";
 import { FX } from "./fx.js";
@@ -11,6 +13,7 @@ import { postJSON } from "./api.js";
 import { highlightNextKey, pulseKey, glowKey, requestFit } from "./keyboard.js";
 import { refreshStats } from "./stats.js";
 import { showResult } from "./result.js";
+import { learning, refreshFreeplay, setMode } from "./modes.js";
 
 // Typing state, used only by the typing code.
 let wrongScript = 0;       // presses in a row that came from another keyboard layout
@@ -90,6 +93,7 @@ const STAT_ICONS = {
   key: '<circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M21 12v2.5"/>',
 };
 function renderLetters() {
+  if (!learning()) { renderFreeLetters(); return; }
   if (!S.exercise) return;
   const info = {};
   for (const k of S.lastStats?.keys ?? []) info[k.char] = k;
@@ -140,6 +144,15 @@ function renderLetters() {
   el.lettersCaption.innerHTML = parts.join("");
   popLetter = null;
   justMastered = new Set();
+}
+
+// Free practice and the test: no letters to learn. Every key is open, and the
+// status line says what this round is.
+function renderFreeLetters() {
+  el.letters.replaceChildren();
+  for (const key of Object.values(S.keyEls)) key.classList.remove("locked");
+  if (S.altgrEl) S.altgrEl.classList.remove("locked");
+  el.lettersCaption.innerHTML = `<span class="begin">${t(S.mode === "test" ? "mode.testCaption" : "mode.freeCaption")}</span>`;
 }
 
 // ---------- the stream ----------
@@ -198,13 +211,13 @@ function appendPortions(list) {
   }
   el.text.insertBefore(frag, el.caret);
   const last = list.at(-1);
-  S.exercise = { ...(S.exercise ?? {}), unlocked: last.unlocked, locked: last.locked };
+  if (last.unlocked) S.exercise = { ...(S.exercise ?? {}), unlocked: last.unlocked, locked: last.locked };  // learning only
 }
 
 // The letters bar shows the focus of the portion with the caret.
 function showPortion(i) {
   current = i;
-  if (portions[i]) S.exercise.focus = portions[i].focus;
+  if (portions[i] && S.exercise) S.exercise.focus = portions[i].focus;
   renderLetters();
 }
 
@@ -233,6 +246,7 @@ function mistypedWords(por) {
 // of the round: then the round is over (handleChar ends it).
 function portionDone(k) {
   if (k === round - 1) return true;
+  if (!learning()) return freePortionDone(k);
   const por = portions[k];
   const samples = records.slice(sentUpTo, por.end + 1).filter(Boolean);
   sentUpTo = por.end + 1;
@@ -249,6 +263,23 @@ function portionDone(k) {
     if (id !== streamId) return;
     if (res.newLetter) newLetter(res.newLetter);
     renderLetters();
+  }).catch((err) => { console.error(err); el.hint.textContent = t("err.server"); });
+  return false;
+}
+
+// Free practice and the test: nothing is learned, so nothing is sent but the
+// words of the round (not to repeat them). Once the round has all its
+// portions, nothing more is asked for.
+function freePortionDone(k) {
+  sentUpTo = portions[k].end + 1;
+  showPortion(k + 1);
+  if (portions.length >= round) return false;
+  const id = streamId;
+  queue = queue.then(async () => {
+    if (id !== streamId) return;
+    const res = await postJSON("/freeplay/portion", { recent: recentWords() });
+    if (id !== streamId) return;
+    appendPortions(res.portions);
   }).catch((err) => { console.error(err); el.hint.textContent = t("err.server"); });
   return false;
 }
@@ -281,7 +312,7 @@ function resetStream() {
 export async function loadExercise() {
   resetStream();
   const id = streamId;
-  const res = await postJSON("/portion", { start: true, recent: [] });
+  const res = await postJSON(learning() ? "/portion" : "/freeplay/portion", { start: true, recent: [] });
   if (id !== streamId) return;
   roundBefore = S.lastStats;
   round = res.round || Infinity;
@@ -619,6 +650,8 @@ async function finishRound() {
     await queue;                                       // portions still on their way
     streamId++;                                        // nothing more for this round
     if (!typed.length) { await loadExercise(); return; } // nothing typed: nothing to keep
+    if (S.mode === "test") { await finishTest(wpm, accuracy, typed.length); return; }
+    if (S.mode === "free") { await finishFree(wpm, accuracy, typed.length, fullSeconds(end), resisted); return; }
     const res = await postJSON("/results", { samples, chars: typed.length, wpm, accuracy, perSecond: fullSeconds(end) });
     await refreshStats();
     if (res.newLetter) newLetter(res.newLetter);
@@ -634,4 +667,30 @@ async function finishRound() {
   } finally {
     S.busy = false;
   }
+}
+
+// The end of a free practice round: it goes to the free practice history
+// only (POST /freeplay/results), never to the letter statistics.
+async function finishFree(wpm, accuracy, chars, perSecond, resisted) {
+  const before = S.free?.sessions ?? [];
+  const res = await postJSON("/freeplay/results", { wpm, accuracy, chars, perSecond });
+  await refreshFreeplay();
+  const best = before.length > 0 && wpm > Math.max(...before.map((x) => x.wpm));
+  if (best) FX.burstFrom(el.wpm, 80);
+  await showResult({ wpm, accuracy, consistency: res.consistency, best, resisted });
+  await loadExercise();
+}
+
+// The end of the typing test. Only a full round counts (Esc or a long pause
+// stops the test). The server checks the numbers (freeplay.Passed) and
+// remembers a pass; the test is in no history. A pass goes on to free
+// practice, anything else back to learning.
+async function finishTest(wpm, accuracy, chars) {
+  const full = wordsTyped >= roundWords;
+  const res = full ? await postJSON("/freeplay/test", { wpm, accuracy, chars }) : { passed: false };
+  await refreshFreeplay();
+  if (res.passed) FX.burstFrom(el.wpm, 80);
+  await showResult({ wpm, accuracy, test: !full ? "stopped" : res.passed ? "pass" : "fail" });
+  setMode(res.passed ? "free" : "learn");
+  await loadExercise();
 }

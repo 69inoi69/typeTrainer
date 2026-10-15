@@ -38,6 +38,16 @@ type Store interface {
 	RecentSessions(lang string, limit int) ([]Session, error) // newest first
 	SessionCount(lang string) (int, error)                    // all finished exercises
 
-	// Reset deletes everything stored for the language: it is new again.
+	// Free practice (internal/freeplay) is kept apart from learning: its
+	// own history, and a flag set once the typing test is passed. Its
+	// rounds never change the letter statistics above.
+	TestPassed(lang string) (bool, error)
+	SetTestPassed(lang string, passed bool) error
+	AddFreeplaySession(lang string, s Session) error
+	RecentFreeplaySessions(lang string, limit int) ([]Session, error) // newest first
+	FreeplaySessionCount(lang string) (int, error)
+
+	// Reset deletes everything stored for the language, free practice
+	// included: it is new again.
 	Reset(lang string) error
 }

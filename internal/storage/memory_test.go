@@ -70,3 +70,36 @@ func TestMemoryStore_Reset(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// Free practice has its own history and test flag, apart from learning and
+// per language; Reset clears them too.
+func TestMemoryStore_Freeplay(t *testing.T) {
+	m := NewMemoryStore()
+	if p, _ := m.TestPassed("en"); p {
+		t.Fatal("a new language must start with the test not passed")
+	}
+	m.SetTestPassed("en", true)
+	for _, w := range []float64{50, 60} {
+		m.AddFreeplaySession("en", Session{WPM: w})
+	}
+	m.AddSession("en", Session{WPM: 20})
+
+	if c, _ := m.FreeplaySessionCount("en"); c != 2 {
+		t.Fatalf("freeplay sessions = %d, want 2", c)
+	}
+	if c, _ := m.SessionCount("en"); c != 1 {
+		t.Fatalf("learning sessions = %d, want 1 (freeplay must not mix in)", c)
+	}
+	if got, _ := m.RecentFreeplaySessions("en", 5); len(got) != 2 || got[0].WPM != 60 {
+		t.Fatalf("recent freeplay = %+v, want newest first", got)
+	}
+	if p, _ := m.TestPassed("pl"); p {
+		t.Fatal("the test flag leaked into another language")
+	}
+	m.Reset("en")
+	p, _ := m.TestPassed("en")
+	c, _ := m.FreeplaySessionCount("en")
+	if p || c != 0 {
+		t.Fatalf("after reset: passed=%v sessions=%d", p, c)
+	}
+}

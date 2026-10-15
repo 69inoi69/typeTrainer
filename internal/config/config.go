@@ -5,6 +5,7 @@ package config
 
 import (
 	"typingtrainer/internal/engine"
+	"typingtrainer/internal/freeplay"
 	"typingtrainer/internal/sim"
 )
 
@@ -17,7 +18,8 @@ type Config struct {
 
 	ConsistencyMinSeconds int // a round shorter than this gets no consistency (engine.Consistency)
 	Engine                engine.Params
-	Sim                   sim.Params // only for the simulation tool (go run ./tools/sim)
+	Freeplay              freeplay.Params // free practice and the typing test that opens it
+	Sim                   sim.Params      // only for the simulation tool (go run ./tools/sim)
 }
 
 func Default() Config {
@@ -61,6 +63,16 @@ func Default() Config {
 			RankStart:   200, // first lesson: the 200 most common words come freely (monkeytype "200")
 			RankStep:    200, // every 200 places further down the list...
 			RankPenalty: 0.5, // ...halve the chance of a word
+		},
+		Freeplay: freeplay.Params{
+			PortionWords:  6,   // the same stream as in learning: one line per portion...
+			AheadPortions: 2,   // ...two waiting...
+			RoundPortions: 5,   // ...and rounds of 30 words (the test is one such round)
+			RecentWords:   20,  // "do not repeat" looks at the last 20 words
+			RepeatPenalty: 0.3, // a word used recently is rarer, as in learning
+
+			TestWPM:      30, // the typing test: the goal speed of learning (TargetWPM)...
+			TestAccuracy: 97, // ...with at most about 1 mistake in 33 key presses
 		},
 		// A made-up typist: assumptions of the simulation, not measured values.
 		// docs/ALGORITHM.md section 11 explains them.

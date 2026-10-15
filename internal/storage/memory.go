@@ -18,6 +18,9 @@ type langData struct {
 	stats    map[string]engine.KeyStat
 	unlocked int
 	sessions []Session
+
+	testPassed bool      // free practice opened by the typing test
+	freeplay   []Session // the history of free practice, oldest first
 }
 
 func NewMemoryStore() *MemoryStore {
@@ -82,18 +85,55 @@ func (m *MemoryStore) AddSession(lang string, s Session) error {
 func (m *MemoryStore) RecentSessions(lang string, limit int) ([]Session, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	all := m.data(lang).sessions
+	return newestFirst(m.data(lang).sessions, limit), nil
+}
+
+// newestFirst copies up to limit sessions, newest first.
+func newestFirst(all []Session, limit int) []Session {
 	out := []Session{}
 	for i := len(all) - 1; i >= 0 && len(out) < limit; i-- {
 		out = append(out, all[i])
 	}
-	return out, nil
+	return out
 }
 
 func (m *MemoryStore) SessionCount(lang string) (int, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return len(m.data(lang).sessions), nil
+}
+
+func (m *MemoryStore) TestPassed(lang string) (bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.data(lang).testPassed, nil
+}
+
+func (m *MemoryStore) SetTestPassed(lang string, passed bool) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.data(lang).testPassed = passed
+	return nil
+}
+
+func (m *MemoryStore) AddFreeplaySession(lang string, s Session) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	d := m.data(lang)
+	d.freeplay = append(d.freeplay, s)
+	return nil
+}
+
+func (m *MemoryStore) RecentFreeplaySessions(lang string, limit int) ([]Session, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return newestFirst(m.data(lang).freeplay, limit), nil
+}
+
+func (m *MemoryStore) FreeplaySessionCount(lang string) (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return len(m.data(lang).freeplay), nil
 }
 
 // Reset forgets the language; the next call to data() starts it from zero.
