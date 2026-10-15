@@ -223,11 +223,19 @@ body[data-mode="free"] .learn-only { display: none; }
 }
 .pop-card[hidden] { display: none; }
 .menu-item {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 3px; width: 100%;
+  display: flex; align-items: center; gap: 12px; width: 100%;
   padding: 9px 10px; margin-bottom: 4px; border-radius: 10px; background: none; text-align: left;
 }
+.menu-item > span { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .menu-item b { color: var(--text); font-weight: 500; font-size: .86rem; }
 .menu-item small { color: var(--sub); font-size: .72rem; }
+/* each guide its own colour, so they differ at a glance */
+.menu-item svg {
+  --mc: var(--accent); width: 34px; height: 34px; padding: 7px; flex: none; border-radius: 10px;
+  fill: none; stroke: var(--mc); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+  background: color-mix(in srgb, var(--mc) 14%, transparent);
+}
+.menu-item.site svg { --mc: #6f9fe0; }
 .menu-item:hover { background: color-mix(in srgb, var(--text) 6%, var(--panel)); }
 
 /* wide screens: the navigation is a column at the left edge, the languages a
@@ -795,6 +803,12 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 }
 @keyframes do-pulse { 50% { background: color-mix(in srgb, var(--accent) 22%, transparent); } }
 .intro-step { text-align: center; }
+/* step "what": a small keyboard map, every key in its finger's colour */
+.intro-map {
+  --u: min(26px, calc((100vw - 120px) / 13.6));
+  display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * .12); margin: 4px 0 16px;
+}
+.intro-map .key { font-size: calc(var(--u) * .4); background: color-mix(in srgb, var(--fc) 42%, var(--key)); color: var(--text); border-bottom-width: 1px; }
 .intro-choice { justify-content: center; margin-bottom: 14px; }
 .intro-choice button:not(.primary) { background: var(--bg); }
 button.primary kbd { background: rgba(0, 0, 0, .16); color: inherit; }
@@ -1012,6 +1026,7 @@ body.live-off .live .metric.num { display: none; }
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 70%, transparent), 0 0 0 9999px color-mix(in srgb, var(--bg) 78%, transparent);
   transition: left .35s var(--ease), top .35s var(--ease), width .35s var(--ease), height .35s var(--ease);
 }
+.tour-spot.none { box-shadow: 0 0 0 9999px color-mix(in srgb, var(--bg) 78%, transparent); }
 .tour-card {
   position: fixed; width: min(340px, calc(100vw - 16px)); padding: 14px 16px 10px;
   background: var(--panel); border-radius: 14px; box-shadow: var(--ring), var(--shadow);
