@@ -290,22 +290,25 @@ Among words that contain the focus letter, the ones that also contain other weak
 letters are preferred.
 
 **Common words first.** `F(word)` works like monkeytype's "English 200",
-"1k", "2k" word lists, but without a switch: at the start the text is made of
-the most common words, and rarer words come in step by step as the user
-progresses. The word lists are sorted by frequency (section 12), so a word's
-place in its list, its **rank** (0 = the most common word), says how common
-it is.
+"1k", "2k" word lists, but without a switch: while the user learns the
+letters the text is made of the most common words, and rarer words come in
+step by step once the whole keyboard is known. The word lists are sorted by
+frequency (section 12), so a word's place in its list, its **rank**
+(0 = the most common word), says how common it is.
 
 ```
-MaxRank  = RankStart + (words in the list - RankStart) * progress
-progress = (unlocked letters - letters of the first lesson) / (all letters - letters of the first lesson)
+letters still locked:  MaxRank = RankStart
+every letter open:     MaxRank = RankStart + (words in the list - RankStart) * min(1, typed / RampLetters)
 ```
 
-With `RankStart = 200`, `RankStep = 200` and `RankPenalty = 0.5`, the first
-lesson allows the 200 most common words freely, and every 200 places further
-down the list halve a word's chance (rank 1000: 1/16). With half of the
-letters open the limit is about rank 1100, with all letters open it is the
-whole list (2000) and the penalty is gone. Choices behind this:
+`typed` = letters typed in learning rounds that ended with every letter open
+(`Store.LettersTyped`, the sum of `chars` of those rounds in the history).
+With `RankStart = 200`, `RankStep = 200` and `RankPenalty = 0.5`, every lesson
+before the full alphabet allows the 200 most common words freely, and every
+200 places further down the list halve a word's chance (rank 1000: 1/16).
+When the last letter opens, the limit grows in a straight line and reaches the
+whole list (2000) after `RampLetters = 10 000` letters, about 1700 words or
+an hour at 30 WPM; then the penalty is gone. Choices behind this:
 
 - **Why it is needed.** Without it, words are drawn evenly from the whole
   list: whatever the open letters are, about half of the possible words are
@@ -313,10 +316,49 @@ whole list (2000) and the penalty is gone. Choices behind this:
   lesson. So a beginner types `sister`, `arrest`, `easier` as often as `is`,
   `at`, `see`. Common words are also short, so this rule makes the first
   lessons shorter too (11.1).
-- **Progress = unlocked letters.** A letter opens only when every open letter is
-  mastered (accurate and at `TargetWPM`), so the count measures real skill, it
-  already exists, and it needs no new stored data. Counting sessions or typed
-  characters would also reward someone who types a lot but badly.
+- **Flat while learning, ramp after (owner's decision, issue #25).** Until
+  October 2026 the limit grew with every unlocked letter (half of the letters
+  open: rank ~1100). Then a learner meets two new things at once, a new
+  letter and rarer words, and a difficulty curve that the user cannot see is
+  hard to explain. Now there is one difficulty at a time: while letters open
+  only the words change their letters, not their rarity; after the full
+  alphabet only the rarity grows. What the flat phase costs is measured in
+  11.1.
+- **The ramp counts typed letters, not rounds.** Rounds have different
+  lengths (10 words to 60 seconds, section 7, "The round"), so "N rounds"
+  would mean different amounts of practice. Typed letters do not depend on
+  the round length. Letter mastery no longer measures progress here: every
+  letter is already mastered once the last one opens. Free practice does not
+  count: it never touches learning data. The number is computed from the
+  history, so it needs no new stored field and survives export/import; a
+  reset starts it again.
+- **A floor for rare letters.** Some letters have almost no words among the
+  200 most common: Russian `ф` and `ъ`, Ukrainian `ф`, English `q`, `x`, `z`
+  have none, Polish `f` none, `ń` and `ź` one. Their words are all far down
+  the list, and the penalty makes the most common of them much more likely
+  than the others (two words 400 places apart: 4 times). So the focus letter
+  uses its own limit:
+
+  ```
+  MaxRank(focus) = max(MaxRank, rank of the focus letter's FloorWords-th most common word in the list)
+  ```
+
+  With `FloorWords = 10`, the 10 most common words of such a letter come
+  freely (all of its words if it has fewer). A portion has 6 words and the
+  repeat penalty looks at the last 20, so 10 words fill a portion without a
+  repeat. The words are counted in the whole list, not only among the open
+  words: in the first lessons every letter has few open words, and counting
+  only those would let rare words in exactly where common ones matter most
+  (tried first: the mean rank of the first 30 exercises rose from ~330 to
+  ~490). Letters with many common words are not affected: their 10th word is
+  inside the top 200. Affected (rank of the 10th word): en `j` 1222, `p` 275,
+  `q` 1823, `x` 851, `z` (8 words in all); pl `f` 1154, `ń` 1159, `ź` 683,
+  `ć` 295, `ł` 250, `ó` 239, `ą` 217; uk `ф` 1797, `щ` 447, `ї` 450, `є` 291,
+  `ц` 223, `х` 209, `ш` 205; ru `ф` 1410, `ц` 845, `щ` 807, `ю` 280, `х` 237,
+  `ш` 231, and `ъ`, which has a single word in the whole Russian list.
+  The penalty only shapes which words of the focus letter are taken: the
+  focus letter itself (step 1) does not depend on it, so a rare letter is
+  never trained less because its words are rare.
 - **A soft penalty, not a ban.** The weight is never 0, so rare words stay
   possible, and a letter whose words are all rare still gets practised. Early
   lessons have few words at all (in English 49 in the first lesson, only 9 of
@@ -398,8 +440,10 @@ All in `internal/config/config.go`.
 | `RecentWords` | 20 | the repeat penalty looks at this many last words | the same window as one exercise had |
 | `RetryWords` | 2 | most mistyped words put back into one portion | at most a third of a portion is repetition |
 | `RoundPortions` | 5 | portions per round (30 words), one result in the history | chosen by the owner: a clear end; about 1-2 minutes for a beginner, 20 seconds for a fast typist |
-| `RankStart` | 200 | words up to this frequency rank come without a penalty in the first lesson | the size of monkeytype's smallest list ("English 200"): the core words of a language |
-| `RankStep` | 200 | distance in ranks that halves a word's chance | one "200 words" block per halving: rank 1000 in the first lesson is 16 times rarer |
+| `RankStart` | 200 | words up to this frequency rank come without a penalty until every letter is open | the size of monkeytype's smallest list ("English 200"): the core words of a language |
+| `RankStep` | 200 | distance in ranks that halves a word's chance | one "200 words" block per halving: rank 1000 while learning letters is 16 times rarer |
+| `FloorWords` | 10 | the focus letter's most common words that always come without the frequency penalty | a portion (6 words) without a repeat, with room for the next one; only letters with few common words (`ф`, `q`, `x`, `z`) are affected |
+| `RampLetters` | 10 000 | letters typed after the full alphabet until every word comes freely | about 1700-1900 words (5.2-5.9 letters per word), ~60 rounds of 30 words, an hour at 30 WPM: the list grows by ~200 words every 6 minutes of typing |
 | `ConsistencyMinSeconds` | 5 | shortest round that gets a consistency (section 3) | a standard deviation of 2-3 numbers says little; 5 s is a few words even for a beginner |
 | `RankPenalty` | 0.5 | weight multiplier per `RankStep` over the limit | halving is easy to explain; with `T = 0.1` one step equals about 0.07 of difficulty, so weak letters still decide first |
 
@@ -523,7 +567,8 @@ dist / rep / top). The rows "adaptive, T = 0.1" and "stream, T = 0.1" use the
 word frequency penalty of section 7; "stream, no frequency penalty" is the
 same stream with `RankPenalty` turned off. The `T = 0.25` rows and the
 comparisons in the first bullets below were measured before the frequency
-penalty existed:
+penalty existed, and the whole table before the flat-then-ramp limit
+(results for it below, "Flat while learning, ramp after"):
 
 | Language | Strategy | Exercises | Variety, first 30 | Variety, expert |
 |---|---|---|---|---|
@@ -598,6 +643,50 @@ What this shows:
 - Most repetition in the first lessons comes from the **small alphabet**, not
   from the strategy: even random words repeat 28-40 % of the previous exercise.
   That part is controlled by `StartLetters` and `MinWords`, not by `T`.
+
+**Flat while learning, ramp after** (section 7, issue #25). The stream
+(`T = 0.1`) with the earlier limit (growing with every unlocked letter),
+with the flat limit and ramp but no floor (`-floor 0`), and with both as
+configured. "after" is the mean rank of the words typed after every letter
+was open, until the goal; "rank, expert" is the mean rank over the
+experienced typist's 100 exercises (every letter open from the start, so the
+ramp runs during them):
+
+| Language | Limit | Exercises | Variety, first 30 | Rank, first 30 | After | Rank, expert |
+|---|---|---|---|---|---|---|
+| en | grows with letters (before) | 171 | 79 / 39 / 77 | 391 | - | 1046 |
+| en | flat, ramp, no floor | 168 | 77 / 42 / 78 | 346 | 603 | 785 |
+| en | flat, ramp, floor 10 | 165 | 77 / 42 / 78 | 346 | 713 | 811 |
+| pl | grows with letters (before) | 232 | 67 / 53 / 76 | 269 | - | 1055 |
+| pl | flat, ramp, no floor | 235 | 66 / 53 / 75 | 259 | 486 | 809 |
+| pl | flat, ramp, floor 10 | 240 | 66 / 53 / 75 | 259 | 605 | 822 |
+| uk | grows with letters (before) | 242 | 70 / 50 / 72 | 337 | - | 1048 |
+| uk | flat, ramp, no floor | 239 | 70 / 51 / 71 | 321 | 565 | 777 |
+| uk | flat, ramp, floor 10 | 230 | 70 / 51 / 71 | 321 | 667 | 791 |
+| ru | grows with letters (before) | 259 | 77 / 43 / 75 | 347 | - | 1043 |
+| ru | flat, ramp, no floor | 251 | 77 / 44 / 74 | 318 | 669 | 816 |
+| ru | flat, ramp, floor 10 | 254 | 77 / 44 / 74 | 318 | 682 | 825 |
+
+- **Words to the goal do not change**: the differences (-5 % to +4 %) are
+  within the spread of 20 runs, in both directions. Learning speed is set by
+  the letter model, not by how rare the words are.
+- **The first lessons get a little more common** (mean rank 4-12 % lower,
+  e.g. ru 347 → 318) with the same variety. Before, the limit had already
+  grown by the 30th exercise; now it waits for the whole alphabet.
+- **After the alphabet the words get rarer step by step**: the experienced
+  typist, whose 100 exercises (about 2000 words) span the ramp, meets a mean
+  rank of ~800 instead of ~1050 (the whole list at once). The beginner reaches
+  the goal soon after the last letter opens, early in the ramp: mean rank
+  600-700 then.
+- **The floor** does not touch the first lessons (identical numbers: it
+  counts in the whole list, section 7). It makes the words of the rare letters
+  more even: with every letter open and the focus on one letter for 300
+  words, the most frequent word of Russian `ф` falls from 14 % to 9 % of
+  them, `ц` and `щ` from 10 % to 6 %, English `j` from 15 % to 7 %, `q` from
+  15 % to 11 %, Polish `f` from 12 % to 7 %. The effect is moderate, because
+  the repeat penalty already stops one word from filling a portion; the
+  number of different words stays the same (Ukrainian `ф` and English `q`
+  have exactly 10 words in the list).
 
 Limits: the typist is invented. Letters do not influence each other, there is
 no forgetting, and learning is the same exponential curve for every letter. The

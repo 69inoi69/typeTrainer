@@ -661,3 +661,46 @@ func TestApp_RoundLengths(t *testing.T) {
 		t.Fatalf("after import time-60: %v", back["sessionCount"])
 	}
 }
+
+// Rare words come in only after the whole alphabet is open, and only as the
+// user keeps typing (engine.MaxRank): the letters of learning rounds finished
+// with every letter open move the limit; free practice does not.
+func TestApp_RareWordsAfterTheAlphabet(t *testing.T) {
+	h, cfg, err := newApp()
+	if err != nil {
+		t.Fatal(err)
+	}
+	list, _ := os.ReadFile("data/langs/en/words.txt")
+	rank := map[string]int{}
+	for i, w := range strings.Fields(string(list)) {
+		if _, ok := rank[w]; !ok {
+			rank[w] = i
+		}
+	}
+	meanRank := func() float64 {
+		sum, n := 0, 0
+		for i := 0; i < 30; i++ {
+			_, out := call(t, h, "POST", "/api/v1/portion?lang=en", `{"start":true}`)
+			for _, p := range out["portions"].([]any) {
+				for _, w := range p.(map[string]any)["words"].([]any) {
+					sum += rank[w.(string)]
+					n++
+				}
+			}
+		}
+		return float64(sum) / float64(n)
+	}
+	call(t, h, "POST", "/api/v1/progress?lang=en", `{"unlockAll":true}`)
+	start := meanRank()
+	call(t, h, "POST", "/api/v1/freeplay/results?lang=en", `{"wpm":40,"accuracy":98,"chars":20000}`)
+	if again := meanRank(); again > 1.5*start {
+		t.Fatalf("free practice moved the limit: mean rank %v, was %v", again, start)
+	}
+	body := fmt.Sprintf(`{"samples":[],"chars":%d,"wpm":40,"accuracy":98}`, int(cfg.Words.RampLetters))
+	if code, out := call(t, h, "POST", "/api/v1/results?lang=en", body); code != 200 {
+		t.Fatalf("results: %d %v", code, out)
+	}
+	if end := meanRank(); end < 2*start {
+		t.Fatalf("after the ramp: mean rank %v, want much higher than %v", end, start)
+	}
+}

@@ -34,8 +34,9 @@ type Config struct {
 	BehindProxy bool
 	Auth        auth.Params // accounts: passwords, login cookies, name rules
 	Engine      engine.Params
-	Freeplay    freeplay.Params // free practice and the typing test that opens it
-	Sim         sim.Params      // only for the simulation tool (go run ./tools/sim)
+	Words       engine.WordParams // how far down the frequency list learning words may come from
+	Freeplay    freeplay.Params   // free practice and the typing test that opens it
+	Sim         sim.Params        // only for the simulation tool (go run ./tools/sim)
 }
 
 func Default() Config {
@@ -101,6 +102,19 @@ func Default() Config {
 			RankStart:   200, // first lesson: the 200 most common words come freely (monkeytype "200")
 			RankStep:    200, // every 200 places further down the list...
 			RankPenalty: 0.5, // ...halve the chance of a word
+		},
+		// MaxRank stays at RankStart (200) until every letter is open, then
+		// grows to the whole list (docs/ALGORITHM.md section 7).
+		Words: engine.WordParams{
+			// One portion has 6 words and "do not repeat" looks at the last
+			// 20: 10 words of the focus letter fill a portion without a repeat
+			// and leave room for the next one. Only letters with few common
+			// words are affected (Russian "ф" has none in the top 200).
+			FloorWords: 10,
+			// 10 000 letters after the whole alphabet is open = about 1700-1900
+			// words, ~60 rounds of 30 words, about an hour at the goal speed
+			// of 30 WPM: the list grows by ~200 words every 6 minutes of typing.
+			RampLetters: 10000,
 		},
 		Freeplay: freeplay.Params{
 			PortionWords:  6,   // the same stream as in learning: one line per portion...

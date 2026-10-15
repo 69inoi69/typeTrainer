@@ -157,6 +157,18 @@ func (m *MemoryStore) SessionLengths(user, lang string) ([]string, error) {
 	return lengths(m.data(user, lang).sessions), nil
 }
 
+func (m *MemoryStore) LettersTyped(user, lang string, unlocked int) (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	n := 0
+	for _, s := range m.data(user, lang).sessions {
+		if s.Unlocked >= unlocked {
+			n += s.Chars
+		}
+	}
+	return n, nil
+}
+
 func (m *MemoryStore) TestPassed(user, lang string) (bool, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

@@ -283,6 +283,13 @@ func (p *PostgresStore) SessionCount(user, lang, length string) (int, error) {
 func (p *PostgresStore) SessionLengths(user, lang string) ([]string, error) {
 	return p.sessionLengths(user, lang, modeLearning)
 }
+func (p *PostgresStore) LettersTyped(user, lang string, unlocked int) (int, error) {
+	var n int
+	err := p.db.QueryRow(`SELECT COALESCE(SUM(chars), 0) FROM sessions
+		WHERE user_id = $1 AND lang = $2 AND mode = $3 AND unlocked >= $4`,
+		user, lang, modeLearning, unlocked).Scan(&n)
+	return n, err
+}
 func (p *PostgresStore) AddFreeplaySession(user, lang string, s Session) error {
 	return p.addSession(user, lang, modeFreeplay, s)
 }
