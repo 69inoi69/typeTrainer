@@ -10,6 +10,10 @@
   <a href="https://69inoi69.github.io/typetrainer/"><b>Try it in your browser</b></a>
 </p>
 
+<p align="center">
+  <img src="docs/screenshots/typing.png" width="760" alt="The typing screen: the letters row, the text, the hands and the keyboard">
+</p>
+
 ---
 
 **Work in progress.** The practical part of an engineering thesis at the
@@ -28,10 +32,27 @@ Lublin University of Technology (2027).
   decides what you practise. Free practice (words from the whole list, its own
   history, nothing shared with learning) opens when every letter is open, or
   after a one-time typing test. It is kept simple for now.
-- English, Polish, Ukrainian and Russian, each with its own progress.
+- **You see what to practise.** Above the text, a row of letters marks the
+  one in focus, the mastered ones and the next to open. The keyboard and the
+  hands show the finger for the next key. The statistics screen shows every
+  round, a keyboard coloured by difficulty and every letter from weakest to
+  strongest, all on one screen.
+- **Settings change how much and how it looks, never what:** round length
+  (10, 30 or 60 words, or 30 or 60 seconds), live numbers on or off, caret
+  style, a dark and a light theme, keyboard on or off.
+- **Two short first-visit guides:** the basics of touch typing, and how
+  this site works.
+- English, Polish, Ukrainian and Russian, each with its own progress; the
+  interface speaks the same four languages.
+- Works on a phone too, with the navigation in a bar at the bottom.
 - **Accounts** (with the local server): sign up, log in, and your progress is
   kept under your account, in PostgreSQL if `DATABASE_URL` is set, otherwise
   in the server's memory.
+
+<p align="center">
+  <img src="docs/screenshots/stats.png" width="380" alt="The statistics screen">
+  <img src="docs/screenshots/light.png" width="380" alt="The light theme">
+</p>
 
 ## Run it locally
 
@@ -57,6 +78,9 @@ website runs the same Go code compiled to WebAssembly.
 - [docs/ALGORITHM.md](docs/ALGORITHM.md): the adaptive model, every formula and parameter
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): packages, data flow, API
 - [docs/USER-GUIDE.md](docs/USER-GUIDE.md): running it on Windows, every screen, button and shortcut
+- [docs/LITERATURE.md](docs/LITERATURE.md): research the model builds on
+- [docs/VOICE.md](docs/VOICE.md): how the app talks to users
+- [docs/COMMENTING.md](docs/COMMENTING.md): how comments in the code are written
 - [docs/DEVELOPMENT-LOG.pdf](docs/DEVELOPMENT-LOG.pdf): how the project was built and why
 
 ## Credits
