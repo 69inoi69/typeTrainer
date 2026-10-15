@@ -6,6 +6,7 @@ package storage
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -27,6 +28,7 @@ var storeTests = map[string]func(*testing.T, Store){
 	"Logins":                    testLogins,
 	"SessionFields":             testSessionFields,
 	"KeyStatsFields":            testKeyStatsFields,
+	"Lengths":                   testLengths,
 }
 
 // runStoreTests runs every test on a fresh, empty store from newStore.
@@ -48,7 +50,7 @@ func testLanguagesAreSeparate(t *testing.T, m Store) {
 
 	stats, _ := m.KeyStats(u, "uk")
 	unlocked, _ := m.Unlocked(u, "uk")
-	count, _ := m.SessionCount(u, "uk")
+	count, _ := m.SessionCount(u, "uk", "")
 	if len(stats) != 0 || unlocked != 0 || count != 0 {
 		t.Fatalf("uk sees en data: stats=%v unlocked=%d sessions=%d", stats, unlocked, count)
 	}
@@ -70,7 +72,7 @@ func testRecentSessionsNewestFirst(t *testing.T, m Store) {
 	for _, w := range []float64{10, 20, 30} {
 		m.AddSession(u, "pl", Session{WPM: w})
 	}
-	got, _ := m.RecentSessions(u, "pl", 2)
+	got, _ := m.RecentSessions(u, "pl", "", 2)
 	if len(got) != 2 || got[0].WPM != 30 || got[1].WPM != 20 {
 		t.Fatalf("got %+v", got)
 	}
@@ -88,11 +90,11 @@ func testReset(t *testing.T, m Store) {
 	}
 	stats, _ := m.KeyStats(u, "en")
 	unlocked, _ := m.Unlocked(u, "en")
-	count, _ := m.SessionCount(u, "en")
+	count, _ := m.SessionCount(u, "en", "")
 	if len(stats) != 0 || unlocked != 0 || count != 0 {
 		t.Fatalf("en not reset: stats=%v unlocked=%d sessions=%d", stats, unlocked, count)
 	}
-	if c, _ := m.SessionCount(u, "pl"); c != 1 {
+	if c, _ := m.SessionCount(u, "pl", ""); c != 1 {
 		t.Fatalf("pl lost its data: sessions=%d", c)
 	}
 	// resetting a language with no data is fine too
@@ -113,13 +115,13 @@ func testFreeplay(t *testing.T, m Store) {
 	}
 	m.AddSession(u, "en", Session{WPM: 20})
 
-	if c, _ := m.FreeplaySessionCount(u, "en"); c != 2 {
+	if c, _ := m.FreeplaySessionCount(u, "en", ""); c != 2 {
 		t.Fatalf("freeplay sessions = %d, want 2", c)
 	}
-	if c, _ := m.SessionCount(u, "en"); c != 1 {
+	if c, _ := m.SessionCount(u, "en", ""); c != 1 {
 		t.Fatalf("learning sessions = %d, want 1 (freeplay must not mix in)", c)
 	}
-	if got, _ := m.RecentFreeplaySessions(u, "en", 5); len(got) != 2 || got[0].WPM != 60 {
+	if got, _ := m.RecentFreeplaySessions(u, "en", "", 5); len(got) != 2 || got[0].WPM != 60 {
 		t.Fatalf("recent freeplay = %+v, want newest first", got)
 	}
 	if p, _ := m.TestPassed(u, "pl"); p {
@@ -127,7 +129,7 @@ func testFreeplay(t *testing.T, m Store) {
 	}
 	m.Reset(u, "en")
 	p, _ := m.TestPassed(u, "en")
-	c, _ := m.FreeplaySessionCount(u, "en")
+	c, _ := m.FreeplaySessionCount(u, "en", "")
 	if p || c != 0 {
 		t.Fatalf("after reset: passed=%v sessions=%d", p, c)
 	}
@@ -144,9 +146,9 @@ func testUsersAreSeparate(t *testing.T, m Store) {
 
 	stats, _ := m.KeyStats("bob", "en")
 	unlocked, _ := m.Unlocked("bob", "en")
-	count, _ := m.SessionCount("bob", "en")
+	count, _ := m.SessionCount("bob", "en", "")
 	passed, _ := m.TestPassed("bob", "en")
-	free, _ := m.FreeplaySessionCount("bob", "en")
+	free, _ := m.FreeplaySessionCount("bob", "en", "")
 	if len(stats) != 0 || unlocked != 0 || count != 0 || passed || free != 0 {
 		t.Fatalf("bob sees ann's data: stats=%v unlocked=%d sessions=%d passed=%v free=%d",
 			stats, unlocked, count, passed, free)
@@ -235,7 +237,7 @@ func testSessionFields(t *testing.T, m Store) {
 		Keys: []engine.Sample{{Char: "ж", Errors: 1, Ms: 0}, {Char: " ", Errors: 0, Ms: 183}}, Unlocked: 7}
 	m.AddSession(u, "ru", in)
 	m.AddSession(u, "ru", Session{WPM: 10, FinishedAt: when}) // no consistency, no keys
-	got, err := m.RecentSessions(u, "ru", 5)
+	got, err := m.RecentSessions(u, "ru", "", 5)
 	if err != nil || len(got) != 2 {
 		t.Fatalf("got %+v %v", got, err)
 	}
@@ -265,5 +267,43 @@ func testKeyStatsFields(t *testing.T, m Store) {
 	got, _ = m.KeyStats(u, "pl")
 	if len(got) != 1 || got["a"].Count != 2 {
 		t.Fatalf("not replaced: %+v", got)
+	}
+}
+
+// Rounds of different lengths are counted and listed apart; a session
+// without a length is a 30-word round (DefaultLength).
+func testLengths(t *testing.T, m Store) {
+	m.AddSession(u, "en", Session{WPM: 30}) // old: no length
+	m.AddSession(u, "en", Session{WPM: 40, Length: "time-60"})
+	m.AddSession(u, "en", Session{WPM: 50, Length: "words-10"})
+	m.AddSession(u, "en", Session{WPM: 60, Length: "time-60"})
+	m.AddFreeplaySession(u, "en", Session{WPM: 70, Length: "words-60"})
+
+	if c, _ := m.SessionCount(u, "en", ""); c != 4 {
+		t.Fatalf("all lengths: %d, want 4", c)
+	}
+	if c, _ := m.SessionCount(u, "en", "time-60"); c != 2 {
+		t.Fatalf("time-60: %d, want 2", c)
+	}
+	got, _ := m.RecentSessions(u, "en", "time-60", 5)
+	if len(got) != 2 || got[0].WPM != 60 || got[1].WPM != 40 || got[0].Length != "time-60" {
+		t.Fatalf("time-60 rounds: %+v", got)
+	}
+	if old, _ := m.RecentSessions(u, "en", DefaultLength, 5); len(old) != 1 || old[0].WPM != 30 || old[0].Length != DefaultLength {
+		t.Fatalf("a round without a length must be %s: %+v", DefaultLength, old)
+	}
+	lengths, _ := m.SessionLengths(u, "en")
+	if want := []string{"time-60", "words-10", "words-30"}; fmt.Sprint(lengths) != fmt.Sprint(want) {
+		t.Fatalf("lengths = %v, want %v", lengths, want)
+	}
+	free, _ := m.FreeplaySessionLengths(u, "en")
+	if fmt.Sprint(free) != "[words-60]" {
+		t.Fatalf("free lengths = %v (learning must not mix in)", free)
+	}
+	if c, _ := m.FreeplaySessionCount(u, "en", "words-60"); c != 1 {
+		t.Fatalf("free words-60: %d", c)
+	}
+	if none, _ := m.SessionLengths(u, "pl"); none == nil || len(none) != 0 {
+		t.Fatalf("no history: lengths must be an empty list, got %#v", none)
 	}
 }

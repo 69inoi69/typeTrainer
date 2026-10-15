@@ -72,12 +72,12 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request, user strin
 		serverError(w, err)
 		return
 	}
-	count, err := s.store.SessionCount(user, id)
+	count, err := s.store.SessionCount(user, id, "")
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	newestFirst, err := s.store.RecentSessions(user, id, count)
+	newestFirst, err := s.store.RecentSessions(user, id, "", count)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -87,12 +87,12 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request, user strin
 		serverError(w, err)
 		return
 	}
-	freeCount, err := s.store.FreeplaySessionCount(user, id)
+	freeCount, err := s.store.FreeplaySessionCount(user, id, "")
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	free, err := s.store.RecentFreeplaySessions(user, id, freeCount)
+	free, err := s.store.RecentFreeplaySessions(user, id, "", freeCount)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -112,7 +112,7 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request, user strin
 		badRequest(w, "invalid JSON")
 		return
 	}
-	if msg := validateImport(in, s.cfg.MaxImportSessions, s.cfg.MaxEvents, len(l.Gen.Order()), l.Info.Alphabet); msg != "" {
+	if msg := validateImport(in, s.cfg.MaxImportSessions, s.cfg.MaxEvents, len(l.Gen.Order()), l.Info.Alphabet, s.validLength); msg != "" {
 		badRequest(w, msg)
 		return
 	}

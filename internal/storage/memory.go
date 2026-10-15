@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -94,29 +95,66 @@ func (m *MemoryStore) AddSession(user, lang string, s Session) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	d := m.data(user, lang)
-	d.sessions = append(d.sessions, s)
+	d.sessions = append(d.sessions, s.WithLength())
 	return nil
 }
 
-func (m *MemoryStore) RecentSessions(user, lang string, limit int) ([]Session, error) {
+func (m *MemoryStore) RecentSessions(user, lang, length string, limit int) ([]Session, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return newestFirst(m.data(user, lang).sessions, limit), nil
+	return newestFirst(m.data(user, lang).sessions, length, limit), nil
 }
 
-// newestFirst copies up to limit sessions, newest first.
-func newestFirst(all []Session, limit int) []Session {
+// newestFirst copies up to limit sessions of one length ("" = any),
+// newest first.
+func newestFirst(all []Session, length string, limit int) []Session {
 	out := []Session{}
 	for i := len(all) - 1; i >= 0 && len(out) < limit; i-- {
-		out = append(out, all[i])
+		if length == "" || all[i].Length == length {
+			out = append(out, all[i])
+		}
 	}
 	return out
 }
 
-func (m *MemoryStore) SessionCount(user, lang string) (int, error) {
+// countLength counts the sessions of one length ("" = all).
+func countLength(all []Session, length string) int {
+	if length == "" {
+		return len(all)
+	}
+	n := 0
+	for _, s := range all {
+		if s.Length == length {
+			n++
+		}
+	}
+	return n
+}
+
+// lengths lists the different lengths of the sessions, sorted.
+func lengths(all []Session) []string {
+	seen := map[string]bool{}
+	out := []string{}
+	for _, s := range all {
+		if !seen[s.Length] {
+			seen[s.Length] = true
+			out = append(out, s.Length)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+func (m *MemoryStore) SessionCount(user, lang, length string) (int, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return len(m.data(user, lang).sessions), nil
+	return countLength(m.data(user, lang).sessions, length), nil
+}
+
+func (m *MemoryStore) SessionLengths(user, lang string) ([]string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return lengths(m.data(user, lang).sessions), nil
 }
 
 func (m *MemoryStore) TestPassed(user, lang string) (bool, error) {
@@ -136,20 +174,26 @@ func (m *MemoryStore) AddFreeplaySession(user, lang string, s Session) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	d := m.data(user, lang)
-	d.freeplay = append(d.freeplay, s)
+	d.freeplay = append(d.freeplay, s.WithLength())
 	return nil
 }
 
-func (m *MemoryStore) RecentFreeplaySessions(user, lang string, limit int) ([]Session, error) {
+func (m *MemoryStore) RecentFreeplaySessions(user, lang, length string, limit int) ([]Session, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return newestFirst(m.data(user, lang).freeplay, limit), nil
+	return newestFirst(m.data(user, lang).freeplay, length, limit), nil
 }
 
-func (m *MemoryStore) FreeplaySessionCount(user, lang string) (int, error) {
+func (m *MemoryStore) FreeplaySessionCount(user, lang, length string) (int, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return len(m.data(user, lang).freeplay), nil
+	return countLength(m.data(user, lang).freeplay, length), nil
+}
+
+func (m *MemoryStore) FreeplaySessionLengths(user, lang string) ([]string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return lengths(m.data(user, lang).freeplay), nil
 }
 
 // Reset forgets the user's language; the next call to data() starts it

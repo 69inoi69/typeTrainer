@@ -21,7 +21,7 @@ export const learning = () => S.mode === "learn";
 
 // Free practice of this language: is it open, its history, the test rules.
 export async function refreshFreeplay() {
-  S.free = await getJSON("/freeplay/stats");
+  S.free = await getJSON(`/freeplay/stats?length=${S.settings.length}`);   // rounds of the chosen length
   i18nVars.testWpm = S.free.testWpm;          // used by the tooltip of the locked tab
   i18nVars.testAcc = S.free.testAccuracy;
   if (S.mode === "free" && !S.free.unlocked) { S.mode = "learn"; restoreKb(); }   // locked again (reset)

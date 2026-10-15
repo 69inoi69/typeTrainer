@@ -112,6 +112,9 @@ type resultsRequest struct {
 	Chars    int             `json:"chars"` // characters typed in the round (0: len(samples))
 	// keypresses in each full second of the round, for engine.Consistency
 	PerSecond []int `json:"perSecond"`
+	// Length: the round length chosen in the settings ("words-30",
+	// "time-60"); "" = storage.DefaultLength.
+	Length string `json:"length"`
 }
 
 // POST /api/v1/results?lang= -> the round is over: stores it in the
@@ -133,6 +136,10 @@ func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, user stri
 		badRequest(w, msg)
 		return
 	}
+	if !s.validLength(req.Length) {
+		badRequest(w, "length: unknown round length")
+		return
+	}
 
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
@@ -147,7 +154,7 @@ func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, user stri
 	}
 	err = s.store.AddSession(user, l.Info.ID, storage.Session{
 		WPM: req.WPM, Accuracy: req.Accuracy, Chars: req.Chars, Consistency: consistency, FinishedAt: time.Now(),
-		Keys: req.Keys, Unlocked: unlocked,
+		Keys: req.Keys, Unlocked: unlocked, Length: req.Length,
 	})
 	if err != nil {
 		serverError(w, err)
@@ -190,10 +197,16 @@ type keyInfo struct {
 	Unlocked   bool    `json:"unlocked"`
 }
 
-// GET /api/v1/stats?lang= -> every letter (hardest first), the last 50 sessions
-// (newest first, without their raw keys) and the total number of finished exercises.
+// GET /api/v1/stats?lang=&length= -> every letter (hardest first), the last 50
+// rounds of that length (newest first, without their raw keys), how many
+// rounds of that length there are, and every length found in the history
+// ("lengths"). No length = rounds of every length.
 func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	id := l.Info.ID
+	length, ok := s.lengthParam(w, r)
+	if !ok {
+		return
+	}
 	stats, err := s.store.KeyStats(user, id)
 	if err != nil {
 		serverError(w, err)
@@ -216,17 +229,39 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, user string
 		})
 	}
 	sort.SliceStable(keys, func(i, j int) bool { return keys[i].Difficulty > keys[j].Difficulty })
-	sessions, err := s.store.RecentSessions(user, id, 50)
+	sessions, err := s.store.RecentSessions(user, id, length, 50)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	count, err := s.store.SessionCount(user, id)
+	count, err := s.store.SessionCount(user, id, length)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	lengths, err := s.store.SessionLengths(user, id)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"lang": id, "keys": keys, "sessions": summaries(sessions), "sessionCount": count, "targetWpm": p.TargetWPM,
+		"lengths": lengths,
 	})
+}
+
+// validLength: is this a round length the server accepts (validLength)?
+func (s *Server) validLength(length string) bool {
+	return validLength(length, s.cfg.MaxRoundWords, s.cfg.MaxRoundSeconds)
+}
+
+// lengthParam reads ?length= of a stats request ("" = every length). On a
+// wrong value it answers 400 itself and returns false.
+func (s *Server) lengthParam(w http.ResponseWriter, r *http.Request) (string, bool) {
+	length := r.URL.Query().Get("length")
+	if !s.validLength(length) {
+		badRequest(w, "length: unknown round length")
+		return "", false
+	}
+	return length, true
 }

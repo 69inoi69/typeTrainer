@@ -88,6 +88,12 @@ Details: `docs/ARCHITECTURE.md`.
   (`internal/freeplay`). It opens when every letter is unlocked, or after the
   one-time *typing test* (one 30-word round at 30 WPM and 97% accuracy). No
   self-declared skill level: the test is the only early way in.
+- **Settings change how much and how it looks, never what.** The settings
+  panel (`web/settings.js`) offers round length (10/30/60 words, 30/60 s),
+  live numbers on/off and the caret style, in both modes. They are not
+  difficulty switches. Every round keeps its length, and rounds of different
+  lengths are never mixed in one chart or record. The typing test ignores
+  the settings: it is always one full 30-word round.
 - **Where the work goes (2026-10).** Learning is the main focus until the
   defense: the algorithm, word choice and how learning looks and feels.
   Free practice is a deliberately minimal, separate mode (a future

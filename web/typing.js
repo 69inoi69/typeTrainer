@@ -1,11 +1,11 @@
 // The typing screen: the text stream (portions of words added while you
-// type, in rounds of 30 words), the caret, what every keypress does, the
+// type, in rounds of the length chosen in the settings), the caret, what every keypress does, the
 // clean-word streak, the live WPM / accuracy, and sending the result when a
 // round ends. The letters bar is in letters.js, the result screen in result.js. The same screen serves every mode
 // (modes.js): learning talks to /portion and /results, free practice and the
 // typing test to /freeplay/*.
 // Layer: middle. Imports the bottom layer, keyboard.js, stats.js, result.js,
-// letters.js and modes.js.
+// letters.js, modes.js and settings.js.
 
 import { t, tPick } from "./i18n.js";
 import { FX } from "./fx.js";
@@ -16,6 +16,7 @@ import { refreshStats } from "./stats.js";
 import { showResult, compareStats } from "./result.js";
 import { renderLetters, markNewLetter, markMastered } from "./letters.js";
 import { learning, refreshFreeplay, setMode } from "./modes.js";
+import { lengthOf, firstRoundDone } from "./settings.js";
 
 // Typing state, used only by the typing code.
 let wrongScript = 0;       // presses in a row that came from another keyboard layout
@@ -90,9 +91,12 @@ export function placeCaret(jump) {
 // learns from them at once, and the answer is the next portion, built from
 // the UPDATED statistics and added at the end of the text. AheadPortions
 // portions are always waiting after the one being typed, so the words you can
-// already see never change. A round is RoundPortions portions (30 words); it
-// ends with the last letter of its last word (no space needed after it), or
-// earlier with Esc or a long pause, see finishRound().
+// already see never change. A round has the length chosen in the settings
+// (settings.js): N words, or N seconds. A words round ends with the last
+// letter of its last word (no space needed after it); a time round when the
+// time is up. Either ends earlier with Esc or a long pause, see finishRound().
+// The typing test is always one full server round (RoundPortions portions,
+// 30 words), whatever the settings say.
 const IDLE_STOP_MS = 10000;  // no key for this long during a round = the user stopped
 const RECENT_SENT = 40;      // words of the round sent as "recent" (the server uses the last RecentWords)
 let portions = [];           // {start, end, focus}: positions of each portion; end = its last space
@@ -100,8 +104,10 @@ let sentUpTo = 0;            // positions before this were sent to the server (B
 let current = 0;             // index of the portion with the caret
 let streamId = 0;            // a new round ignores answers that were meant for the old one
 let queue = Promise.resolve(); // portion requests go one after another
-let round = Infinity;        // portions in a round (from the server)
-let roundWords = 0;          // words in a round, for the counter
+let limit = { kind: "words", n: 30 }; // this round's length: {kind: "words" | "time", n}
+let roundWords = 0;          // words in a words round, for the counter
+let wordsLoaded = 0;         // words in the text so far
+let endAt = -1;              // a words round: position of the space after its last word (-1: not loaded yet)
 let wordsTyped = 0;          // words finished in this round
 let roundBefore = null;      // the statistics when the round started (for the result)
 let roundNewLetter = "";     // a letter that opened during the round
@@ -124,6 +130,11 @@ function appendPortions(list) {
     const end = at + p.words.join(" ").length;   // the space after the last word
     portions.push({ start: at, end, focus: p.focus });
     for (let i = at; i < end; i++) if (S.text[i] === p.focus) focusMask[i] = 1;
+    // the round's last word is in this portion: remember where it ends
+    if (limit.kind === "words" && endAt < 0 && wordsLoaded + p.words.length >= limit.n) {
+      endAt = at + p.words.slice(0, limit.n - wordsLoaded).join(" ").length;
+    }
+    wordsLoaded += p.words.length;
     at = end + 1;
   }
   // words added while you type fade in softly (CSS animation .new, once);
@@ -133,7 +144,8 @@ function appendPortions(list) {
   for (let i = old; i < S.text.length; i++) {
     const sp = document.createElement("span");
     sp.textContent = S.text[i];
-    sp.className = (focusMask[i] ? "fx" : "") + fresh;
+    // words after the end of the round are never typed: not shown either
+    sp.className = (focusMask[i] ? "fx" : "") + fresh + (endAt >= 0 && i >= endAt ? " beyond" : "");
     frag.appendChild(sp);
     spans.push(sp);
   }
@@ -169,17 +181,19 @@ function mistypedWords(por) {
   return out;
 }
 
+// Does the round need more words than the text has? A time round always
+// does: it goes on until the time is up.
+const needMore = () => limit.kind === "time" || wordsLoaded < limit.n;
+
 // The last space of portion k was typed: send it, get the next portion
-// (none once the round has all of them). Returns true for the last portion
-// of the round: then the round is over (handleChar ends it).
+// (none once the round has all its words).
 function portionDone(k) {
-  if (k === round - 1) return true;
   if (!learning()) return freePortionDone(k);
   const por = portions[k];
   const samples = records.slice(sentUpTo, por.end + 1).filter(Boolean);
   sentUpTo = por.end + 1;
   showPortion(k + 1);
-  const body = { samples, retry: mistypedWords(por), last: portions.length >= round };
+  const body = { samples, retry: mistypedWords(por), last: !needMore() };
   const id = streamId;
   queue = queue.then(async () => {
     if (id !== streamId) return;
@@ -192,7 +206,6 @@ function portionDone(k) {
     if (res.newLetter) newLetter(res.newLetter);
     renderLetters();
   }).catch((err) => { console.error(err); el.hint.textContent = t("err.server"); });
-  return false;
 }
 
 // Free practice and the test: nothing is learned, so nothing is sent but the
@@ -201,7 +214,7 @@ function portionDone(k) {
 function freePortionDone(k) {
   sentUpTo = portions[k].end + 1;
   showPortion(k + 1);
-  if (portions.length >= round) return false;
+  if (!needMore()) return;
   const id = streamId;
   queue = queue.then(async () => {
     if (id !== streamId) return;
@@ -209,13 +222,13 @@ function freePortionDone(k) {
     if (id !== streamId) return;
     appendPortions(res.portions);
   }).catch((err) => { console.error(err); el.hint.textContent = t("err.server"); });
-  return false;
 }
 
-// The caret is on the space after the last word of the round: every letter
-// of the round has been typed (right or wrong), so the round is over without
-// that space.
-const roundComplete = () => current === round - 1 && S.pos === portions[current]?.end;
+// Has the user typed anything in this round yet?
+export const roundStarted = () => startTime !== null;
+
+// A time round: is the time up?
+const timeUp = (now) => limit.kind === "time" && startTime !== null && now - startTime >= limit.n * 1000;
 
 // A letter opened: its chip pops with a soft ring (renderLetters, .chip.pop),
 // its key glows once, and the result of the round names it. Calm on purpose:
@@ -232,7 +245,7 @@ function resetStream() {
   queue = Promise.resolve();
   S.text = ""; S.pos = 0; wordClean = true; tabsResisted = 0; wordsTyped = 0;
   state = new Uint8Array(0); focusMask = new Uint8Array(0); records = []; spans = [];
-  portions = []; sentUpTo = 0; current = 0; roundNewLetter = "";
+  portions = []; sentUpTo = 0; current = 0; roundNewLetter = ""; wordsLoaded = 0; endAt = -1;
   extras = new Map(); correctChars = 0; afterBackspace = false;
   startTime = null; lastTime = null; presses = 0; correctPresses = 0; perSecond = [];
   el.text.replaceChildren(el.caret);          // the caret lives inside the text
@@ -244,8 +257,11 @@ export async function loadExercise() {
   const res = await postJSON(learning() ? "/portion" : "/freeplay/portion", { start: true, recent: [] });
   if (id !== streamId) return;
   roundBefore = S.lastStats;
-  round = res.round || Infinity;
-  roundWords = round * (res.portions[0]?.words.length ?? 0);
+  // the test is one full server round; everything else follows the settings
+  limit = S.mode === "test"
+    ? { kind: "words", n: res.round * (res.portions[0]?.words.length ?? 0) }
+    : lengthOf(S.settings.length);
+  roundWords = limit.kind === "words" ? limit.n : 0;
   appendPortions(res.portions);
   renderProgress();
   fitText();                                 // back to the first line
@@ -315,6 +331,7 @@ export function handleChar(ch) {
   // space at the start of a word means nothing (as on monkeytype)
   if (ch === " " && expected !== " " && S.pos === wordStart(S.pos)) return;
   const now = performance.now();
+  if (timeUp(now)) { finishRound(); return; }   // a key after the time is up does not count
   if (startTime === null) {
     startTime = now;
     el.live.classList.remove("final");
@@ -370,8 +387,9 @@ export function handleChar(ch) {
       const space = S.text[S.pos] === " ";
       if (space) endWord();
       S.pos++;
-      if (space && S.pos - 1 === portions[current]?.end) roundOver = portionDone(current);
-      else if (!space && roundComplete()) { endWord(); roundOver = true; }  // the last letter of the round
+      if (space && S.pos - 1 === endAt) roundOver = true;          // the last word, skipped with a space
+      else if (space && S.pos - 1 === portions[current]?.end) portionDone(current);
+      else if (!space && S.pos === endAt) { endWord(); roundOver = true; }  // the last letter of the round
     }
   }
   lastTime = now; afterBackspace = false;
@@ -432,9 +450,20 @@ function endWord() {
   }
   wordClean = true;
 }
-// words typed in this round, out of the words in the round
+// A words round: words typed, out of the words in the round. A time round:
+// the seconds left (refreshed by the timer below, twice a second).
 function renderProgress() {
-  el.progress.textContent = `${Math.min(wordsTyped, roundWords)}/${roundWords}`;
+  const time = limit.kind === "time";
+  const key = time ? "metric.seconds" : "metric.words";
+  if (el.progressLabel.dataset.i18n !== key) {
+    el.progressLabel.dataset.i18n = key;
+    el.progressLabel.innerHTML = t(key);
+  }
+  if (!time) el.progress.textContent = `${Math.min(wordsTyped, roundWords)}/${roundWords}`;
+  else {
+    const passed = startTime === null ? 0 : (performance.now() - startTime) / 1000;
+    el.progress.textContent = Math.max(0, Math.ceil(limit.n - passed));
+  }
 }
 function breakStreak() {
   if (streak >= 3) FX.shake(el.streak);
@@ -523,9 +552,13 @@ export function setMotto(typing = typingNow) {
   FX.anim(el.motto, [{ opacity: 0, transform: "translateY(3px)" }, { opacity: 1, transform: "none" }], { duration: 250, easing: "ease-out" });
 }
 
-// a long pause ends the round
+// Twice a second: a long pause ends the round, and so does the end of the
+// time in a time round (whose counter shows the seconds left).
 setInterval(() => {
-  if (startTime !== null && !S.busy && performance.now() - lastTime > IDLE_STOP_MS) finishRound();
+  if (startTime === null || S.busy) return;
+  const now = performance.now();
+  if (limit.kind === "time") renderProgress();
+  if (now - lastTime > IDLE_STOP_MS || timeUp(now)) finishRound();
 }, 500);
 
 // Esc: ends the round early (or, before the first key, just gives a new text).
@@ -553,6 +586,7 @@ async function finishRound() {
   el.wpm.textContent = Math.round(wpm);
   el.raw.textContent = Math.round(currentRaw(end));
   el.acc.textContent = Math.round(accuracy);
+  if (limit.kind === "time") renderProgress();          // the seconds left when it stopped (0: time is up)
   const resisted = tabsResisted;
   const typed = records.filter(Boolean);              // every sample of the round
   const samples = records.slice(sentUpTo).filter(Boolean); // the ones not sent with a portion yet
@@ -563,7 +597,10 @@ async function finishRound() {
     if (S.mode === "test") { await finishTest(wpm, accuracy, typed.length); return; }
     if (S.mode === "free") { await finishFree(wpm, accuracy, typed, fullSeconds(end), resisted); return; }
     // keys: the whole round, kept by the server as its raw record (it learns only from samples)
-    const res = await postJSON("/results", { samples, keys: typed, chars: typed.length, wpm, accuracy, perSecond: fullSeconds(end) });
+    const res = await postJSON("/results", {
+      samples, keys: typed, chars: typed.length, wpm, accuracy, perSecond: fullSeconds(end), length: S.settings.length,
+    });
+    firstRoundDone();
     await refreshStats();
     if (res.newLetter) newLetter(res.newLetter);
 
@@ -584,7 +621,8 @@ async function finishRound() {
 // only (POST /freeplay/results), never to the letter statistics.
 async function finishFree(wpm, accuracy, keys, perSecond, resisted) {
   const before = S.free?.sessions ?? [];
-  const res = await postJSON("/freeplay/results", { wpm, accuracy, chars: keys.length, perSecond, keys });
+  const res = await postJSON("/freeplay/results", { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length });
+  firstRoundDone();
   await refreshFreeplay();
   const best = before.length > 0 && wpm > Math.max(...before.map((x) => x.wpm));
   if (best) FX.burstFrom(el.wpm, 80);

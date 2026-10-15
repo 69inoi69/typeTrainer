@@ -4,7 +4,7 @@
 //   bottom: state.js and i18n.js import nothing, fx.js only i18n.js,
 //           api.js only state.js
 //   middle: keyboard, typing, letters, stats, intro, languages, tools,
-//           profile, result, tour, modes import the bottom
+//           profile, result, tour, modes, settings import the bottom
 //           and each other in one direction only (no cycles)
 //   top:    input.js and app.js may import anything; nothing imports them
 //           (app.js loads input.js)
@@ -16,7 +16,7 @@ export const $ = (id) => document.getElementById(id);
 export const el = {
   textBox: $("text-box"), text: $("text"), caret: $("caret"), input: $("hidden-input"),
   keyboard: $("keyboard"), hint: $("finger-hint"),
-  live: $("live"), wpm: $("wpm"), raw: $("raw"), acc: $("acc"), progress: $("progress"), motto: $("logo-motto"),
+  live: $("live"), wpm: $("wpm"), raw: $("raw"), acc: $("acc"), progress: $("progress"), progressLabel: $("progress-label"), motto: $("logo-motto"),
   letters: $("letters"), lettersCaption: $("letters-caption"),
   tooltip: $("tooltip"),
   btnNew: $("btn-new"), btnIntro: $("btn-intro"), heatKb: $("heat-kb"),
@@ -25,7 +25,7 @@ export const el = {
   switch: document.querySelector(".switch"), tabType: $("tab-type"), tabStats: $("tab-stats"),
   viewType: $("view-type"), viewStats: $("view-stats"),
   tabLearn: $("tab-learn"), tabFree: $("tab-free"),
-  tiles: $("tiles"), chart: $("chart"), chartNote: $("chart-note"), letterGrid: $("letter-grid"),
+  lengthFilter: $("length-filter"), tiles: $("tiles"), chart: $("chart"), chartNote: $("chart-note"), letterGrid: $("letter-grid"),
   langSwitch: $("lang-switch"), warn: $("layout-warn"),
   streak: $("streak"), streakN: $("streak-n"),
 };
@@ -49,6 +49,7 @@ export const S = {
   view: "type",           // "type" or "stats"
   mode: "learn",          // "learn", "free" or "test" (modes.js)
   free: null,             // last /freeplay/stats answer
+  settings: { length: "words-30", live: false, caret: "line" },   // settings.js
   kbHidden: false,        // keyboard and hands switched off
   mottoIndex: 0,          // the small phrase over the logo (set by init)
 };

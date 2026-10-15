@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -598,5 +599,65 @@ func TestApp_BehindProxy(t *testing.T) {
 	}
 	if rec := viaProxy(h, "8.8.8.8"); rec.Code == 429 {
 		t.Fatal("another client must not be limited")
+	}
+}
+
+// Round lengths (settings): each round keeps its length, the stats pages
+// show one length at a time and list the lengths there are; a length the
+// server does not know is a 400.
+func TestApp_RoundLengths(t *testing.T) {
+	h, _, _ := newApp()
+	round := func(path, length string, wpm int) int {
+		body := fmt.Sprintf(`{"chars":20,"wpm":%d,"accuracy":100,"length":%q}`, wpm, length)
+		code, _ := call(t, h, "POST", path, body)
+		return code
+	}
+	for _, r := range []struct {
+		length string
+		wpm    int
+	}{{"", 20}, {"words-10", 30}, {"time-60", 40}, {"time-60", 50}} {
+		if code := round("/api/v1/results?lang=en", r.length, r.wpm); code != 200 {
+			t.Fatalf("results %q: %d", r.length, code)
+		}
+	}
+	for _, bad := range []string{"words-0", "time-9999", "minutes-5", "words-x", "words-010", "words"} {
+		if code := round("/api/v1/results?lang=en", bad, 30); code != 400 {
+			t.Fatalf("length %q: got %d, want 400", bad, code)
+		}
+	}
+	_, all := call(t, h, "GET", "/api/v1/stats?lang=en", "")
+	if all["sessionCount"].(float64) != 4 {
+		t.Fatalf("all lengths: %v", all["sessionCount"])
+	}
+	if fmt.Sprint(all["lengths"]) != "[time-60 words-10 words-30]" {
+		t.Fatalf("lengths = %v", all["lengths"])
+	}
+	_, timed := call(t, h, "GET", "/api/v1/stats?lang=en&length=time-60", "")
+	sessions := timed["sessions"].([]any)
+	if timed["sessionCount"].(float64) != 2 || len(sessions) != 2 || sessions[0].(map[string]any)["wpm"].(float64) != 50 {
+		t.Fatalf("time-60: %v %v", timed["sessionCount"], sessions)
+	}
+	if code, _ := call(t, h, "GET", "/api/v1/stats?lang=en&length=nope", ""); code != 400 {
+		t.Fatalf("unknown length in stats: %d", code)
+	}
+	// free practice keeps its own lengths
+	call(t, h, "POST", "/api/v1/freeplay/test?lang=en", `{"chars":150,"wpm":40,"accuracy":100}`)
+	if code := round("/api/v1/freeplay/results?lang=en", "time-30", 60); code != 200 {
+		t.Fatalf("freeplay results: %d", code)
+	}
+	_, free := call(t, h, "GET", "/api/v1/freeplay/stats?lang=en&length=time-30", "")
+	if free["sessionCount"].(float64) != 1 || fmt.Sprint(free["lengths"]) != "[time-30]" {
+		t.Fatalf("freeplay: %v %v", free["sessionCount"], free["lengths"])
+	}
+	// the length survives export and import
+	_, exp := call(t, h, "GET", "/api/v1/export?lang=en", "")
+	raw, _ := json.Marshal(exp)
+	call(t, h, "POST", "/api/v1/reset?lang=en", "")
+	if code, out := call(t, h, "POST", "/api/v1/import?lang=en", string(raw)); code != 200 {
+		t.Fatalf("import: %d %v", code, out)
+	}
+	_, back := call(t, h, "GET", "/api/v1/stats?lang=en&length=time-60", "")
+	if back["sessionCount"].(float64) != 2 {
+		t.Fatalf("after import time-60: %v", back["sessionCount"])
 	}
 }

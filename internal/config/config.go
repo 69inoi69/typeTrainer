@@ -17,6 +17,11 @@ type Config struct {
 	MaxImportBytes    int // largest accepted import body (one language)
 	MaxImportSessions int // most history entries accepted in one import
 
+	// Round lengths ("words-30", "time-60", storage.Session.Length): the
+	// settings offer a few of them; these limits only stop nonsense.
+	MaxRoundWords   int
+	MaxRoundSeconds int
+
 	ConsistencyMinSeconds int // a round shorter than this gets no consistency (engine.Consistency)
 	// Accounts: whether /api/v1/auth/* works. Set by setup.go, not here:
 	// on GitHub Pages (WebAssembly) there are no cookies, so it is off.
@@ -40,6 +45,9 @@ func Default() Config {
 
 		MaxImportBytes:    64 << 20, // 64 MB: a round with its raw keys is 5-7 KB, so ~10 000 rounds fit
 		MaxImportSessions: 50000,
+
+		MaxRoundWords:   500, // the settings offer 10, 30 and 60 words
+		MaxRoundSeconds: 600, // ...and 30 and 60 seconds
 
 		ConsistencyMinSeconds: 5, // under 5 full seconds there is too little to judge the pace
 		Auth: auth.Params{

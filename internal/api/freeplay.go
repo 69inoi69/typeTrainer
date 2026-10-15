@@ -79,6 +79,10 @@ func (s *Server) handleFreeplayResults(w http.ResponseWriter, r *http.Request, u
 		badRequest(w, msg)
 		return
 	}
+	if !s.validLength(req.Length) {
+		badRequest(w, "length: unknown round length")
+		return
+	}
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 	open, err := s.freeplayOpen(user, l)
@@ -96,7 +100,8 @@ func (s *Server) handleFreeplayResults(w http.ResponseWriter, r *http.Request, u
 	}
 	err = s.store.AddFreeplaySession(user, l.Info.ID, storage.Session{
 		WPM: req.WPM, Accuracy: req.Accuracy, Chars: req.Chars, Consistency: consistency, FinishedAt: time.Now(),
-		Keys: req.Keys, // kept as the raw record only, never learned from
+		Keys:   req.Keys, // kept as the raw record only, never learned from
+		Length: req.Length,
 	})
 	if err != nil {
 		serverError(w, err)
@@ -138,10 +143,16 @@ func (s *Server) handleFreeplayTest(w http.ResponseWriter, r *http.Request, user
 	writeJSON(w, http.StatusOK, map[string]bool{"passed": passed, "unlocked": open})
 }
 
-// GET /api/v1/freeplay/stats?lang= -> {"unlocked", "testPassed", "sessions"
-// (the last 50, newest first), "sessionCount", "testWpm", "testAccuracy"}.
+// GET /api/v1/freeplay/stats?lang=&length= -> {"unlocked", "testPassed",
+// "sessions" (the last 50 of that length, newest first), "sessionCount" (of
+// that length), "lengths" (every length in the history), "testWpm",
+// "testAccuracy"}. No length = rounds of every length.
 func (s *Server) handleFreeplayStats(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	id := l.Info.ID
+	length, ok := s.lengthParam(w, r)
+	if !ok {
+		return
+	}
 	open, err := s.freeplayOpen(user, l)
 	if err != nil {
 		serverError(w, err)
@@ -152,18 +163,23 @@ func (s *Server) handleFreeplayStats(w http.ResponseWriter, r *http.Request, use
 		serverError(w, err)
 		return
 	}
-	sessions, err := s.store.RecentFreeplaySessions(user, id, 50)
+	sessions, err := s.store.RecentFreeplaySessions(user, id, length, 50)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	count, err := s.store.FreeplaySessionCount(user, id)
+	count, err := s.store.FreeplaySessionCount(user, id, length)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	lengths, err := s.store.FreeplaySessionLengths(user, id)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"unlocked": open, "testPassed": passed, "sessions": summaries(sessions), "sessionCount": count,
+		"unlocked": open, "testPassed": passed, "sessions": summaries(sessions), "sessionCount": count, "lengths": lengths,
 		"testWpm": s.cfg.Freeplay.TestWPM, "testAccuracy": s.cfg.Freeplay.TestAccuracy,
 	})
 }

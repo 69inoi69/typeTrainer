@@ -4,6 +4,7 @@
 package api
 
 import (
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -37,6 +38,26 @@ func validate(req resultsRequest, maxEvents int, alphabet string) string {
 	return ""
 }
 
+// validLength checks a round length: "" (DefaultLength), "words-N" with
+// 1 <= N <= maxWords, or "time-N" with 1 <= N <= maxSeconds seconds.
+func validLength(length string, maxWords, maxSeconds int) bool {
+	if length == "" {
+		return true
+	}
+	kind, num, ok := strings.Cut(length, "-")
+	n, err := strconv.Atoi(num)
+	if !ok || err != nil || n < 1 || strconv.Itoa(n) != num {
+		return false
+	}
+	switch kind {
+	case "words":
+		return n <= maxWords
+	case "time":
+		return n <= maxSeconds
+	}
+	return false
+}
+
 // validateSamples: at most max samples, every one a single letter of
 // the language's alphabet or a space, so junk keys never end up in the statistics.
 func validateSamples(samples []engine.Sample, max int, alphabet string) string {
@@ -57,7 +78,7 @@ func validateSamples(samples []engine.Sample, max int, alphabet string) string {
 // validateImport makes sure a loaded file cannot put impossible numbers or
 // foreign letters into the statistics. letters = how many letters the
 // language's unlock order has.
-func validateImport(in langExport, maxSessions, maxEvents, letters int, alphabet string) string {
+func validateImport(in langExport, maxSessions, maxEvents, letters int, alphabet string, okLength func(string) bool) string {
 	if in.Unlocked < 0 || in.Unlocked > letters {
 		return "unlocked: out of range"
 	}
@@ -71,11 +92,11 @@ func validateImport(in langExport, maxSessions, maxEvents, letters int, alphabet
 			return "keys: impossible numbers for " + ch
 		}
 	}
-	if msg := validateSessions(in.Sessions, maxSessions, maxEvents, letters, alphabet); msg != "" {
+	if msg := validateSessions(in.Sessions, maxSessions, maxEvents, letters, alphabet, okLength); msg != "" {
 		return msg
 	}
 	if in.Freeplay != nil {
-		if msg := validateSessions(in.Freeplay.Sessions, maxSessions, maxEvents, letters, alphabet); msg != "" {
+		if msg := validateSessions(in.Freeplay.Sessions, maxSessions, maxEvents, letters, alphabet, okLength); msg != "" {
 			return "freeplay " + msg
 		}
 	}
@@ -84,7 +105,7 @@ func validateImport(in langExport, maxSessions, maxEvents, letters int, alphabet
 
 // validateSessions: at most max entries, every number in its range, raw
 // keys as in validateSamples (at most maxEvents per session).
-func validateSessions(sessions []storage.Session, max, maxEvents, letters int, alphabet string) string {
+func validateSessions(sessions []storage.Session, max, maxEvents, letters int, alphabet string, okLength func(string) bool) string {
 	if len(sessions) > max {
 		return "sessions: too many"
 	}
@@ -97,6 +118,9 @@ func validateSessions(sessions []storage.Session, max, maxEvents, letters int, a
 		}
 		if sess.Unlocked < 0 || sess.Unlocked > letters {
 			return "sessions: unlocked out of range"
+		}
+		if !okLength(sess.Length) {
+			return "sessions: unknown length " + sess.Length
 		}
 		if msg := validateSamples(sess.Keys, maxEvents, alphabet); msg != "" {
 			return "sessions: keys: " + msg
