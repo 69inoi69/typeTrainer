@@ -50,7 +50,7 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
 - The header is quiet, as on monkeytype: on the left the logo and two small
   icons (typing / statistics), on the right the languages and the profile.
   The chosen option has a short yellow line under it. From your first
-  keypress until the end of the exercise the header steps back: the logo turns
+  keypress until the end of the round the header steps back: the logo turns
   grey, the controls almost vanish (move the mouse over the header to bring
   them back) and the small phrase over the logo turns into a "typing" one.
 - The **EN · PL · UK · RU** switch changes the language you practise **and the
@@ -58,17 +58,23 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   follows your browser's language).
 - **Tab does not restart.** Restarting throws away exactly the mistakes the
   trainer learns from, so Tab only answers with a small animation; the result
-  screen then says how many times you resisted. `Esc` (restart)
-  still gives a new exercise.
+  screen then says how many times you resisted. `Esc` (stop) ends the round
+  early and shows its result.
+- **Rounds of 30 words, picked while you type.** The text is not ready in
+  advance: it grows a few words at a time (a portion of 6 words around one
+  focus letter), and every new portion is chosen from your newest statistics.
+  The two lines ahead never change under your eyes. A word you mistyped comes
+  back a line or two later. The counter `12/30 words` shows how much of the
+  round is left; 10 seconds without a key also end the round.
 - The **bolt + number** at the right end of the numbers line counts clean words
   in a row (typed without a single mistake; hover for the tooltip). It gets
   hotter as it grows: green from 3, yellow from 10, orange with a zapping bolt
   from 25, glowing red from 50. New records, mastered letters, new letters and
   the streak at 10 and every 25 words get a small confetti.
-- **While you type** the feedback is where your eyes already are: the letter
-  in focus is tinted in the text, the caret turns green while your speed is at
+- **While you type** the feedback is where your eyes already are: the focus
+  letter of each portion is tinted in the text, the caret turns green while your speed is at
   the goal, and the numbers line changes once per word (calm, not every key).
-- **When the text ends** the text window shows the result instead of the
+- **When the round ends** the text window shows the result instead of the
   text: one main line (a new letter with a joke about it, a new record,
   mastered letters, or a short verdict on accuracy), which letters got faster
   or slower, and now and then a tip. Space, Enter or any letter goes on at
@@ -91,9 +97,9 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
 - The red-on-click bin button resets everything: progress in all languages and
   the settings saved in your browser, as on the very first visit. It needs a
   second click (the first one turns it red), so it does not happen by accident.
-- Shortcuts, also listed small at the bottom of the page: `Esc` restart ·
+- Shortcuts, also listed small at the bottom of the page: `Esc` stop ·
   `Shift + Tab` type / stats · `Alt + 1…4` language · `Alt + K` keyboard and
-  hands on / off. On phones (no Esc key) a "restart" button is shown under
+  hands on / off. On phones (no Esc key) a "stop" button is shown under
   the text instead.
 - The top line of the text card shows **wpm**, **raw** (every keypress counts,
   wrong ones too, like on monkeytype; only shown, never stored) and accuracy.

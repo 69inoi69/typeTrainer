@@ -16,7 +16,7 @@ export const $ = (id) => document.getElementById(id);
 export const el = {
   textBox: $("text-box"), text: $("text"), caret: $("caret"), input: $("hidden-input"),
   keyboard: $("keyboard"), hint: $("finger-hint"),
-  live: $("live"), wpm: $("wpm"), raw: $("raw"), acc: $("acc"), motto: $("logo-motto"),
+  live: $("live"), wpm: $("wpm"), raw: $("raw"), acc: $("acc"), progress: $("progress"), motto: $("logo-motto"),
   letters: $("letters"), lettersCaption: $("letters-caption"),
   tooltip: $("tooltip"),
   btnNew: $("btn-new"), btnIntro: $("btn-intro"), heatKb: $("heat-kb"),
@@ -40,11 +40,11 @@ export const S = {
   keyEls: {},             // char -> key <div> (the letter printed on the key)
   altBase: {},            // AltGr letter -> base key char ("ą" -> "a")
   altgrEl: null,          // the AltGr key, if the layout has one
-  exercise: null,         // last /exercise answer: text, focus, unlocked, locked
+  exercise: null,         // {focus, unlocked, locked}: the focus of the portion being typed
   lastStats: null,        // last /stats answer
-  text: "",               // the exercise text
+  text: "",               // the text of the stream so far (grows while you type)
   pos: 0,                 // index of the character to type next
-  busy: false,            // true while talking to the server between exercises
+  busy: false,            // true while a finished run is being saved
   view: "type",           // "type" or "stats"
   kbHidden: false,        // keyboard and hands switched off
   mottoIndex: 0,          // the small phrase over the logo (set by init)

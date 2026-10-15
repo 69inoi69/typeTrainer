@@ -69,7 +69,7 @@ Some times are **ignored** for speed (but still count for accuracy):
 1. the time of a position whose sample has a mistake (`errors > 0`), because
    the first attempt there was a wrong movement;
 2. gaps longer than `MaxIntervalMs = 2000 ms`, which are pauses;
-3. the first press of the exercise (no previous press) and the first press
+3. the first press of a round (no previous press) and the first press
    after a Backspace (that time is spent correcting): both get `ms = 0`
    (not measured).
 
@@ -219,8 +219,9 @@ In words: at least 20 occurrences, under 5 % mistakes, at 30 WPM or faster.
 It is checked on the raw values (not on the shrunk difficulty) so it can be
 explained to a user in one sentence.
 
-**Next letter.** After each exercise: if every open letter is mastered, the
-next letter in the order opens. At most one letter per exercise. A new letter
+**Next letter.** After each portion of the stream (section 7): if every open
+letter is mastered, the next letter in the order opens. At most one letter per
+portion. A new letter
 starts at the prior difficulty 0.7, which is higher than the difficulty of the
 mastered letters, so it automatically becomes the focus.
 
@@ -229,10 +230,13 @@ all letters at once. From then on the engine works only through focus.
 
 ## 7. Choosing the words
 
-Every exercise has `ExerciseWords = 20` words. Only words made entirely of open
-letters are allowed. Each word slot is filled in two steps.
+The text is a **stream**: it is not built in advance but a few words at a
+time while the user types, each time from the newest statistics. One piece
+of the stream is a **portion** of `PortionWords = 6` words (about one line),
+built by `Generator.Portion`. Only words made entirely of open letters are
+allowed.
 
-**Step 1, what to train: pick a focus letter.**
+**Step 1, what to train: one focus letter for the whole portion.**
 
 ```
 P(letter) = exp(d_letter / T) / Σ exp(d_i / T)        T = Temperature = 0.1
@@ -247,27 +251,56 @@ one knob for "how hard to push on weaknesses":
 - with `T → 0` it always picks the single worst letter;
 - with a large `T` every letter is almost equally likely.
 
-`exp` is never 0, so no letter disappears from practice.
+`exp` is never 0, so no letter disappears from practice. Because the focus is
+drawn again for every portion, it changes every few words: the user works on
+one letter at a time, but never on the same one for long.
 
-**Step 2, how to train it: pick a word that contains the focus letter.**
+**Step 2, how to train it: every word of the portion contains the focus letter.**
 
 ```
 D(word)   = average difficulty of the word's letters (each occurrence counts)
-P(word)  ~ exp(D(word) / T) * RepeatPenalty^(times already used in this exercise)
+P(word)  ~ exp(D(word) / T) * RepeatPenalty^(uses in the last RecentWords words)
 ```
 
 Among words that contain the focus letter, the ones that also contain other weak
-letters are preferred. `RepeatPenalty = 0.3` makes repeating a word inside one
-exercise unlikely, and the same word never appears twice in a row.
+letters are preferred. `RepeatPenalty = 0.3` makes a word that was used in the
+last `RecentWords = 20` words of the stream unlikely, and the same word never
+appears twice in a row (also across the border of two portions). If the
+focus letter has too few words, a word without it is taken.
 
-**Focus shown to the user** is simply the open letter with the highest
-difficulty.
+**Mistyped words come back.** Words the user typed with a mistake (a wrong or
+extra letter, or skipped letters; a mistake fixed with Backspace counts too)
+are typed again: up to `RetryWords = 2` of them are put into the next portion
+that is built, at random places, instead of new words. They are not repeated
+right away, because of the waiting portions (below), but about 2 portions
+later. Repeating a missed item after a short gap is the idea of spaced
+practice; here it is the simplest version, one repetition.
 
-**When does the model react?** Statistics are updated after each exercise, and
-the next exercise is generated from the new values. Exercises are kept short (20
-words, about 100 characters: 40 seconds at 30 WPM, 20 seconds at 60 WPM) so this
-feels immediate. Updating after each word
-would be possible, but the text would change under the user's eyes.
+**Focus shown to the user** is the focus letter of the portion being typed.
+
+**When does the model react?** After every portion. When the space after its
+last word is typed, the portion's samples are sent, the statistics are
+updated (and maybe a letter opens), and the answer is one new portion built
+from the new values. It is added at the end of the text. `AheadPortions = 2`
+portions always wait after the one being typed, so the user can read ahead
+(about two lines) and **words already on the screen never change**. The cost
+is a delay: a new portion is typed about 12 words after the data it was built
+from. Before the stream, a whole exercise of 20 words was built in advance, so
+a mistake on its first word changed the text only 20 to 40 words later.
+
+**The round.** The stream is cut into rounds of `RoundPortions = 5` portions
+(30 words), so the user always sees how much is left (a counter `12/30`) and
+gets a result at a clear point. The last word of a round ends it; Esc or
+10 seconds without a key end it early. The WPM and accuracy of the round go to
+the history, and the next round starts from scratch: new waiting portions, an
+empty list of recent words. Inside a round the words are still chosen portion
+by portion. The time of a round ends at its last keypress, so the pause that
+ended it early does not lower the WPM.
+
+**The earlier strategy** (`Generator.Next`, kept for the simulation): a whole
+exercise of `ExerciseWords = 20` words at once, a new focus letter for every
+word, the repeat penalty counted inside the exercise, statistics updated
+after the exercise. Section 11.1 compares the two.
 
 ## 8. Parameters
 
@@ -287,8 +320,13 @@ All in `internal/config/config.go`.
 | `MasteryMinSamples` | 20 | evidence needed for mastery | ≈ one EMA memory length |
 | `MasteryErrorRate` | 0.05 | max mistakes for mastery | 95 % accuracy, a common minimum goal |
 | `StartLetters` / `MinWords` | 6 / 30 | first lesson | enough variety from the first minute |
-| `RepeatPenalty` | 0.3 | less repetition inside one exercise | variety |
-| `ExerciseWords` | 20 | words per exercise | short loop, model updates often |
+| `RepeatPenalty` | 0.3 | less repetition of recent words | variety |
+| `ExerciseWords` | 20 | words per exercise of the earlier strategy (`Next`), and the unit of the simulation | short loop, model updates often |
+| `PortionWords` | 6 | words per portion of the stream, one focus letter each | about one line: the model reacts after every line, the focus changes often enough not to bore |
+| `AheadPortions` | 2 | portions waiting after the one being typed | about two lines to read ahead; fewer would leave the window half empty |
+| `RecentWords` | 20 | the repeat penalty looks at this many last words | the same window as one exercise had |
+| `RetryWords` | 2 | most mistyped words put back into one portion | at most a third of a portion is repetition |
+| `RoundPortions` | 5 | portions per round (30 words), one result in the history | chosen by the owner: a clear end; about 1-2 minutes for a beginner, 20 seconds for a fast typist |
 
 The values were chosen by reasoning, not fitted to data. Tuning them on real
 user data is a good subject for the evaluation chapter (section 11).
@@ -358,16 +396,25 @@ every letter's **hidden** values meet the mastery goal (≤ 5 % errors,
 ≤ 400 ms). The hidden values are used only to judge the result; the strategies
 see only what a real browser would send.
 
-**Three strategies,** all with the same statistics (`engine.Apply`), the same
-unlocking rule (`NextUnlocked`), 20 words per exercise, and for each run the
-same typist and the same random numbers:
+**Four strategies,** all with the same statistics (`engine.Apply`), the same
+unlocking rule (`NextUnlocked`), and for each run the same typist and the same
+random numbers:
 
 1. **random words:** any open word, uniformly;
 2. **best of 20 (monkeytype):** a copy of monkeytype's "weakspot" mode. Each
    letter has an EMA of (press time + 5000 ms for a mistake) over about 50
    presses; for every word slot 20 random open words are drawn and the one with
    the highest mean letter score is taken;
-3. **adaptive (softmax):** this project's `Generator.Next`.
+3. **adaptive (softmax):** this project's `Generator.Next`, 20 words at once,
+   statistics updated after each exercise (the app before the stream);
+4. **stream:** this project's `Generator.Portion` exactly as the app uses it
+   now (section 7): rounds of 5 portions of 6 words, 2 waiting, statistics
+   updated after each portion, mistyped words come back.
+
+Strategies 1-3 work in exercises of 20 words. The stream has no exercises, so
+everything is counted in words and reported in "exercises" of 20 words: 163
+exercises means 3260 words typed. The variety numbers of the stream are
+measured on blocks of 20 words in a row.
 
 **Variety.** A faster strategy is useless if it is boring, so the simulation
 also measures how repetitive the exercises are (means over exercises):
@@ -392,18 +439,22 @@ dist / rep / top):
 | en | best of 20 | 292 | 47 / 55 / 94 | 96 / 8 / 75 |
 | en | adaptive, T = 0.25 | 299 | 94 / 28 / 73 | 100 / 2 / 62 |
 | en | adaptive, T = 0.1 | 173 | 89 / 31 / 83 | 99 / 3 / 62 |
+| en | stream, T = 0.1 | 163 | 88 / 29 / 82 | 98 / 5 / 65 |
 | pl | random words | 1520 | 81 / 40 / 70 | 100 / 1 / 55 |
 | pl | best of 20 | 274 | 33 / 64 / 83 | 96 / 8 / 69 |
 | pl | adaptive, T = 0.25 | 450 | 86 / 50 / 71 | 100 / 1 / 55 |
 | pl | adaptive, T = 0.1 | 246 | 77 / 49 / 79 | 100 / 2 / 56 |
+| pl | stream, T = 0.1 | 229 | 75 / 47 / 80 | 99 / 4 / 59 |
 | uk | random words | 1818 | 81 / 39 / 61 | 100 / 1 / 51 |
 | uk | best of 20 | 286 | 34 / 59 / 85 | 96 / 8 / 68 |
 | uk | adaptive, T = 0.25 | 464 | 90 / 44 / 66 | 100 / 2 / 53 |
 | uk | adaptive, T = 0.1 | 247 | 85 / 46 / 76 | 100 / 2 / 54 |
+| uk | stream, T = 0.1 | 233 | 82 / 40 / 77 | 99 / 4 / 57 |
 | ru | random words | 3000 (none reached) | 83 / 38 / 60 | 100 / 1 / 56 |
 | ru | best of 20 | 1175 | 34 / 59 / 81 | 96 / 8 / 72 |
 | ru | adaptive, T = 0.25 | 490 | 91 / 42 / 67 | 99 / 4 / 58 |
-| ru | adaptive, T = 0.1 | 248 | 86 / 40 / 77 | 98 / 4 / 59 |
+| ru | adaptive, T = 0.1 | 247 | 86 / 40 / 77 | 98 / 4 / 59 |
+| ru | stream, T = 0.1 | 251 | 85 / 34 / 77 | 97 / 5 / 62 |
 
 `go run ./tools/sim -temps 0.1,0.15,0.2,0.25` prints the in-between values
 too: exercises fall steadily as T falls (en 299, 264, 229, 173).
@@ -423,6 +474,18 @@ What this shows:
   in every language. The price is moderate: in the first lessons 5-9 points fewer
   different words and one letter pushed a bit harder (`top` +8..10 points);
   for an experienced typist the variety is practically the same.
+- **The stream** (the app now, rounds of 30 words) needs 6-7 % fewer words to
+  the goal than whole exercises in English, Polish and Ukrainian (163 against
+  173, 229 against 246, 233 against 247), and 2 % more in Russian (251 against
+  247, within the spread of 20 runs; there the rare letters `ъ`, `э`, `ф` set
+  the pace). It reacts after every 6 words instead of every 20. Variety in the
+  first lessons is the same within 1-6 points (fewer repeated words, `rep`).
+  An experienced typist sees a few more repeated words (`rep` 4-5 % against
+  2-4 %): mostly the mistyped words that come back on purpose.
+  Without rounds (one endless stream, tried first) the gain was slightly
+  larger (161, 221, 227, 247): each new round starts with three portions built
+  from the same statistics. The owner chose rounds anyway, for a clear end and
+  a result screen.
 - Most repetition in the first lessons comes from the **small alphabet**, not
   from the strategy: even random words repeat 28-40 % of the previous exercise.
   That part is controlled by `StartLetters` and `MinWords`, not by `T`.

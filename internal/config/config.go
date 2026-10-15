@@ -47,6 +47,12 @@ func Default() Config {
 			MinWords:      30,  // ...and at least 30 real words to choose from
 			RepeatPenalty: 0.3, // each earlier use in the exercise multiplies weight by 0.3
 			ExerciseWords: 20,  // short exercises -> the model updates more often
+
+			PortionWords:  6,  // a portion is about one line: short enough to react fast
+			AheadPortions: 2,  // two portions (~12 words) are always ready on screen
+			RecentWords:   20, // "do not repeat" looks at the last 20 words, as one exercise did
+			RetryWords:    2,  // up to 2 words with a mistake are typed again
+			RoundPortions: 5,  // a round is 30 words: a clear end, then the result
 		},
 		// A made-up typist: assumptions of the simulation, not measured values.
 		// docs/ALGORITHM.md section 11 explains them.

@@ -6,7 +6,7 @@
 
 <p align="center">
   An adaptive touch-typing trainer that finds your weakest letters<br>
-  and builds every exercise from real words around them.<br><br>
+  and keeps building the text from real words around them while you type.<br><br>
   <a href="https://69inoi69.github.io/typetrainer/"><b>Try it in your browser</b></a>
 </p>
 
@@ -18,9 +18,10 @@ Lublin University of Technology (2027).
 ## Idea
 
 - **Real words only**, no generated letter combinations.
-- **It adapts to you.** Every keypress is measured; letters you miss or type
-  slowly show up more often in the next exercise. Plain statistics, no
-  machine learning, so every step can be explained.
+- **It adapts to you while you type.** Every keypress is measured; the text
+  is built a few words at a time, so letters you miss or type slowly show up
+  more often a line or two later, and mistyped words come back. Plain
+  statistics, no machine learning, so every step can be explained.
 - **Letters open gradually**, most frequent first, once the open ones are
   accurate and fast enough.
 - **One mode.** The algorithm decides what you practise.

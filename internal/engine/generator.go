@@ -142,7 +142,101 @@ type Exercise struct {
 	Locked   []string `json:"locked"`   // letters still to come, in order
 }
 
-// Next builds one exercise.
+// pool is what both Next and Portion need before they pick words: the
+// difficulty and softmax weight of every open letter, the open words grouped
+// by letter, and each word's base weight exp(meanDifficulty / T).
+type pool struct {
+	open     []string
+	words    []string
+	index    map[string]int   // word -> its index in words
+	letterW  []float64        // softmax weight of open[i]
+	byLetter map[string][]int // letter -> indexes of the words that contain it
+	baseW    []float64        // base weight of words[i]
+	weakest  string           // the open letter with the highest difficulty
+}
+
+func (g *Generator) newPool(stats map[string]KeyStat, unlocked int, p Params) *pool {
+	pl := &pool{open: g.order[:unlocked], words: g.eligible(unlocked), index: map[string]int{}, byLetter: map[string][]int{}}
+	diff := map[rune]float64{}
+	pl.letterW = make([]float64, len(pl.open))
+	best := -1.0
+	for i, c := range pl.open {
+		d := Difficulty(stats[c], p)
+		diff[letterRune(c)] = d
+		pl.letterW[i] = SoftmaxWeight(d, p)
+		if d > best {
+			best, pl.weakest = d, c
+		}
+	}
+	pl.baseW = make([]float64, len(pl.words))
+	for i, w := range pl.words {
+		pl.index[w] = i
+		sum := 0.0
+		seen := map[rune]bool{}
+		for _, r := range w {
+			sum += diff[r]
+			if !seen[r] {
+				seen[r] = true
+				pl.byLetter[string(r)] = append(pl.byLetter[string(r)], i)
+			}
+		}
+		pl.baseW[i] = SoftmaxWeight(sum/float64(len(w)), p)
+	}
+	return pl
+}
+
+// pickFocus is step 1: a focus letter with P(letter) ~ exp(difficulty / T).
+func (pl *pool) pickFocus(r float64) string { return pl.open[WeightedPick(pl.letterW, r)] }
+
+// pickWord is step 2: a word that contains the focus letter, with
+// P(word) ~ exp(meanDifficulty / T) * RepeatPenalty^uses. Words in `avoid`
+// (the neighbours of this slot) are never picked, so no word appears twice
+// in a row. Returns an index into pl.words.
+func (pl *pool) pickWord(focus string, uses []int, p Params, r float64, avoid ...int) int {
+	n := 0 // how many different words are avoided
+	for i, a := range avoid {
+		if a >= 0 && !contains(avoid[:i], a) {
+			n++
+		}
+	}
+	// (with nothing else left, a repeat is allowed: one-word dictionary)
+	banned := func(idx int) bool { return n < len(pl.words) && contains(avoid, idx) }
+	cands := pl.byLetter[focus]
+	if len(cands) == 0 { // a letter with no open word: pick from all words
+		cands = make([]int, len(pl.words))
+		for i := range pl.words {
+			cands[i] = i
+		}
+	}
+	w := make([]float64, len(cands))
+	for j, idx := range cands {
+		w[j] = pl.baseW[idx]
+		for u := 0; u < uses[idx]; u++ {
+			w[j] *= p.RepeatPenalty
+		}
+		if banned(idx) {
+			w[j] = 0
+		}
+	}
+	if idx := cands[WeightedPick(w, r)]; !banned(idx) {
+		return idx
+	}
+	// every candidate was banned (the focus letter has only those words):
+	// the first allowed word from a random place in the list
+	start := int(r * float64(len(pl.words)))
+	for k := range pl.words {
+		if idx := (start + k) % len(pl.words); !banned(idx) {
+			return idx
+		}
+	}
+	return start
+}
+
+func (g *Generator) letters(unlocked int) (open, locked []string) {
+	return append([]string{}, g.order[:unlocked]...), append([]string{}, g.order[unlocked:]...)
+}
+
+// Next builds one exercise of ExerciseWords words in one go.
 //
 // For every word slot:
 //  1. pick a FOCUS letter: P(letter) ~ exp(difficulty / T)        (what to train)
@@ -151,78 +245,130 @@ type Exercise struct {
 //
 // Step 2 prefers words with several weak letters (e.g. both 'r' and 's'
 // when both are weak) and avoids repeating a word within one exercise.
+//
+// The app now uses Portion (the stream); Next is kept as the earlier
+// strategy, so the simulation can compare the two.
 func (g *Generator) Next(stats map[string]KeyStat, unlocked int, p Params) Exercise {
 	unlocked = g.Clamp(unlocked)
-	open := g.order[:unlocked]
-	words := g.eligible(unlocked)
-
-	ex := Exercise{Unlocked: append([]string{}, open...), Locked: append([]string{}, g.order[unlocked:]...)}
-	if len(words) == 0 {
+	ex := Exercise{}
+	ex.Unlocked, ex.Locked = g.letters(unlocked)
+	pl := g.newPool(stats, unlocked, p)
+	if len(pl.words) == 0 {
 		return ex
 	}
+	ex.Focus = pl.weakest
 
-	// difficulty and softmax weight of every open letter
-	diff := map[rune]float64{}
-	letterW := make([]float64, len(open))
-	best := -1.0
-	for i, c := range open {
-		d := Difficulty(stats[c], p)
-		diff[letterRune(c)] = d
-		letterW[i] = SoftmaxWeight(d, p)
-		if d > best {
-			best, ex.Focus = d, c
-		}
-	}
-
-	// group words by letter, and pre-compute each word's base weight
-	byLetter := map[string][]int{}
-	baseW := make([]float64, len(words))
-	for i, w := range words {
-		sum := 0.0
-		seen := map[rune]bool{}
-		for _, r := range w {
-			sum += diff[r]
-			if !seen[r] {
-				seen[r] = true
-				byLetter[string(r)] = append(byLetter[string(r)], i)
-			}
-		}
-		baseW[i] = SoftmaxWeight(sum/float64(len(w)), p)
-	}
-
-	uses := make([]int, len(words))
+	uses := make([]int, len(pl.words))
 	out := make([]string, 0, p.ExerciseWords)
 	last := -1
 	for len(out) < p.ExerciseWords {
-		focus := open[WeightedPick(letterW, g.rng.Float64())]
-		cands := byLetter[focus]
-		if len(cands) == 0 { // a letter with no open word: pick from all words
-			cands = make([]int, len(words))
-			for i := range words {
-				cands[i] = i
-			}
-		}
-		w := make([]float64, len(cands))
-		for j, idx := range cands {
-			w[j] = baseW[idx]
-			for u := 0; u < uses[idx]; u++ {
-				w[j] *= p.RepeatPenalty
-			}
-			if idx == last && len(words) > 1 {
-				w[j] = 0 // never the same word twice in a row
-			}
-		}
-		pick := WeightedPick(w, g.rng.Float64())
-		idx := cands[pick]
-		if idx == last && len(words) > 1 { // only possible if every weight was 0
-			continue
-		}
+		focus := pl.pickFocus(g.rng.Float64())
+		idx := pl.pickWord(focus, uses, p, g.rng.Float64(), last)
 		uses[idx]++
 		last = idx
-		out = append(out, words[idx])
+		out = append(out, pl.words[idx])
 	}
 	ex.Text = strings.Join(out, " ")
 	return ex
+}
+
+// Portion is a few words of the stream, all built around one focus letter.
+type Portion struct {
+	Words    []string `json:"words"`
+	Focus    string   `json:"focus"`    // the letter this portion trains
+	Weakest  string   `json:"weakest"`  // the open letter with the highest difficulty
+	Unlocked []string `json:"unlocked"` // open letters, in unlock order
+	Locked   []string `json:"locked"`   // letters still to come, in order
+}
+
+// Portion builds the next PortionWords words of the stream (the text the
+// user types is a stream of portions, each built from the newest statistics,
+// see docs/ALGORITHM.md section 7).
+//
+//   - recent: the words already in the stream, oldest first. Only the last
+//     RecentWords count for RepeatPenalty, and the next word is never the
+//     same as the last one.
+//   - retry: words the user typed with a mistake. Up to RetryWords of them
+//     that are still allowed come back in this portion, at random places.
+//
+// The rest of the slots: ONE focus letter for the whole portion (step 1 of
+// Next, done once), then each word is step 2 of Next for that letter.
+func (g *Generator) Portion(stats map[string]KeyStat, unlocked int, recent, retry []string, p Params) Portion {
+	unlocked = g.Clamp(unlocked)
+	por := Portion{}
+	por.Unlocked, por.Locked = g.letters(unlocked)
+	pl := g.newPool(stats, unlocked, p)
+	if len(pl.words) == 0 || p.PortionWords <= 0 {
+		return por
+	}
+	por.Weakest = pl.weakest
+	por.Focus = pl.pickFocus(g.rng.Float64())
+
+	uses := make([]int, len(pl.words))
+	if len(recent) > p.RecentWords {
+		recent = recent[len(recent)-p.RecentWords:]
+	}
+	last := -1
+	for _, w := range recent {
+		if idx, ok := pl.index[w]; ok {
+			uses[idx]++
+			last = idx
+		} else {
+			last = -1
+		}
+	}
+
+	// the retry words first, each in a random free slot (not right after
+	// the same word)
+	slots := make([]int, p.PortionWords) // index into pl.words, -1 = free
+	for i := range slots {
+		slots[i] = -1
+	}
+	placed := 0
+	for _, w := range retry {
+		idx, ok := pl.index[w]
+		if !ok || placed >= p.RetryWords || contains(slots, idx) {
+			continue
+		}
+		free := []int{}
+		for i, s := range slots {
+			if s == -1 && !(i == 0 && idx == last) {
+				free = append(free, i)
+			}
+		}
+		if len(free) == 0 {
+			continue
+		}
+		slots[free[g.rng.Intn(len(free))]] = idx
+		placed++
+	}
+
+	// the free slots, in order: never the same word as either neighbour
+	for i := range slots {
+		if slots[i] == -1 {
+			next := -1
+			if i+1 < len(slots) {
+				next = slots[i+1]
+			}
+			slots[i] = pl.pickWord(por.Focus, uses, p, g.rng.Float64(), last, next)
+		}
+		uses[slots[i]]++
+		last = slots[i]
+	}
+	por.Words = make([]string, len(slots))
+	for i, idx := range slots {
+		por.Words[i] = pl.words[idx]
+	}
+	return por
+}
+
+func contains(xs []int, x int) bool {
+	for _, v := range xs {
+		if v == x {
+			return true
+		}
+	}
+	return false
 }
 
 // WeightedPick picks an index with probability proportional to its weight.
