@@ -352,6 +352,14 @@ body[data-mode="free"] .learn-only { display: none; }
   background: color-mix(in srgb, var(--ok) 38%, transparent); border-bottom-color: var(--ok);
   box-shadow: 0 0 12px color-mix(in srgb, var(--ok) 40%, transparent);
 }                        /* new exercise: no glide */
+/* The caret is a thin line by default (settings: "line"): 2px of accent at
+   the left edge of the next letter, same glide and blink. The block above is
+   the "block" setting (body.caret-block, settings.js). */
+body:not(.caret-block) .caret {
+  width: 2px; background: var(--accent); border-bottom: 0; border-radius: 1px;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+body:not(.caret-block) .caret.fast { background: var(--ok); box-shadow: 0 0 8px color-mix(in srgb, var(--ok) 45%, transparent); }
 .text-box.typing .caret { animation: none; }             /* solid while typing */
 .text-box.blurred .caret { opacity: 0; }
 @keyframes blink { 50% { opacity: 0; } }
@@ -893,6 +901,43 @@ body.entering .toolbar { animation-delay: .48s; }
 .account-as b { color: var(--text); font-weight: 600; }
 .account-in button { padding: 6px 12px; font-size: .85rem; box-shadow: var(--ring); }
 .profile-soon { margin: 0; padding-top: 10px; border-top: 1px solid var(--line); color: var(--sub); font-size: .72rem; line-height: 1.5; }
+
+/* ---------- settings (settings.js) ---------- */
+/* live numbers off: wpm, raw and accuracy go; the word counter and the streak stay */
+body.live-off .live .metric.num { display: none; }
+/* words after the end of a words round are never typed, so not shown */
+.text span.beyond { display: none; }
+.settings { position: relative; }
+.settings-card {
+  position: absolute; left: 50%; bottom: calc(100% + 10px); translate: -50% 0; z-index: 6;
+  width: 270px; padding: 14px 16px 12px; text-align: left;
+  background: var(--panel); border-radius: 14px; box-shadow: var(--ring), 0 18px 50px rgba(0, 0, 0, .45);
+  animation: note-in .2s var(--ease);
+}
+.settings-card[hidden] { display: none; }
+.set-label { display: block; margin: 10px 0 6px; color: var(--sub); font-size: .72rem; }
+.settings-card .profile-title + .set-label { margin-top: 0; }
+.set-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.set-unit { width: 52px; color: var(--sub); font-size: .75rem; }
+.set-row button {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 0; border-radius: 8px;
+  background: var(--bg); color: var(--sub); box-shadow: var(--ring); font-size: .8rem; cursor: pointer;
+}
+.set-row button:hover { color: var(--text); }
+.set-row button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); box-shadow: none; }
+/* small pictures of the two carets */
+.cs { display: inline-block; height: 12px; border-radius: 1px; background: currentColor; }
+.cs.line { width: 2px; }
+.cs.block { width: 8px; opacity: .55; border-bottom: 2px solid currentColor; }
+.set-note { margin: 8px 0 0; padding-top: 8px; border-top: 1px solid var(--line); color: var(--sub); font-size: .7rem; line-height: 1.5; }
+/* the stats screen: one round length at a time */
+.length-filter { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.length-filter button {
+  padding: 5px 12px; border: 0; border-radius: 999px; background: none; color: var(--sub);
+  box-shadow: var(--ring); font-size: .8rem; cursor: pointer;
+}
+.length-filter button:hover { color: var(--text); }
+.length-filter button[aria-selected="true"] { background: var(--accent); color: var(--on-accent); box-shadow: none; }
 
 /* ---------- tour (tour.js) ---------- */
 .tour-btn {

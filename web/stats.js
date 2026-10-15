@@ -1,15 +1,22 @@
 // The stats screen: number tiles, the WPM chart, the difficulty heatmap
 // keyboard and the letter cards. refreshStats() also keeps S.lastStats fresh
-// for the typing screen.
-// Layer: middle. Imports the bottom layer and tools.js (tooltips).
+// for the typing screen. Rounds of different lengths are never mixed: the
+// screen shows one length at a time (the one chosen in the settings, or
+// another one picked in the row of lengths above the tiles).
+// Layer: middle. Imports the bottom layer, tools.js (tooltips) and settings.js.
 
 import { i18nVars, t, applyI18n } from "./i18n.js";
 import { el, S } from "./state.js";
 import { getJSON } from "./api.js";
 import { showTip } from "./tools.js";
+import { LENGTHS, lengthLabel, firstRoundDone } from "./settings.js";
 
+// S.lastStats: the letters and the rounds of the length chosen in the
+// settings (the typing screen compares a round with those).
 export async function refreshStats() {
-  S.lastStats = await getJSON("/stats");
+  S.lastStats = await getJSON(`/stats?length=${S.settings.length}`);
+  other = null;                                     // back to the chosen length
+  if (S.lastStats.lengths.length) firstRoundDone(); // finished rounds before: the live numbers are earned
   i18nVars.target = S.lastStats.targetWpm;
   applyI18n(el.intro);
   if (S.view === "stats") renderStats();
@@ -19,8 +26,10 @@ export async function refreshStats() {
 // chart, no letters (style.css hides their panels, body[data-mode="free"]).
 export function renderStats() {
   const free = S.mode === "free";
-  const s = free ? S.free : S.lastStats;
+  const own = free ? S.free : S.lastStats;
+  const s = other && other.free === free && other.length !== S.settings.length ? other.data : own;
   if (!s) return;
+  renderLengthFilter(s.lengths ?? [], s === own ? S.settings.length : other.length);
   const sessions = [...s.sessions].reverse(); // oldest first
   const last10 = sessions.slice(-10);
   const avg = (arr, f) => arr.length ? arr.reduce((a, x) => a + f(x), 0) / arr.length : null;
@@ -40,6 +49,28 @@ export function renderStats() {
   drawHeatKeyboard(s.keys);
   drawLetterGrid(s.keys);
 }
+
+// ---------- one round length at a time ----------
+// other: the rounds of a length other than the chosen one, picked on this
+// screen ({free, length, data: the /stats or /freeplay/stats answer}).
+let other = null;
+// A button per length found in the history, plus the chosen one; known
+// lengths in the settings' order.
+function renderLengthFilter(have, shown) {
+  const all = new Set([...have, S.settings.length]);
+  const ids = [...LENGTHS.filter((id) => all.has(id)), ...[...all].filter((id) => !LENGTHS.includes(id))];
+  el.lengthFilter.innerHTML = ids.map((id) =>
+    `<button type="button" role="tab" data-length="${id}" aria-selected="${id === shown}">${lengthLabel(id)}</button>`).join("");
+}
+el.lengthFilter.addEventListener("click", async (e) => {
+  const b = e.target.closest("button[data-length]");
+  if (!b) return;
+  b.blur();
+  const id = b.dataset.length, free = S.mode === "free";
+  if (id === S.settings.length) other = null;
+  else other = { free, length: id, data: await getJSON(`${free ? "/freeplay/stats" : "/stats"}?length=${id}`) };
+  renderStats();
+});
 
 // Difficulty heatmap: the keyboard of the language, but grey, and every key
 // as red as the difficulty the algorithm gives its letter (0 = no red,

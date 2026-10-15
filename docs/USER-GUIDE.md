@@ -62,6 +62,18 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   lock on the tab), clicking it starts the test, one round of 30 words at
   30 wpm with 97% accuracy. Only a full round counts (`Esc` stops the test);
   you can take it again any time. The mode is remembered per language.
+- The **gear** in the bottom bar opens the **settings**:
+  - **round length**: 10, 30 or 60 words, or 30 or 60 seconds (default 30
+    words). A words round ends with the last letter of its last word, a time
+    round when the time is up; the counter in the text card shows the words
+    or the seconds left. The typing test is always 30 words.
+  - **wpm and accuracy while typing**: show or hide. A brand-new user does
+    not see them until the first finished round (a beginner should not
+    chase speed); then they appear and you can hide them again. The word
+    counter and the streak always stay.
+  - **caret**: a thin line (default) or a block.
+  The settings only change how much you type and how it looks; what you
+  practise is still up to the trainer. They are kept in this browser.
 - The **EN · PL · UK · RU** switch changes the language you practise **and the
   language of the interface** (remembered in your browser; the first time it
   follows your browser's language).
@@ -130,7 +142,9 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   "Keeping progress in PostgreSQL"). The picture (a colour, or your own image) is kept only in
   this browser. On the website (GitHub Pages) there are no accounts: you can
   set a name and a picture, kept only in this browser; "reset" forgets them.
-- The **keyboard / chart** icon switch at the top (or `Shift + Tab`) opens the statistics screen: totals
+- The **keyboard / chart** icon switch at the top (or `Shift + Tab`) opens the statistics screen. Rounds of different
+  lengths are never mixed: a row of lengths above the numbers shows the one
+  chosen in the settings, and you can pick another length you have played. Then: totals
   (with the average consistency of the last 10 rounds),
   speed of every exercise, a **difficulty keyboard** (grey keys, the redder the
   harder the letter is for you, dashed = no data yet; hover or tap a key for

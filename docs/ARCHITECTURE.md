@@ -40,7 +40,7 @@ its own.
 | `internal/storage/store.go` | The `Store` interface. |
 | `internal/storage/memory.go` | In-memory `Store` (lost on restart). |
 | `internal/storage/postgres.go` | PostgreSQL `Store` through the standard `database/sql`; the pgx driver is only registered. Applies `migrations/*.sql` at start. Not in the WebAssembly build. |
-| `internal/storage/migrations/` | The database tables, one numbered SQL file per change (`001_init.sql`). |
+| `internal/storage/migrations/` | The database tables, one numbered SQL file per change (`001_init.sql`, `002_session_length.sql`). |
 | `internal/storage/store_test.go` | The tests every `Store` must pass; run on memory always and on PostgreSQL when `TT_TEST_DATABASE_URL` is set (`postgres_test.go`). |
 | `internal/api/handlers.go` | The `Server`, the route list (`Register`), `?lang=`, JSON helpers, locking around read-modify-write. |
 | `internal/api/learning.go` | Learning routes: `/portion`, `/results`, `/stats`, `/progress`. |
@@ -84,6 +84,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `profile.js` | The profile in the header: the account (log in / sign up / log out; the page reloads after each), and a picture kept only in the browser. |
 | middle | `result.js` | The result screen in the text window: `showResult(r)` shows what changed and resolves when the user goes on; `compareStats()` works out what a learning round changed. |
 | middle | `modes.js` | The modes (learning / free practice / typing test), the switch in the header, `refreshFreeplay()` (`S.free`), the mode remembered per language. |
+| middle | `settings.js` | The settings panel (gear in the bottom bar): round length, live numbers, caret; kept in `localStorage` (`S.settings`). |
 | middle | `tour.js` | The "how this site works" tour: a ring around each part of the page and a short card. |
 | top | `input.js` | Keydown and phone input, the Type / Stats switch, the mode switch, the keyboard on / off button, window resize: sends each action to the module that handles it. |
 | top | `app.js` | Entry point: `init()`. |
@@ -151,16 +152,16 @@ All responses are JSON. Every route except `/languages` and `/auth/*` takes `?la
 | GET | `/api/v1/auth/me` | | `{accounts, name}`; `name` is null for a guest, `accounts` false where they cannot work (GitHub Pages) |
 | GET | `/api/v1/layout` | | layout JSON |
 | POST | `/api/v1/portion` | `{samples: [{char, errors, ms}], recent: [words], retry: [words], start: bool, last: bool}` | `{portions: [{words, focus, weakest, unlocked, locked}], newLetter, round}`; one portion, `AheadPortions + 1` with `start`, none with `last` |
-| POST | `/api/v1/results` | `{samples: [{char, errors, ms}], keys: [the same shape, the whole round], chars, wpm, accuracy, perSecond: [keypresses in each full second]}` | `{unlocked, newLetter, consistency}` (`consistency` 0–100, `null` for a round under `ConsistencyMinSeconds`); the round is over: one history entry |
+| POST | `/api/v1/results` | `{samples: [{char, errors, ms}], keys: [the same shape, the whole round], chars, wpm, accuracy, perSecond: [keypresses in each full second], length}` | `{unlocked, newLetter, consistency}` (`consistency` 0–100, `null` for a round under `ConsistencyMinSeconds`); the round is over: one history entry |
 | POST | `/api/v1/progress` | `{unlockAll: true\|false}` | `{unlocked}`; for development only, the interface no longer calls it |
 | POST | `/api/v1/reset` | | `{ok: true}`; deletes all data of the language (reset button, until there are user accounts) |
 | GET | `/api/v1/export` | | `{unlocked, keys: {char: {count, mistakes, errEma, timeEma, timedCount}}, sessions: [all, OLDEST first, each with its raw keys], freeplay: {testPassed, sessions}}`; everything stored for the language (`freeplay` is missing in older files) |
 | POST | `/api/v1/import` | the same JSON as `/export` | `{unlocked, sessions}`; REPLACES the language's data, or changes nothing if the data is invalid |
-| GET | `/api/v1/stats` | | `{keys: [{char, count, errorRate, avgMs, difficulty, mastered, unlocked}], sessions: [last 50, newest first, without raw keys], sessionCount, targetWpm}` |
+| GET | `/api/v1/stats?length=` | | `{keys: [{char, count, errorRate, avgMs, difficulty, mastered, unlocked}], sessions: [last 50 of that length, newest first, without raw keys], sessionCount (of that length), lengths: [every length in the history], targetWpm}`; no `length` = every length |
 | POST | `/api/v1/freeplay/portion` | `{recent: [words], start: bool}` | `{portions: [{words}], round}`; words drawn evenly from the whole list; works while free practice is locked (the test uses it) |
-| POST | `/api/v1/freeplay/results` | `{chars, wpm, accuracy, perSecond, keys}` | `{consistency}`; one entry in the free practice history; 403 while locked |
+| POST | `/api/v1/freeplay/results` | `{chars, wpm, accuracy, perSecond, keys, length}` | `{consistency}`; one entry in the free practice history; 403 while locked |
 | POST | `/api/v1/freeplay/test` | `{chars, wpm, accuracy}` | `{passed, unlocked}`; a pass opens free practice for good; stored in no history |
-| GET | `/api/v1/freeplay/stats` | | `{unlocked, testPassed, sessions: [last 50, newest first, without raw keys], sessionCount, testWpm, testAccuracy}` |
+| GET | `/api/v1/freeplay/stats?length=` | | `{unlocked, testPassed, sessions: [last 50 of that length, newest first, without raw keys], sessionCount, lengths, testWpm, testAccuracy}` |
 
 Validation on `/portion` and `/results`: at most 5000 samples (zero is fine:
 nothing new to learn), each with exactly one character that is a letter of the
@@ -168,6 +169,16 @@ language or a space, `errors >= 0`, `ms >= 0`; `keys` follows the same rules. `/
 `chars >= 1` (something was typed; 0 means "the number of samples"), WPM 0–400,
 accuracy 0–100, and `perSecond` with at most 5000 entries, each between 0 and 5000. `recent` and `retry` hold at most 5000 words; a word that
 is not in the list or has a locked letter is simply ignored. Body limit 1 MB.
+
+**Round length** (`length` on `/results` and `/freeplay/results`, and
+`?length=` on the stats routes): `words-N` or `time-N`, the length chosen in
+the settings (`web/settings.js`). Missing = `words-30`, the only length
+before the settings existed (`storage.DefaultLength`); every stored round
+has one. N is at most `MaxRoundWords` words or `MaxRoundSeconds` seconds
+(`config.go`); anything else is a 400. The stats routes show one length at
+a time, so a record or an average never mixes a 10-word round with a
+60-second one. The letter model does not care about the length: it learns
+from every keypress.
 
 Validation on `/import`: `unlocked` between 0 and the number of letters; every key is
 one letter of the language or a space; per letter `0 <= mistakes <= count`,

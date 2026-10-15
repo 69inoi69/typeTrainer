@@ -21,6 +21,11 @@ type Session struct {
 	// measured: a round too short to judge, or history from before it existed.
 	Consistency *float64  `json:"consistency,omitempty"`
 	FinishedAt  time.Time `json:"finishedAt"`
+	// Length is the round length the user chose in the settings, as
+	// "words-30" or "time-60" (ValidLength). Rounds of different lengths
+	// are not compared with each other: the stats screen shows one length
+	// at a time. Stores fill in DefaultLength when it is empty.
+	Length string `json:"length,omitempty"`
 
 	// Keys is the raw record of the round: every typed letter in order,
 	// with its mistakes and time, exactly as the browser measured it. The
@@ -31,6 +36,18 @@ type Session struct {
 	// Unlocked is how many letters were open after the round (learning
 	// only; 0 in free practice and in old history).
 	Unlocked int `json:"unlocked,omitempty"`
+}
+
+// DefaultLength is the length of every round from before the settings
+// existed: 30 words.
+const DefaultLength = "words-30"
+
+// WithLength returns the session with DefaultLength if it has no length.
+func (s Session) WithLength() Session {
+	if s.Length == "" {
+		s.Length = DefaultLength
+	}
+	return s
 }
 
 // Summary is the session without its raw keys: what lists of many
@@ -84,9 +101,11 @@ type Store interface {
 	Unlocked(user, lang string) (int, error)
 	SetUnlocked(user, lang string, n int) error
 
+	// History. length picks rounds of one length ("words-30"); "" = all.
 	AddSession(user, lang string, s Session) error
-	RecentSessions(user, lang string, limit int) ([]Session, error) // newest first
-	SessionCount(user, lang string) (int, error)                    // all finished exercises
+	RecentSessions(user, lang, length string, limit int) ([]Session, error) // newest first
+	SessionCount(user, lang, length string) (int, error)                    // finished rounds
+	SessionLengths(user, lang string) ([]string, error)                     // lengths in the history, sorted
 
 	// Free practice (internal/freeplay) is kept apart from learning: its
 	// own history, and a flag set once the typing test is passed. Its
@@ -94,8 +113,9 @@ type Store interface {
 	TestPassed(user, lang string) (bool, error)
 	SetTestPassed(user, lang string, passed bool) error
 	AddFreeplaySession(user, lang string, s Session) error
-	RecentFreeplaySessions(user, lang string, limit int) ([]Session, error) // newest first
-	FreeplaySessionCount(user, lang string) (int, error)
+	RecentFreeplaySessions(user, lang, length string, limit int) ([]Session, error) // newest first
+	FreeplaySessionCount(user, lang, length string) (int, error)
+	FreeplaySessionLengths(user, lang string) ([]string, error)
 
 	// Reset deletes everything the user has stored for the language, free
 	// practice included: it is new again. Other users and languages stay.

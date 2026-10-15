@@ -18,6 +18,7 @@ import { restoreKb } from "./keyboard.js";
 import { showIntro } from "./intro.js";
 import { renderProfile, loadAccount } from "./profile.js";
 import { buildLangSwitch, initialLanguage, loadLanguage } from "./languages.js";
+import { loadSettings } from "./settings.js";
 
 import "./input.js";   // keys and buttons: it only adds event listeners
 
@@ -31,6 +32,7 @@ import "./input.js";   // keys and buttons: it only adds event listeners
   S.mottoIndex = Math.floor(Math.random() * SPLASH_PHRASES);
   const splash = Splash.start();
   if (splash.phrase !== undefined) S.mottoIndex = splash.phrase;   // the logo keeps the start phrase
+  loadSettings();   // round length, live numbers, caret (settings.js)
   restoreKb();   // keyboard on or off from last time (learning until the mode is known)
   labelTips();
   if (isTouch()) el.textBox.classList.add("blurred"); // phone: tap to open the keyboard

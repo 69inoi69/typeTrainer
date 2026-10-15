@@ -6,13 +6,14 @@
 import { el, S, introOpen, isTouch, focusText } from "./state.js";
 import { applyKb, requestFit } from "./keyboard.js";
 import { refreshStats, renderStats } from "./stats.js";
-import { fitText, placeCaret, handleChar, backspace, nudge, setTyping, stopRound, loadExercise } from "./typing.js";
+import { fitText, placeCaret, handleChar, backspace, nudge, setTyping, stopRound, loadExercise, roundStarted } from "./typing.js";
 import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
 import { resultOpen, closeResult } from "./result.js";
 import { tourOpen, tourKey } from "./tour.js";
-import { setMode } from "./modes.js";
+import { settingsOpen, closeSettings, onLengthChange } from "./settings.js";
+import { setMode, refreshFreeplay } from "./modes.js";
 
 // the keyboard button and Alt+K: keyboard and hands off, or back on
 function toggleKb() {
@@ -68,6 +69,16 @@ function chooseMode(m) {
 el.tabLearn.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("learn"); });
 el.tabFree.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("free"); });
 
+// ---------- settings: a new round length ----------
+// The stats follow the new length; a round not started yet is rebuilt with
+// it (a round already begun keeps its length to the end). The test always
+// has its own length.
+onLengthChange(() => {
+  refreshStats().catch(console.error);
+  refreshFreeplay().then(() => { if (S.view === "stats") renderStats(); }).catch(console.error);
+  if (!roundStarted() && !S.busy && S.mode !== "test") loadExercise().catch(console.error);
+});
+
 // ---------- input ----------
 // Desktop: keydown gives us the real key. preventDefault stops the character
 // from ALSO arriving through the hidden input (and space from scrolling).
@@ -80,6 +91,11 @@ document.addEventListener("keydown", (e) => {
     return;
   }
   if (document.body.classList.contains("splashing")) return;
+  // the settings panel: Esc closes it, typing closes it and goes on
+  if (settingsOpen()) {
+    closeSettings();
+    if (e.key === "Escape") { e.preventDefault(); return; }
+  }
   // shortcuts: Shift+Tab = type <-> stats, Alt+1...4 = language, Alt+K = keyboard on / off
   if (e.key === "Tab" && e.shiftKey) {
     e.preventDefault();

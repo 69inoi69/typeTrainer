@@ -207,17 +207,19 @@ func (p *PostgresStore) addSession(user, lang, mode string, s Session) error {
 			return err
 		}
 	}
+	s = s.WithLength()
 	_, err := p.db.Exec(`INSERT INTO sessions
-		(user_id, lang, mode, wpm, accuracy, chars, consistency, unlocked, keys, finished_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-		user, lang, mode, s.WPM, s.Accuracy, s.Chars, s.Consistency, s.Unlocked, keys, s.FinishedAt)
+		(user_id, lang, mode, wpm, accuracy, chars, consistency, unlocked, keys, finished_at, length)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+		user, lang, mode, s.WPM, s.Accuracy, s.Chars, s.Consistency, s.Unlocked, keys, s.FinishedAt, s.Length)
 	return err
 }
 
-func (p *PostgresStore) recentSessions(user, lang, mode string, limit int) ([]Session, error) {
-	rows, err := p.db.Query(`SELECT wpm, accuracy, chars, consistency, unlocked, keys, finished_at
-		FROM sessions WHERE user_id = $1 AND lang = $2 AND mode = $3
-		ORDER BY id DESC LIMIT $4`, user, lang, mode, limit)
+// In the queries below, length = ” means "every length".
+func (p *PostgresStore) recentSessions(user, lang, mode, length string, limit int) ([]Session, error) {
+	rows, err := p.db.Query(`SELECT wpm, accuracy, chars, consistency, unlocked, keys, finished_at, length
+		FROM sessions WHERE user_id = $1 AND lang = $2 AND mode = $3 AND ($4 = '' OR length = $4)
+		ORDER BY id DESC LIMIT $5`, user, lang, mode, length, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +229,7 @@ func (p *PostgresStore) recentSessions(user, lang, mode string, limit int) ([]Se
 		var s Session
 		var consistency sql.NullFloat64
 		var keys []byte
-		if err := rows.Scan(&s.WPM, &s.Accuracy, &s.Chars, &consistency, &s.Unlocked, &keys, &s.FinishedAt); err != nil {
+		if err := rows.Scan(&s.WPM, &s.Accuracy, &s.Chars, &consistency, &s.Unlocked, &keys, &s.FinishedAt, &s.Length); err != nil {
 			return nil, err
 		}
 		if consistency.Valid {
@@ -243,30 +245,55 @@ func (p *PostgresStore) recentSessions(user, lang, mode string, limit int) ([]Se
 	return out, rows.Err()
 }
 
-func (p *PostgresStore) sessionCount(user, lang, mode string) (int, error) {
+func (p *PostgresStore) sessionCount(user, lang, mode, length string) (int, error) {
 	var n int
-	err := p.db.QueryRow(`SELECT count(*) FROM sessions WHERE user_id = $1 AND lang = $2 AND mode = $3`,
-		user, lang, mode).Scan(&n)
+	err := p.db.QueryRow(`SELECT count(*) FROM sessions
+		WHERE user_id = $1 AND lang = $2 AND mode = $3 AND ($4 = '' OR length = $4)`,
+		user, lang, mode, length).Scan(&n)
 	return n, err
+}
+
+func (p *PostgresStore) sessionLengths(user, lang, mode string) ([]string, error) {
+	rows, err := p.db.Query(`SELECT DISTINCT length FROM sessions
+		WHERE user_id = $1 AND lang = $2 AND mode = $3 ORDER BY length`, user, lang, mode)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []string{}
+	for rows.Next() {
+		var l string
+		if err := rows.Scan(&l); err != nil {
+			return nil, err
+		}
+		out = append(out, l)
+	}
+	return out, rows.Err()
 }
 
 func (p *PostgresStore) AddSession(user, lang string, s Session) error {
 	return p.addSession(user, lang, modeLearning, s)
 }
-func (p *PostgresStore) RecentSessions(user, lang string, limit int) ([]Session, error) {
-	return p.recentSessions(user, lang, modeLearning, limit)
+func (p *PostgresStore) RecentSessions(user, lang, length string, limit int) ([]Session, error) {
+	return p.recentSessions(user, lang, modeLearning, length, limit)
 }
-func (p *PostgresStore) SessionCount(user, lang string) (int, error) {
-	return p.sessionCount(user, lang, modeLearning)
+func (p *PostgresStore) SessionCount(user, lang, length string) (int, error) {
+	return p.sessionCount(user, lang, modeLearning, length)
+}
+func (p *PostgresStore) SessionLengths(user, lang string) ([]string, error) {
+	return p.sessionLengths(user, lang, modeLearning)
 }
 func (p *PostgresStore) AddFreeplaySession(user, lang string, s Session) error {
 	return p.addSession(user, lang, modeFreeplay, s)
 }
-func (p *PostgresStore) RecentFreeplaySessions(user, lang string, limit int) ([]Session, error) {
-	return p.recentSessions(user, lang, modeFreeplay, limit)
+func (p *PostgresStore) RecentFreeplaySessions(user, lang, length string, limit int) ([]Session, error) {
+	return p.recentSessions(user, lang, modeFreeplay, length, limit)
 }
-func (p *PostgresStore) FreeplaySessionCount(user, lang string) (int, error) {
-	return p.sessionCount(user, lang, modeFreeplay)
+func (p *PostgresStore) FreeplaySessionCount(user, lang, length string) (int, error) {
+	return p.sessionCount(user, lang, modeFreeplay, length)
+}
+func (p *PostgresStore) FreeplaySessionLengths(user, lang string) ([]string, error) {
+	return p.sessionLengths(user, lang, modeFreeplay)
 }
 
 // Reset deletes the user's language from all three tables in one transaction.
