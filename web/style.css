@@ -188,7 +188,7 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
 .rail .switch { grid-auto-flow: column; grid-auto-columns: 1fr; }
 .rail .switch button, .rail-btn {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-  width: 58px; height: 50px; padding: 0; border-radius: 10px; background: none; color: var(--sub);
+  width: 72px; height: 50px; padding: 0 2px; border-radius: 10px; background: none; color: var(--sub);
 }
 .rail .switch button:hover, .rail-btn:hover { background: none; color: color-mix(in srgb, var(--text) 70%, var(--sub)); }
 .rail .switch button[aria-selected="true"], .rail-btn[aria-expanded="true"] { color: var(--text); }
@@ -234,7 +234,7 @@ body[data-mode="free"] .learn-only { display: none; }
    column at the right edge, both in the middle of the height (--side is the
    room they take, so the text and keyboard never go under them) */
 @media (min-width: 1000px) {
-  :root { --side: 84px; }
+  :root { --side: 96px; }
   .rail {
     left: 14px; right: auto; top: 50%; bottom: auto; translate: 0 -50%;
     flex-direction: column; gap: 10px; padding: 0; background: none; backdrop-filter: none; box-shadow: none;
@@ -244,8 +244,8 @@ body[data-mode="free"] .learn-only { display: none; }
   .rail-group + .rail-group { padding-top: 10px; border-top: 1px solid var(--line); }
   .rail .switch-thumb { top: 0; left: -6px; width: 2px; height: calc(100% / var(--n)); transform: translateY(calc(var(--i) * 100%)); }
   .rail .switch-thumb::after { top: calc(50% - 9px); left: 0; width: 2px; height: 18px; }
-  .rail .switch button, .rail-btn { width: 62px; height: 54px; }
-  .pop-card { left: 96px; right: auto; top: 50%; bottom: auto; translate: 0 -50%; width: 300px; margin: 0; }
+  .rail .switch button, .rail-btn { width: 76px; height: 54px; }
+  .pop-card { left: 106px; right: auto; top: 50%; bottom: auto; translate: 0 -50%; width: 300px; margin: 0; }
   .lang-switch {
     position: fixed; right: 14px; top: 50%; translate: 0 -50%; height: auto;
     grid-auto-flow: row; grid-auto-rows: 40px; grid-auto-columns: auto;
@@ -579,7 +579,7 @@ button:disabled:active { transform: none; }
 .tile { background: var(--panel); border-radius: 10px; padding: 8px 12px; min-width: 0; }
 .tile b { display: block; font-size: 1.3rem; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1.2; }
 .tile small { display: block; color: var(--sub); font-size: .7rem; line-height: 1.3; }
-.chart { height: clamp(130px, 24vh, 300px); }
+.chart { height: clamp(140px, 30vh, 340px); }
 /* free practice has no letters: the chart takes their room */
 body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 /* the keyboard a little wider than the letters; one under the other on a narrow screen */
@@ -836,7 +836,12 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .logo-name { font-size: 1.3rem; }
   :root { --ctl: 34px; }
   .lang-switch { grid-auto-columns: minmax(30px, auto); }
-  .rail { justify-content: space-between; gap: 0; }
+  /* phone: six equal buttons over the whole width */
+  .rail { justify-content: space-between; gap: 0; padding-inline: 2px; }
+  .rail-group, .rail .switch { flex: 2; }
+  .rail .switch button, .rail-btn { width: auto; flex: 1; min-width: 0; }
+  .rail .pop { flex: 1; display: flex; }
+  .rail .switch button small, .rail-btn small { font-size: .58rem; letter-spacing: -.02em; }
   .lang-switch button { padding: 0 6px; }
   .live { gap: 14px; margin-bottom: 6px; }
   .metric > span, .streak span { font-size: 1.15rem; }

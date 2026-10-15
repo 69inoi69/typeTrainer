@@ -347,7 +347,7 @@ const I18N = {
     "result.test.fail": "ще ні: тест просить {testWpm} wpm і {testAcc}% · назад до навчання, спробуй будь-коли",
     "result.test.stopped": "тест зупинено · рахується лише повний раунд",
     "result.testScore": "<b>{wpm} wpm</b> · точність <b>{acc}%</b>",
-    "nav.type": "друк", "nav.stats": "статистика", "nav.help": "довідка", "nav.settings": "налаштування", "tip.help": "довідка: два путівники",
+    "nav.type": "друк", "nav.stats": "статистика", "nav.help": "довідка", "nav.settings": "параметри", "tip.help": "довідка: два путівники",
     "help.title": "довідка", "help.basics": "основи сліпого друку", "help.basicsNote": "де тримати пальці, за три короткі кроки", "help.site": "як влаштований сайт", "help.siteNote": "коротка прогулянка екраном",
     "settings.theme": "тема", "settings.dark": "темна", "settings.light": "світла", "settings.keyboard": "клавіатура і руки",
     "settings.data": "твоя статистика", "data.save": "зберегти", "data.load": "завантажити", "data.reset": "скинути", "data.resetSure": "точно?",
