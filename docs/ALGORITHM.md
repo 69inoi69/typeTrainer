@@ -394,7 +394,8 @@ last word is typed, the portion's samples are sent, the statistics are
 updated (and maybe a letter opens), and the answer is one new portion built
 from the new values. It is added at the end of the text. `AheadPortions = 2`
 portions always wait after the one being typed, so the user can read ahead
-(about two lines) and **words already on the screen never change**. The cost
+(12 words, shown one more for each finished word) and **words already on the
+screen never change**. The cost
 is a delay: a new portion is typed about 12 words after the data it was built
 from. Before the stream, a whole exercise of 20 words was built in advance, so
 a mistake on its first word changed the text only 20 to 40 words later.

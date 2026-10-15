@@ -126,7 +126,16 @@ is `RoundPortions` portions (30 words).
    `Generator.NextUnlocked` whether a letter opens, and answers with ONE new
    portion built from the updated statistics. The browser adds it at the end of
    the text. Once the round has all its portions the browser sends
-   `last: true` and gets none. Backspace cannot go back into a portion that was sent.
+   `last: true` and gets none. Backspace can go back one word, also into a
+   portion that was sent; those new presses are only shown, not sent again.
+
+   **Rendering: one word at a time.** Portions arrive whole, but the browser
+   shows only the words up to `SHOWN_AHEAD = 12` (two portions) after the
+   current one; every finished word reveals exactly one more, with a short
+   fade (`typing.js` `reveal()`, CSS `.later` / `.new`). A hidden word is
+   `visibility: hidden`, so it already has its place in the line: nothing
+   visible moves when it appears. Two portions are always waiting, so the
+   next word to show is always already there.
 4. The last letter of the last word of the round (no space needed after it;
    right or wrong), or Esc, or 10 s without a key →
    `POST /api/v1/results` with the samples not sent yet, every keypress of

@@ -305,6 +305,7 @@ body[data-mode="free"] .learn-only { display: none; }
 /* words added while you type (typing.js, appendPortions): a soft fade-in,
    opacity and blur only, so nothing on the screen moves */
 .text span.new { animation: word-in 350ms ease-out; }
+.text span.later { visibility: hidden; }   /* a word not shown yet: keeps its place (typing.js reveal) */
 @keyframes word-in { from { opacity: .2; filter: blur(2px); } }
 .text-box.blurred .text { filter: blur(3px); opacity: .5; }
 .focus-hint {
