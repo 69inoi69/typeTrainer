@@ -6,7 +6,7 @@
 import { el, S, introOpen, isTouch, focusText } from "./state.js";
 import { applyKb, requestFit } from "./keyboard.js";
 import { refreshStats, renderStats } from "./stats.js";
-import { fitText, placeCaret, loadExercise, handleChar, backspace, nudge, setTyping } from "./typing.js";
+import { fitText, placeCaret, handleChar, backspace, nudge, setTyping, stopRound } from "./typing.js";
 import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
@@ -87,7 +87,7 @@ document.addEventListener("keydown", (e) => {
     return;
   }
   if (S.view !== "type") return;
-  if (e.key === "Escape") { e.preventDefault(); newExercise(); return; }
+  if (e.key === "Escape") { e.preventDefault(); stopRound(); return; }
   if (e.key === "Tab") { e.preventDefault(); nudge(); return; }   // no restart, see nudge()
   if (e.key === "Backspace") { e.preventDefault(); focusText(); backspace(e.ctrlKey || e.altKey); return; } // Alt = Option on a Mac
   // A held key repeats every ~30 ms. Those are not finger movements: if the
@@ -117,9 +117,4 @@ el.input.addEventListener("input", () => {
 el.textBox.addEventListener("click", () => { el.input.focus({ preventScroll: true }); focusText(); });
 el.input.addEventListener("blur", () => { if (isTouch()) el.textBox.classList.add("blurred"); });
 
-function newExercise() {
-  if (S.busy) return;
-  el.live.classList.remove("final");
-  loadExercise().catch(console.error);
-}
-el.btnNew.addEventListener("click", (e) => { e.currentTarget.blur(); newExercise(); });
+el.btnNew.addEventListener("click", (e) => { e.currentTarget.blur(); stopRound(); });

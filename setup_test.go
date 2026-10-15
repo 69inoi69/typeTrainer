@@ -33,9 +33,9 @@ func TestApp_AllLanguagesLoad(t *testing.T) {
 	}
 	for _, l := range langs {
 		id := l["id"].(string)
-		code, ex := call(t, h, "GET", "/api/v1/exercise?lang="+id, "")
-		if code != 200 || ex["text"] == "" {
-			t.Fatalf("%s: exercise %d %v", id, code, ex)
+		code, out := call(t, h, "POST", "/api/v1/portion?lang="+id, `{"start":true}`)
+		if code != 200 || len(out["portions"].([]any)) != 3 { // AheadPortions = 2, plus the one to type
+			t.Fatalf("%s: portion %d %v", id, code, out)
 		}
 		code, _ = call(t, h, "GET", "/api/v1/layout?lang="+id, "")
 		if code != 200 {
@@ -46,7 +46,7 @@ func TestApp_AllLanguagesLoad(t *testing.T) {
 
 func TestApp_UnknownLanguageIs400(t *testing.T) {
 	h, _, _ := newApp()
-	if code, _ := call(t, h, "GET", "/api/v1/exercise?lang=xx", ""); code != 400 {
+	if code, _ := call(t, h, "POST", "/api/v1/portion?lang=xx", "{}"); code != 400 {
 		t.Fatalf("got %d, want 400", code)
 	}
 }
@@ -84,9 +84,58 @@ func TestApp_ResetClearsOneLanguage(t *testing.T) {
 		t.Fatalf("after reset ru=%v uk=%v", ru["sessionCount"], uk["sessionCount"])
 	}
 	// back to the first lesson, not all letters
-	_, ex := call(t, h, "GET", "/api/v1/exercise?lang=ru", "")
-	if len(ex["locked"].([]any)) == 0 {
+	_, out := call(t, h, "POST", "/api/v1/portion?lang=ru", "{}")
+	if len(out["portions"].([]any)[0].(map[string]any)["locked"].([]any)) == 0 {
 		t.Fatal("after reset all letters are still open")
+	}
+}
+
+// The stream: samples sent with a portion update the statistics at once,
+// the answer has the next portion, and nothing goes into the history until
+// the run is stopped with /results.
+func TestApp_PortionLearnsWithoutAHistoryEntry(t *testing.T) {
+	h, _, _ := newApp()
+	body := `{"samples":[{"char":"о","errors":1,"ms":300},{"char":" ","errors":0,"ms":200}],"recent":["он"],"retry":["он"]}`
+	code, out := call(t, h, "POST", "/api/v1/portion?lang=ru", body)
+	if code != 200 {
+		t.Fatalf("portion: %d %v", code, out)
+	}
+	por := out["portions"].([]any)[0].(map[string]any)
+	if len(por["words"].([]any)) == 0 || por["focus"] == "" || len(out["portions"].([]any)) != 1 {
+		t.Fatalf("portion: %v", out)
+	}
+	_, st := call(t, h, "GET", "/api/v1/stats?lang=ru", "")
+	if st["sessionCount"].(float64) != 0 {
+		t.Fatal("a portion must not add a history entry")
+	}
+	counted := false
+	for _, k := range st["keys"].([]any) {
+		if k := k.(map[string]any); k["char"] == "о" && k["count"].(float64) == 1 {
+			counted = true
+		}
+	}
+	if !counted {
+		t.Fatal("the sample of о was not applied")
+	}
+	// stopping with nothing left to send still records the run
+	if code, out := call(t, h, "POST", "/api/v1/results?lang=ru", `{"samples":[],"chars":40,"wpm":30,"accuracy":95}`); code != 200 {
+		t.Fatalf("results: %d %v", code, out)
+	}
+	_, st = call(t, h, "GET", "/api/v1/stats?lang=ru", "")
+	if st["sessionCount"].(float64) != 1 {
+		t.Fatal("results must add one history entry")
+	}
+	_, out = call(t, h, "POST", "/api/v1/portion?lang=ru", `{"last":true}`)
+	if len(out["portions"].([]any)) != 0 {
+		t.Fatalf("last: want no portions, got %v", out)
+	}
+	for _, bad := range []string{`{"start":"yes"}`, `{"samples":[{"char":"a","errors":0,"ms":1}]}`} {
+		if code, _ := call(t, h, "POST", "/api/v1/portion?lang=ru", bad); code != 400 {
+			t.Fatalf("%s: got %d, want 400", bad, code)
+		}
+	}
+	if code, _ := call(t, h, "POST", "/api/v1/results?lang=ru", `{"samples":[],"wpm":30,"accuracy":95}`); code != 400 {
+		t.Fatal("a run with nothing typed must be rejected")
 	}
 }
 

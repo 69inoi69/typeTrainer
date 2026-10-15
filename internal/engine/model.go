@@ -33,7 +33,15 @@ type Params struct {
 	StartLetters  int     // first lesson has at least this many letters
 	MinWords      int     // ...and enough letters to build at least this many real words
 	RepeatPenalty float64 // weight multiplier for a word already used in the same exercise
-	ExerciseWords int     // words per exercise
+	ExerciseWords int     // words per exercise (Next: the whole text at once)
+
+	// The stream (Portion): the text is built a few words at a time while the
+	// user types, always from the newest statistics.
+	PortionWords  int // words per portion; one focus letter per portion
+	AheadPortions int // portions waiting after the one being typed
+	RecentWords   int // RepeatPenalty counts uses in the last this many words
+	RetryWords    int // at most this many mistyped words come back in a portion
+	RoundPortions int // a round (one result in the history) is this many portions
 }
 
 // TargetMs converts TargetWPM to milliseconds per character.

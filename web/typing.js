@@ -1,12 +1,13 @@
-// The typing screen: the exercise text, the caret, what every keypress does,
-// the clean-word streak, the live WPM / accuracy, the letters bar, and
-// sending the result when the exercise is done.
+// The typing screen: the text stream (portions of words added while you
+// type, in rounds of 30 words), the caret, what every keypress does, the
+// clean-word streak, the live WPM / accuracy, the letters bar, and sending
+// the result when a round ends.
 // Layer: middle. Imports the bottom layer, keyboard.js, stats.js and result.js.
 
 import { t, tPick } from "./i18n.js";
 import { FX } from "./fx.js";
 import { $, el, S, introOpen } from "./state.js";
-import { getJSON, postJSON } from "./api.js";
+import { postJSON } from "./api.js";
 import { highlightNextKey, pulseKey, requestFit } from "./keyboard.js";
 import { refreshStats } from "./stats.js";
 import { showResult } from "./result.js";
@@ -31,8 +32,8 @@ let popLetter = null;      // letter that was just unlocked (for the animation)
 // Rewards (they change nothing in the statistics, they only feel nice)
 let streak = 0;            // words in a row typed without a single mistake
 let wordClean = true;      // no mistake in the current word so far
-let tabsResisted = 0;      // Tab presses during this exercise (no restart here)
-let justMastered = new Set(); // letters mastered in the last exercise (chips shine)
+let tabsResisted = 0;      // Tab presses during this round (no restart here)
+let justMastered = new Set(); // letters just mastered (their chips shine)
 
 // The text window always shows TEXT_LINES lines at one font size (style.css,
 // .text): it never changes size between exercises. A text that needs more
@@ -120,7 +121,7 @@ function renderLetters() {
   const openCount = S.exercise.unlocked.length;
   const all = openCount + S.exercise.locked.length;
   const mastered = S.exercise.unlocked.filter((c) => info[c]?.mastered).length;
-  const started = (S.lastStats?.sessionCount ?? 0) > 0;
+  const started = (S.lastStats?.keys ?? []).some((k) => k.count > 0);   // anything typed yet
   const pill = (icon, cls, tip, label, value) =>
     `<span class="stat ${cls}" data-tip="${tip}"><svg viewBox="0 0 24 24" aria-hidden="true">${STAT_ICONS[icon]}</svg>` +
     `<span class="lbl">${label}</span>${value}</span>`;
@@ -141,43 +142,151 @@ function renderLetters() {
   justMastered = new Set();
 }
 
-// ---------- exercise ----------
-function showExercise(ex) {
-  S.exercise = ex;
-  S.text = ex.text;
-  S.pos = 0; wordClean = true; tabsResisted = 0;
-  state = new Uint8Array(S.text.length); records = new Array(S.text.length).fill(null);
+// ---------- the stream ----------
+// The text is not built in one go: it is a stream of short portions (a few
+// words around one focus letter, Generator.Portion on the server). When the
+// last word of a portion is typed, its samples go to POST /portion, the model
+// learns from them at once, and the answer is the next portion, built from
+// the UPDATED statistics and added at the end of the text. AheadPortions
+// portions are always waiting after the one being typed, so the words you can
+// already see never change. A round is RoundPortions portions (30 words); it
+// ends with its last word, or earlier with Esc or a long pause, see finishRound().
+const IDLE_STOP_MS = 10000;  // no key for this long during a round = the user stopped
+const RECENT_SENT = 40;      // words of the round sent as "recent" (the server uses the last RecentWords)
+let portions = [];           // {start, end, focus}: positions of each portion; end = its last space
+let sentUpTo = 0;            // positions before this were sent to the server (Backspace cannot go there)
+let current = 0;             // index of the portion with the caret
+let streamId = 0;            // a new round ignores answers that were meant for the old one
+let queue = Promise.resolve(); // portion requests go one after another
+let round = Infinity;        // portions in a round (from the server)
+let roundWords = 0;          // words in a round, for the counter
+let wordsTyped = 0;          // words finished in this round
+let roundBefore = null;      // the statistics when the round started (for the result)
+let roundNewLetter = "";     // a letter that opened during the round
+
+// Adds portions at the end of the text: text, per-position arrays and spans.
+// The focus letter of each portion is tinted in that portion, so you see what
+// you practise.
+function appendPortions(list) {
+  const old = S.text.length;
+  const add = list.map((p) => p.words.join(" ") + " ").join("");
+  if (!add) return;
+  S.text += add;
+  const grow = (a) => { const g = new Uint8Array(S.text.length); g.set(a); return g; };
+  state = grow(state);
+  focusMask = grow(focusMask);
+  for (let i = old; i < S.text.length; i++) records.push(null);
+  let at = old;
+  for (const p of list) {
+    if (!p.words.length) continue;
+    const end = at + p.words.join(" ").length;   // the space after the last word
+    portions.push({ start: at, end, focus: p.focus });
+    for (let i = at; i < end; i++) if (S.text[i] === p.focus) focusMask[i] = 1;
+    at = end + 1;
+  }
+  const frag = document.createDocumentFragment();   // one DOM update, not one per letter
+  for (let i = old; i < S.text.length; i++) {
+    const sp = document.createElement("span");
+    sp.textContent = S.text[i];
+    if (focusMask[i]) sp.className = "fx";
+    frag.appendChild(sp);
+    spans.push(sp);
+  }
+  el.text.insertBefore(frag, el.caret);
+  const last = list.at(-1);
+  S.exercise = { ...(S.exercise ?? {}), unlocked: last.unlocked, locked: last.locked };
+}
+
+// The letters bar shows the focus of the portion with the caret.
+function showPortion(i) {
+  current = i;
+  if (portions[i]) S.exercise.focus = portions[i].focus;
+  renderLetters();
+}
+
+// The words of the round so far (the server avoids repeating them).
+function recentWords() {
+  return S.text.trim().split(" ").slice(-RECENT_SENT);
+}
+
+// The words of a portion typed with a mistake: a wrong or extra letter, or
+// skipped letters. Read from the samples, so a mistake fixed with Backspace
+// still counts. They come back in a later portion.
+function mistypedWords(por) {
+  const out = [];
+  for (let i = por.start; i <= por.end; ) {
+    const end = wordEnd(i);
+    let bad = false;
+    for (let j = i; j <= end; j++) if (records[j] ? records[j].errors > 0 : j < end) bad = true;
+    if (bad) out.push(S.text.slice(i, end));
+    i = end + 1;
+  }
+  return out;
+}
+
+// The last space of portion k was typed: send it, get the next portion
+// (none once the round has all of them). The last portion ends the round.
+function portionDone(k) {
+  if (k === round - 1) { finishRound(); return; }
+  const por = portions[k];
+  const samples = records.slice(sentUpTo, por.end + 1).filter(Boolean);
+  sentUpTo = por.end + 1;
+  showPortion(k + 1);
+  const body = { samples, retry: mistypedWords(por), last: portions.length >= round };
+  const id = streamId;
+  queue = queue.then(async () => {
+    if (id !== streamId) return;
+    body.recent = recentWords();
+    const res = await postJSON("/portion", body);
+    if (id !== streamId) return;
+    appendPortions(res.portions);
+    await refreshStats();
+    if (id !== streamId) return;
+    if (res.newLetter) newLetter(res.newLetter);
+    renderLetters();
+  }).catch((err) => { console.error(err); el.hint.textContent = t("err.server"); });
+}
+
+// A letter opened: its chip pops now, the result of the round names it.
+function newLetter(l) {
+  popLetter = roundNewLetter = l;
+  FX.burstFrom(el.letters, 60);
+}
+
+// A new round: an empty text, then AheadPortions + 1 portions at once.
+function resetStream() {
+  streamId++;
+  queue = Promise.resolve();
+  S.text = ""; S.pos = 0; wordClean = true; tabsResisted = 0; wordsTyped = 0;
+  state = new Uint8Array(0); focusMask = new Uint8Array(0); records = []; spans = [];
+  portions = []; sentUpTo = 0; current = 0; roundNewLetter = "";
   extras = new Map(); correctChars = 0; afterBackspace = false;
   startTime = null; lastTime = null; presses = 0; correctPresses = 0;
+  el.text.replaceChildren(el.caret);          // the caret lives inside the text
+}
 
-  // build all spans at once with a fragment: one DOM update, not hundreds
-  const frag = document.createDocumentFragment();
-  // the focus letter is tinted in the text, so you see what you practise
-  focusMask = new Uint8Array(S.text.length);
-  spans = [...S.text].map((ch, i) => {
-    const s = document.createElement("span");
-    s.textContent = ch;
-    if (ch === ex.focus) { focusMask[i] = 1; s.className = "fx"; }
-    frag.appendChild(s);
-    return s;
-  });
-  el.text.replaceChildren(frag, el.caret);   // the caret lives inside the text
+export async function loadExercise() {
+  resetStream();
+  const id = streamId;
+  const res = await postJSON("/portion", { start: true, recent: [] });
+  if (id !== streamId) return;
+  roundBefore = S.lastStats;
+  round = res.round || Infinity;
+  roundWords = round * (res.portions[0]?.words.length ?? 0);
+  appendPortions(res.portions);
+  renderProgress();
   fitText();                                 // back to the first line
   requestFit();                              // more lines (narrow window) leave less room for the keyboard
   el.text.classList.remove("swap");
-  void el.text.offsetWidth;                  // restart the fade-in (once per exercise)
+  void el.text.offsetWidth;                  // restart the fade-in (once per round)
   el.text.classList.add("swap");
   el.textBox.classList.remove("typing");
   setTyping(false);
   el.caret.classList.remove("fast");
   if (!el.live.classList.contains("final")) { el.wpm.textContent = "0"; el.raw.textContent = "0"; el.acc.textContent = "100"; }
   highlightNextKey();
-  renderLetters();
+  showPortion(0);
   placeCaret(true);
-}
-
-export async function loadExercise() {
-  showExercise(await getJSON("/exercise"));
 }
 
 // ---------- typing ----------
@@ -282,28 +391,27 @@ export function handleChar(ch) {
       if (ok) correctPresses++;
       else mistake();
       pulseKey(ch, ok);
-      if (S.text[S.pos] === " ") endWord();
+      const space = S.text[S.pos] === " ";
+      if (space) endWord();
       S.pos++;
+      if (space && S.pos - 1 === portions[current]?.end) portionDone(current);
     }
   }
   lastTime = now; afterBackspace = false;
   highlightNextKey();
   placeCaret(false);
-  if (S.pos === S.text.length) {
-    endWord();
-    finishExercise();
-  }
 }
 
 // Backspace: one character back in the current word (extra letters go
 // first); with Ctrl the whole word. From the start of a word it goes back
-// into the previous word, but only if that word has a mistake. Only the
-// screen changes: the samples (records) keep every mistake.
+// into the previous word, but only if that word has a mistake and its
+// portion was not sent to the server yet. Only the screen changes: the
+// samples (records) keep every mistake.
 export function backspace(wholeWord) {
   if (!canType() || startTime === null) return;
   if (S.pos === wordStart(S.pos)) {
     const space = S.pos - 1;
-    if (S.pos === 0 || !wordHasError(wordStart(space), space)) return;
+    if (S.pos <= sentUpTo || !wordHasError(wordStart(space), space)) return;
     setState(space, 0);
     S.pos = space;
     while (S.pos > 0 && state[S.pos - 1] === 3) setState(--S.pos, 0);   // skipped = not typed
@@ -332,6 +440,8 @@ function clearWord() {
 const STREAK_TIERS = [10, 25, 50];
 const streakTier = (n) => STREAK_TIERS.filter((x) => n >= x).length;
 function endWord() {
+  wordsTyped++;
+  renderProgress();
   updateLive();                              // the numbers change once per word: calm, readable
   if (wordClean) {
     const before = streakTier(streak);
@@ -342,6 +452,10 @@ function endWord() {
     if (streak === 10 || streak % 25 === 0) FX.burstFrom(el.streak, 40);   // at 10, then every 25: a small party
   }
   wordClean = true;
+}
+// words typed in this round, out of the words in the round
+function renderProgress() {
+  el.progress.textContent = `${Math.min(wordsTyped, roundWords)}/${roundWords}`;
 }
 function breakStreak() {
   if (streak >= 3) FX.shake(el.streak);
@@ -377,16 +491,17 @@ export function hideWarn() {
 }
 
 // WPM uses the standard definition: 5 characters = 1 word.
-function currentWpm() {
+// `end`: when the round ended (default: now).
+function currentWpm(end = performance.now()) {
   if (startTime === null) return 0;
-  const minutes = (performance.now() - startTime) / 60000;
+  const minutes = (end - startTime) / 60000;
   return minutes > 0 ? (correctChars / 5) / minutes : 0;   // only what is right counts
 }
 // raw: every keypress counts, the wrong ones too (as on monkeytype).
 // Shown in the header only; never sent to the server.
-function currentRaw() {
+function currentRaw(end = performance.now()) {
   if (startTime === null) return 0;
-  const minutes = (performance.now() - startTime) / 60000;
+  const minutes = (end - startTime) / 60000;
   return minutes > 0 ? (presses / 5) / minutes : 0;
 }
 function currentAccuracy() {
@@ -422,9 +537,9 @@ export function setMotto(typing = typingNow) {
   FX.anim(el.motto, [{ opacity: 0, transform: "translateY(3px)" }, { opacity: 1, transform: "none" }], { duration: 250, easing: "ease-out" });
 }
 
-// What one exercise changed: a new record, letters mastered, and which
+// What one round changed: a new record, letters mastered, and which
 // letters got faster or slower (smoothed time per letter, avgMs, before and
-// after). Only letters typed in this exercise count. Display only.
+// after). Only letters typed in this round count. Display only.
 const CHANGE_MIN = 0.03;   // a letter must change by 3 % or more to be named
 function compareStats(before, after, samples) {
   const prev = Object.fromEntries((before?.keys ?? []).map((k) => [k.char, k]));
@@ -441,34 +556,52 @@ function compareStats(before, after, samples) {
   return { best, mastered, faster, slower };
 }
 
-async function finishExercise() {
+// a long pause ends the round
+setInterval(() => {
+  if (startTime !== null && !S.busy && performance.now() - lastTime > IDLE_STOP_MS) finishRound();
+}, 500);
+
+// Esc: ends the round early (or, before the first key, just gives a new text).
+export function stopRound() {
+  if (S.busy) return;
+  if (startTime === null) {
+    el.live.classList.remove("final");
+    loadExercise().catch(console.error);
+  } else finishRound();
+}
+
+// The round is over (its last word, Esc or a long pause): the numbers of the
+// round go to the history, the result screen shows what changed, then the
+// next round starts. The time of the round ends at its last keypress, so the
+// pause that ended it early does not lower the WPM.
+async function finishRound() {
   S.busy = true;
-  const wpm = Math.round(currentWpm() * 10) / 10;
+  const end = lastTime;
+  const wpm = Math.round(currentWpm(end) * 10) / 10;
   const accuracy = Math.round(currentAccuracy() * 10) / 10;
   // the live line keeps showing this result (in white) until the next
-  // exercise starts
+  // round starts
   el.live.classList.add("final");
   setTyping(false);
   el.wpm.textContent = Math.round(wpm);
-  el.raw.textContent = Math.round(currentRaw());
+  el.raw.textContent = Math.round(currentRaw(end));
   el.acc.textContent = Math.round(accuracy);
-  // remember the state before, to see what this exercise changed
-  const before = S.lastStats;
   const resisted = tabsResisted;
-  // one sample per typed position, in text order (skipped letters have none)
-  const samples = records.filter(Boolean);
+  const typed = records.filter(Boolean);              // every sample of the round
+  const samples = records.slice(sentUpTo).filter(Boolean); // the ones not sent with a portion yet
   try {
-    if (!samples.length) { await loadExercise(); return; }   // nothing typed: nothing to learn from
-    const res = await postJSON("/results", { samples, wpm, accuracy });
+    await queue;                                       // portions still on their way
+    streamId++;                                        // nothing more for this round
+    if (!typed.length) { await loadExercise(); return; } // nothing typed: nothing to keep
+    const res = await postJSON("/results", { samples, chars: typed.length, wpm, accuracy });
     await refreshStats();
-    const next = getJSON("/exercise");     // built from the UPDATED model, loads while the result shows
+    if (res.newLetter) newLetter(res.newLetter);
 
-    const r = compareStats(before, S.lastStats, samples);
-    if (res.newLetter) { popLetter = res.newLetter; FX.burstFrom(el.letters, 60); }
+    const r = compareStats(roundBefore, S.lastStats, typed);
     justMastered = new Set(r.mastered);
     if (r.best) FX.burstFrom(el.wpm, 80);
-    await showResult({ wpm, accuracy, newLetter: res.newLetter, resisted, ...r });
-    showExercise(await next);
+    await showResult({ wpm, accuracy, newLetter: roundNewLetter, resisted, ...r });
+    await loadExercise();   // built from the UPDATED model
   } catch (err) {
     console.error(err);
     el.hint.textContent = t("err.server");

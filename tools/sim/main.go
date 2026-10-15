@@ -53,6 +53,8 @@ func main() {
 	p := cfg.Sim
 	fmt.Printf("%d simulated typists per strategy, %d words per exercise, give up after %d exercises\n",
 		p.Runs, cfg.Engine.ExerciseWords, p.MaxExercises)
+	fmt.Printf("stream: portions of %d words, %d waiting; counted in exercises of %d words\n",
+		cfg.Engine.PortionWords, cfg.Engine.AheadPortions, cfg.Engine.ExerciseWords)
 	fmt.Printf("beginner: exercises until every letter meets the goal; variety of the first %d exercises\n", p.FirstExercises)
 	fmt.Printf("expert: all letters open from the start, variety over %d exercises\n", p.OpenExercises)
 	fmt.Printf("variety: dist = share of different words in an exercise, rep = share of words also in\n" +
@@ -70,7 +72,7 @@ func main() {
 }
 
 // strategy builds a fresh strategy for one run (k: 0 random, 1 best of N,
-// 2 adaptive with temperature t).
+// 2 adaptive with temperature t, 3 the stream with temperature t).
 func strategy(k int, t float64, gen *engine.Generator, cfg config.Config, rng *rand.Rand) sim.Strategy {
 	switch k {
 	case 0:
@@ -80,6 +82,9 @@ func strategy(k int, t float64, gen *engine.Generator, cfg config.Config, rng *r
 	}
 	ep := cfg.Engine
 	ep.Temperature = t
+	if k == 3 {
+		return &sim.Stream{Gen: gen, EP: ep}
+	}
 	return &sim.Adaptive{Gen: gen, EP: ep}
 }
 
@@ -97,9 +102,12 @@ func runLanguage(id string, words []string, cfg config.Config, temps []float64) 
 	for _, t := range temps {
 		jobs = append(jobs, job{2, t})
 	}
+	for _, t := range temps {
+		jobs = append(jobs, job{3, t})
+	}
 	for _, j := range jobs {
 		ep := cfg.Engine
-		if j.k == 2 {
+		if j.k >= 2 {
 			ep.Temperature = j.t
 		}
 		var res []sim.Result
@@ -124,6 +132,9 @@ func runLanguage(id string, words []string, cfg config.Config, temps []float64) 
 		}
 		if j.k == 2 {
 			name = fmt.Sprintf("adaptive, T = %g", j.t)
+		}
+		if j.k == 3 {
+			name = fmt.Sprintf("stream, T = %g", j.t)
 		}
 		fmt.Println(row(name, res, vs))
 	}

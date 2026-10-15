@@ -93,13 +93,14 @@ func TestRun_EveryStrategyReachesTheGoal(t *testing.T) {
 		tent neat hate thee teeth near earn tear rate hear art rat tar her here there`)
 	p := cfg.Sim
 	p.MaxExercises = 2000
-	for k := 0; k < 3; k++ {
+	for k := 0; k < 4; k++ {
 		gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
 		rng := rand.New(rand.NewSource(3))
 		strategies := []sim.Strategy{
 			&sim.Random{Gen: gen, Words: cfg.Engine.ExerciseWords, Rng: rng},
 			&sim.BestOfN{Gen: gen, Words: cfg.Engine.ExerciseWords, Rng: rng, P: p},
 			&sim.Adaptive{Gen: gen, EP: cfg.Engine},
+			&sim.Stream{Gen: gen, EP: cfg.Engine},
 		}
 		s := strategies[k]
 		res := sim.Run(gen, s, newTypist(gen.Order(), 5), cfg.Engine, p)
@@ -138,7 +139,9 @@ func TestRunOpen_Variety(t *testing.T) {
 	words := []string{"ab", "ba", "bb", "aa"}
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
 	s := &fixed{texts: []string{"ab ab ba bb", "ab aa aa aa"}}
-	v := sim.RunOpen(gen, s, newTypist(gen.Order(), 1), cfg.Engine, 2)
+	ep := cfg.Engine
+	ep.ExerciseWords = 4 // one text = one exercise
+	v := sim.RunOpen(gen, s, newTypist(gen.Order(), 1), ep, 2)
 	// exercise 1: 3 different of 4 words; exercise 2: 2 of 4
 	if !near(v.Distinct, (0.75+0.5)/2) {
 		t.Errorf("Distinct = %v", v.Distinct)
@@ -158,6 +161,62 @@ func TestRunOpen_NoExercisesIsNaN(t *testing.T) {
 	v := sim.RunOpen(gen, &fixed{texts: []string{"ab"}}, newTypist(gen.Order(), 1), cfg.Engine, 0)
 	if !math.IsNaN(v.Distinct) || !math.IsNaN(v.Repeated) || !math.IsNaN(v.TopShare) {
 		t.Fatalf("no data must give NaN, got %+v", v)
+	}
+}
+
+// The stream measures variety in blocks of ExerciseWords words, whatever
+// the size of its portions.
+func TestRunOpen_StreamIsMeasuredInBlocks(t *testing.T) {
+	words := []string{"ab", "ba", "bb", "aa"}
+	gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
+	s := &fixed{texts: []string{"ab ba", "bb aa"}} // 2 words per text
+	ep := cfg.Engine
+	ep.ExerciseWords = 4
+	v := sim.RunOpen(gen, s, newTypist(gen.Order(), 1), ep, 2)
+	// two blocks "ab ba bb aa": all different, and all in the previous block
+	if !near(v.Distinct, 1) || !near(v.Repeated, 1) {
+		t.Fatalf("got %+v", v)
+	}
+}
+
+func TestStream_MistypedWordsComeBack(t *testing.T) {
+	words := strings.Fields("the then than tan ant net ten hen eat tea ate heat hat that")
+	gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
+	s := &sim.Stream{Gen: gen, EP: cfg.Engine}
+	first := strings.Fields(s.Text(nil, len(gen.Order())))
+	// every letter of the first word wrong, the rest clean
+	var samples []engine.Sample
+	for i, w := range first {
+		for _, r := range w {
+			smp := engine.Sample{Char: string(r), Ms: 300}
+			if i == 0 {
+				smp.Errors = 1
+			}
+			samples = append(samples, smp)
+		}
+	}
+	s.Observe(samples)
+	found := false
+	for i := 0; i < cfg.Engine.AheadPortions+1; i++ {
+		for _, w := range strings.Fields(s.Text(nil, len(gen.Order()))) {
+			found = found || w == first[0]
+		}
+	}
+	if !found {
+		t.Fatalf("%q was mistyped but did not come back", first[0])
+	}
+}
+
+// A round of the stream is RoundPortions portions; then a new round starts.
+func TestStream_Rounds(t *testing.T) {
+	words := strings.Fields("the then than tan ant net ten hen eat tea ate heat hat that")
+	gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
+	s := &sim.Stream{Gen: gen, EP: cfg.Engine}
+	for i := 0; i < 2*cfg.Engine.RoundPortions; i++ {
+		s.Text(nil, len(gen.Order()))
+		if want := i%cfg.Engine.RoundPortions == 0; s.RoundStart() != want {
+			t.Fatalf("portion %d: RoundStart = %v, want %v", i, s.RoundStart(), want)
+		}
 	}
 }
 

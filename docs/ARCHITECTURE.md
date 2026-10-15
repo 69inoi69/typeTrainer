@@ -64,7 +64,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `tools.js` | Tooltips of the icon buttons, reset, export / import of the statistics. |
 | middle | `keyboard.js` | On-screen keyboard and hands from the layout data, the next key and finger, the on / off button, the automatic size that fits the window. |
 | middle | `stats.js` | The stats screen (tiles, WPM chart, heatmap keyboard, letter cards) and `refreshStats()`. |
-| middle | `typing.js` | The exercise text, the caret, `handleChar()` / `backspace()`, the streak, live WPM / accuracy, the "typing now" header mode, the letters bar, sending results. |
+| middle | `typing.js` | The text stream (portions added while you type), the caret, `handleChar()` / `backspace()`, the streak, live WPM / accuracy, the "typing now" header mode, the letters bar, sending results. |
 | middle | `intro.js` | The first-visit intro and "open all letters". |
 | middle | `languages.js` | The language switch and `loadLanguage()`. |
 | middle | `profile.js` | The profile placeholder in the header: name and picture, kept only in the browser. |
@@ -90,18 +90,33 @@ ES modules from a `file://` address, so when `index.html` is opened by
 double-click it is the only script that runs and it says how to open the page.
 Its one sentence is the only interface text outside `i18n.js`.
 
-## Request lifecycle: from a keypress to the next exercise
+## Request lifecycle: from a keypress to the next words
 
-1. `keydown` (`input.js`) → `handleChar()` in `typing.js` compares the key with the expected
+The text is a stream of short portions (`Generator.Portion`, see
+`docs/ALGORITHM.md`, section 7), not one exercise built in advance. A round
+is `RoundPortions` portions (30 words).
+
+1. Start of a round (`loadExercise()` in `typing.js`) → `POST /api/v1/portion {start: true}`
+   returns the portion to type plus `AheadPortions` waiting after it, and
+   `round` (portions per round).
+2. `keydown` (`input.js`) → `handleChar()` in `typing.js` compares the key with the expected
    character and moves on either way (wrong = red). Each typed position keeps
    one sample `{char, errors, ms}`; `backspace()` changes only the screen, never
    the samples. Rules: `docs/ALGORITHM.md`, section 3.
-2. Last character typed → `POST /api/v1/results` with all samples, WPM and accuracy.
-3. The handler (under a mutex) reads the stats from the `Store`, calls
-   `engine.Apply`, saves them, asks `Generator.NextUnlocked` whether a letter
-   opens, saves the unlock count, stores a session summary.
-4. The browser calls `GET /api/v1/stats` (letter chips, heatmap, history) and
-   `GET /api/v1/exercise`, which runs `Generator.Next` on the new statistics.
+3. The space after the last word of a portion → `POST /api/v1/portion` with the
+   portion's samples, the words of the stream so far (`recent`) and the words
+   typed with a mistake (`retry`). The handler (under a mutex) reads the stats
+   from the `Store`, calls `engine.Apply`, saves them, asks
+   `Generator.NextUnlocked` whether a letter opens, and answers with ONE new
+   portion built from the updated statistics. The browser adds it at the end of
+   the text. Once the round has all its portions the browser sends
+   `last: true` and gets none. Backspace cannot go back into a portion that was sent.
+4. The last word of the round, or Esc, or 10 s without a key →
+   `POST /api/v1/results` with the samples not sent yet, WPM, accuracy and the
+   number of typed characters; the handler learns from the samples the same
+   way and stores a session summary. Then the next round starts (step 1).
+5. After each portion and each round the browser calls `GET /api/v1/stats`
+   (letter chips, heatmap, history).
 
 ## API
 
@@ -112,17 +127,20 @@ All responses are JSON. Every route except `/languages` takes `?lang=<id>`
 |---|---|---|---|
 | GET | `/api/v1/languages` | | `[{id, name, label, layout, alphabet, systemLayout}]` |
 | GET | `/api/v1/layout` | | layout JSON |
-| GET | `/api/v1/exercise` | | `{text, focus, unlocked: [..], locked: [..]}` |
-| POST | `/api/v1/results` | `{samples: [{char, errors, ms}], wpm, accuracy}` | `{unlocked, newLetter}` |
+| POST | `/api/v1/portion` | `{samples: [{char, errors, ms}], recent: [words], retry: [words], start: bool, last: bool}` | `{portions: [{words, focus, weakest, unlocked, locked}], newLetter, round}`; one portion, `AheadPortions + 1` with `start`, none with `last` |
+| POST | `/api/v1/results` | `{samples: [{char, errors, ms}], chars, wpm, accuracy}` | `{unlocked, newLetter}`; the round is over: one history entry |
 | POST | `/api/v1/progress` | `{unlockAll: true\|false}` | `{unlocked}` |
 | POST | `/api/v1/reset` | | `{ok: true}`; deletes all data of the language (reset button, until there are user accounts) |
 | GET | `/api/v1/export` | | `{unlocked, keys: {char: {count, mistakes, errEma, timeEma, timedCount}}, sessions: [all, OLDEST first]}`; everything stored for the language |
 | POST | `/api/v1/import` | the same JSON as `/export` | `{unlocked, sessions}`; REPLACES the language's data, or changes nothing if the data is invalid |
 | GET | `/api/v1/stats` | | `{keys: [{char, count, errorRate, avgMs, difficulty, mastered, unlocked}], sessions: [last 50, newest first], sessionCount, targetWpm}` |
 
-Validation on `/results`: 1–5000 samples, each with exactly one character that
-is a letter of the language or a space, `errors >= 0`, `ms >= 0`; WPM 0–400;
-accuracy 0–100. Body limit 1 MB.
+Validation on `/portion` and `/results`: at most 5000 samples (zero is fine:
+nothing new to learn), each with exactly one character that is a letter of the
+language or a space, `errors >= 0`, `ms >= 0`. `/results` also needs
+`chars >= 1` (something was typed; 0 means "the number of samples"), WPM 0–400
+and accuracy 0–100. `recent` and `retry` hold at most 5000 words; a word that
+is not in the list or has a locked letter is simply ignored. Body limit 1 MB.
 
 Validation on `/import`: `unlocked` between 0 and the number of letters; every key is
 one letter of the language or a space; per letter `0 <= mistakes <= count`,
