@@ -22,13 +22,17 @@ exercises from real words around the user's weak letters.
 
 ## Stack (do not change without asking)
 
-- Backend: Go 1.24+, **standard library only** (`net/http`), no frameworks, no
-  third-party modules. (Planned single exception: the PostgreSQL driver,
-  when the database comes.)
+- Backend: Go 1.25+, **standard library only** (`net/http`), no frameworks, no
+  third-party modules. The single exception: the PostgreSQL driver
+  (`github.com/jackc/pgx/v5`), used only through the standard `database/sql`.
+  Ask before adding any other module.
 - Frontend: plain HTML + CSS + vanilla JavaScript. **No frameworks, no npm,
   no build step.** Files in `web/` are served by the Go server.
-- Storage: in memory now, behind the `storage.Store` interface. PostgreSQL
-  comes later as a new implementation of the same interface.
+- Storage: behind the `storage.Store` interface. `MemoryStore` by default,
+  `PostgresStore` when `DATABASE_URL` is set. Both pass the same tests
+  (`internal/storage/store_test.go`); a new `Store` method needs both and a
+  test there. Table changes go into a new numbered file in
+  `internal/storage/migrations/`, never into an old one.
 - Four languages: English, Polish, Ukrainian, Russian. Language data lives in
   `data/` (`languages.json`, `layouts/`, `langs/<id>/words.txt`), not in code.
 - Development machine: Windows, PowerShell.
@@ -103,8 +107,8 @@ Details: `docs/ALGORITHM.md`.
 ## Not now
 
 Leaderboards, public profile pages, more languages, themes, frameworks.
-(Accounts exist: sign up / log in / log out on the normal server; the
-database is the next step.) Structure code so they can be added later, but do not build them.
+(Accounts exist: sign up / log in / log out on the normal server, kept in
+PostgreSQL when it is configured.) Structure code so they can be added later, but do not build them.
 
 ## Commands
 

@@ -7,9 +7,17 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 )
+
+// The app tests always use the memory store, even on a machine where
+// DATABASE_URL is set: they must never write into a real database.
+func TestMain(m *testing.M) {
+	os.Unsetenv("DATABASE_URL")
+	os.Exit(m.Run())
+}
 
 func call(t *testing.T, h http.Handler, method, path, body string) (int, map[string]any) {
 	t.Helper()

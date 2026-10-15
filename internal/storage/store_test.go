@@ -1,5 +1,9 @@
 package storage
 
+// The same tests run against every Store implementation (storeTests): the
+// memory store always, PostgreSQL when a test database is configured
+// (postgres_test.go). Both must behave exactly alike.
+
 import (
 	"errors"
 	"testing"
@@ -11,9 +15,33 @@ import (
 // u is the user of the tests that are not about users.
 const u = LocalUser
 
+// storeTests: every behaviour a Store must have.
+var storeTests = map[string]func(*testing.T, Store){
+	"LanguagesAreSeparate":      testLanguagesAreSeparate,
+	"KeyStatsIsACopy":           testKeyStatsIsACopy,
+	"RecentSessionsNewestFirst": testRecentSessionsNewestFirst,
+	"Reset":                     testReset,
+	"Freeplay":                  testFreeplay,
+	"UsersAreSeparate":          testUsersAreSeparate,
+	"Users":                     testUsers,
+	"Logins":                    testLogins,
+	"SessionFields":             testSessionFields,
+	"KeyStatsFields":            testKeyStatsFields,
+}
+
+// runStoreTests runs every test on a fresh, empty store from newStore.
+func runStoreTests(t *testing.T, newStore func(t *testing.T) Store) {
+	for name, test := range storeTests {
+		t.Run(name, func(t *testing.T) { test(t, newStore(t)) })
+	}
+}
+
+func TestMemoryStore(t *testing.T) {
+	runStoreTests(t, func(*testing.T) Store { return NewMemoryStore() })
+}
+
 // Progress in one language must never leak into another.
-func TestMemoryStore_LanguagesAreSeparate(t *testing.T) {
-	m := NewMemoryStore()
+func testLanguagesAreSeparate(t *testing.T, m Store) {
 	m.SaveKeyStats(u, "en", map[string]engine.KeyStat{"e": {Count: 5}})
 	m.SetUnlocked(u, "en", 9)
 	m.AddSession(u, "en", Session{WPM: 40})
@@ -29,8 +57,7 @@ func TestMemoryStore_LanguagesAreSeparate(t *testing.T) {
 	}
 }
 
-func TestMemoryStore_KeyStatsIsACopy(t *testing.T) {
-	m := NewMemoryStore()
+func testKeyStatsIsACopy(t *testing.T, m Store) {
 	m.SaveKeyStats(u, "en", map[string]engine.KeyStat{"a": {Count: 1}})
 	s, _ := m.KeyStats(u, "en")
 	s["a"] = engine.KeyStat{Count: 99}
@@ -39,8 +66,7 @@ func TestMemoryStore_KeyStatsIsACopy(t *testing.T) {
 	}
 }
 
-func TestMemoryStore_RecentSessionsNewestFirst(t *testing.T) {
-	m := NewMemoryStore()
+func testRecentSessionsNewestFirst(t *testing.T, m Store) {
 	for _, w := range []float64{10, 20, 30} {
 		m.AddSession(u, "pl", Session{WPM: w})
 	}
@@ -51,8 +77,7 @@ func TestMemoryStore_RecentSessionsNewestFirst(t *testing.T) {
 }
 
 // Reset clears one language and leaves the others alone.
-func TestMemoryStore_Reset(t *testing.T) {
-	m := NewMemoryStore()
+func testReset(t *testing.T, m Store) {
 	for _, l := range []string{"en", "pl"} {
 		m.SaveKeyStats(u, l, map[string]engine.KeyStat{"e": {Count: 5}})
 		m.SetUnlocked(u, l, 9)
@@ -78,8 +103,7 @@ func TestMemoryStore_Reset(t *testing.T) {
 
 // Free practice has its own history and test flag, apart from learning and
 // per language; Reset clears them too.
-func TestMemoryStore_Freeplay(t *testing.T) {
-	m := NewMemoryStore()
+func testFreeplay(t *testing.T, m Store) {
 	if p, _ := m.TestPassed(u, "en"); p {
 		t.Fatal("a new language must start with the test not passed")
 	}
@@ -111,8 +135,7 @@ func TestMemoryStore_Freeplay(t *testing.T) {
 
 // One user's progress must never leak into another user's, and resetting
 // one user leaves the other alone.
-func TestMemoryStore_UsersAreSeparate(t *testing.T) {
-	m := NewMemoryStore()
+func testUsersAreSeparate(t *testing.T, m Store) {
 	m.SaveKeyStats("ann", "en", map[string]engine.KeyStat{"e": {Count: 5}})
 	m.SetUnlocked("ann", "en", 9)
 	m.AddSession("ann", "en", Session{WPM: 40})
@@ -154,8 +177,7 @@ func TestSession_Summary(t *testing.T) {
 	}
 }
 
-func TestMemoryStore_Users(t *testing.T) {
-	m := NewMemoryStore()
+func testUsers(t *testing.T, m Store) {
 	now := time.Now()
 	a, err := m.CreateUser("ann", "hash-a", now)
 	if err != nil || a.ID == "" || a.ID == LocalUser {
@@ -183,8 +205,7 @@ func TestMemoryStore_Users(t *testing.T) {
 }
 
 // A login works until it expires or is deleted.
-func TestMemoryStore_Logins(t *testing.T) {
-	m := NewMemoryStore()
+func testLogins(t *testing.T, m Store) {
 	now := time.Now()
 	m.AddLogin("t1", "u1", now.Add(time.Hour))
 	if id, err := m.LoginUser("t1", now); err != nil || id != "u1" {
@@ -203,5 +224,46 @@ func TestMemoryStore_Logins(t *testing.T) {
 	}
 	if _, err := m.LoginUser("never", now); !errors.Is(err, ErrNotFound) {
 		t.Fatal("an unknown login works")
+	}
+}
+
+// Every field of a session comes back as it was stored, the raw keys too.
+func testSessionFields(t *testing.T, m Store) {
+	c := 81.5
+	when := time.Date(2026, 10, 15, 18, 30, 0, 0, time.UTC)
+	in := Session{WPM: 42.5, Accuracy: 97.25, Chars: 180, Consistency: &c, FinishedAt: when,
+		Keys: []engine.Sample{{Char: "ж", Errors: 1, Ms: 0}, {Char: " ", Errors: 0, Ms: 183}}, Unlocked: 7}
+	m.AddSession(u, "ru", in)
+	m.AddSession(u, "ru", Session{WPM: 10, FinishedAt: when}) // no consistency, no keys
+	got, err := m.RecentSessions(u, "ru", 5)
+	if err != nil || len(got) != 2 {
+		t.Fatalf("got %+v %v", got, err)
+	}
+	old, s := got[0], got[1]
+	if s.WPM != 42.5 || s.Accuracy != 97.25 || s.Chars != 180 || s.Unlocked != 7 ||
+		s.Consistency == nil || *s.Consistency != 81.5 || !s.FinishedAt.Equal(when) {
+		t.Fatalf("fields changed: %+v", s)
+	}
+	if len(s.Keys) != 2 || s.Keys[0] != in.Keys[0] || s.Keys[1] != in.Keys[1] {
+		t.Fatalf("keys changed: %+v", s.Keys)
+	}
+	if old.Consistency != nil || len(old.Keys) != 0 {
+		t.Fatalf("missing values must stay missing: %+v", old)
+	}
+}
+
+// Every field of a letter comes back as it was stored, and SaveKeyStats
+// replaces the whole set (a letter left out is gone).
+func testKeyStatsFields(t *testing.T, m Store) {
+	k := engine.KeyStat{Count: 25, Mistakes: 3, ErrEMA: 0.0625, TimeEMA: 412.75, TimedCount: 20}
+	m.SaveKeyStats(u, "pl", map[string]engine.KeyStat{"ą": k, " ": {Count: 1}})
+	got, _ := m.KeyStats(u, "pl")
+	if len(got) != 2 || got["ą"] != k || got[" "].Count != 1 {
+		t.Fatalf("got %+v", got)
+	}
+	m.SaveKeyStats(u, "pl", map[string]engine.KeyStat{"a": {Count: 2}})
+	got, _ = m.KeyStats(u, "pl")
+	if len(got) != 1 || got["a"].Count != 2 {
+		t.Fatalf("not replaced: %+v", got)
 	}
 }

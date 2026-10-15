@@ -34,7 +34,8 @@ type Server struct {
 
 	// genMu: the generators' random sources are not safe for parallel use.
 	// writeMu: makes "read stats -> update -> save" one atomic step.
-	// (A PostgreSQL store would do this inside a transaction instead.)
+	// Enough for one server process, with either store; several processes
+	// on one database would need a transaction around it instead.
 	genMu   sync.Mutex
 	writeMu sync.Mutex
 }

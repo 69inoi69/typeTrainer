@@ -30,12 +30,12 @@ Lublin University of Technology (2027).
   after a one-time typing test. It is kept simple for now.
 - English, Polish, Ukrainian and Russian, each with its own progress.
 - **Accounts** (with the local server): sign up, log in, and your progress is
-  kept under your account. For now everything lives in the server's memory;
-  a database comes next.
+  kept under your account, in PostgreSQL if `DATABASE_URL` is set, otherwise
+  in the server's memory.
 
 ## Run it locally
 
-Needs [Go](https://go.dev/dl/) 1.24 or newer. In the project folder:
+Needs [Go](https://go.dev/dl/) 1.25 or newer. In the project folder:
 
 ```
 go run .
@@ -43,7 +43,13 @@ go run .
 
 Then open <http://localhost:3000>. Tests: `go test ./...`
 
-Go standard library only, plain HTML/CSS/JavaScript, no build step. The
+Progress lives in memory until the server stops. To keep it, point the
+server at PostgreSQL:
+`DATABASE_URL=postgres://user:password@localhost:5432/typetrainer go run .`
+(Windows steps: [docs/USER-GUIDE.md](docs/USER-GUIDE.md)).
+
+Go standard library plus one module (the PostgreSQL driver), plain
+HTML/CSS/JavaScript, no build step. The
 website runs the same Go code compiled to WebAssembly.
 
 ## Documentation
