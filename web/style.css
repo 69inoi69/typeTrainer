@@ -176,6 +176,16 @@ body.typing-now .top:hover .switch, body.typing-now .top:hover .profile { opacit
   content: ""; display: block; width: 14px; height: 2px; margin: 0 auto; border-radius: 2px;
   background: var(--accent); box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent);
 }
+/* learning / free practice: the second tab is chosen; a lock while it is closed */
+.switch.second .switch-thumb { transform: translateX(100%); }
+.mode-switch button { gap: 5px; grid-auto-flow: column; }
+.mode-switch .lock {
+  width: 12px; height: 12px; fill: none; stroke: currentColor;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; display: none;
+}
+.mode-switch .locked .lock { display: block; }
+/* free practice has no letters to learn: their panels on the stats screen go */
+body[data-mode="free"] .learn-only { display: none; }
 .lang-switch.mini .switch-thumb { width: calc(100% / var(--n, 4)); }
 .lang-switch.mini button { padding: 0 8px; font-weight: 500; }
 

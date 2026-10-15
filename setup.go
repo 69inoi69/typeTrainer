@@ -17,6 +17,7 @@ import (
 	"typingtrainer/internal/api"
 	"typingtrainer/internal/config"
 	"typingtrainer/internal/engine"
+	"typingtrainer/internal/freeplay"
 	"typingtrainer/internal/language"
 	"typingtrainer/internal/layout"
 	"typingtrainer/internal/storage"
@@ -85,5 +86,6 @@ func loadLanguage(info language.Language, cfg config.Config, seed int64) (*api.L
 		return nil, fmt.Errorf("word list is empty")
 	}
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(seed)), cfg.Engine)
-	return &api.Language{Info: info, Gen: gen, LayoutJSON: layoutJSON}, nil
+	free := freeplay.NewPicker(words, rand.New(rand.NewSource(seed+1)))
+	return &api.Language{Info: info, Gen: gen, Free: free, LayoutJSON: layoutJSON}, nil
 }

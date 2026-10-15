@@ -4,7 +4,7 @@
 //   bottom: state.js and i18n.js import nothing, fx.js only i18n.js,
 //           api.js only state.js
 //   middle: keyboard, typing, stats, intro, languages, tools, profile,
-//           result, tour import the bottom
+//           result, tour, modes import the bottom
 //           and each other in one direction only (no cycles)
 //   top:    input.js and app.js may import anything; nothing imports them
 //           (app.js loads input.js)
@@ -24,6 +24,7 @@ export const el = {
   intro: $("intro"),
   switch: document.querySelector(".switch"), tabType: $("tab-type"), tabStats: $("tab-stats"),
   viewType: $("view-type"), viewStats: $("view-stats"),
+  tabLearn: $("tab-learn"), tabFree: $("tab-free"),
   tiles: $("tiles"), chart: $("chart"), chartNote: $("chart-note"), letterGrid: $("letter-grid"),
   langSwitch: $("lang-switch"), warn: $("layout-warn"),
   streak: $("streak"), streakN: $("streak-n"),
@@ -46,6 +47,8 @@ export const S = {
   pos: 0,                 // index of the character to type next
   busy: false,            // true while a finished run is being saved
   view: "type",           // "type" or "stats"
+  mode: "learn",          // "learn", "free" or "test" (modes.js)
+  free: null,             // last /freeplay/stats answer
   kbHidden: false,        // keyboard and hands switched off
   mottoIndex: 0,          // the small phrase over the logo (set by init)
 };

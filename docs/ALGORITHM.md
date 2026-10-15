@@ -21,8 +21,10 @@ one **difficulty** between 0 and 1. Letters are introduced **gradually**, most
 frequent first; a new letter opens only when every open letter is typed
 accurately at the target speed. Inside the open letters, each next word is
 chosen at random, but with probabilities shaped by difficulty, so weak letters
-show up much more often and strong ones still appear sometimes. There is one
-mode and no settings: the model alone decides what to practise.
+show up much more often and strong ones still appear sometimes. Learning has
+no settings: the model alone decides what to practise. (Free practice, a
+separate mode in `internal/freeplay`, draws words evenly from the whole list
+and never feeds this model; see docs/ARCHITECTURE.md, "Modes".)
 
 ## 2. Design decisions
 

@@ -15,8 +15,11 @@ export async function refreshStats() {
   if (S.view === "stats") renderStats();
 }
 
+// Free practice shows its own history (S.free, modes.js): the tiles and the
+// chart, no letters (style.css hides their panels, body[data-mode="free"]).
 export function renderStats() {
-  const s = S.lastStats;
+  const free = S.mode === "free";
+  const s = free ? S.free : S.lastStats;
   if (!s) return;
   const sessions = [...s.sessions].reverse(); // oldest first
   const last10 = sessions.slice(-10);
@@ -32,7 +35,8 @@ export function renderStats() {
     [fmt(avg(measured, (x) => x.consistency), "%"), t("tile.avgCons")],
   ].map(([v, l]) => `<div class="tile"><b>${v}</b><small>${l}</small></div>`).join("");
 
-  drawChart(sessions, s.targetWpm, s.sessionCount);
+  drawChart(sessions, free ? s.testWpm : s.targetWpm, s.sessionCount);
+  if (free) return;
   drawHeatKeyboard(s.keys);
   drawLetterGrid(s.keys);
 }

@@ -242,3 +242,72 @@ func TestApp_ResultsConsistency(t *testing.T) {
 		t.Fatal("a negative count per second must be rejected")
 	}
 }
+
+// Free practice: locked for a new user; the typing test opens it only at
+// 30 WPM and 97 %; its rounds go to their own history and never change the
+// letter statistics of learning; export/import carry it and reset clears it.
+func TestApp_FreeplayAndTest(t *testing.T) {
+	h, _, _ := newApp()
+	_, st := call(t, h, "GET", "/api/v1/freeplay/stats?lang=en", "")
+	if st["unlocked"] != false || st["testPassed"] != false {
+		t.Fatalf("new user: %v", st)
+	}
+	// the words of the test come from the full list (any letter)
+	code, out := call(t, h, "POST", "/api/v1/freeplay/portion?lang=en", `{"start":true}`)
+	if code != 200 || len(out["portions"].([]any)) != 3 || out["round"] != float64(5) {
+		t.Fatalf("freeplay portion: %d %v", code, out)
+	}
+	round := `{"wpm":55,"accuracy":99,"chars":150,"perSecond":[5,5,5,5,5,5,5,5]}`
+	if code, _ := call(t, h, "POST", "/api/v1/freeplay/results?lang=en", round); code != 403 {
+		t.Fatalf("locked freeplay results: %d, want 403", code)
+	}
+	// a failed test (too slow, then too inaccurate) changes nothing
+	for _, body := range []string{`{"wpm":29,"accuracy":100,"chars":150}`, `{"wpm":80,"accuracy":96,"chars":150}`} {
+		if _, out := call(t, h, "POST", "/api/v1/freeplay/test?lang=en", body); out["passed"] != false || out["unlocked"] != false {
+			t.Fatalf("failed test %s: %v", body, out)
+		}
+	}
+	if _, out := call(t, h, "POST", "/api/v1/freeplay/test?lang=en", `{"wpm":30,"accuracy":97,"chars":150}`); out["passed"] != true || out["unlocked"] != true {
+		t.Fatalf("passed test: %v", out)
+	}
+	if _, pl := call(t, h, "GET", "/api/v1/freeplay/stats?lang=pl", ""); pl["unlocked"] != false {
+		t.Fatal("the test of one language opened another")
+	}
+	if code, out := call(t, h, "POST", "/api/v1/freeplay/results?lang=en", round); code != 200 || out["consistency"] == nil {
+		t.Fatalf("freeplay results: %d %v", code, out)
+	}
+	_, st = call(t, h, "GET", "/api/v1/freeplay/stats?lang=en", "")
+	_, learn := call(t, h, "GET", "/api/v1/stats?lang=en", "")
+	if st["sessionCount"] != float64(1) || learn["sessionCount"] != float64(0) {
+		t.Fatalf("histories mixed: freeplay %v, learning %v", st["sessionCount"], learn["sessionCount"])
+	}
+	for _, k := range learn["keys"].([]any) {
+		if k.(map[string]any)["count"] != float64(0) {
+			t.Fatalf("freeplay changed the letter statistics: %v", k)
+		}
+	}
+
+	// export -> reset -> import brings the flag and the history back
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/api/v1/export?lang=en", nil))
+	file := rec.Body.String()
+	call(t, h, "POST", "/api/v1/reset?lang=en", "")
+	if _, st := call(t, h, "GET", "/api/v1/freeplay/stats?lang=en", ""); st["unlocked"] != false || st["sessionCount"] != float64(0) {
+		t.Fatalf("reset did not clear free practice: %v", st)
+	}
+	if code, out := call(t, h, "POST", "/api/v1/import?lang=en", file); code != 200 {
+		t.Fatalf("import: %d %v", code, out)
+	}
+	if _, st := call(t, h, "GET", "/api/v1/freeplay/stats?lang=en", ""); st["unlocked"] != true || st["sessionCount"] != float64(1) {
+		t.Fatalf("import lost free practice: %v", st)
+	}
+}
+
+// Every letter unlocked in learning opens free practice without the test.
+func TestApp_FreeplayOpensWithAllLetters(t *testing.T) {
+	h, _, _ := newApp()
+	call(t, h, "POST", "/api/v1/progress?lang=uk", `{"unlockAll":true}`)
+	if _, st := call(t, h, "GET", "/api/v1/freeplay/stats?lang=uk", ""); st["unlocked"] != true || st["testPassed"] != false {
+		t.Fatalf("all letters open: %v", st)
+	}
+}

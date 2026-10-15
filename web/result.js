@@ -23,12 +23,18 @@ let done = null;           // resolves the promise of the open result
 export const resultOpen = () => done !== null;
 
 // r: { wpm, accuracy, consistency (null = too short), newLetter, best, mastered: [chars], resisted,
-//      faster: [{c, pct}], slower: [{c, pct}] }
+//      faster: [{c, pct}], slower: [{c, pct}], test: "pass" | "fail" | "stopped" (the typing test only) }
 export function showResult(r) {
   const lines = [];
   // 1. the main line: the most important thing that happened
   const wpm = Math.round(r.wpm);
   const mastered = (r.mastered ?? []).join(" ");
+  if (r.test) {
+    // the typing test: passed or not, and the numbers it was judged on
+    lines.push(`<p class="r-main${r.test === "pass" ? " k-best" : ""}">${t(`result.test.${r.test}`)}</p>`);
+    lines.push(`<p class="r-facts">${t("result.testScore", { wpm, acc: Math.round(r.accuracy) })}</p>`);
+    return open(lines);
+  }
   if (r.newLetter) {
     const l = r.newLetter;
     const joke = hasText(`joke.${l}`) ? t(`joke.${l}`) : tPick("joke", { letter: l });
@@ -58,6 +64,11 @@ export function showResult(r) {
   if (advice) facts.push(tPick("advice"));
   if (facts.length) lines.push(`<p class="r-facts">${facts.join(" · ")}</p>`);
 
+  return open(lines);
+}
+
+// Puts the lines into the window and waits until the result is closed.
+function open(lines) {
   box.innerHTML = `<div class="r-body">${lines.join("")}</div>` +
     `<p class="r-next">${t("result.next")}</p><i class="r-bar" style="--ms:${RESULT_MS}ms"></i>`;
   box.querySelector(".r-bar").addEventListener("animationend", closeResult);

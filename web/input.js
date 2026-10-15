@@ -1,17 +1,18 @@
 // Everything the user does with keys and buttons, sent to the module that
 // handles it: keydown and the phone input, the Type / Stats switch, the
-// keyboard on / off button, window resize, the "new exercise" button.
+// mode switch (learning / free practice), the keyboard on / off button, window resize, the "new exercise" button.
 // Layer: top. Imports anything; nothing imports it (app.js only loads it).
 
 import { el, S, introOpen, isTouch, focusText } from "./state.js";
 import { applyKb, requestFit } from "./keyboard.js";
 import { refreshStats, renderStats } from "./stats.js";
-import { fitText, placeCaret, handleChar, backspace, nudge, setTyping, stopRound } from "./typing.js";
+import { fitText, placeCaret, handleChar, backspace, nudge, setTyping, stopRound, loadExercise } from "./typing.js";
 import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
 import { resultOpen, closeResult } from "./result.js";
 import { tourOpen, tourKey } from "./tour.js";
+import { setMode } from "./modes.js";
 
 // the keyboard button and Alt+K: keyboard and hands off, or back on
 function toggleKb() {
@@ -49,6 +50,23 @@ function setView(name) {
 }
 el.tabType.addEventListener("click", (e) => { e.currentTarget.blur(); setView("type"); });
 el.tabStats.addEventListener("click", (e) => { e.currentTarget.blur(); setView("stats"); });
+
+// ---------- modes: learning / free practice ----------
+// While free practice is locked, its tab starts the typing test (modes.js).
+// A new mode starts a new round; a round already begun is dropped, as when
+// the language changes (learning keeps every portion sent so far).
+function chooseMode(m) {
+  if (S.busy) return;
+  if (m === "free" && !S.free?.unlocked) m = "test";
+  if (m === S.mode) return;
+  setMode(m);
+  el.live.classList.remove("final");
+  if (m === "test" && S.view !== "type") setView("type");
+  if (S.view === "stats") renderStats();
+  loadExercise().catch(console.error);
+}
+el.tabLearn.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("learn"); });
+el.tabFree.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("free"); });
 
 // ---------- input ----------
 // Desktop: keydown gives us the real key. preventDefault stops the character

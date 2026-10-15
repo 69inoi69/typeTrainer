@@ -12,6 +12,7 @@ import { refreshStats, renderStats } from "./stats.js";
 import { loadExercise, hideWarn, setMotto } from "./typing.js";
 import { drawIntroKeys } from "./intro.js";
 import { renderProfile } from "./profile.js";
+import { refreshFreeplay, restoreMode } from "./modes.js";
 
 // ---------- languages ----------
 // The switch is built once; changing language only moves the yellow thumb
@@ -75,6 +76,8 @@ export async function loadLanguage(id) {
     labelTips();
     applyKb();                              // re-translates "off"
     await refreshStats();
+    await refreshFreeplay();
+    restoreMode();                          // learning or free practice, as last time in this language
     await loadExercise();
     if (S.view === "stats") renderStats();
   } finally {

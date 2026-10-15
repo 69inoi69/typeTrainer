@@ -16,6 +16,7 @@ import (
 
 	"typingtrainer/internal/config"
 	"typingtrainer/internal/engine"
+	"typingtrainer/internal/freeplay"
 	"typingtrainer/internal/language"
 	"typingtrainer/internal/storage"
 )
@@ -23,7 +24,8 @@ import (
 // Language is everything the server needs for one typing language.
 type Language struct {
 	Info       language.Language
-	Gen        *engine.Generator
+	Gen        *engine.Generator // learning: the adaptive word choice
+	Free       *freeplay.Picker  // free practice: words drawn evenly
 	LayoutJSON []byte
 }
 
@@ -59,6 +61,10 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/export", s.withLang(s.handleExport))
 	mux.HandleFunc("POST /api/v1/import", s.withLang(s.handleImport))
 	mux.HandleFunc("GET /api/v1/stats", s.withLang(s.handleStats))
+	mux.HandleFunc("POST /api/v1/freeplay/portion", s.withLang(s.handleFreeplayPortion))
+	mux.HandleFunc("POST /api/v1/freeplay/results", s.withLang(s.handleFreeplayResults))
+	mux.HandleFunc("POST /api/v1/freeplay/test", s.withLang(s.handleFreeplayTest))
+	mux.HandleFunc("GET /api/v1/freeplay/stats", s.withLang(s.handleFreeplayStats))
 }
 
 type langHandler func(w http.ResponseWriter, r *http.Request, l *Language)
@@ -249,6 +255,22 @@ type langExport struct {
 	Unlocked int                       `json:"unlocked"` // how many letters are open
 	Keys     map[string]engine.KeyStat `json:"keys"`     // the raw statistics per letter
 	Sessions []storage.Session         `json:"sessions"` // finished exercises, OLDEST first
+	// free practice: absent in files from before it existed
+	Freeplay *freeplayExport `json:"freeplay,omitempty"`
+}
+
+type freeplayExport struct {
+	TestPassed bool              `json:"testPassed"`
+	Sessions   []storage.Session `json:"sessions"` // OLDEST first
+}
+
+// oldestFirst turns a newest-first list around: the file reads like a diary.
+func oldestFirst(newestFirst []storage.Session) []storage.Session {
+	out := make([]storage.Session, len(newestFirst))
+	for i, sess := range newestFirst {
+		out[len(newestFirst)-1-i] = sess
+	}
+	return out
 }
 
 // GET /api/v1/export?lang= -> all stored data of the language (nothing is cut:
@@ -275,11 +297,25 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request, l *Languag
 		serverError(w, err)
 		return
 	}
-	sessions := make([]storage.Session, len(newestFirst))
-	for i, sess := range newestFirst {
-		sessions[len(newestFirst)-1-i] = sess // the file reads like a diary: oldest first
+	passed, err := s.store.TestPassed(id)
+	if err != nil {
+		serverError(w, err)
+		return
 	}
-	writeJSON(w, http.StatusOK, langExport{Unlocked: unlocked, Keys: keys, Sessions: sessions})
+	freeCount, err := s.store.FreeplaySessionCount(id)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	free, err := s.store.RecentFreeplaySessions(id, freeCount)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, langExport{
+		Unlocked: unlocked, Keys: keys, Sessions: oldestFirst(newestFirst),
+		Freeplay: &freeplayExport{TestPassed: passed, Sessions: oldestFirst(free)},
+	})
 }
 
 // POST /api/v1/import?lang= <the JSON from /export> -> REPLACES everything stored
@@ -320,6 +356,18 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request, l *Languag
 			return
 		}
 	}
+	if f := in.Freeplay; f != nil {
+		if err := s.store.SetTestPassed(id, f.TestPassed); err != nil {
+			serverError(w, err)
+			return
+		}
+		for _, sess := range f.Sessions {
+			if err := s.store.AddFreeplaySession(id, sess); err != nil {
+				serverError(w, err)
+				return
+			}
+		}
+	}
 	writeJSON(w, http.StatusOK, map[string]int{"unlocked": in.Unlocked, "sessions": len(in.Sessions)})
 }
 
@@ -340,10 +388,23 @@ func validateImport(in langExport, maxSessions, letters int, alphabet string) st
 			return "keys: impossible numbers for " + ch
 		}
 	}
-	if len(in.Sessions) > maxSessions {
+	if msg := validateSessions(in.Sessions, maxSessions); msg != "" {
+		return msg
+	}
+	if in.Freeplay != nil {
+		if msg := validateSessions(in.Freeplay.Sessions, maxSessions); msg != "" {
+			return "freeplay " + msg
+		}
+	}
+	return ""
+}
+
+// validateSessions: at most max entries, every number in its range.
+func validateSessions(sessions []storage.Session, max int) string {
+	if len(sessions) > max {
 		return "sessions: too many"
 	}
-	for _, sess := range in.Sessions {
+	for _, sess := range sessions {
 		if sess.WPM < 0 || sess.WPM > 400 || sess.Accuracy < 0 || sess.Accuracy > 100 || sess.Chars < 0 {
 			return "sessions: wpm, accuracy or chars out of range"
 		}

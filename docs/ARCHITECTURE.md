@@ -15,7 +15,7 @@
                                      └─────────────────────────────────────────┘
 ```
 
-**Dependency rule:** `api` uses `engine` and `storage`. `storage` imports
+**Dependency rule:** `api` uses `engine`, `freeplay` and `storage`. `storage` imports
 `engine` only for the `KeyStat` type. `engine` imports nothing from the project.
 The engine therefore never knows about HTTP or the database and can be tested on
 its own.
@@ -32,6 +32,8 @@ its own.
 | `internal/config` | Every tunable number in one place. |
 | `internal/engine/model.go` | Per-letter statistics, EMA update, difficulty, mastery, softmax weight. |
 | `internal/engine/generator.go` | Unlock order, first lesson size, unlocking rule, word selection. |
+| `internal/freeplay` | Free practice and the typing test: evenly drawn words from the whole list (`Picker.Portion`), the pass rule of the test (`Passed`). Imports nothing from the project; never touches the letter model. |
+| `internal/api/freeplay.go` | The `/api/v1/freeplay/*` routes. |
 | `internal/engine/consistency.go` | Consistency of a round's speed (a measurement shown to the user; the model does not use it). |
 | `internal/storage/store.go` | The `Store` interface. |
 | `internal/storage/memory.go` | In-memory `Store` (lost on restart). |
@@ -70,8 +72,9 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `languages.js` | The language switch and `loadLanguage()`. |
 | middle | `profile.js` | The profile placeholder in the header: name and picture, kept only in the browser. |
 | middle | `result.js` | The result screen in the text window: `showResult(r)` shows what changed and resolves when the user goes on. |
+| middle | `modes.js` | The modes (learning / free practice / typing test), the switch in the header, `refreshFreeplay()` (`S.free`), the mode remembered per language. |
 | middle | `tour.js` | The "how this site works" tour: a ring around each part of the page and a short card. |
-| top | `input.js` | Keydown and phone input, the Type / Stats switch, the keyboard on / off button, window resize: sends each action to the module that handles it. |
+| top | `input.js` | Keydown and phone input, the Type / Stats switch, the mode switch, the keyboard on / off button, window resize: sends each action to the module that handles it. |
 | top | `app.js` | Entry point: `init()`. |
 
 **Import rule:** imports only go down. `state.js` and `i18n.js` import
@@ -134,9 +137,13 @@ All responses are JSON. Every route except `/languages` takes `?lang=<id>`
 | POST | `/api/v1/results` | `{samples: [{char, errors, ms}], chars, wpm, accuracy, perSecond: [keypresses in each full second]}` | `{unlocked, newLetter, consistency}` (`consistency` 0–100, `null` for a round under `ConsistencyMinSeconds`); the round is over: one history entry |
 | POST | `/api/v1/progress` | `{unlockAll: true\|false}` | `{unlocked}`; for development only, the interface no longer calls it |
 | POST | `/api/v1/reset` | | `{ok: true}`; deletes all data of the language (reset button, until there are user accounts) |
-| GET | `/api/v1/export` | | `{unlocked, keys: {char: {count, mistakes, errEma, timeEma, timedCount}}, sessions: [all, OLDEST first]}`; everything stored for the language |
+| GET | `/api/v1/export` | | `{unlocked, keys: {char: {count, mistakes, errEma, timeEma, timedCount}}, sessions: [all, OLDEST first], freeplay: {testPassed, sessions}}`; everything stored for the language (`freeplay` is missing in older files) |
 | POST | `/api/v1/import` | the same JSON as `/export` | `{unlocked, sessions}`; REPLACES the language's data, or changes nothing if the data is invalid |
 | GET | `/api/v1/stats` | | `{keys: [{char, count, errorRate, avgMs, difficulty, mastered, unlocked}], sessions: [last 50, newest first], sessionCount, targetWpm}` |
+| POST | `/api/v1/freeplay/portion` | `{recent: [words], start: bool}` | `{portions: [{words}], round}`; words drawn evenly from the whole list; works while free practice is locked (the test uses it) |
+| POST | `/api/v1/freeplay/results` | `{chars, wpm, accuracy, perSecond}` | `{consistency}`; one entry in the free practice history; 403 while locked |
+| POST | `/api/v1/freeplay/test` | `{chars, wpm, accuracy}` | `{passed, unlocked}`; a pass opens free practice for good; stored in no history |
+| GET | `/api/v1/freeplay/stats` | | `{unlocked, testPassed, sessions: [last 50, newest first], sessionCount, testWpm, testAccuracy}` |
 
 Validation on `/portion` and `/results`: at most 5000 samples (zero is fine:
 nothing new to learn), each with exactly one character that is a letter of the
@@ -158,6 +165,28 @@ Every `Store` method takes the language id, so each language has its own
 statistics, unlocked letters and history. Each language also has its own
 `Generator` (own unlock order and first lesson), built in `setup.go`.
 
+## Modes
+
+The app has two modes and a test (`web/modes.js`, `internal/freeplay`):
+
+- **Learning** is the adaptive trainer described in docs/ALGORITHM.md: the
+  `/portion` and `/results` routes, the letter model, unlocking.
+- **Free practice** draws words evenly from the whole word list (a word used
+  in the last `RecentWords` words is rarer, the last one never comes twice in
+  a row). It has its own history (`AddFreeplaySession`) and its own stats
+  screen (tiles and the WPM chart). Nothing it sends reaches the letter
+  model: `/freeplay/results` drops any samples.
+- The **typing test** is one free practice round (30 words). Only a full round
+  counts; the server checks `wpm >= TestWPM` and `accuracy >= TestAccuracy`
+  (`freeplay.Passed`) and keeps one flag per language (`SetTestPassed`).
+  A failed test changes nothing and can be taken again.
+
+Free practice opens when every letter is unlocked in learning, or once the
+test is passed (`freeplayOpen` in `internal/api/freeplay.go`). The chosen mode
+is interface state: it lives in the browser (`localStorage`, `tt.mode.<lang>`),
+not on the server. Reset clears the flag and the free practice history;
+export / import carry both.
+
 ## Concurrency
 
 The random generator is not safe for parallel use, so `Next` runs under
@@ -167,7 +196,7 @@ transaction (`SELECT ... FOR UPDATE`) instead.
 
 ## Adding PostgreSQL later
 
-Create `internal/storage/postgres.go` with a type that has the eight `Store`
+Create `internal/storage/postgres.go` with a type that has the thirteen `Store`
 methods and change one line in `setup.go`. A possible schema, once accounts exist:
 
 ```sql
