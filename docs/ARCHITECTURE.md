@@ -9,8 +9,8 @@
  │  typing.js (keydown,  │ ◀───────  │   │                                      │
  │  timing), keyboard... │           │   ├──▶ engine   model + word generator   │
  └───────────────────────┘           │   └──▶ storage  Store interface          │
-                                     │              └─ MemoryStore (now)        │
-                                     │              └─ PostgresStore (later)    │
+                                     │              ├─ MemoryStore (default)    │
+                                     │              └─ PostgresStore (DB URL)   │
                                      │ config  all numbers   layout  key data   │
                                      └─────────────────────────────────────────┘
 ```
@@ -30,7 +30,7 @@ its own.
 | `pages/wasm-shim.js` | Pages only: routes `/api/v1/` requests from the frontend to the Go code in the browser. |
 | `.github/workflows/pages.yml` | On every push to `main`: test, build WebAssembly, publish to Pages. |
 | `.github/workflows/tests.yml` | On every pull request: gofmt, vet, tests, WebAssembly build. |
-| `accounts_server.go`, `accounts_wasm.go` | `accountsOn`: accounts work on the normal server, not on GitHub Pages (picked by build tags). |
+| `build_server.go`, `build_wasm.go` | What differs between the normal server and GitHub Pages (picked by build tags): `accountsOn` (accounts only on the server) and `openStore` (PostgreSQL when `DATABASE_URL` is set, else memory; always memory on Pages). |
 | `internal/config` | Every tunable number in one place. |
 | `internal/auth` | Password hashing (PBKDF2-SHA256), random login tokens, the rules for account names and passwords. Knows nothing about HTTP or storage. |
 | `internal/engine/model.go` | Per-letter statistics, EMA update, difficulty, mastery, softmax weight. |
@@ -39,6 +39,9 @@ its own.
 | `internal/freeplay` | Free practice and the typing test: evenly drawn words from the whole list (`Picker.Portion`), the pass rule of the test (`Passed`). Imports nothing from the project; never touches the letter model. |
 | `internal/storage/store.go` | The `Store` interface. |
 | `internal/storage/memory.go` | In-memory `Store` (lost on restart). |
+| `internal/storage/postgres.go` | PostgreSQL `Store` through the standard `database/sql`; the pgx driver is only registered. Applies `migrations/*.sql` at start. Not in the WebAssembly build. |
+| `internal/storage/migrations/` | The database tables, one numbered SQL file per change (`001_init.sql`). |
+| `internal/storage/store_test.go` | The tests every `Store` must pass; run on memory always and on PostgreSQL when `TT_TEST_DATABASE_URL` is set (`postgres_test.go`). |
 | `internal/api/handlers.go` | The `Server`, the route list (`Register`), `?lang=`, JSON helpers, locking around read-modify-write. |
 | `internal/api/learning.go` | Learning routes: `/portion`, `/results`, `/stats`, `/progress`. |
 | `internal/api/data.go` | `/reset`, `/export`, `/import` (learning and free practice data together). |
@@ -173,7 +176,7 @@ one letter of the language or a space; per letter `0 <= mistakes <= count`,
 `MaxImportSessions`) are in `internal/config/config.go`. The browser joins the
 languages into one file `{app, version, exportedAt, languages: {id: <export>}}`
 (see `web/tools.js`, "export / import"). Import and export use only the existing
-`Store` methods, so the future PostgreSQL store needs nothing extra.
+`Store` methods, so the PostgreSQL store needs nothing extra.
 
 ### Raw round records
 
@@ -225,7 +228,7 @@ Not yet (needed before the app is public, step 5 of the plan): every guest
 shares the one `local` user, so on a public server guests would see each
 other's progress (a per-browser guest id fixes this); no limit on login
 attempts; `Secure` is decided by `r.TLS`, which is not set behind a proxy
-that ends HTTPS. On GitHub Pages accounts are off (`accounts_wasm.go`):
+that ends HTTPS. On GitHub Pages accounts are off (`build_wasm.go`):
 requests never leave the page there, so there are no cookies. Each language also has its own
 `Generator` (own unlock order and first lesson), built in `setup.go`.
 
@@ -259,32 +262,42 @@ export / import carry both.
 
 The random generators are not safe for parallel use, so `Portion` (learning and free practice) runs under
 `genMu`. "Read stats → update → save" must not interleave between two
-requests, so it runs under `writeMu`. A PostgreSQL store would use a
-transaction (`SELECT ... FOR UPDATE`) instead.
+requests, so it runs under `writeMu`. That is enough while one server
+process serves everyone, with either store. Several server processes on one
+database would need a transaction around it instead (`SELECT ... FOR UPDATE`).
 
-## Adding PostgreSQL later
+## PostgreSQL
 
-Create `internal/storage/postgres.go` with a type that has all the `Store`
-methods and change one line in `setup.go`. Every method already takes the
-user and the language, so every table is keyed by both. A possible schema:
+`go run .` uses the memory store. With the environment variable
+`DATABASE_URL` set (for example
+`postgres://user:password@localhost:5432/typetrainer`), `openStore` in
+`build_server.go` opens `storage.PostgresStore` instead, and the log says
+`storage: PostgreSQL`. The address is not in the code, so no password ends up
+in git. How to install PostgreSQL on Windows: USER-GUIDE.md.
 
-```sql
-CREATE TABLE users     (id BIGSERIAL PRIMARY KEY, name TEXT UNIQUE NOT NULL,
-                        password_hash TEXT NOT NULL, created_at TIMESTAMPTZ DEFAULT now());
-CREATE TABLE logins    (token_hash TEXT PRIMARY KEY, user_id BIGINT REFERENCES users(id),
-                        expires TIMESTAMPTZ NOT NULL);
-CREATE TABLE progress  (user_id BIGINT REFERENCES users(id), lang TEXT,
-                        unlocked INT NOT NULL DEFAULT 0, test_passed BOOLEAN NOT NULL DEFAULT false,
-                        PRIMARY KEY (user_id, lang));
-CREATE TABLE key_stats (user_id BIGINT REFERENCES users(id), lang TEXT, char TEXT,
-                        count INT, mistakes INT, err_ema DOUBLE PRECISION,
-                        time_ema DOUBLE PRECISION, timed_count INT,
-                        PRIMARY KEY (user_id, lang, char));
-CREATE TABLE sessions  (id BIGSERIAL PRIMARY KEY, user_id BIGINT REFERENCES users(id),
-                        lang TEXT, mode TEXT, -- 'learning' or 'freeplay'
-                        wpm REAL, accuracy REAL, chars INT, consistency REAL NULL,
-                        finished_at TIMESTAMPTZ DEFAULT now());
-```
+- **One third-party module.** The code uses only the standard `database/sql`
+  package; `github.com/jackc/pgx/v5/stdlib` is imported only to register the
+  driver that speaks PostgreSQL's protocol (the standard library has none).
+  Another driver would be a one-line change. pgx needs Go 1.25, so `go.mod`
+  says 1.25 (1.24 is no longer supported by the Go team either). The
+  WebAssembly build does not include it (`postgres.go` has a build tag).
+- **Tables** (`internal/storage/migrations/001_init.sql`): `users`, `logins`
+  (token hashes), `progress` (unlocked letters, typing test), `key_stats`
+  (the letter model) and `sessions` (the history of both modes, `mode`
+  column; the raw keys as `JSONB`). Every data table is keyed by user and
+  language. `user_id` is text and not a foreign key, because the guest
+  (`local`) has data but no row in `users`; an account's id is `u` + `users.id`.
+- **Migrations**: at start `migrate` applies every file in `migrations/`
+  that the table `schema_migrations` has not recorded yet, in number order,
+  each in a transaction. A new version of the app updates an old database by
+  itself; a change to the tables is a new file (`002_...sql`), never an edit
+  of an old one.
+- **Transactions**: `SaveKeyStats` (delete + insert the letters) and `Reset`
+  (three tables) are all-or-nothing.
+- **Tests**: the same tests run on both stores (`store_test.go`). The
+  PostgreSQL run needs `TT_TEST_DATABASE_URL` (it empties the tables, so use a
+  separate database); the pull request checks start a PostgreSQL 16 for it.
+  The app tests (`setup_test.go`) always use memory.
 
 ## Two ways to run: server and GitHub Pages
 

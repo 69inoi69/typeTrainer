@@ -20,7 +20,6 @@ import (
 	"typingtrainer/internal/freeplay"
 	"typingtrainer/internal/language"
 	"typingtrainer/internal/layout"
-	"typingtrainer/internal/storage"
 )
 
 // The web/ and data/ folders are baked into the program at build time,
@@ -33,7 +32,7 @@ var files embed.FS
 // It returns the HTTP handler (API + web files) and the config.
 func newApp() (http.Handler, config.Config, error) {
 	cfg := config.Default()
-	cfg.Accounts = accountsOn // off in the WebAssembly build (accounts_wasm.go)
+	cfg.Accounts = accountsOn // off in the WebAssembly build (build_wasm.go)
 
 	langData, err := files.ReadFile("data/languages.json")
 	if err != nil {
@@ -54,8 +53,11 @@ func newApp() (http.Handler, config.Config, error) {
 		langs = append(langs, l)
 	}
 
-	// Swap this line for storage.NewPostgresStore(...) later.
-	var store storage.Store = storage.NewMemoryStore()
+	// PostgreSQL or memory: build_server.go / build_wasm.go decide.
+	store, err := openStore()
+	if err != nil {
+		return nil, cfg, err
+	}
 
 	server := api.NewServer(cfg, store, langs)
 	mux := http.NewServeMux()

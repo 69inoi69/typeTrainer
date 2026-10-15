@@ -1,6 +1,7 @@
 # Checks every pull request before it is merged (pages.yml checks main again
-# before publishing): formatting, static checks, tests, and that the
-# WebAssembly version of the site still compiles.
+# before publishing): formatting, static checks, tests (the storage tests
+# also against a real PostgreSQL), and that the WebAssembly version of the
+# site still compiles.
 name: Tests
 
 on:
@@ -12,6 +13,20 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # a throwaway PostgreSQL for internal/storage/postgres_test.go
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: tt
+          POSTGRES_PASSWORD: tt
+          POSTGRES_DB: typetrainer_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TT_TEST_DATABASE_URL: postgres://tt:tt@localhost:5432/typetrainer_test
     steps:
       - uses: actions/checkout@v4
 
