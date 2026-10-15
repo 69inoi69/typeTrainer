@@ -10,6 +10,7 @@ const testIterations = 1000
 
 var p = Params{NameMin: 3, NameMax: 20, PasswordMin: 8, PasswordMax: 128}
 
+// The right password matches its hash; a password one letter off does not.
 func TestPassword_RightAndWrong(t *testing.T) {
 	h, err := HashPassword("correct horse", testIterations)
 	if err != nil {
@@ -36,6 +37,7 @@ func TestPassword_SaltedAndHidden(t *testing.T) {
 	}
 }
 
+// A broken or foreign stored hash never lets anyone in.
 func TestPassword_MalformedNeverMatches(t *testing.T) {
 	for _, s := range []string{"", "plain", "pbkdf2-sha256$x$00$00", "md5$1$00$00",
 		"pbkdf2-sha256$0$00$00", "pbkdf2-sha256$10$zz$00", "pbkdf2-sha256$10$00$"} {
@@ -45,6 +47,7 @@ func TestPassword_MalformedNeverMatches(t *testing.T) {
 	}
 }
 
+// Tokens are long and different each time, and the store gets only their hash.
 func TestToken_RandomAndHashed(t *testing.T) {
 	t1, h1, err := NewToken()
 	if err != nil {
@@ -59,6 +62,8 @@ func TestToken_RandomAndHashed(t *testing.T) {
 	}
 }
 
+// Names are normalized, and only Latin letters, digits, "_" and "-" of the
+// right length are allowed.
 func TestNames(t *testing.T) {
 	if NormalizeName("  Sasha_88 ") != "sasha_88" {
 		t.Fatal("NormalizeName")
@@ -75,6 +80,7 @@ func TestNames(t *testing.T) {
 	}
 }
 
+// Passwords are checked by length in characters (not bytes) and must be valid UTF-8.
 func TestPasswords(t *testing.T) {
 	for _, ok := range []string{"12345678", "пароль12", strings.Repeat("x", 128)} {
 		if !ValidPassword(ok, p) {

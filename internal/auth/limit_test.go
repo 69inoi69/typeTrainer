@@ -8,6 +8,8 @@ import (
 
 var t0 = time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)
 
+// A key is refused after max attempts, only until its window ends; other
+// keys are not affected.
 func TestLimiter_RefusesAfterMaxThenOpensAgain(t *testing.T) {
 	l := NewLimiter(3, 15*time.Minute)
 	if w := l.Wait("1.2.3.4", t0); w != 0 {
@@ -36,6 +38,7 @@ func TestLimiter_RefusesAfterMaxThenOpensAgain(t *testing.T) {
 	}
 }
 
+// Forget (a successful login) frees the key at once.
 func TestLimiter_Forget(t *testing.T) {
 	l := NewLimiter(1, time.Hour)
 	l.Count("k", t0)

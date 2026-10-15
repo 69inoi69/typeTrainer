@@ -3,7 +3,7 @@
 //
 // A simulated typist has a hidden error probability and a hidden time for
 // every letter. Each time it types a letter, that letter gets a little better.
-// Three strategies pick the words; all of them use the same statistics, the
+// Four strategies pick the words; all of them use the same statistics, the
 // same unlocking rule and the same typist, only the word choice differs:
 //
 //   - Random:   any open word, uniformly (no adaptation at all)
@@ -21,6 +21,11 @@
 // The typist is made up. Its numbers are in internal/config and must be
 // reported as assumptions; the simulation compares strategies under the
 // same assumptions, it does not predict real people.
+//
+// The method and the results are in docs/ALGORITHM.md, section 11.1.
+// Only tools/sim (go run ./tools/sim) and the tests use this package; the
+// app never does. It imports only internal/engine, and drives it exactly as
+// internal/api does (engine.Apply, then Generator.NextUnlocked).
 package sim
 
 import (
@@ -33,7 +38,8 @@ import (
 	"typingtrainer/internal/engine"
 )
 
-// Params describe the simulated typist and the experiment.
+// Params describe the simulated typist and the experiment. The values are
+// in internal/config (Default, Sim) with a reason for each.
 type Params struct {
 	ErrMin, ErrMax   float64 // starting hidden error probability of a letter: uniform in this range
 	TimeMin, TimeMax float64 // starting hidden time per press, ms: uniform in this range
@@ -56,7 +62,9 @@ type Params struct {
 	ScoreWindow   int     // BestOfN: EMA over about this many presses (monkeytype: 50)
 }
 
-// Typist is the hidden truth about one simulated person.
+// Typist is the hidden truth about one simulated person. The engine never
+// sees these values: it only gets the samples that Type returns, as it
+// only gets keypresses from a real browser.
 type Typist struct {
 	err  map[string]float64 // probability of a mistake on the letter
 	time map[string]float64 // mean time per press, ms
@@ -111,6 +119,8 @@ func (t *Typist) Type(text string) []engine.Sample { return t.typeText(text, tru
 // first press is timed like any other.
 func (t *Typist) TypeMore(text string) []engine.Sample { return t.typeText(text, false) }
 
+// typeText is Type and TypeMore. first = the first press is untimed (Ms 0),
+// as in the browser when nothing was pressed before it.
 func (t *Typist) typeText(text string, first bool) []engine.Sample {
 	var out []engine.Sample
 	for _, r := range text {
@@ -146,9 +156,13 @@ func (t *Typist) Skilled(ep engine.Params) bool {
 }
 
 // Strategy chooses the text of the next exercise.
+//
+// To add a strategy: a type with these three methods here, and a case in
+// strategy() and a job in runLanguage() of tools/sim/main.go.
 type Strategy interface {
-	Name() string
-	// typed: letters typed since every letter was open (engine.MaxRank)
+	Name() string // the row label in the printed table
+	// Text returns the next text to type; "" ends the run. typed: letters
+	// typed since every letter was open (engine.MaxRank).
 	Text(stats map[string]engine.KeyStat, unlocked, typed int) string
 	Observe(samples []engine.Sample) // sees what was typed (only BestOfN needs it)
 }
@@ -159,6 +173,9 @@ type Adaptive struct {
 	EP  engine.Params
 }
 
+// Name, Text and Observe implement Strategy. Text is one whole exercise
+// from Generator.Next; Adaptive keeps no memory of its own (the statistics
+// are passed in), so Observe does nothing.
 func (a *Adaptive) Name() string { return "adaptive (softmax)" }
 func (a *Adaptive) Text(stats map[string]engine.KeyStat, unlocked, typed int) string {
 	return a.Gen.Next(stats, unlocked, typed, a.EP).Text
@@ -186,7 +203,13 @@ type Stream struct {
 // round (its first press has no previous press, so it is not timed).
 func (s *Stream) RoundStart() bool { return s.typed == 1 }
 
+// Name implements Strategy.
 func (s *Stream) Name() string { return "stream (portions)" }
+
+// Text returns the next portion to type. It first builds new portions from
+// the statistics as they are now, until the one to hand out and
+// AheadPortions more are ready (the browser also asks for them ahead), but
+// never more than RoundPortions in a round. Then it hands out the oldest.
 func (s *Stream) Text(stats map[string]engine.KeyStat, unlocked, typed int) string {
 	if s.typed == s.EP.RoundPortions { // the round is over: a new one
 		s.queue, s.recent, s.retry, s.built, s.typed = nil, nil, nil, 0, 0
@@ -229,6 +252,8 @@ type Random struct {
 	Rng   *rand.Rand
 }
 
+// Name, Text and Observe implement Strategy. Random ignores the statistics
+// and learns nothing, so Observe does nothing.
 func (s *Random) Name() string { return "random words" }
 func (s *Random) Text(_ map[string]engine.KeyStat, unlocked, _ int) string {
 	return pick(s.Gen.Words(unlocked), s.Words, s.Rng, func(cands []string) string {
@@ -250,8 +275,12 @@ type BestOfN struct {
 	scored map[string]int
 }
 
+// Name implements Strategy.
 func (s *BestOfN) Name() string { return fmt.Sprintf("best of %d (monkeytype)", s.P.BestOf) }
 
+// Text fills an exercise slot by slot: BestOf random open words, the one
+// with the highest score wins. It ignores the engine's statistics and uses
+// only its own scores (Observe).
 func (s *BestOfN) Text(_ map[string]engine.KeyStat, unlocked, _ int) string {
 	return pick(s.Gen.Words(unlocked), s.Words, s.Rng, func(cands []string) string {
 		best, bestScore := "", -1.0
@@ -265,6 +294,8 @@ func (s *BestOfN) Text(_ map[string]engine.KeyStat, unlocked, _ int) string {
 	})
 }
 
+// wordScore is the mean score of the word's letters that have a score;
+// 0 if none has one yet.
 func (s *BestOfN) wordScore(w string) float64 {
 	total, n := 0.0, 0
 	for _, r := range w {
@@ -280,7 +311,9 @@ func (s *BestOfN) wordScore(w string) float64 {
 }
 
 // Observe updates the scores. Like monkeytype, a press without a measured
-// time (the first one) is skipped.
+// time (the first one) is skipped. The step 1/n with n capped at ScoreWindow
+// is a plain average for the first presses and an EMA after that (the same
+// idea as emaStep in internal/engine/model.go).
 func (s *BestOfN) Observe(samples []engine.Sample) {
 	if s.score == nil {
 		s.score, s.scored = map[string]float64{}, map[string]int{}
@@ -318,8 +351,13 @@ func pick(cands []string, n int, rng *rand.Rand, choose func([]string) string) s
 	return strings.Join(out, " ")
 }
 
-// Result of one simulated typist with one strategy. Everything is counted in
-// exercises of ExerciseWords words, also for the stream (words typed / 20).
+// Result is the outcome of one simulated typist with one strategy. Everything
+// is counted in exercises of ExerciseWords words, also for the stream (words
+// typed / ExerciseWords, rounded up).
+//
+// To add a metric: a field here (or in Variety), computed in Run (or in
+// variety.block), and a column in tools/sim/main.go (the header in
+// runLanguage and the format in row or pct).
 type Result struct {
 	Exercises int     // exercises until the typist was skilled at every letter
 	Reached   bool    // false = gave up after MaxExercises
@@ -446,6 +484,7 @@ type variety struct {
 	prev                    map[string]bool
 }
 
+// add collects the words of one text and measures every full block.
 func (v *variety) add(text string) {
 	v.buf = append(v.buf, strings.Fields(text)...)
 	for len(v.buf) >= v.size && v.size > 0 {
@@ -454,6 +493,8 @@ func (v *variety) add(text string) {
 	}
 }
 
+// block measures one exercise-sized block of words and adds the numbers to
+// the sums.
 func (v *variety) block(words []string) {
 	cur := map[string]bool{}
 	again := 0

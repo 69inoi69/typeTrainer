@@ -1,7 +1,11 @@
 // The on-screen keyboard and the two hands above it: drawing them from the
-// layout data, lighting the next key and its finger, the on / off button, and
-// fitting the keyboard into the window.
+// layout data (data/layouts/*.json, from /api/v1/layout), lighting the next
+// key and its finger, keyboard on / off, and fitting the keyboard into the
+// window.
 // Layer: middle. Imports only the bottom layer.
+// Called by: typing.js (highlightNextKey, pulseKey, glowKey on keys),
+// languages.js (drawKeyboard for a new layout), intro.js (makeKey),
+// modes.js and app.js (restoreKb), input.js (applyKb, requestFit).
 
 import { FEEL } from "./feel.js";
 import { t } from "./i18n.js";
@@ -11,6 +15,8 @@ import { el, S, store, isTouch } from "./state.js";
 // ---------- keyboard ----------
 let fingerOf = {};         // char -> finger id
 
+// One key <div> from one key of the layout data ({char, finger, home,
+// width, alt, label, modifier}). Also used by the intro for its small keyboards.
 export function makeKey(k) {
   const finger = S.layout.fingers[k.finger];
   const key = document.createElement("div");
@@ -30,6 +36,9 @@ export function makeKey(k) {
   return key;
 }
 
+// Draws the whole keyboard of S.layout and fills the lookup tables
+// (S.keyEls, S.altBase, fingerOf) used on every keypress, so a keypress
+// never has to search the page.
 export function drawKeyboard() {
   el.keyboard.innerHTML = "";
   S.keyEls = {}; fingerOf = {}; S.altBase = {}; S.altgrEl = null; nextKeyEl = null;
@@ -100,14 +109,14 @@ export function pulseKey(ch, ok) {
   if (ok) {   // a short, soft press (knobs: FEEL.keyPress*)
     k.animate([{ transform: `translateY(1px) scale(${FEEL.keyPressScale})` }, { transform: "none" }],
       { duration: FEEL.keyPressMs, easing: "cubic-bezier(.2,.8,.2,1)" });
-  } else {    // the wrong key gets a quick red tint (the colour of --error; FEEL.keyMiss*)
+  } else {    // the wrong key gets a quick red tint (the dark theme's --error; FEEL.keyMiss*)
     k.animate([{ boxShadow: `inset 0 0 0 999px rgba(202, 71, 84, ${FEEL.keyMissAlpha})` }, { boxShadow: "inset 0 0 0 999px rgba(202, 71, 84, 0)" }],
       { duration: FEEL.keyMissMs, easing: "ease-out" });
   }
 }
 
 // A letter just opened: its key glows once with a soft ring in the accent
-// colour (--accent), ~380 ms. One animation, no confetti.
+// colour (the dark theme's --accent), ~380 ms. One animation, no confetti.
 export function glowKey(ch) {
   const k = keyFor(ch);
   if (!k || !k.animate) return;
@@ -115,9 +124,10 @@ export function glowKey(ch) {
     { duration: 380, easing: "ease-out" });
 }
 
-// Keyboard on / off (the button in the bottom bar, or Alt+K): keyboard and
-// hands together. Its size is not a setting: it is always the largest that
-// fits the window (fitKeyboard below). Remembered in localStorage, separately
+// Keyboard on / off (the choice in the settings panel, or Alt+K; both go
+// through input.js): keyboard and hands together. Its size is not a
+// setting: it is always the largest that fits the window (fitKeyboard
+// below). Remembered in localStorage, separately
 // for learning (tt.kbHidden) and for free practice and the test
 // (tt.kbHidden.free): someone who comes to free practice can already type
 // without looking, so there the keyboard starts hidden.
@@ -156,6 +166,8 @@ export function applyKb(animate = false) {
 // hands 1.68 u * handScale (2 u wide, 100:84) + keyboard 4.36 u (4 rows, 3 gaps of .12 u)
 const HANDS_KB_PER_U = 1.68 * FEEL.handScale + 4.36;
 let fitFrame = 0;
+// Asks for fitKeyboard in the next animation frame; several asks in one
+// frame give one measure.
 export function requestFit() {
   cancelAnimationFrame(fitFrame);
   fitFrame = requestAnimationFrame(fitKeyboard);

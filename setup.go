@@ -3,7 +3,13 @@
 //   - main_wasm.go: the same app compiled to WebAssembly for GitHub Pages
 //
 // Both call newApp(), so the engine, the store and the API handlers are
-// exactly the same code in both versions.
+// exactly the same code in both versions. The few differences (which store,
+// accounts on or off, the proxy setting) live in build_server.go and
+// build_wasm.go; Go build tags pick one of them.
+//
+// To add something every request needs at start (a new data file, a new
+// package to wire in): load it in newApp or loadLanguage here, so both
+// versions get it.
 package main
 
 import (
@@ -44,6 +50,8 @@ func newApp() (http.Handler, config.Config, error) {
 		return nil, cfg, err
 	}
 
+	// a new random seed on every start; each language (and its free practice
+	// picker, seed+1 in loadLanguage) gets its own random source
 	seed := time.Now().UnixNano()
 	var langs []*api.Language
 	for i, info := range infos {
@@ -67,6 +75,7 @@ func newApp() (http.Handler, config.Config, error) {
 	if err != nil {
 		return nil, cfg, err
 	}
+	// everything that is not /api/v1/ is a file of the page itself
 	mux.Handle("/", http.FileServerFS(webFS))
 	return server.WithGuest(mux), cfg, nil
 }

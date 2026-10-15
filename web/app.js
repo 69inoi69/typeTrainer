@@ -1,13 +1,15 @@
 // Typing trainer frontend. Plain JavaScript, no frameworks, no build step:
 // native ES modules (see the import rule at the top of state.js).
 // This is the entry point: it loads input.js and starts the app.
+// Layer: top. index.html loads only this file; it imports what init() needs.
 //
 // Flow:  load layout -> POST /api/v1/portion {start} (the first few portions
 // of words) -> user types (keydown) -> every typed position becomes a
 // "sample" {char, errors, ms} -> a portion is done -> POST its samples to
 // /api/v1/portion (the server updates the model, maybe unlocks a letter, and
 // answers with the next portion, built from the updated model) -> ... ->
-// the round ends (30 words, Esc or a pause) -> POST /api/v1/results (the history).
+// the round ends (its length from the settings, Esc or a pause) ->
+// POST /api/v1/results (the history).
 
 import { SPLASH_PHRASES, setUiLang, t } from "./i18n.js";
 import { FX, Splash } from "./fx.js";

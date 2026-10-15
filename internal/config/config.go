@@ -1,6 +1,19 @@
 // Package config keeps every tunable number in ONE place.
 // Change values here, not inside the logic. What each number means and why
 // it has this value is explained in docs/ALGORITHM.md ("Parameters").
+//
+// setup.go reads Default() once at start and hands each part its own
+// numbers (engine.Params to the generator, auth.Params to the accounts, and
+// so on); tools/sim and the sim tests read it too. The packages that own the
+// numbers define their Params types, so this package imports them, never
+// the other way round.
+//
+// To add a tunable number: a field in the Params type of the package that
+// uses it (or in Config for the server itself), its value with a unit and a
+// reason in Default below, and a row in docs/ALGORITHM.md section 8 if it
+// changes the algorithm. The engine tests write their own copy of the
+// engine numbers (testParams in internal/engine/model_test.go): add it there
+// too.
 package config
 
 import (
@@ -10,6 +23,7 @@ import (
 	"typingtrainer/internal/sim"
 )
 
+// Config is every setting of the program, grouped by the part that uses it.
 type Config struct {
 	Addr      string // address the HTTP server listens on
 	MaxEvents int    // safety limit for one results request
@@ -39,6 +53,8 @@ type Config struct {
 	Sim         sim.Params        // only for the simulation tool (go run ./tools/sim)
 }
 
+// Default returns the values the program runs with. Tests that must not
+// change when a value here changes write their own numbers instead.
 func Default() Config {
 	return Config{
 		Addr:      "localhost:3000",

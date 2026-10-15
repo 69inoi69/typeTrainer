@@ -7,6 +7,13 @@
 //	go run ./tools/sim -floor 0 -ramp 0  # other WordParams (experiment only)
 //
 // It is a research tool, not part of the app: it reads data/ from disk.
+// The numbers it uses come from internal/config (Engine, Words, Sim); the
+// flags only override them for an experiment. What the columns mean and
+// how to read the results is in docs/ALGORITHM.md, section 11.1.
+//
+// To add a column (a new metric): compute it in internal/sim (Result or
+// Variety), add its title to both header lines in runLanguage, and print it
+// in row or pct.
 package main
 
 import (
@@ -89,6 +96,11 @@ func main() {
 // strategy builds a fresh strategy for one run (k: 0 random, 1 best of N,
 // 2 adaptive with temperature t, 3 the stream with temperature t, 4 the
 // stream without the word frequency penalty, to show what the penalty changes).
+// A fresh one each run, because the stream and best of N keep state.
+//
+// To add a strategy: a type in internal/sim, a new k here (and in
+// engineParams if it needs other engine numbers), a job in runLanguage and
+// its row name there.
 func strategy(k int, t float64, gen *engine.Generator, cfg config.Config, rng *rand.Rand) sim.Strategy {
 	switch k {
 	case 0:
@@ -116,6 +128,9 @@ func engineParams(k int, t float64, cfg config.Config) engine.Params {
 	return ep
 }
 
+// runLanguage prints the table of one language: one row per strategy (and
+// per temperature for the engine strategies), each the summary of p.Runs
+// beginners (Run) and p.Runs experts (RunOpen).
 func runLanguage(id string, words []string, cfg config.Config, temps []float64) {
 	p := cfg.Sim
 	fmt.Printf("\n%s (%d words)\n", id, len(words))
@@ -145,7 +160,10 @@ func runLanguage(id string, words []string, cfg config.Config, temps []float64) 
 		for run := 0; run < p.Runs; run++ {
 			seed := int64(run + 1)
 			// The same typist and the same random numbers for every strategy:
-			// only the word choice differs.
+			// only the word choice differs. Different seed offsets (+1000 for
+			// the typist's noise, +2000 for the strategy) keep the random
+			// streams apart, so one part using more numbers does not change
+			// what another part draws.
 			gen := engine.NewGenerator(words, rand.New(rand.NewSource(seed)), ep)
 			gen.SetWordParams(cfg.Words)
 			typist := sim.NewTypist(gen.Order(), p, rand.New(rand.NewSource(seed))).
@@ -234,6 +252,7 @@ func pct(vs []sim.Variety) string {
 	return fmt.Sprintf("%4.0f%% %4.0f%% %4.0f%% %5.1f %5.0f", d/n, r/n, t/n, l/m, k/m)
 }
 
+// fail prints the error and stops with exit code 1.
 func fail(err error) {
 	fmt.Fprintln(os.Stderr, err)
 	os.Exit(1)

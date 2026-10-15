@@ -10,8 +10,18 @@
 //           (app.js loads input.js)
 // webmodules_test.go checks this rule on every `go test ./...`.
 // This file is at the very bottom: it imports nothing.
+//
+// Why one shared object S: a module may change a field of an imported object
+// but cannot assign to an imported variable, so state that several modules
+// change lives in S; state used by one module stays a variable inside it.
+// To add a module: pick the lowest layer it fits, list it above, and import
+// only from its own layer or below. A new bottom module also goes into the
+// list in webmodules_test.go (TestWebModules_BottomLayer); the table in
+// docs/ARCHITECTURE.md ("Frontend modules") gets a row.
 
 // ---------- page elements ----------
+// Elements used by several modules, looked up once at load (modules are
+// loaded after the page is parsed), so no keypress ever searches the page.
 export const $ = (id) => document.getElementById(id);
 export const el = {
   textBox: $("text-box"), text: $("text"), caret: $("caret"), input: $("hidden-input"),
@@ -41,7 +51,10 @@ export const S = {
   keyEls: {},             // char -> key <div> (the letter printed on the key)
   altBase: {},            // AltGr letter -> base key char ("ą" -> "a")
   altgrEl: null,          // the AltGr key, if the layout has one
-  exercise: null,         // {focus, unlocked, locked}: the focus of the portion being typed
+  // learning only: {focus, unlocked, locked}: the focus letter of the
+  // portion being typed and the open / locked letters ("exercise" is an
+  // older name, from before rounds)
+  exercise: null,
   lastStats: null,        // last /stats answer
   text: "",               // the text of the stream so far (grows while you type)
   pos: 0,                 // index of the character to type next
@@ -59,8 +72,14 @@ export const store = { // localStorage can be blocked; the app must work without
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch { /* ignore */ } },
 };
+// Is guide A (intro.js) on screen? Here, not in intro.js, because typing.js
+// needs it too and must not import intro.js.
 export const introOpen = () => !el.intro.classList.contains("hidden") && !el.intro.classList.contains("closing");
+// A touch screen (phone, tablet): no physical keyboard, no hover.
 export const isTouch = () => matchMedia("(pointer: coarse)").matches;
+// Gets the text ready for keys. On a phone the hidden <input> must have the
+// focus, or the phone's keyboard does not open; preventScroll stops the page
+// jumping to that invisible input.
 export function focusText() {
   if (isTouch() && document.activeElement !== el.input) el.input.focus({ preventScroll: true });
   el.textBox.classList.remove("blurred");

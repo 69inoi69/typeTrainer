@@ -3,6 +3,11 @@
 // learning / free practice, the help menu), the keyboard on / off choice of
 // the settings, window resize, the "stop" button of touch screens.
 // Layer: top. Imports anything; nothing imports it (app.js only loads it).
+// It holds almost no logic of its own: it decides WHO gets an action (an
+// open guide, a card, the result screen, or typing) and calls that module.
+// To add a navigation item: a button in nav.rail (index.html, with an icon,
+// a <small> label and data-tip), its texts in i18n.js, and its click here
+// (the "views", "modes" and "help" sections below are the pattern).
 
 import { $, el, S, introOpen, isTouch, focusText } from "./state.js";
 import { applyKb, requestFit } from "./keyboard.js";
@@ -101,6 +106,8 @@ onLengthChange(() => {
 });
 
 // ---------- input ----------
+// The order of the checks matters: an open guide or card gets the key first,
+// then the shortcuts, then the result screen, and only then typing.
 // Desktop: keydown gives us the real key. preventDefault stops the character
 // from ALSO arriving through the hidden input (and space from scrolling).
 document.addEventListener("keydown", (e) => {

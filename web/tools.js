@@ -1,6 +1,8 @@
 // Tooltips of the icon buttons, and the "your statistics" row of the
 // settings panel: reset, export and import.
 // Layer: middle. Imports only the bottom layer.
+// Called by: app.js and languages.js (labelTips), stats.js (showTip for a
+// tap on a phone). The buttons it wires are static in index.html.
 
 import { t } from "./i18n.js";
 import { FX } from "./fx.js";
@@ -11,6 +13,7 @@ import { API } from "./api.js";
 // Icon buttons have no text, so their meaning (and the shortcut) is shown in a
 // small tooltip: data-tip="key" in index.html, text from i18n.js.
 let tipFor = null;
+// Shows the tooltip of node above it (below it near the top of the window).
 export function showTip(node) {
   tipFor = node;
   const r = node.getBoundingClientRect();

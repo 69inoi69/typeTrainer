@@ -1,11 +1,14 @@
 // The stats screen, built to fit on one screen: number tiles, the WPM
 // chart, the difficulty heatmap keyboard and the letter chips. The exact
 // numbers live in tooltips (hover, or keyboard focus), so the screen stays
-// calm and answers "how am I doing?" at a glance. refreshStats() also keeps S.lastStats fresh
-// for the typing screen. Rounds of different lengths are never mixed: the
+// calm and answers "how am I doing?" at a glance. refreshStats() also keeps
+// S.lastStats fresh for the typing screen. Rounds of different lengths are never mixed: the
 // screen shows one length at a time (the one chosen in the settings, or
 // another one picked in the row of lengths above the tiles).
 // Layer: middle. Imports the bottom layer, tools.js (tooltips) and settings.js.
+// Called by: typing.js (refreshStats after every portion and round),
+// languages.js (on a language change), input.js (on the Stats tab, a resize
+// and a new round length).
 
 import { i18nVars, t, applyI18n } from "./i18n.js";
 import { el, S } from "./state.js";
@@ -24,6 +27,8 @@ export async function refreshStats() {
   if (S.view === "stats") renderStats();
 }
 
+// Draws the stats screen from the last answers (no server call, except
+// for another round length picked on this screen).
 // Free practice shows its own history (S.free, modes.js): the tiles and the
 // chart, no letters (style.css hides their panels, body[data-mode="free"]).
 export function renderStats() {
@@ -135,14 +140,16 @@ el.heatKb.addEventListener("click", (e) => {
   if (key) showTip(key);
 });
 
-// Bar chart of WPM per exercise, drawn as SVG by hand (no chart library).
+// Bar chart of WPM per round, drawn as SVG by hand (no chart library).
+// target: the goal line (the trainer's target speed, or the test speed in
+// free practice); total: all rounds of this length, so a bar can say "#41".
 function drawChart(sessions, target, total) {
   if (!sessions.length) {
     el.chart.innerHTML = `<div class="empty">${t("chart.empty")}</div>`;
     el.chartNote.textContent = "";
     return;
   }
-  const first = total - sessions.length + 1; // number of the oldest shown exercise
+  const first = total - sessions.length + 1; // number of the oldest shown round
   const scope = sessions.length === total ? t("chart.all") : t("chart.last", { n: sessions.length });
   el.chartNote.textContent = t("chart.note", { scope, target });
 
@@ -169,7 +176,7 @@ function drawChart(sessions, target, total) {
     svg += `<path class="bar${i === sessions.length - 1 ? " last" : ""}" data-i="${i}" d="${d}"/>`;
   });
   svg += `<line class="target" x1="${padL}" x2="${W - padR}" y1="${y(target)}" y2="${y(target)}"/>`;
-  // x labels: first and last exercise number
+  // x labels: first and last round number
   svg += `<text class="axis" x="${padL + slot / 2}" y="${H - 6}" text-anchor="middle">#${first}</text>`;
   if (sessions.length > 1)
     svg += `<text class="axis" x="${padL + (sessions.length - 0.5) * slot}" y="${H - 6}" text-anchor="middle">#${total}</text>`;

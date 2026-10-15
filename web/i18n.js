@@ -8,6 +8,13 @@
 // Finger names are in the form the hint sentence needs ("press X with your
 // left pinky" / "naciśnij X lewym małym palcem"), so each language gets
 // grammatically correct sentences without code per language.
+//
+// Layer: bottom. Imports nothing; almost every module imports t().
+// To add an interface text: one key in ALL FOUR blocks below (en, pl, uk,
+// ru), in the tone of docs/VOICE.md, then t("key") in the code or
+// data-i18n="key" in index.html. Never write interface text in another file
+// (the one exception is file-check.js). For a random choice, number the keys
+// ("x.0", "x.1", ...) and use tPick("x").
 
 const I18N = {
   en: {
@@ -501,6 +508,8 @@ export function setUiLang(id) {
   uiLang = I18N[id] ? id : "en";
 }
 
+// The text of key in the interface language, with {name} filled from vars
+// (or i18nVars). Falls back to English, then to the key itself.
 export function t(key, vars = {}) {
   const text = I18N[uiLang]?.[key] ?? I18N.en[key] ?? key;
   return text.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? i18nVars[name] ?? ""));

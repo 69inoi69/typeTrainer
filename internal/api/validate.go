@@ -1,5 +1,11 @@
 // Request checks: nothing impossible or foreign may reach the statistics.
 // Each function returns "" when the input is fine, else the error message.
+// The browser is never trusted: anyone can send any JSON to the API, and a
+// single wrong number (a negative time, a letter from another alphabet)
+// would spoil a user's letter model for good.
+//
+// To add a field to a request or to the export file: check its range here,
+// in the same style, and add a bad case to the tests in setup_test.go.
 
 package api
 
@@ -15,6 +21,8 @@ import (
 // validate checks a results request: a round needs at least one typed
 // character, and samples as in validateSamples.
 func validate(req resultsRequest, maxEvents int, alphabet string) string {
+	// 1<<20 characters (about a million) and 400 WPM (below) are far above any
+	// real round: they only stop absurd numbers, not fast typists
 	if req.Chars < 1 || req.Chars > 1<<20 {
 		return "chars: out of range"
 	}
@@ -58,10 +66,10 @@ func validLength(length string, maxWords, maxSeconds int) bool {
 	return false
 }
 
-// validGroup: "" (the normal app) or storage.GroupRandom.
+// validGroup accepts "" (the normal app) or storage.GroupRandom.
 func validGroup(g string) bool { return g == "" || g == storage.GroupRandom }
 
-// validateSamples: at most max samples, every one a single letter of
+// validateSamples accepts at most max samples, every one a single letter of
 // the language's alphabet or a space, so junk keys never end up in the statistics.
 func validateSamples(samples []engine.Sample, max int, alphabet string) string {
 	if len(samples) > max {
@@ -109,8 +117,8 @@ func validateImport(in langExport, maxSessions, maxEvents, letters int, alphabet
 	return ""
 }
 
-// validateSessions: at most max entries, every number in its range, raw
-// keys as in validateSamples (at most maxEvents per session).
+// validateSessions accepts at most max entries, every number in its range,
+// raw keys as in validateSamples (at most maxEvents per session).
 func validateSessions(sessions []storage.Session, max, maxEvents, letters int, alphabet string, okLength func(string) bool) string {
 	if len(sessions) > max {
 		return "sessions: too many"

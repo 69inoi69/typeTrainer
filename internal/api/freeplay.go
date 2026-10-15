@@ -1,3 +1,9 @@
+// Free practice routes (internal/freeplay): words drawn evenly from the
+// whole list, its own history, and nothing sent here changes the letter
+// statistics of learning. It opens when every letter is unlocked in
+// learning, or after the typing test is passed once. The test's own route
+// lives here too.
+
 package api
 
 import (
@@ -10,12 +16,8 @@ import (
 	"typingtrainer/internal/storage"
 )
 
-// Free practice (internal/freeplay): words drawn evenly from the whole list,
-// its own history, and nothing sent here changes the letter statistics of
-// learning. It opens when every letter is unlocked in learning, or after the
-// typing test is passed once.
-
-// freeplayOpen: may this language use free practice?
+// freeplayOpen says whether this user may use free practice in this
+// language: the test was passed, or every letter is open in learning.
 func (s *Server) freeplayOpen(user string, l *Language) (bool, error) {
 	passed, err := s.store.TestPassed(user, l.Info.ID)
 	if err != nil || passed {
@@ -28,6 +30,8 @@ func (s *Server) freeplayOpen(user string, l *Language) (bool, error) {
 	return l.Gen.Clamp(unlocked) == len(l.Gen.Order()), nil
 }
 
+// freeplayPortionRequest is the body of /freeplay/portion. Unlike learning,
+// it carries no samples: free practice learns nothing.
 type freeplayPortionRequest struct {
 	Recent []string `json:"recent"` // words already in the round, oldest first
 	Start  bool     `json:"start"`  // a new round: AheadPortions + 1 portions, else 1

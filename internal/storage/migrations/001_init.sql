@@ -2,8 +2,9 @@
 -- postgres.go; later changes go into new numbered files (002_..., 003_...),
 -- never into this one.
 --
--- user_id is TEXT, not a reference to users: the guest ("local") has data
--- but no row in users. An account's id is "u" followed by users.id.
+-- user_id is TEXT, not a reference to users: guests ("local", or "g" and
+-- the hash of their guest cookie) have data but no row in users. An
+-- account's id is "u" followed by users.id.
 
 CREATE TABLE users (
     id            BIGSERIAL   PRIMARY KEY,

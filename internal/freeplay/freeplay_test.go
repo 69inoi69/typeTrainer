@@ -32,6 +32,7 @@ func TestPortion_Uniform(t *testing.T) {
 	}
 }
 
+// The same word never comes twice in a row, also across the start of a portion.
 func TestPortion_NeverTheSameWordTwiceInARow(t *testing.T) {
 	pk := NewPicker([]string{"ab", "ba"}, rand.New(rand.NewSource(2)))
 	got := pk.Portion([]string{"ab"}, 50, testParams)
@@ -61,6 +62,7 @@ func TestPortion_RecentWordsAreRarer(t *testing.T) {
 	}
 }
 
+// No words, zero words asked for, and a one-word list: no panic, no endless loop.
 func TestPortion_EdgeCases(t *testing.T) {
 	if got := NewPicker(nil, rand.New(rand.NewSource(1))).Portion(nil, 6, testParams); got != nil {
 		t.Fatalf("no words: %v", got)
@@ -75,6 +77,7 @@ func TestPortion_EdgeCases(t *testing.T) {
 	}
 }
 
+// The test passes at exactly TestWPM and TestAccuracy and fails just below either.
 func TestPassed(t *testing.T) {
 	for _, c := range []struct {
 		wpm, acc float64

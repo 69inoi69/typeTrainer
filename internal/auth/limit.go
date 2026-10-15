@@ -18,6 +18,7 @@ type Limiter struct {
 	seen map[string]attempts
 }
 
+// attempts is the count of one key in its current window.
 type attempts struct {
 	count int
 	since time.Time // the first attempt of this window
@@ -28,6 +29,7 @@ type attempts struct {
 // change who is refused.
 const pruneAt = 1024
 
+// NewLimiter allows max attempts per key in each window.
 func NewLimiter(max int, window time.Duration) *Limiter {
 	return &Limiter{max: max, window: window, seen: map[string]attempts{}}
 }

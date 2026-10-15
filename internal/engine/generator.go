@@ -1,5 +1,12 @@
 package engine
 
+// This file chooses WHAT the user types: the order in which letters open,
+// when the next one opens, and which real words fill the text. It uses the
+// difficulty scores of model.go and is explained in docs/ALGORITHM.md,
+// sections 6 (unlocking) and 7 (choosing the words). internal/api calls
+// Portion (or RandomPortion for the hidden control group) for every few
+// words and NextUnlocked after every saved round.
+
 import (
 	"math"
 	"math/rand"
@@ -18,6 +25,10 @@ import (
 //
 //  2. Focus. Inside the open letters, weak letters are chosen more often
 //     (softmax over difficulty), and words that contain them are preferred.
+//
+// There is one Generator per language, made once at start (setup.go). Its
+// random source is not safe for parallel use, so internal/api locks around
+// every call (genMu).
 type Generator struct {
 	words []string       // the dictionary, most frequent first
 	rank  map[string]int // word -> its place in words (0 = the most frequent)
@@ -68,6 +79,8 @@ func (g *Generator) SetWordParams(wp WordParams) {
 }
 
 // NewGenerator computes the unlock order and the first lesson size once.
+// words must be ordered most frequent first (data/langs/<id>/words.txt is);
+// a word that appears twice keeps its first, better rank.
 func NewGenerator(words []string, rng *rand.Rand, p Params) *Generator {
 	g := &Generator{words: words, rng: rng, rank: map[string]int{}}
 	for i, w := range words {
@@ -81,8 +94,9 @@ func NewGenerator(words []string, rng *rand.Rand, p Params) *Generator {
 }
 
 // letterOrder sorts letters by how often they appear in the word list.
-// For English this gives roughly e t a r o n s i l c ... so the first lessons
-// already allow many real words.
+// With the included English list this gives e a r s t i n o l d ... (the
+// table in docs/ALGORITHM.md section 6), so the first lessons already allow
+// many real words.
 func letterOrder(words []string) []string {
 	count := map[string]int{}
 	for _, w := range words {
@@ -117,9 +131,11 @@ func (g *Generator) firstLessonSize(p Params) int {
 	return n
 }
 
-// Order returns the unlock order. Start returns the first lesson size.
+// Order returns the unlock order. The slice is shared: do not modify it.
 func (g *Generator) Order() []string { return g.order }
-func (g *Generator) Start() int      { return g.start }
+
+// Start returns the first lesson size (how many letters a new user has).
+func (g *Generator) Start() int { return g.start }
 
 // Clamp keeps an unlocked count inside [Start, number of letters].
 // A stored value of 0 means "new user" and becomes Start.
@@ -134,8 +150,9 @@ func (g *Generator) Clamp(unlocked int) int {
 }
 
 // NextUnlocked decides whether to open the next letter: yes if every open
-// letter is mastered. At most one letter per call (per exercise), so the
-// user is never flooded with new keys.
+// letter is mastered. At most one letter per call (internal/api calls it
+// once per saved round), so the user is never flooded with new keys.
+// It returns the new unlocked count, already clamped.
 func (g *Generator) NextUnlocked(stats map[string]KeyStat, unlocked int, p Params) int {
 	unlocked = g.Clamp(unlocked)
 	if unlocked == len(g.order) {
@@ -182,9 +199,9 @@ func (g *Generator) eligible(n int) []string {
 	return out
 }
 
-// Exercise is what the generator returns.
+// Exercise is what Next returns: a whole exercise as one text.
 type Exercise struct {
-	Text     string   `json:"text"`
+	Text     string   `json:"text"`     // ExerciseWords words separated by spaces; "" if no word is possible
 	Focus    string   `json:"focus"`    // the currently weakest open letter
 	Unlocked []string `json:"unlocked"` // open letters, in unlock order
 	Locked   []string `json:"locked"`   // letters still to come, in order
@@ -207,6 +224,8 @@ type pool struct {
 	weakest  string           // the open letter with the highest difficulty
 }
 
+// newPool computes the pool for the current statistics. It is built again
+// for every portion (not cached), so each portion uses the newest numbers.
 func (g *Generator) newPool(stats map[string]KeyStat, unlocked, typed int, p Params) *pool {
 	pl := &pool{open: g.order[:unlocked], words: g.eligible(unlocked), index: map[string]int{}, byLetter: map[string][]int{},
 		maxRank: g.MaxRank(unlocked, typed, p), floor: g.floor}
@@ -357,6 +376,8 @@ func (pl *pool) pickWord(focus string, uses []int, p Params, r float64, avoid ..
 	return start
 }
 
+// letters splits the unlock order into open and locked letters. Both are
+// copies, so a caller (or JSON encoding) can never change g.order.
 func (g *Generator) letters(unlocked int) (open, locked []string) {
 	return append([]string{}, g.order[:unlocked]...), append([]string{}, g.order[unlocked:]...)
 }
@@ -398,8 +419,9 @@ func (g *Generator) Next(stats map[string]KeyStat, unlocked, typed int, p Params
 }
 
 // Portion is a few words of the stream, all built around one focus letter.
+// It is sent to the browser as JSON by POST /api/v1/portion.
 type Portion struct {
-	Words    []string `json:"words"`
+	Words    []string `json:"words"`    // PortionWords words; empty if no word is possible
 	Focus    string   `json:"focus"`    // the letter this portion trains
 	Weakest  string   `json:"weakest"`  // the open letter with the highest difficulty
 	Unlocked []string `json:"unlocked"` // open letters, in unlock order
@@ -488,6 +510,7 @@ func (g *Generator) Portion(stats map[string]KeyStat, unlocked, typed int, recen
 	return por
 }
 
+// contains reports whether x is in xs (the lists here are a few items long).
 func contains(xs []int, x int) bool {
 	for _, v := range xs {
 		if v == x {

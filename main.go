@@ -9,6 +9,8 @@ import (
 	"net/http"
 )
 
+// main builds the app (setup.go) and serves it at cfg.Addr until the
+// program is stopped.
 func main() {
 	handler, cfg, err := newApp()
 	if err != nil {

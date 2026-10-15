@@ -18,6 +18,7 @@ var testParams = Params{
 	RankStart: 200, RankStep: 200, RankPenalty: 0.5,
 }
 
+// near compares floats with a tolerance for rounding.
 func near(a, b float64) bool { return math.Abs(a-b) < 1e-9 }
 
 // repeat feeds the same sample n times.
@@ -28,12 +29,14 @@ func repeat(s KeyStat, smp Sample, n int) KeyStat {
 	return s
 }
 
+// 30 WPM is 400 ms per character (1 word = 5 characters).
 func TestTargetMs(t *testing.T) {
 	if got := testParams.TargetMs(); !near(got, 400) { // 30 WPM = 150 chars/min
 		t.Fatalf("got %v, want 400", got)
 	}
 }
 
+// The 1/n start of the EMA: the first samples are a plain average.
 func TestUpdate_FirstSamplesAreAPlainAverage(t *testing.T) {
 	// 1/n step: after 200 ms and 400 ms the EMA must be exactly 300 ms,
 	// not dragged towards the starting value 0.
@@ -44,6 +47,7 @@ func TestUpdate_FirstSamplesAreAPlainAverage(t *testing.T) {
 	}
 }
 
+// The EMA forgets old mistakes; the lifetime counters do not.
 func TestUpdate_RecentDataWins(t *testing.T) {
 	// 50 mistakes, then 50 clean presses: the EMA must have "forgotten"
 	// most of the bad past (a lifetime average would still say 50%).
@@ -57,6 +61,8 @@ func TestUpdate_RecentDataWins(t *testing.T) {
 	}
 }
 
+// Pauses, presses after a mistake and untimed presses never enter TimeEMA,
+// but they are still counted.
 func TestUpdate_IgnoresPausesAndRetries(t *testing.T) {
 	s := Update(KeyStat{}, Sample{Ms: 5000}, testParams)  // pause
 	s = Update(s, Sample{Errors: 2, Ms: 300}, testParams) // after a mistake
@@ -66,12 +72,14 @@ func TestUpdate_IgnoresPausesAndRetries(t *testing.T) {
 	}
 }
 
+// A letter with no data has exactly the prior difficulty.
 func TestDifficulty_UnknownLetterEqualsPrior(t *testing.T) {
 	if got := Difficulty(KeyStat{}, testParams); !near(got, testParams.PriorDifficulty) {
 		t.Fatalf("got %v, want prior %v", got, testParams.PriorDifficulty)
 	}
 }
 
+// Shrinkage: one good press is not enough, many are.
 func TestDifficulty_ShrinkageNeedsEvidence(t *testing.T) {
 	// One perfect, fast press is not enough to call a letter easy...
 	one := Update(KeyStat{}, Sample{Ms: 200}, testParams)
@@ -85,6 +93,7 @@ func TestDifficulty_ShrinkageNeedsEvidence(t *testing.T) {
 	}
 }
 
+// Raw difficulty is 0 at best, 1 at worst, and linear in between.
 func TestRawDifficulty_Bounds(t *testing.T) {
 	worst := KeyStat{Count: 10, ErrEMA: 1, TimeEMA: 5000, TimedCount: 10}
 	best := KeyStat{Count: 10, ErrEMA: 0, TimeEMA: 100, TimedCount: 10}
@@ -101,6 +110,7 @@ func TestRawDifficulty_Bounds(t *testing.T) {
 	}
 }
 
+// Mastery needs enough samples and the target speed.
 func TestMastered(t *testing.T) {
 	fast := repeat(KeyStat{}, Sample{Ms: 300}, 20)
 	if !Mastered(fast, testParams) {
@@ -114,6 +124,8 @@ func TestMastered(t *testing.T) {
 	}
 }
 
+// Temperature sets how much more likely a weak letter is, and a weight is
+// never 0.
 func TestSoftmaxWeight_TemperatureControlsFocus(t *testing.T) {
 	ratio := SoftmaxWeight(1, testParams) / SoftmaxWeight(0, testParams)
 	if !near(ratio/math.Exp(10), 1) {

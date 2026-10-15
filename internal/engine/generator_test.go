@@ -21,6 +21,7 @@ func newTestGen(seed int64) *Generator {
 	return NewGenerator(testWords, rand.New(rand.NewSource(seed)), testParams)
 }
 
+// Each index is picked for its share of the total weight.
 func TestWeightedPick(t *testing.T) {
 	w := []float64{1, 3} // total 4: r in [0, .25) -> 0, [.25, 1) -> 1
 	for _, c := range []struct {
@@ -33,6 +34,7 @@ func TestWeightedPick(t *testing.T) {
 	}
 }
 
+// Empty input, all-zero weights, and a zero weight that is never picked.
 func TestWeightedPick_EdgeCases(t *testing.T) {
 	if got := WeightedPick(nil, 0.5); got != -1 {
 		t.Errorf("empty: got %d, want -1", got)
@@ -47,6 +49,7 @@ func TestWeightedPick_EdgeCases(t *testing.T) {
 	}
 }
 
+// The unlock order is by letter frequency in the word list.
 func TestLetterOrder_MostFrequentFirst(t *testing.T) {
 	order := letterOrder([]string{"eee", "ee", "ta", "t"})
 	if strings.Join(order, "") != "eta" {
@@ -54,6 +57,7 @@ func TestLetterOrder_MostFrequentFirst(t *testing.T) {
 	}
 }
 
+// The first lesson has at least StartLetters letters and MinWords words.
 func TestFirstLesson_HasEnoughRealWords(t *testing.T) {
 	g := newTestGen(1)
 	if g.Start() < testParams.StartLetters {
@@ -64,6 +68,7 @@ func TestFirstLesson_HasEnoughRealWords(t *testing.T) {
 	}
 }
 
+// A new user's exercise uses only open letters and has ExerciseWords words.
 func TestNext_UsesOnlyOpenLetters(t *testing.T) {
 	g := newTestGen(2)
 	ex := g.Next(nil, 0, 0, testParams) // brand new user: no stats, unlocked = 0
@@ -81,6 +86,7 @@ func TestNext_UsesOnlyOpenLetters(t *testing.T) {
 	}
 }
 
+// Next never puts the same word twice in a row.
 func TestNext_NoWordTwiceInARow(t *testing.T) {
 	g := newTestGen(3)
 	for i := 0; i < 50; i++ {
@@ -135,6 +141,8 @@ func TestNext_WeakLetterGetsFocus(t *testing.T) {
 	}
 }
 
+// A letter opens only when every open letter is mastered, one at a time,
+// never past the last letter.
 func TestNextUnlocked(t *testing.T) {
 	g := newTestGen(4)
 	start := g.Start()
@@ -194,6 +202,7 @@ func TestNext_MultiByteLetters(t *testing.T) {
 	}
 }
 
+// letterRune reads a whole multi-byte letter, not its first byte.
 func TestLetterRune(t *testing.T) {
 	for in, want := range map[string]rune{"e": 'e', "ą": 'ą', "ж": 'ж', "ї": 'ї'} {
 		if got := letterRune(in); got != want {

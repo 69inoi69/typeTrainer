@@ -9,9 +9,14 @@
 //
 //	goApi(method, path, body) -> {status, body}
 //
-// pages/wasm-shim.js sends every /api/v1/ request from app.js to that
-// function. The handlers answer exactly as the real server would; httptest
+// pages/wasm-shim.js sends every /api/v1/ request of the page (web/api.js,
+// web/tools.js) to that function. The handlers answer exactly as the real server would; httptest
 // is only used as a convenient in-memory request/response pair.
+//
+// Differences from the server, all decided in build_wasm.go: the memory
+// store only (data is gone when the tab closes), no accounts and no guest
+// cookies (there is only the one person in the tab). Anything that needs
+// files on disk or a long-running server cannot work here.
 package main
 
 import (

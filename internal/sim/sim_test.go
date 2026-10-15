@@ -13,11 +13,15 @@ import (
 
 var cfg = config.Default()
 
+// newTypist draws a typist and returns a clone, as tools/sim does
+// (a template has no noise source of its own).
 func newTypist(letters []string, seed int64) *sim.Typist {
 	t := sim.NewTypist(letters, cfg.Sim, rand.New(rand.NewSource(seed)))
 	return t.Clone(rand.New(rand.NewSource(seed + 1)))
 }
 
+// One sample per letter, none for spaces, and the first press is untimed,
+// as in the browser.
 func TestTypist_SamplesSkipSpacesAndFirstPress(t *testing.T) {
 	ty := newTypist([]string{"a", "b"}, 1)
 	s := ty.Type("ab ba")
@@ -34,6 +38,7 @@ func TestTypist_SamplesSkipSpacesAndFirstPress(t *testing.T) {
 	}
 }
 
+// Practice improves a letter until its hidden values meet the goal.
 func TestTypist_PracticeMakesSkilled(t *testing.T) {
 	ty := newTypist([]string{"a"}, 1)
 	if ty.Skilled(cfg.Engine) {
@@ -45,6 +50,7 @@ func TestTypist_PracticeMakesSkilled(t *testing.T) {
 	}
 }
 
+// Skilled needs every letter: one never practised keeps the typist unskilled.
 func TestTypist_NoLetterNoSkill(t *testing.T) {
 	ty := newTypist([]string{"a", "q"}, 1)
 	ty.Type(strings.Repeat("a", 1000)) // q never practised
@@ -53,6 +59,7 @@ func TestTypist_NoLetterNoSkill(t *testing.T) {
 	}
 }
 
+// BestOfN picks words with the letter that has the worst score.
 func TestBestOfN_PrefersWorstScore(t *testing.T) {
 	words := []string{"ab", "ba", "aa", "bb", "az", "za"}
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
@@ -78,6 +85,7 @@ func TestBestOfN_PrefersWorstScore(t *testing.T) {
 	}
 }
 
+// An untimed press gives no score, and the strategy still fills an exercise.
 func TestBestOfN_UntimedPressesHaveNoScore(t *testing.T) {
 	words := []string{"ab", "ba"}
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
@@ -88,6 +96,8 @@ func TestBestOfN_UntimedPressesHaveNoScore(t *testing.T) {
 	}
 }
 
+// On a small word list all four strategies open every letter and reach the
+// goal, in that order.
 func TestRun_EveryStrategyReachesTheGoal(t *testing.T) {
 	words := strings.Fields(`the then than tan ant net ten hen eat tea ate heat hat that
 		tent neat hate thee teeth near earn tear rate hear art rat tar her here there`)
@@ -110,6 +120,7 @@ func TestRun_EveryStrategyReachesTheGoal(t *testing.T) {
 	}
 }
 
+// Run stops at MaxExercises and reports that the goal was not reached.
 func TestRun_GivesUp(t *testing.T) {
 	words := []string{"ab", "ba", "abba"}
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
@@ -135,6 +146,7 @@ func (f *fixed) Text(map[string]engine.KeyStat, int, int) string {
 }
 func (f *fixed) Observe([]engine.Sample) {}
 
+// The variety numbers on hand-made texts, checked against values counted by hand.
 func TestRunOpen_Variety(t *testing.T) {
 	words := []string{"ab", "ba", "bb", "aa"}
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
@@ -172,6 +184,7 @@ func TestRun_Letters(t *testing.T) {
 	}
 }
 
+// No exercise measured: every variety number is NaN, not a misleading 0.
 func TestRunOpen_NoExercisesIsNaN(t *testing.T) {
 	gen := engine.NewGenerator([]string{"ab"}, rand.New(rand.NewSource(1)), cfg.Engine)
 	v := sim.RunOpen(gen, &fixed{texts: []string{"ab"}}, newTypist(gen.Order(), 1), cfg.Engine, 0)
@@ -195,6 +208,7 @@ func TestRunOpen_StreamIsMeasuredInBlocks(t *testing.T) {
 	}
 }
 
+// A word typed with a mistake comes back in one of the next portions.
 func TestStream_MistypedWordsComeBack(t *testing.T) {
 	words := strings.Fields("the then than tan ant net ten hen eat tea ate heat hat that")
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
@@ -236,6 +250,7 @@ func TestStream_Rounds(t *testing.T) {
 	}
 }
 
+// An expert meets the goal from the start (RunOpen relies on that).
 func TestNewExpert_StartsNearTheGoal(t *testing.T) {
 	letters := []string{"a", "b", "c", "d", "e"}
 	ty := sim.NewExpert(letters, cfg.Sim, rand.New(rand.NewSource(1))).Clone(rand.New(rand.NewSource(2)))

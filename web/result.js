@@ -6,16 +6,18 @@
 //
 // showResult(r) shows it and resolves when it is closed: Space, Enter, any
 // letter, a click, or when its time bar is full (hover pauses the bar, so a
-// beginner can read in peace). It does not care WHY typing stopped (end of a
-// text, or a pause in an endless text): the caller passes what to show.
+// beginner can read in peace). It does not care WHY typing stopped (the end
+// of the round, Esc or a long pause): the caller passes what to show.
 // compareStats() works out what a learning round changed, for that screen.
 // Display only: nothing here changes what is measured or sent.
 // Layer: middle. Imports only the bottom layer.
+// Called by: typing.js (showResult, compareStats at the end of a round),
+// input.js (resultOpen, closeResult: any key goes on).
 
 import { t, tPick, hasText } from "./i18n.js";
 import { $, el } from "./state.js";
 
-const RESULT_MS = 6000;    // time on screen before the next text comes by itself
+const RESULT_MS = 6000;    // time on screen before the next round comes by itself
 const ADVICE_CHANCE = 0.4; // chance of a tip when no letter changed noticeably
 
 const box = $("result");
@@ -78,6 +80,8 @@ function open(lines) {
   return new Promise((resolve) => { done = resolve; });
 }
 
+// Closes the result screen; the waiting showResult() resolves and the
+// caller starts the next round.
 export function closeResult() {
   if (!done) return;
   const resolve = done;

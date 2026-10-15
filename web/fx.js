@@ -1,15 +1,24 @@
-// Small visual rewards: confetti, bumps, a queue of short messages.
+// Small visual rewards: confetti, bumps, a queue of short messages, and
+// the start screen (Splash).
 //
 // Nothing here changes what is measured or learned; it only makes actions
 // feel alive. Everything is either a CSS animation, the Web Animations API
 // (element.animate, runs on the compositor) or a short canvas animation that
-// runs only at the END of an exercise, never per keystroke.
+// runs only at the END of a round, never per keystroke.
 // With "reduce motion" switched on in the OS, all of it is skipped.
+// Layer: bottom. Imports only i18n.js (the splash phrases). It does not know
+// the rest of the app: callers pass it the element to animate (typing.js for
+// the streak and records, tools.js for toasts, app.js for the splash).
+// To add a reward effect: a function inside FX and its name in the returned
+// object. It may only change how things look: never S, a sample, or anything
+// sent to the server (AGENTS.md).
 
 import { SPLASH_PHRASES, t } from "./i18n.js";
 
 export const FX = (() => {
   const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // confetti colours: fixed, not theme variables (a canvas cannot read CSS
+  // variables cheaply, and bright pieces read on both themes)
   const COLORS = ["#e2b714", "#8cc97a", "#7fa6e0", "#c98bd6", "#e59a62", "#5fc4c4", "#e57f8f"];
 
   // ---------- confetti ----------
@@ -86,9 +95,11 @@ export const FX = (() => {
     const a = anim(node, [{ opacity: 1 }, { opacity: 0, transform: "translateY(4px)" }], { duration: ms, easing: "ease-in" });
     if (a) { try { await a.finished; } catch { /* cancelled */ } }
   };
+  // bump: a quick grow and back (the streak number); s = how big at the top
   const bump = (node, s = 1.3) => anim(node,
     [{ transform: "scale(1)" }, { transform: `scale(${s})` }, { transform: "scale(1)" }],
     { duration: 280, easing: "cubic-bezier(.3,1.6,.5,1)" });
+  // shake: a short "no" from side to side (a broken streak, the reset button)
   const shake = (node) => anim(node,
     [{ transform: "translateX(0)" }, { transform: "translateX(-5px)" }, { transform: "translateX(4px)" }, { transform: "translateX(-2px)" }, { transform: "none" }],
     { duration: 320, easing: "ease-out" });
@@ -170,6 +181,7 @@ export const Splash = (() => {
 
     async function done() {
       const wait = MIN_MS - (performance.now() - t0);
+      // a timer as a wait, not an animation: it runs once, at load
       if (!skipped && wait > 0) await new Promise((r) => setTimeout(r, wait));
       // FLIP: move the big logo onto the small header logo
       // (scale by font size, line up the left edges and the vertical centres)

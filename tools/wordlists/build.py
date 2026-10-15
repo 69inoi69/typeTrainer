@@ -32,6 +32,13 @@ Filtering, in this order, keeping the frequency order of the source:
      names (Polish q v x, Ukrainian ґ), and filling them brings in names
      (vincent, quinn, ґрегорі) and garbage.
 """
+# When to rerun: after a change to a block_<lang>.txt list or to a rule
+# below. Do not edit words.txt by hand, so the thesis can describe exactly
+# how the lists were made (AGENTS.md). An optional second argument changes
+# N (the number of common words, default 2000). The script prints each
+# language, its word count and its first words; check them, then run
+# `go test ./...` (the lists are built into the program, setup.go go:embed,
+# so restart `go run .` to use them).
 import os
 import sys
 
@@ -41,7 +48,9 @@ ALPHABET = {
     "uk": "абвгґдеєжзиіїйклмнопрстуфхцчшщьюя",
     "ru": "абвгдежзийклмнопрстуфхцчшщъыьэюя",
 }
+# step 3: the one-letter words that are real words in each language
 ONE_LETTER = {"en": set("ai"), "pl": set("aiouwz"), "uk": set("явіузао"), "ru": set("явискуоа")}
+# step 4: a word with none of these is not a real word (all four languages)
 VOWELS = set("aeiouyąęóаеєиіїоуюяыэ")
 UK_KEEP = {"по"}  # short shared word that the Russian filter would drop
 MIN_PER_LETTER = 10  # the same number as FloorWords in internal/config/config.go
@@ -66,6 +75,7 @@ def load(src, lang):
 
 
 def blocklist(lang):
+    # step 7: block_<lang>.txt, one or more words per line; no file = no block list
     path = os.path.join(HERE, f"block_{lang}.txt")
     return set(open(path, encoding="utf-8").read().split()) if os.path.exists(path) else set()
 
@@ -74,6 +84,7 @@ def build(src, out_root, n):
     freq = {lang: load(src, lang) for lang in ALPHABET}
     for lang, alphabet in ALPHABET.items():
         blocked, words = blocklist(lang), []
+        # most frequent first; each check below is one numbered step of the docstring
         for w, p in sorted(freq[lang].items(), key=lambda x: -x[1]):
             if not all(ch in alphabet for ch in w):
                 continue

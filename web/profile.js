@@ -8,6 +8,9 @@
 // only in this browser; nothing about learning depends on them. "Reset"
 // forgets them together with the other tt.* keys.
 // Layer: middle. Imports only the bottom layer.
+// Called by: app.js (loadAccount, renderProfile at start), languages.js
+// (renderProfile on a language change), input.js (profileOpen, closeProfile:
+// keys go to the card while it is open, Esc closes it).
 
 import { t } from "./i18n.js";
 import { $, store } from "./state.js";
@@ -85,6 +88,7 @@ export function renderProfile() {
 
 // ---------- open / close ----------
 export const profileOpen = () => !card.hidden;
+// Closes the card (Esc, Enter in the name field, a click outside).
 export function closeProfile() {
   card.hidden = true;
   btn.setAttribute("aria-expanded", "false");
