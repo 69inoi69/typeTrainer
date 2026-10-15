@@ -24,9 +24,10 @@ Lublin University of Technology (2027).
   statistics, no machine learning, so every step can be explained.
 - **Letters open gradually**, most frequent first, once the open ones are
   accurate and fast enough.
-- **Learning and free practice.** In learning the algorithm decides what you
-  practise. Free practice (words from the whole list, its own history) opens
-  when every letter is open, or after a one-time typing test.
+- **Learning and free practice.** Learning is the main mode: the algorithm
+  decides what you practise. Free practice (words from the whole list, its own
+  history, nothing shared with learning) opens when every letter is open, or
+  after a one-time typing test. It is kept simple for now.
 - English, Polish, Ukrainian and Russian, each with its own progress.
 
 ## Run it locally

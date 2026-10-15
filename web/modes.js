@@ -8,11 +8,12 @@
 // test is passed (the server decides: GET /freeplay/stats -> unlocked). The
 // chosen mode is remembered per language in this browser (tt.mode.<lang>);
 // the test is never remembered, a reload goes back to learning.
-// Layer: middle. Imports only the bottom layer.
+// Layer: middle. Imports the bottom layer and keyboard.js.
 
 import { i18nVars, t } from "./i18n.js";
 import { $, el, S, store } from "./state.js";
 import { getJSON } from "./api.js";
+import { restoreKb } from "./keyboard.js";
 
 const sw = $("mode-switch");
 
@@ -23,19 +24,21 @@ export async function refreshFreeplay() {
   S.free = await getJSON("/freeplay/stats");
   i18nVars.testWpm = S.free.testWpm;          // used by the tooltip of the locked tab
   i18nVars.testAcc = S.free.testAccuracy;
-  if (S.mode === "free" && !S.free.unlocked) S.mode = "learn";   // locked again (reset)
+  if (S.mode === "free" && !S.free.unlocked) { S.mode = "learn"; restoreKb(); }   // locked again (reset)
   renderModes();
 }
 
 // The mode saved for this language (after refreshFreeplay).
 export function restoreMode() {
   S.mode = store.get(`tt.mode.${S.lang}`) === "free" && S.free?.unlocked ? "free" : "learn";
+  restoreKb();                                  // each mode has its own keyboard on / off
   renderModes();
 }
 
 export function setMode(m) {
   S.mode = m;
   if (m !== "test") store.set(`tt.mode.${S.lang}`, m);
+  restoreKb(true);
   renderModes();
 }
 
