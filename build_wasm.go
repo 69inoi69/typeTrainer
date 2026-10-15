@@ -10,6 +10,9 @@ import "typingtrainer/internal/storage"
 // /api/v1/auth/me says so and the page shows no login form.
 const accountsOn = false
 
+// behindProxy: no proxy and no HTTP inside the page.
+func behindProxy() bool { return false }
+
 // openStore: a browser has no database; the data lives in the page's memory.
 func openStore() (storage.Store, error) {
 	return storage.NewMemoryStore(), nil

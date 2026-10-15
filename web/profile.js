@@ -134,7 +134,7 @@ function setMsg(key) {
   msg.classList.toggle("bad", !!key);
   msg.textContent = t(key || "account.note");
 }
-const ERRORS = { 400: "account.rules", 401: "account.wrong", 409: "account.taken" };
+const ERRORS = { 400: "account.rules", 401: "account.wrong", 409: "account.taken", 429: "account.slow" };
 
 // Both buttons submit the form (Enter = log in); the button says which route.
 $("account-form").addEventListener("submit", async (e) => {

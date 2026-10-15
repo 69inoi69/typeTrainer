@@ -5,6 +5,7 @@ package storage
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"typingtrainer/internal/engine"
@@ -39,9 +40,19 @@ func (s Session) Summary() Session {
 	return s
 }
 
-// LocalUser is the user id of everyone who is not logged in (a guest): the
-// person sitting at this server or browser tab.
+// LocalUser is the user id of a guest where browsers cannot be told apart:
+// on GitHub Pages (no cookies) and for a browser that refuses cookies.
 const LocalUser = "local"
+
+// GuestPrefix starts the id of a guest the server knows by their guest
+// cookie: "g" + the hash of the cookie (api.Server.WithGuest). Account ids
+// start with "u", so the two never clash.
+const GuestPrefix = "g"
+
+// IsGuest says whether the id belongs to a guest (not to an account).
+func IsGuest(user string) bool {
+	return user == LocalUser || strings.HasPrefix(user, GuestPrefix)
+}
 
 // User is an account. The password is only kept as a hash (auth.HashPassword).
 type User struct {
@@ -60,8 +71,8 @@ var (
 // package should know how the data is actually stored.
 //
 // Every method takes two ids:
-//   - the user ("local" for now, see LocalUser): each person has their own
-//     data. With accounts this becomes the account id.
+//   - the user: an account id, or a guest's id (IsGuest). Each person has
+//     their own data.
 //   - the language ("en", "pl", ...): each language has its own letter
 //     statistics, its own unlock progress and its own history, because being
 //     good at English says nothing about Ukrainian.

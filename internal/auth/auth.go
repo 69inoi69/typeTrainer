@@ -25,6 +25,10 @@ type Params struct {
 	NameMax     int
 	PasswordMin int // password length, in characters
 	PasswordMax int
+
+	GuestDays     int // how long a guest's cookie (and so their progress) lasts
+	Attempts      int // login/sign-up attempts allowed per IP address...
+	AttemptWindow int // ...in this many minutes (see Limiter)
 }
 
 const (

@@ -19,10 +19,21 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+// testGuest is the guest cookie of the browser most tests play: like a real
+// browser, it sends the same cookie with every request.
+const testGuest = "test-browser"
+
+// guestRequest is a request from that browser.
+func guestRequest(method, path, body string) *http.Request {
+	req := httptest.NewRequest(method, path, strings.NewReader(body))
+	req.AddCookie(&http.Cookie{Name: "tt_guest", Value: testGuest})
+	return req
+}
+
 func call(t *testing.T, h http.Handler, method, path, body string) (int, map[string]any) {
 	t.Helper()
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest(method, path, strings.NewReader(body)))
+	h.ServeHTTP(rec, guestRequest(method, path, body))
 	var out map[string]any
 	json.Unmarshal(rec.Body.Bytes(), &out)
 	return rec.Code, out
@@ -158,7 +169,7 @@ func TestApp_ExportImportRoundTrip(t *testing.T) {
 	call(t, h, "POST", "/api/v1/progress?lang=ru", `{"unlockAll":true}`)
 
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest("GET", "/api/v1/export?lang=ru", nil))
+	h.ServeHTTP(rec, guestRequest("GET", "/api/v1/export?lang=ru", ""))
 	exported := rec.Body.String()
 	var file struct {
 		Unlocked int
@@ -180,7 +191,7 @@ func TestApp_ExportImportRoundTrip(t *testing.T) {
 		t.Fatalf("import: %d %v", code, out)
 	}
 	rec = httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest("GET", "/api/v1/export?lang=ru", nil))
+	h.ServeHTTP(rec, guestRequest("GET", "/api/v1/export?lang=ru", ""))
 	if rec.Body.String() != exported {
 		t.Fatalf("round trip changed the data:\n%s\n%s", exported, rec.Body.String())
 	}
@@ -299,7 +310,7 @@ func TestApp_FreeplayAndTest(t *testing.T) {
 
 	// export -> reset -> import brings the flag and the history back
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest("GET", "/api/v1/export?lang=en", nil))
+	h.ServeHTTP(rec, guestRequest("GET", "/api/v1/export?lang=en", ""))
 	file := rec.Body.String()
 	call(t, h, "POST", "/api/v1/reset?lang=en", "")
 	if _, st := call(t, h, "GET", "/api/v1/freeplay/stats?lang=en", ""); st["unlocked"] != false || st["sessionCount"] != float64(0) {
@@ -352,12 +363,12 @@ func TestApp_RawKeysKept(t *testing.T) {
 	}
 
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest("GET", "/api/v1/export?lang=ru", nil))
+	h.ServeHTTP(rec, guestRequest("GET", "/api/v1/export?lang=ru", ""))
 	exported := rec.Body.String()
 	call(t, h, "POST", "/api/v1/reset?lang=ru", "")
 	call(t, h, "POST", "/api/v1/import?lang=ru", exported)
 	rec = httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest("GET", "/api/v1/export?lang=ru", nil))
+	h.ServeHTTP(rec, guestRequest("GET", "/api/v1/export?lang=ru", ""))
 	if rec.Body.String() != exported {
 		t.Fatal("raw keys lost in an export/import round trip")
 	}
@@ -386,7 +397,7 @@ func TestApp_RawKeysKept(t *testing.T) {
 // login cookie the answer sets ("" if none).
 func callAs(t *testing.T, h http.Handler, cookie, method, path, body string) (int, map[string]any, string) {
 	t.Helper()
-	req := httptest.NewRequest(method, path, strings.NewReader(body))
+	req := guestRequest(method, path, body)
 	if cookie != "" {
 		req.AddCookie(&http.Cookie{Name: "tt_login", Value: cookie})
 	}
@@ -470,5 +481,122 @@ func TestApp_Accounts(t *testing.T) {
 	}
 	if code, me, _ := callAs(t, h, "made-up", "GET", "/api/v1/auth/me", ""); code != 200 || me["name"] != nil {
 		t.Fatalf("unknown cookie: %d %v", code, me)
+	}
+}
+
+// cookieOf finds a cookie the answer sets (nil if none).
+func cookieOf(rec *httptest.ResponseRecorder, name string) *http.Cookie {
+	for _, c := range rec.Result().Cookies() {
+		if c.Name == name {
+			return c
+		}
+	}
+	return nil
+}
+
+// Every browser gets its own guest: a request without a guest cookie gets
+// one (already from the page itself), and two guests never share data.
+func TestApp_GuestPerBrowser(t *testing.T) {
+	h, _, _ := newApp()
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/", nil))
+	c := cookieOf(rec, "tt_guest")
+	if c == nil || c.Value == "" || !c.HttpOnly || c.SameSite != http.SameSiteLaxMode || c.MaxAge <= 0 {
+		t.Fatalf("the page must set a guest cookie: %+v", c)
+	}
+	if c.Secure {
+		t.Fatal("plain HTTP without a proxy: the cookie cannot be Secure")
+	}
+	// a browser that already has one keeps it
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, guestRequest("GET", "/", ""))
+	if cookieOf(rec, "tt_guest") != nil {
+		t.Fatal("an existing guest cookie must not be replaced")
+	}
+
+	// the test browser's round is not seen by the new guest
+	round := `{"samples":[{"char":"ж","errors":0,"ms":300}],"wpm":30,"accuracy":100}`
+	call(t, h, "POST", "/api/v1/results?lang=ru", round)
+	other := httptest.NewRequest("GET", "/api/v1/stats?lang=ru", nil)
+	other.AddCookie(c)
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, other)
+	var theirs map[string]any
+	json.Unmarshal(rec.Body.Bytes(), &theirs)
+	_, mine := call(t, h, "GET", "/api/v1/stats?lang=ru", "")
+	if theirs["sessionCount"].(float64) != 0 || mine["sessionCount"].(float64) != 1 {
+		t.Fatalf("new guest=%v test browser=%v", theirs["sessionCount"], mine["sessionCount"])
+	}
+}
+
+// fromIP is a guest request from one IP address.
+func fromIP(t *testing.T, h http.Handler, ip, path, body string) *httptest.ResponseRecorder {
+	t.Helper()
+	req := guestRequest("POST", path, body)
+	req.RemoteAddr = ip + ":5000"
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	return rec
+}
+
+// After Auth.Attempts failed logins or sign-ups from one IP address, that
+// address gets 429 (even with the right password); others do not.
+func TestApp_LoginAttemptLimit(t *testing.T) {
+	h, cfg, _ := newApp()
+	if rec := fromIP(t, h, "10.0.0.1", "/api/v1/auth/register", `{"name":"ann","password":"secret-ann"}`); rec.Code != 200 {
+		t.Fatalf("register: %d", rec.Code)
+	}
+	right := `{"name":"ann","password":"secret-ann"}`
+	// two wrong passwords, the rest cheap broken sign-ups: all count
+	for i := 0; i < cfg.Auth.Attempts; i++ {
+		path, body := "/api/v1/auth/register", `{"name":"x","password":"short"}`
+		if i < 2 {
+			path, body = "/api/v1/auth/login", `{"name":"ann","password":"wrong-pass"}`
+		}
+		if rec := fromIP(t, h, "10.0.0.2", path, body); rec.Code == 429 {
+			t.Fatalf("attempt %d refused too early", i+1)
+		}
+	}
+	rec := fromIP(t, h, "10.0.0.2", "/api/v1/auth/login", right)
+	if rec.Code != 429 || rec.Header().Get("Retry-After") == "" {
+		t.Fatalf("over the limit: %d, Retry-After=%q", rec.Code, rec.Header().Get("Retry-After"))
+	}
+	if rec := fromIP(t, h, "10.0.0.3", "/api/v1/auth/login", right); rec.Code != 200 {
+		t.Fatalf("another address must not be limited: %d", rec.Code)
+	}
+}
+
+// Behind a proxy (BEHIND_PROXY=1) cookies are Secure when the proxy says
+// HTTPS, and the limit counts the address the proxy added, not one the
+// client wrote in front of it. Without the setting both headers are ignored.
+func TestApp_BehindProxy(t *testing.T) {
+	viaProxy := func(h http.Handler, forwardedFor string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest("POST", "/api/v1/auth/register", strings.NewReader(`{"name":"x","password":"short"}`))
+		req.Header.Set("X-Forwarded-Proto", "https")
+		req.Header.Set("X-Forwarded-For", forwardedFor)
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		return rec
+	}
+
+	h, _, _ := newApp()
+	if c := cookieOf(viaProxy(h, "1.1.1.1"), "tt_guest"); c == nil || c.Secure {
+		t.Fatalf("no BEHIND_PROXY: the header must be ignored: %+v", c)
+	}
+
+	t.Setenv("BEHIND_PROXY", "1")
+	h, cfg, _ := newApp()
+	if c := cookieOf(viaProxy(h, "1.1.1.1"), "tt_guest"); c == nil || !c.Secure {
+		t.Fatalf("HTTPS through the proxy: the cookie must be Secure: %+v", c)
+	}
+	// a different made-up first address every time: still one client
+	for i := 0; i < cfg.Auth.Attempts; i++ {
+		viaProxy(h, "fake-"+strings.Repeat("x", i)+", 9.9.9.9")
+	}
+	if rec := viaProxy(h, "fake-new, 9.9.9.9"); rec.Code != 429 {
+		t.Fatalf("faking X-Forwarded-For got around the limit: %d", rec.Code)
+	}
+	if rec := viaProxy(h, "8.8.8.8"); rec.Code == 429 {
+		t.Fatal("another client must not be limited")
 	}
 }

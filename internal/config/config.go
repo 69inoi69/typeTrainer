@@ -21,10 +21,16 @@ type Config struct {
 	// Accounts: whether /api/v1/auth/* works. Set by setup.go, not here:
 	// on GitHub Pages (WebAssembly) there are no cookies, so it is off.
 	Accounts bool
-	Auth     auth.Params // accounts: passwords, login cookies, name rules
-	Engine   engine.Params
-	Freeplay freeplay.Params // free practice and the typing test that opens it
-	Sim      sim.Params      // only for the simulation tool (go run ./tools/sim)
+	// BehindProxy: the server runs behind a reverse proxy (nginx, Caddy)
+	// that ends HTTPS. Then the client's address and "was it HTTPS" come
+	// from the proxy's X-Forwarded-For / X-Forwarded-Proto headers. Set by
+	// setup.go from the environment variable BEHIND_PROXY=1; never turn it
+	// on without a proxy, or anyone could fake those headers.
+	BehindProxy bool
+	Auth        auth.Params // accounts: passwords, login cookies, name rules
+	Engine      engine.Params
+	Freeplay    freeplay.Params // free practice and the typing test that opens it
+	Sim         sim.Params      // only for the simulation tool (go run ./tools/sim)
 }
 
 func Default() Config {
@@ -46,6 +52,14 @@ func Default() Config {
 			NameMax:     20,  // ...of a-z, 0-9, "_" and "-"
 			PasswordMin: 8,   // NIST SP 800-63B: at least 8 characters...
 			PasswordMax: 128, // ...and an upper limit, so nobody sends megabytes to hash
+			// A guest keeps their progress for a year without visiting, like
+			// any site that remembers you without an account.
+			GuestDays: 365,
+			// 10 failed logins (or sign-ups) per IP address in 15 minutes:
+			// plenty for a person who forgot a password, about 1000 guesses a
+			// day for a script instead of millions (OWASP: limit attempts).
+			Attempts:      10,
+			AttemptWindow: 15,
 		},
 		Engine: engine.Params{
 			Alpha:         0.1,  // EMA: roughly the last ~20 occurrences of a letter matter
