@@ -1,9 +1,10 @@
 // Everything the user does with keys and buttons, sent to the module that
-// handles it: keydown and the phone input, the Type / Stats switch, the
-// mode switch (learning / free practice), the keyboard on / off button, window resize, the "new exercise" button.
+// handles it: keydown and the phone input, the navigation (Type / Stats,
+// learning / free practice, the help menu), the keyboard on / off choice of
+// the settings, window resize, the "stop" button of touch screens.
 // Layer: top. Imports anything; nothing imports it (app.js only loads it).
 
-import { el, S, introOpen, isTouch, focusText } from "./state.js";
+import { $, el, S, introOpen, isTouch, focusText } from "./state.js";
 import { applyKb, requestFit } from "./keyboard.js";
 import { refreshStats, renderStats } from "./stats.js";
 import { fitText, placeCaret, handleChar, backspace, nudge, setTyping, stopRound, loadExercise, roundStarted } from "./typing.js";
@@ -12,16 +13,16 @@ import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
 import { resultOpen, closeResult } from "./result.js";
 import { tourOpen, tourKey } from "./tour.js";
-import { settingsOpen, closeSettings, onLengthChange } from "./settings.js";
+import { settingsOpen, closeSettings, onLengthChange, onKbToggle } from "./settings.js";
 import { setMode, refreshFreeplay } from "./modes.js";
 
-// the keyboard button and Alt+K: keyboard and hands off, or back on
+// the keyboard choice in the settings and Alt+K: keyboard and hands off, or back on
 function toggleKb() {
   S.kbHidden = !S.kbHidden;
   applyKb(true);
   placeCaret(true);
 }
-el.btnKb.addEventListener("click", (e) => { e.currentTarget.blur(); toggleKb(); });
+onKbToggle(toggleKb);
 window.addEventListener("resize", () => {
   fitText();
   requestFit();
@@ -69,6 +70,26 @@ function chooseMode(m) {
 el.tabLearn.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("learn"); });
 el.tabFree.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("free"); });
 
+// ---------- help: a small menu with the two guides ----------
+// The menu items themselves are wired by intro.js (#btn-intro) and tour.js
+// (#btn-tour); here the menu only opens and closes.
+const help = $("help"), helpBtn = $("btn-help"), helpCard = $("help-card");
+const helpOpen = () => !helpCard.hidden;
+function closeHelp() {
+  helpCard.hidden = true;
+  helpBtn.setAttribute("aria-expanded", "false");
+}
+helpBtn.addEventListener("click", () => {
+  helpBtn.blur();
+  if (helpOpen()) { closeHelp(); return; }
+  closeSettings();
+  helpCard.hidden = false;
+  helpBtn.setAttribute("aria-expanded", "true");
+});
+helpCard.addEventListener("click", (e) => { if (e.target.closest(".menu-item")) closeHelp(); });
+document.addEventListener("pointerdown", (e) => { if (helpOpen() && !help.contains(e.target)) closeHelp(); });
+$("btn-settings").addEventListener("click", closeHelp);   // one panel at a time
+
 // ---------- settings: a new round length ----------
 // The stats follow the new length; a round not started yet is rebuilt with
 // it (a round already begun keeps its length to the end). The test always
@@ -91,10 +112,12 @@ document.addEventListener("keydown", (e) => {
     return;
   }
   if (document.body.classList.contains("splashing")) return;
-  // the settings panel: Esc closes it, typing closes it and goes on
-  if (settingsOpen()) {
+  // the settings panel or the help menu: Esc closes it, typing closes it and goes on
+  if (settingsOpen() || helpOpen()) {
+    const was = helpOpen() ? helpBtn : null;
     closeSettings();
-    if (e.key === "Escape") { e.preventDefault(); return; }
+    closeHelp();
+    if (e.key === "Escape") { e.preventDefault(); was?.focus(); return; }
   }
   // shortcuts: Shift+Tab = type <-> stats, Alt+1...4 = language, Alt+K = keyboard on / off
   if (e.key === "Tab" && e.shiftKey) {

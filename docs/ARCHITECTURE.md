@@ -75,19 +75,19 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | bottom | `fx.js` | Visual rewards: confetti, bumps, the message queue in the status line (outside typing), the start screen. They never affect what is measured. |
 | bottom | `feel.js` | `FEEL`: every knob of how a keypress feels (letter settle, key dip, red tint of a wrong key, caret flinch, mistake marks), also given to the CSS as `--feel-*`. Tuning the feel = changing a number here. |
 | bottom | `api.js` | `getJSON` / `postJSON` for `/api/v1/`, with `?lang=` added. |
-| middle | `tools.js` | Tooltips of the icon buttons, reset, export / import of the statistics. |
+| middle | `tools.js` | Tooltips, and the "your statistics" row of the settings panel: reset, export / import. |
 | middle | `keyboard.js` | On-screen keyboard and hands from the layout data, the next key and finger, the on / off button (remembered separately for learning and free practice), the automatic size that fits the window. |
 | middle | `stats.js` | The stats screen (tiles, WPM chart, heatmap keyboard, letter cards) and `refreshStats()`. |
 | middle | `typing.js` | The text stream (portions added while you type), the caret, `handleChar()` / `backspace()`, the streak, live WPM / accuracy, the "typing now" header mode, sending results. |
 | middle | `letters.js` | The letters bar above the text, its status line, locked keys dimmed on the keyboard. |
 | middle | `intro.js` | The first-visit intro (home row, space, eyes up). |
 | middle | `languages.js` | The language switch and `loadLanguage()`. |
-| middle | `profile.js` | The profile in the header: the account (log in / sign up / log out; the page reloads after each), and a picture kept only in the browser. |
+| middle | `profile.js` | The account in the top right corner ("log in" for a guest where accounts work): the account (log in / sign up / log out; the page reloads after each), and a picture kept only in the browser. |
 | middle | `result.js` | The result screen in the text window: `showResult(r)` shows what changed and resolves when the user goes on; `compareStats()` works out what a learning round changed. |
-| middle | `modes.js` | The modes (learning / free practice / typing test), the switch in the header, `refreshFreeplay()` (`S.free`), the mode remembered per language. |
-| middle | `settings.js` | The settings panel (gear in the bottom bar): round length, live numbers, caret; kept in `localStorage` (`S.settings`). |
+| middle | `modes.js` | The modes (learning / free practice / typing test), the learning / free switch of the navigation, `refreshFreeplay()` (`S.free`), the mode remembered per language. |
+| middle | `settings.js` | The settings panel (gear in the navigation): round length, live numbers, caret, theme, keyboard on / off (carried out by `input.js`); kept in `localStorage` (`S.settings`). The data row (save / load / reset) is static HTML wired by `tools.js`. |
 | middle | `tour.js` | The "how this site works" tour: a ring around each part of the page and a short card. |
-| top | `input.js` | Keydown and phone input, the Type / Stats switch, the mode switch, the keyboard on / off button, window resize: sends each action to the module that handles it. |
+| top | `input.js` | Keydown and phone input, the navigation (Type / Stats, the mode switch, the help menu), keyboard on / off (settings and Alt+K), window resize: sends each action to the module that handles it. |
 | top | `app.js` | Entry point: `init()`. |
 
 **Import rule:** imports only go down. `state.js` and `i18n.js` import
@@ -106,6 +106,22 @@ stays a plain variable inside it.
 ES modules from a `file://` address, so when `index.html` is opened by
 double-click it is the only script that runs and it says how to open the page.
 Its one sentence is the only interface text outside `i18n.js`.
+
+### Screen layout
+
+Three fixed places, the same in every view (`index.html`, `style.css`):
+
+- **header**: the logo, the language switch and the account (`profile.js`);
+- **navigation** (`nav.rail`, wired in `input.js`): typing / stats,
+  learning / free, help / settings. A column at the left edge of a wide
+  window (`--side` keeps the text and keyboard clear of it), a bar at the
+  bottom below 1000 px;
+- **languages**: a column at the right edge of a wide window, in the header
+  of a narrow one (the same element, moved by CSS).
+
+Colours are CSS variables on `:root`; the light theme redefines them under
+`:root[data-theme="light"]` (set by `settings.js`, and by a one-line script
+in `<head>` so a light page never flashes dark).
 
 ## Request lifecycle: from a keypress to the next words
 

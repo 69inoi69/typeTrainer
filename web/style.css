@@ -17,12 +17,12 @@
      that fits: never wider than the window allows, never taller than the room
      left on the screen (--u-fit, set by fitKeyboard in keyboard.js). 84px:
      even on a huge screen the keys stop growing */
-  --u: min(calc((100vw - 32px) / 13.6), var(--u-fit, 56px), 84px);
+  --u: min(calc((100vw - 32px - 2 * var(--side)) / 13.6), var(--u-fit, 56px), 84px);
   /* width of the text card (and of the header, so their edges line up): a
      little wider than the on-screen keyboard (13.4 key units, + 1.2) and
      growing with it, but never narrower than 760px, so the text keeps fitting
      in its 3-line window (typing.js, fitText) */
-  --tw: min(100vw - 32px, max(760px, calc(var(--u) * 14.6)));
+  --tw: min(100vw - 32px - 2 * var(--side), max(760px, calc(var(--u) * 14.6)));
 
   /* motion: one place to tune how "snappy" the app feels */
   --fast: 70ms;
@@ -33,6 +33,25 @@
   --ctl: 38px;          /* outer height of every switch and button */
   --track: color-mix(in srgb, var(--text) 5%, var(--panel));
   --ring: inset 0 0 0 1px color-mix(in srgb, var(--text) 8%, transparent);
+  --shadow: 0 18px 50px rgba(0, 0, 0, .45);   /* under the cards that open over the page */
+  --side: 0px;          /* room for the side columns (wide screens, see .rail) */
+}
+/* The light theme (settings: theme). The same names, other values: every
+   rule below uses only these variables, so it follows by itself. To add a
+   theme: one more block like this one, and a button in settings.js. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #e3e4e8;
+  --panel: #f1f2f4;
+  --key: #f5f6f8;
+  --line: #cdd0d6;
+  --sub: #858a94;
+  --text: #2a2c31;
+  --accent: #c99a06;    /* the same yellow, a little deeper: readable on a light page */
+  --on-accent: #1c1d20;
+  --error: #d23f4e;
+  --ok: #4c9a3a;
+  --shadow: 0 18px 50px rgba(40, 44, 56, .18);
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; } /* no blue flash on tap (phones) */
 html, body { min-height: 100%; }
@@ -56,23 +75,23 @@ body { user-select: none; -webkit-user-select: none; }
 ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); color: var(--text); }
 
 /* ---------- header ---------- */
+/* Only who and where: the logo on the left, the language switch and the
+   account on the right. Its edges line up with the text card (--tw). */
 .top {
   width: var(--tw); margin: 0 auto; padding: 14px 0;
-  /* logo + Type/Stats on the left, languages + profile on the right, the
-     middle stays empty (like monkeytype) */
   display: flex; align-items: center; justify-content: space-between; gap: 12px 20px;
   position: relative; z-index: 5;      /* the profile card opens over the page */
 }
-.top-side { display: flex; align-items: center; gap: 18px; min-width: 0; }
-.top-side.right { gap: 14px; }
-/* While you type, the header steps back (as on monkeytype): the logo turns
-   grey, the controls almost vanish. Moving the mouse over it brings it back. */
-.top .logo-name, .top .logo-key, .top-side .switch, .profile { transition: color .4s var(--ease), opacity .4s var(--ease), filter .4s var(--ease); }
+.top-side { display: flex; align-items: center; gap: 14px; min-width: 0; }
+/* While you type, everything around the text steps back (as on monkeytype):
+   the logo turns grey, the controls almost vanish. Moving the mouse over them
+   brings them back. */
+.top .logo-name, .top .logo-key, .lang-switch, .profile, .rail { transition: color .4s var(--ease), opacity .4s var(--ease), filter .4s var(--ease); }
 body.typing-now .top .logo-name { color: var(--sub); }
 body.typing-now .top .logo-name span { color: color-mix(in srgb, var(--sub) 70%, var(--text)); }
 body.typing-now .top .logo-key { filter: grayscale(1) brightness(.55); }
-body.typing-now .top-side .switch, body.typing-now .profile { opacity: .15; }
-body.typing-now .top:hover .switch, body.typing-now .top:hover .profile { opacity: 1; }
+body.typing-now .lang-switch, body.typing-now .profile, body.typing-now .rail { opacity: .15; }
+body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.typing-now .rail:hover { opacity: 1; }
 .logo { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .logo-key { width: 34px; height: 34px; flex: none; }
 .logo-text { display: flex; flex-direction: column; line-height: 1; min-width: 0; }
@@ -127,79 +146,120 @@ body.typing-now .top:hover .switch, body.typing-now .top:hover .profile { opacit
 @keyframes zap { from { transform: rotate(-6deg) scale(1); } to { transform: rotate(4deg) scale(1.08); } }
 .streak[data-tier="3"] span { text-shadow: 0 0 14px color-mix(in srgb, var(--sc) 55%, transparent); }
 
-/* ---------- type / stats switch ---------- */
-.switch {
-  position: relative; display: grid; grid-template-columns: 1fr 1fr;
-  /* a lighter track with a thin edge, so the switches stand out from the page */
-  background: var(--track); border-radius: 999px; padding: 4px;
-  box-shadow: var(--ring); height: var(--ctl);
-  flex: none;                     /* never squeezed: both halves stay equal */
-}
+/* ---------- switches: the navigation and the languages ---------- */
+/* One look for every switch: no track and no pill, grey labels, the chosen
+   one in the text colour with a short accent bar next to it. The bar is drawn
+   by ::after inside one sliding thumb, so it glides from option to option.
+   --n = how many options, --i = which one is chosen (0, 1, ...). */
+.switch { position: relative; display: grid; --n: 2; --i: 0; flex: none; }
 .switch button {
   position: relative; z-index: 1; border: 0; background: none; cursor: pointer; white-space: nowrap;
-  color: color-mix(in srgb, var(--text) 50%, var(--sub)); padding: 0 14px; border-radius: 999px;
-  height: 100%; display: grid; place-items: center;    /* same height in both switches */
-  /* labels: bold, no letter spacing (it adds space after the last letter and
-     pushes the text off centre), line-height 1 so the box is the glyphs */
+  color: var(--sub); border-radius: 10px; padding: 0;
   font-size: .8rem; font-weight: 600; letter-spacing: 0; line-height: 1;
-  /* the new label lights up while the pill arrives, not before */
-  transition: color 180ms ease 90ms;
+  transition: color 180ms ease 60ms;
 }
-.switch button[aria-selected="true"] { color: var(--on-accent); }
-.switch button:not([aria-selected="true"]):hover { color: var(--text); }
-.switch-thumb {
-  position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px);
-  background: var(--accent); border-radius: 999px;
-  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .14);   /* a flat pill with a slight edge, no glow */
-  /* ease-in-out: starts softly, glides, settles softly (no jump at the start) */
-  transition: transform 300ms cubic-bezier(.65, 0, .35, 1);
-}
-.switch.stats .switch-thumb { transform: translateX(100%); }
-.view-switch button { padding: 0 16px; }
-.view-switch svg {
-  width: 20px; height: 20px; fill: none; stroke: currentColor;
-  stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
-}
-
-/* Quiet header switches: no track and no pill, grey labels, the chosen one
-   in the text colour with a short accent line under it. The line is drawn by
-   ::after inside the same sliding thumb, so it still glides. */
-.switch.mini { background: none; box-shadow: none; padding: 0; --n: 2; }
-.switch.mini button { color: var(--sub); padding: 0 10px; }
-.switch.mini button[aria-selected="true"] { color: var(--text); }
-.switch.mini button:not([aria-selected="true"]):hover { color: color-mix(in srgb, var(--text) 70%, var(--sub)); }
-.switch.mini .switch-thumb {
-  top: auto; bottom: 1px; left: 0; height: 2px; width: calc(100% / var(--n));
-  background: none; box-shadow: none;
-}
-.switch.mini .switch-thumb::after {
-  content: ""; display: block; width: 14px; height: 2px; margin: 0 auto; border-radius: 2px;
+.switch button:hover { background: none; color: color-mix(in srgb, var(--text) 70%, var(--sub)); }
+.switch button[aria-selected="true"] { color: var(--text); }
+.switch-thumb { position: absolute; pointer-events: none; transition: transform 260ms cubic-bezier(.65, 0, .35, 1); }
+.switch-thumb::after {
+  content: ""; position: absolute; border-radius: 2px;
   background: var(--accent); box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent);
 }
-/* learning / free practice: the second tab is chosen; a lock while it is closed */
-.switch.second .switch-thumb { transform: translateX(100%); }
-.mode-switch button { gap: 5px; grid-auto-flow: column; }
+.switch.stats, .switch.second { --i: 1; }
+
+/* the languages: a row in the header (narrow screens), a column at the right
+   edge of a wide screen; the bar under / beside the chosen language */
+.lang-switch { grid-auto-flow: column; grid-auto-columns: minmax(34px, auto); height: var(--ctl); }
+.lang-switch button { padding: 0 8px; font-weight: 500; }
+.lang-switch .switch-thumb { left: 0; bottom: 1px; height: 2px; width: calc(100% / var(--n)); transform: translateX(calc(var(--i) * 100%)); }
+.lang-switch .switch-thumb::after { left: calc(50% - 7px); width: 14px; height: 2px; }
+
+/* The navigation (index.html, nav.rail): groups of buttons, each an icon
+   with a small label under it. Narrow screens: a bar at the bottom (below).
+   Wide screens: a column at the left edge (the media query further down). */
+.rail {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 8;
+  display: flex; justify-content: center; gap: 22px; align-items: stretch;
+  padding: 4px 6px calc(4px + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  backdrop-filter: blur(8px); box-shadow: 0 -1px 0 var(--line);
+}
+.rail-group { display: flex; }
+.rail .switch { grid-auto-flow: column; grid-auto-columns: 1fr; }
+.rail .switch button, .rail-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  width: 58px; height: 50px; padding: 0; border-radius: 10px; background: none; color: var(--sub);
+}
+.rail .switch button:hover, .rail-btn:hover { background: none; color: color-mix(in srgb, var(--text) 70%, var(--sub)); }
+.rail .switch button[aria-selected="true"], .rail-btn[aria-expanded="true"] { color: var(--text); }
+.rail .switch button svg, .rail-btn svg, .rail .ico {
+  width: 21px; height: 21px; flex: none; fill: none; stroke: currentColor;
+  stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+}
+.rail .switch button small, .rail-btn small { font-size: .62rem; font-weight: 500; line-height: 1.3; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+/* bottom bar: the thumb's bar sits on the top edge of the chosen button */
+.rail .switch-thumb { top: -4px; left: 0; height: 2px; width: calc(100% / var(--n)); transform: translateX(calc(var(--i) * 100%)); }
+.rail .switch-thumb::after { left: calc(50% - 9px); width: 18px; height: 2px; }
+/* free practice: its icon, with a small lock while it is closed */
+.mode-switch .ico { position: relative; display: block; }
+.mode-switch .ico svg { width: 100%; height: 100%; }
 .mode-switch .lock {
-  width: 12px; height: 12px; fill: none; stroke: currentColor;
-  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; display: none;
+  position: absolute; right: -6px; bottom: -3px; width: 11px !important; height: 11px !important;
+  stroke-width: 2.4; display: none; color: var(--sub); background: var(--bg); border-radius: 3px;
 }
 .mode-switch .locked .lock { display: block; }
+.mode-switch .locked:not([aria-selected="true"]) .ico > svg:first-child { opacity: .55; }
 /* free practice has no letters to learn: their panels on the stats screen go */
 body[data-mode="free"] .learn-only { display: none; }
-.lang-switch.mini .switch-thumb { width: calc(100% / var(--n, 4)); }
-.lang-switch.mini button { padding: 0 8px; font-weight: 500; }
 
-/* ---------- language switch (same look as type/stats, N options) ---------- */
-.lang-switch { grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); }
-.lang-switch button { padding: 0 12px; }
-.lang-switch .switch-thumb {
-  width: calc((100% - 8px) / var(--n, 4));
-  transform: translateX(calc(var(--i, 0) * 100%));
+/* the two panels of the navigation (help, settings): a card next to the
+   button (wide screens) or above the bottom bar (narrow ones) */
+.pop { position: relative; }
+.pop-card {
+  position: fixed; left: 12px; right: 12px; bottom: calc(66px + env(safe-area-inset-bottom)); z-index: 9;
+  max-width: 340px; margin-inline: auto; padding: 14px 16px 12px; text-align: left;
+  background: var(--panel); border-radius: 14px; box-shadow: var(--ring), var(--shadow);
+  animation: note-in .2s var(--ease);
+}
+.pop-card[hidden] { display: none; }
+.menu-item {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 3px; width: 100%;
+  padding: 9px 10px; margin-bottom: 4px; border-radius: 10px; background: none; text-align: left;
+}
+.menu-item b { color: var(--text); font-weight: 500; font-size: .86rem; }
+.menu-item small { color: var(--sub); font-size: .72rem; }
+.menu-item:hover { background: color-mix(in srgb, var(--text) 6%, var(--panel)); }
+
+/* wide screens: the navigation is a column at the left edge, the languages a
+   column at the right edge, both in the middle of the height (--side is the
+   room they take, so the text and keyboard never go under them) */
+@media (min-width: 1000px) {
+  :root { --side: 84px; }
+  .rail {
+    left: 14px; right: auto; top: 50%; bottom: auto; translate: 0 -50%;
+    flex-direction: column; gap: 10px; padding: 0; background: none; backdrop-filter: none; box-shadow: none;
+  }
+  .rail-group { flex-direction: column; }
+  .rail .switch { grid-auto-flow: row; grid-auto-rows: 1fr; }
+  .rail-group + .rail-group { padding-top: 10px; border-top: 1px solid var(--line); }
+  .rail .switch-thumb { top: 0; left: -6px; width: 2px; height: calc(100% / var(--n)); transform: translateY(calc(var(--i) * 100%)); }
+  .rail .switch-thumb::after { top: calc(50% - 9px); left: 0; width: 2px; height: 18px; }
+  .rail .switch button, .rail-btn { width: 62px; height: 54px; }
+  .pop-card { left: 96px; right: auto; top: 50%; bottom: auto; translate: 0 -50%; width: 300px; margin: 0; }
+  .lang-switch {
+    position: fixed; right: 14px; top: 50%; translate: 0 -50%; height: auto;
+    grid-auto-flow: row; grid-auto-rows: 40px; grid-auto-columns: auto;
+  }
+  .lang-switch button { padding: 0 14px; }
+  .lang-switch .switch-thumb { top: 0; bottom: auto; left: auto; right: -6px; width: 2px; height: calc(100% / var(--n)); transform: translateY(calc(var(--i) * 100%)); }
+  .lang-switch .switch-thumb::after { top: calc(50% - 7px); left: 0; width: 2px; height: 14px; }
 }
 
 /* ---------- views ---------- */
 .views {
-  flex: 1; width: 100%; max-width: 900px; margin: 0 auto; padding: 0 16px 12px;
+  /* as wide as the text card (--tw) plus the side padding, so every screen
+     lines up with the header */
+  flex: 1; width: 100%; max-width: calc(var(--tw) + 32px); margin: 0 auto; padding: 0 16px 12px;
   display: flex; flex-direction: column;
 }
 /* auto margins in a flex column = vertically centred; stats stay at the top */
@@ -476,26 +536,17 @@ body:not(.caret-block) .caret.fast { background: var(--ok); box-shadow: 0 0 8px 
   border-bottom-color: color-mix(in srgb, var(--fc) 22%, transparent);
 }
 
-/* ---------- toolbar (icon buttons, the words are in tooltips) ---------- */
-/* "new text" only where there is no Esc key (phones, tablets) */
+/* ---------- buttons and the shortcut line ---------- */
+/* "stop" only where there is no Esc key (phones, tablets) */
 @media (pointer: fine) { .touch-only { display: none !important; } }
-/* the guide button says what it is: for beginners */
-button.icon.guide { padding: 0 14px 0 11px; font-size: .8rem; }
-/* the bottom bar: buttons and keyboard shortcuts in one line when they fit
-   (a second line only on a narrow window): every pixel of height saved here
-   goes to the on-screen keyboard (fitKeyboard measures this bar) */
-.bottom {
-  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 34px;
-  padding: 4px 16px 12px;
-}
-/* keyboard shortcuts */
+/* the keyboard shortcuts under the keyboard (fitKeyboard measures this bar) */
+.bottom { display: flex; justify-content: center; padding: 4px 16px 12px; }
 .hints {
   display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 22px;
   color: color-mix(in srgb, var(--sub) 85%, transparent); font-size: .74rem;
 }
 .hints kbd { background: var(--panel); color: color-mix(in srgb, var(--text) 60%, var(--sub)); padding: 1px 6px; border-radius: 4px; }
-@media (pointer: coarse) { .hints { display: none; } }
-.toolbar { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; color: var(--sub); }
+@media (pointer: coarse) { .bottom { display: none; } }
 button {
   color: var(--sub); background: var(--panel); border: 0;
   padding: 8px 14px; border-radius: 8px; cursor: pointer;
@@ -503,63 +554,44 @@ button {
 }
 button:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6%, var(--panel)); }
 button:active { transform: scale(.95); }
-.switch button:hover { background: none; }
 kbd { font: inherit; font-size: .8em; padding: 1px 5px; border-radius: 4px; background: var(--bg); }
-
-/* Every round button has its own colour (--bc), all in one style: icon in
-   the colour, a faint tint behind it and a thin ring; brighter on hover */
-button.icon {
-  --bc: var(--sub);
-  height: var(--ctl); min-width: var(--ctl); padding: 0 9px; border-radius: 999px;
-  color: var(--bc); background: color-mix(in srgb, var(--bc) 9%, var(--panel));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bc) 26%, transparent);
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-}
-#btn-new { --bc: var(--accent); }
-#btn-intro { --bc: #7fa6e0; }      /* blue, like the "new letter" message */
-#btn-export { --bc: var(--ok); }
-#btn-import { --bc: #5fc4c4; }
-#btn-reset { --bc: var(--error); }
-button.icon svg {
-  width: 20px; height: 20px; flex: none;
-  fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
-}
-button.icon:hover {
-  color: color-mix(in srgb, var(--bc) 75%, #fff); background: color-mix(in srgb, var(--bc) 18%, var(--panel));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bc) 50%, transparent);
-}
-/* switched on: accent color, tinted background and a thin ring */
-button.icon[aria-pressed="true"] {
-  color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--panel));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
-}
-/* reset: a small gap from the other buttons, red when armed */
-#btn-reset { margin-left: 8px; }
-#btn-reset.armed, #btn-reset.armed:hover {
-  color: var(--on-accent); background: var(--error);
-  box-shadow: 0 0 14px color-mix(in srgb, var(--error) 45%, transparent);
-}
 button:disabled { opacity: .35; cursor: default; }
 button:disabled:hover { color: var(--sub); background: none; }
 button:disabled:active { transform: none; }
 
-/* keyboard on / off: the keyboard icon, crossed out while it is off */
-#btn-kb { --bc: var(--sub); }
-#btn-kb .kb-strike { opacity: 0; transition: opacity var(--fast); }
-#btn-kb[aria-pressed="false"] .kb-strike { opacity: 1; }
+/* "stop" at the end of the live line (touch screens) */
+.stop-btn {
+  width: 30px; height: 30px; padding: 0; margin-left: 10px; border-radius: 999px; flex: none;
+  display: grid; place-items: center; color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--panel));
+}
+.streak:not(.show) + .stop-btn { margin-left: auto; }
+.stop-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
 
 /* ---------- stats view ---------- */
-.tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-top: 8px; }
-.tile { background: var(--panel); border-radius: 12px; padding: 14px 16px; min-width: 0; transition: transform var(--med) var(--ease), box-shadow var(--med); }
-.tile:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(0, 0, 0, .25); }
-.tile b { display: block; font-size: 1.7rem; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; }
-.tile small { color: var(--sub); font-size: .8rem; }
-.panel { margin-top: 26px; }
+/* One screen, no scrolling at 1280x800 and up: a row of numbers, the chart,
+   then the keyboard and the letters side by side. Heights come from the
+   window (vh), so a taller screen gets a taller chart, not a scrollbar. */
+#view-stats { display: flex; flex-direction: column; gap: 18px; padding-top: 4px; }
+#view-stats[hidden] { display: none; }
+.stats-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.tiles { flex: 1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; min-width: min(100%, 560px); }
+.tile { background: var(--panel); border-radius: 10px; padding: 8px 12px; min-width: 0; }
+.tile b { display: block; font-size: 1.3rem; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1.2; }
+.tile small { display: block; color: var(--sub); font-size: .7rem; line-height: 1.3; }
+.chart { height: clamp(130px, 24vh, 300px); }
+/* free practice has no letters: the chart takes their room */
+body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
+/* the keyboard a little wider than the letters; one under the other on a narrow screen */
+.stats-pair { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px 28px; }
+@media (max-width: 860px) { .stats-pair { grid-template-columns: minmax(0, 1fr); } }
 
 /* ---------- stats: difficulty heatmap keyboard ---------- */
 /* grey keys (no finger colours), red only = how hard the letter is */
+/* the keys are as big as the panel's width allows (100cqw = the panel) */
+.heat-panel { container-type: inline-size; }
 .heat-kb {
-  --u: min(46px, calc((100vw - 48px) / 13.6)); --hk: color-mix(in srgb, var(--text) 7%, var(--panel));
+  --u: min(40px, calc(100cqw / 13.8)); --hk: color-mix(in srgb, var(--text) 7%, var(--panel));
   display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * .12);
   user-select: none; padding-top: 4px;
 }
@@ -580,16 +612,13 @@ button:disabled:active { transform: none; }
   content: ""; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px;
   border-radius: 50%; background: var(--ok); z-index: 1;
 }
-.heat-legend {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px;
-  margin-top: 14px; color: var(--sub); font-size: .78rem;
-}
+.heat-legend { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--sub); font-size: .72rem; }
 .heat-scale {
-  width: 96px; height: 8px; border-radius: 4px;
+  width: 60px; height: 6px; border-radius: 4px;
   background: linear-gradient(to right, color-mix(in srgb, var(--text) 7%, var(--panel)), color-mix(in srgb, var(--error) 85%, var(--panel)));
 }
 .heat-sample {
-  width: 14px; height: 14px; border-radius: 3px; margin-left: 14px;
+  width: 11px; height: 11px; border-radius: 3px; margin-left: 10px;
   outline: 1px dashed color-mix(in srgb, var(--sub) 80%, transparent); outline-offset: -1px;
 }
 .panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin-bottom: 10px; }
@@ -597,7 +626,7 @@ button:disabled:active { transform: none; }
 .panel-note { color: var(--sub); font-size: .8rem; }
 .empty { color: var(--sub); padding: 28px 0; text-align: center; }
 
-.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .chart .grid { stroke: var(--line); stroke-width: 1; }
 .chart .target { stroke: var(--sub); stroke-width: 1; stroke-dasharray: 4 4; }
 .chart .axis { fill: var(--sub); font-size: 11px; font-family: var(--mono); }
@@ -606,21 +635,29 @@ button:disabled:active { transform: none; }
 .chart .hit { fill: transparent; cursor: default; }
 .chart .bar.hover { fill: var(--text); }
 
-.letter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(190px, 40vw), 1fr)); gap: 8px; }
-.lcard {
-  background: var(--panel); border-radius: 10px; padding: 10px 12px; min-width: 0;
-  display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: center;
+/* letter chips: the letter, a thin difficulty bar under it (--d: 0..1) */
+.letter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 6px; }
+.lchip {
+  position: relative; height: 46px; border-radius: 8px; background: var(--panel); cursor: default;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
   transition: transform var(--med) var(--ease), background var(--med);
 }
-.lcard:not(.locked):hover { transform: translateY(-2px); background: color-mix(in srgb, var(--text) 5%, var(--panel)); }
-.lcard .ch { grid-row: span 2; font-size: 1.5rem; width: 1.4em; text-align: center; color: var(--text); position: relative; }
-.lcard.mastered .ch::after {         /* same green dot as on the letter chips */
-  content: ""; position: absolute; top: 2px; right: -2px; width: 5px; height: 5px; border-radius: 50%; background: var(--ok);
+.lchip:not(.locked):hover, .lchip:focus-visible { transform: translateY(-2px); background: color-mix(in srgb, var(--text) 6%, var(--panel)); }
+.lchip .ch { font-size: 1.05rem; line-height: 1; color: var(--text); }
+.lchip .meter {
+  width: 60%; height: 3px; border-radius: 2px; background: var(--line); position: relative; overflow: hidden;
 }
-.lcard.locked { opacity: .45; }
-.lcard .meter { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
-.lcard .meter i { display: block; height: 100%; background: var(--error); border-radius: 2px; transition: width .5s var(--ease); }
-.lcard .meta { font-size: .75rem; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.lchip .meter::after {
+  content: ""; position: absolute; inset: 0; width: calc(var(--d) * 100%); border-radius: 2px;
+  background: color-mix(in srgb, var(--error) calc(40% + var(--d) * 60%), var(--sub));
+}
+.lchip.mastered::after {         /* same green dot as on the letter chips of the typing screen */
+  content: ""; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; border-radius: 50%; background: var(--ok);
+}
+.lchip.nodata .meter { background: none; outline: 1px dashed color-mix(in srgb, var(--sub) 60%, transparent); }
+.lchip.locked { background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 25%, transparent); }
+.lchip.locked .ch { color: color-mix(in srgb, var(--sub) 60%, transparent); }
+.lchip.locked .meter { visibility: hidden; }
 
 /* ---------- tooltip & toast ---------- */
 .tooltip {
@@ -781,27 +818,30 @@ button.primary:hover { color: var(--on-accent); filter: brightness(1.08); }
 button.link { background: none; padding: 8px 0; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* ---------- medium windows ---------- */
-/* logo, switches and numbers do not fit in one row: logo and numbers on top,
-   the switches in their own row under them (nothing overlaps) */
+/* ---------- narrow windows: the navigation is a bar at the bottom ---------- */
+@media (max-width: 999px) {
+  /* room for the bar, so nothing hides under it (fitKeyboard reads this) */
+  body { padding-bottom: calc(58px + env(safe-area-inset-bottom)); }
+}
 @media (max-width: 760px) {
-  .profile-name { display: none; }      /* only the picture */
+  .profile-name { display: none; }      /* only the picture (or the person icon) */
 }
 
 /* ---------- small screens ---------- */
 @media (max-width: 640px) {
-  /* phone: switches on top (wrapping if they do not fit), numbers below */
-  .top { padding-block: 10px; }
-  .top-side.right { gap: 6px; }
-  .live { gap: 14px; margin-bottom: 6px; }
-  .logo { display: none; }
+  /* phone: logo, languages and the account on top; numbers below */
+  .top { padding-block: 10px 6px; gap: 8px; }
+  .top-side { gap: 4px; }
+  .logo-key { display: none; }
+  .logo-name { font-size: 1.3rem; }
   :root { --ctl: 34px; }
-  .switch button { padding: 0 14px; }
+  .lang-switch { grid-auto-columns: minmax(30px, auto); }
+  .rail { justify-content: space-between; gap: 0; }
+  .lang-switch button { padding: 0 6px; }
+  .live { gap: 14px; margin-bottom: 6px; }
   .metric > span, .streak span { font-size: 1.15rem; }
   .metric.raw { display: none; }          /* phone: no room, wpm + acc are enough */
-  button.icon.guide span { display: none; } /* phone: icon only */
-  button.icon.guide { padding: 0 7px; }
-  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 100%; }
   .tile:last-child:nth-child(odd) { grid-column: span 2; }   /* 5 tiles: the last one takes the whole row */
   .letter-row { gap: 4px; flex-wrap: wrap; }   /* phone: one row would make the chips tiny */
   .chip { font-size: .8rem; flex: none; width: 1.6em; height: 1.6em; }
@@ -811,11 +851,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   #view-type { margin-block: 4px 0; padding-bottom: 0; }
   /* ...but with the on-screen keyboard hidden there is room: centre again */
   body.kb-hidden #view-type { margin-block: auto; padding-bottom: 8vh; }
-  .top { padding-bottom: 6px; }
   .note { font-size: .78rem; border-radius: 14px; }   /* phone: a long message may take two lines */
-  .toolbar { gap: 6px; }
-  button.icon { padding: 0 7px; }
-  #btn-reset { margin-left: 0; }
   .text-box { padding: 14px 16px 14px 34px; border-radius: 12px; }
   .text-box::before { left: 14px; top: 48px; }   /* 14 + 28 + 6 */
   .result { left: 34px; right: 16px; top: 48px; }
@@ -853,11 +889,11 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 body.splashing .top .logo, body.landing .top .logo-name, body.landing .top .logo-motto { visibility: hidden; }  /* the splash logo and phrase land here */
 
 /* after the splash: the page slides in, piece by piece */
-body.entering .top-side .switch, body.entering .profile, body.entering .letters, body.entering .text-box,
-body.entering .hands, body.entering .kb-row, body.entering .toolbar {
+body.entering .lang-switch, body.entering .profile, body.entering .rail, body.entering .letters, body.entering .text-box,
+body.entering .hands, body.entering .kb-row, body.entering .bottom {
   animation: rise-in .55s var(--ease) both;
 }
-body.entering .top-side .switch { animation-delay: .08s; }
+body.entering .rail, body.entering .lang-switch { animation-delay: .08s; }
 body.entering .profile { animation-delay: .12s; }
 body.entering .letters { animation-delay: .16s; }
 body.entering .text-box { animation-delay: .22s; }
@@ -866,7 +902,7 @@ body.entering .kb-row:nth-child(1) { animation-delay: .30s; }
 body.entering .kb-row:nth-child(2) { animation-delay: .34s; }
 body.entering .kb-row:nth-child(3) { animation-delay: .38s; }
 body.entering .kb-row:nth-child(4) { animation-delay: .42s; }
-body.entering .toolbar { animation-delay: .48s; }
+body.entering .bottom { animation-delay: .48s; }
 @keyframes rise-in { from { opacity: 0; transform: translateY(12px); } }
 .letters-caption .begin + .begin::before { content: "·"; margin-right: 10px; color: var(--sub); }
 
@@ -889,7 +925,7 @@ body.entering .toolbar { animation-delay: .48s; }
 .avatar.big { width: 52px; height: 52px; font-size: 1.3rem; }
 .profile-card {
   position: absolute; right: 0; top: calc(100% + 8px); width: 290px; padding: 14px 16px 12px;
-  background: var(--panel); border-radius: 14px; box-shadow: var(--ring), 0 18px 50px rgba(0, 0, 0, .45);
+  background: var(--panel); border-radius: 14px; box-shadow: var(--ring), var(--shadow);
   animation: note-in .2s var(--ease);
 }
 .profile-card[hidden] { display: none; }
@@ -932,14 +968,13 @@ body.entering .toolbar { animation-delay: .48s; }
 body.live-off .live .metric.num { display: none; }
 /* words after the end of a words round are never typed, so not shown */
 .text span.beyond { display: none; }
-.settings { position: relative; }
-.settings-card {
-  position: absolute; left: 50%; bottom: calc(100% + 10px); translate: -50% 0; z-index: 6;
-  width: 270px; padding: 14px 16px 12px; text-align: left;
-  background: var(--panel); border-radius: 14px; box-shadow: var(--ring), 0 18px 50px rgba(0, 0, 0, .45);
-  animation: note-in .2s var(--ease);
-}
-.settings-card[hidden] { display: none; }
+/* a long card scrolls inside itself on a short screen */
+.settings-card { max-height: calc(100dvh - 90px); overflow-y: auto; scrollbar-width: thin; }
+/* your statistics: save, load and (red when armed) reset */
+.data-row button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.data-row #btn-reset { margin-left: auto; }
+.data-row #btn-reset:hover { color: var(--error); }
+.data-row #btn-reset.armed, .data-row #btn-reset.armed:hover { color: #fff; background: var(--error); box-shadow: none; }
 .set-label { display: block; margin: 10px 0 6px; color: var(--sub); font-size: .72rem; }
 .settings-card .profile-title + .set-label { margin-top: 0; }
 .set-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
@@ -954,9 +989,8 @@ body.live-off .live .metric.num { display: none; }
 .cs { display: inline-block; height: 12px; border-radius: 1px; background: currentColor; }
 .cs.line { width: 2px; }
 .cs.block { width: 8px; opacity: .55; border-bottom: 2px solid currentColor; }
-.set-note { margin: 8px 0 0; padding-top: 8px; border-top: 1px solid var(--line); color: var(--sub); font-size: .7rem; line-height: 1.5; }
 /* the stats screen: one round length at a time */
-.length-filter { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.length-filter { display: flex; flex-wrap: wrap; gap: 6px; }
 .length-filter button {
   padding: 5px 12px; border: 0; border-radius: 999px; background: none; color: var(--sub);
   box-shadow: var(--ring); font-size: .8rem; cursor: pointer;
@@ -965,14 +999,6 @@ body.live-off .live .metric.num { display: none; }
 .length-filter button[aria-selected="true"] { background: var(--accent); color: var(--on-accent); box-shadow: none; }
 
 /* ---------- tour (tour.js) ---------- */
-.tour-btn {
-  height: var(--ctl); width: var(--ctl); padding: 0; display: grid; place-items: center;
-  background: none; color: var(--sub); border-radius: 999px;
-}
-.tour-btn:hover { background: none; color: var(--text); }
-.tour-btn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-body.typing-now .tour-btn { opacity: .15; }
-body.typing-now .top:hover .tour-btn { opacity: 1; }
 .tour { position: fixed; inset: 0; z-index: 40; }
 .tour[hidden] { display: none; }
 /* the ring: a rounded box with a huge shadow that dims everything around it */
@@ -983,7 +1009,7 @@ body.typing-now .top:hover .tour-btn { opacity: 1; }
 }
 .tour-card {
   position: fixed; width: min(340px, calc(100vw - 16px)); padding: 14px 16px 10px;
-  background: var(--panel); border-radius: 14px; box-shadow: var(--ring), 0 18px 50px rgba(0, 0, 0, .45);
+  background: var(--panel); border-radius: 14px; box-shadow: var(--ring), var(--shadow);
   transition: left .35s var(--ease), top .35s var(--ease);
 }
 .tour-step { margin: 0 0 6px; color: var(--accent); font-size: .72rem; }

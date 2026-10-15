@@ -37,9 +37,15 @@ function paint(node) {
   node.style.setProperty("--av", photo ? "var(--sub)" : a);
   node.textContent = photo ? "" : [...(name() || t("profile.guest"))][0];
 }
+// Where accounts work and nobody is logged in, the corner says "log in"
+// with a person icon (as on monkeytype); otherwise the picture and the name.
+const signIn = () => account.accounts && !account.name;
+const PERSON = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6"/></svg>`;
 function paintAll() {
-  $("profile-name").textContent = name() || t("profile.guest");
+  btn.classList.toggle("signin", signIn());
+  $("profile-name").textContent = signIn() ? t("account.login") : name() || t("profile.guest");
   paint($("avatar"));
+  if (signIn()) $("avatar").innerHTML = PERSON;
   paint($("avatar-big"));
 }
 

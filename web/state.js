@@ -20,9 +20,9 @@ export const el = {
   letters: $("letters"), lettersCaption: $("letters-caption"),
   tooltip: $("tooltip"),
   btnNew: $("btn-new"), btnIntro: $("btn-intro"), heatKb: $("heat-kb"),
-  btnKb: $("btn-kb"), hands: $("hands"),
+  hands: $("hands"),
   intro: $("intro"),
-  switch: document.querySelector(".switch"), tabType: $("tab-type"), tabStats: $("tab-stats"),
+  switch: document.querySelector(".view-switch"), tabType: $("tab-type"), tabStats: $("tab-stats"),
   viewType: $("view-type"), viewStats: $("view-stats"),
   tabLearn: $("tab-learn"), tabFree: $("tab-free"),
   lengthFilter: $("length-filter"), tiles: $("tiles"), chart: $("chart"), chartNote: $("chart-note"), letterGrid: $("letter-grid"),
@@ -49,7 +49,7 @@ export const S = {
   view: "type",           // "type" or "stats"
   mode: "learn",          // "learn", "free" or "test" (modes.js)
   free: null,             // last /freeplay/stats answer
-  settings: { length: "words-30", live: false, caret: "line" },   // settings.js
+  settings: { length: "words-30", live: false, caret: "line", theme: "dark" },   // settings.js
   kbHidden: false,        // keyboard and hands switched off
   mottoIndex: 0,          // the small phrase over the logo (set by init)
 };

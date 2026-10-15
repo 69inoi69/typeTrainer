@@ -1,5 +1,7 @@
-// The stats screen: number tiles, the WPM chart, the difficulty heatmap
-// keyboard and the letter cards. refreshStats() also keeps S.lastStats fresh
+// The stats screen, built to fit on one screen: number tiles, the WPM
+// chart, the difficulty heatmap keyboard and the letter chips. The exact
+// numbers live in tooltips (hover, or keyboard focus), so the screen stays
+// calm and answers "how am I doing?" at a glance. refreshStats() also keeps S.lastStats fresh
 // for the typing screen. Rounds of different lengths are never mixed: the
 // screen shows one length at a time (the one chosen in the settings, or
 // another one picked in the row of lengths above the tiles).
@@ -105,7 +107,10 @@ function drawHeatKeyboard(keys) {
         key.style.setProperty("--heat", Math.max(...seen.map((s) => s.difficulty)).toFixed(3));
         if (seen.every((s) => s.mastered)) key.classList.add("mastered");
       }
-      if (letters.length) key.dataset.tipText = letters.map(heatLine).join("   |   ");
+      if (letters.length) {
+        key.dataset.tipText = letters.map(heatLine).join("   |   ");
+        key.tabIndex = 0;                                              // the numbers by keyboard too
+      }
       rowEl.appendChild(key);
     }
     el.heatKb.appendChild(rowEl);
@@ -141,8 +146,10 @@ function drawChart(sessions, target, total) {
   const scope = sessions.length === total ? t("chart.all") : t("chart.last", { n: sessions.length });
   el.chartNote.textContent = t("chart.note", { scope, target });
 
-  // draw at the real pixel width, so text stays 11px on a phone too
-  const W = Math.max(280, el.chart.clientWidth || 860), H = 200, padL = 34, padR = 8, padT = 10, padB = 22;
+  // draw at the real pixel size of the box (style.css sizes it to fit the
+  // screen), so text stays 11px on a phone too
+  const W = Math.max(280, el.chart.clientWidth || 860), H = Math.max(120, el.chart.clientHeight || 200);
+  const padL = 34, padR = 8, padT = 10, padB = 22;
   const plotW = W - padL - padR, plotH = H - padT - padB;
   const max = niceMax(Math.max(target, ...sessions.map((x) => x.wpm)));
   const y = (v) => padT + plotH - (v / max) * plotH;
@@ -193,20 +200,21 @@ function niceMax(v) {                 // round the axis up to 20, 40, 60, 80, 10
   return steps.find((s) => s >= v * 1.05) ?? Math.ceil(v / 100) * 100;
 }
 
+// Every letter as a small chip, weakest first: the letter, and under it a
+// thin bar as long and as red as its difficulty (green dot = mastered).
+// The numbers are in the tooltip, the same line as on the heatmap keyboard.
 function drawLetterGrid(keys) {
   // open letters first (weakest first, as the server sorts them), locked ones last
   keys = [...keys.filter((k) => k.unlocked), ...keys.filter((k) => !k.unlocked)];
   el.letterGrid.innerHTML = keys.map((k) => {
-    let meta;
-    if (!k.unlocked) meta = t("letter.locked");
-    else if (!k.count) meta = t("letter.noData");
-    else meta = t("letter.err", { e: Math.round(k.errorRate * 100) }) +
-      (k.avgMs ? " · " + t("letter.ms", { ms: Math.round(k.avgMs) }) : "");
-    const width = k.count ? Math.round(k.difficulty * 100) : 0;
-    return `<div class="lcard${k.unlocked ? "" : " locked"}${k.mastered ? " mastered" : ""}" title="${k.mastered ? t("letter.mastered") : ""}">
-      <span class="ch">${k.char}</span>
-      <div class="meter" title="${t("letter.difficulty")} ${k.difficulty.toFixed(2)}"><i style="width:${width}%"></i></div>
-      <div class="meta">${meta}</div>
-    </div>`;
+    const cls = "lchip" + (k.unlocked ? "" : " locked") + (k.mastered ? " mastered" : "") + (k.count ? "" : " nodata");
+    const d = k.count ? k.difficulty.toFixed(3) : 0;
+    return `<div class="${cls}" tabindex="0" style="--d:${d}" data-tip-text="${heatLine(k)}">` +
+      `<span class="ch">${k.char}</span><i class="meter"></i></div>`;
   }).join("");
 }
+// phones have no hover: a tap on a chip shows its numbers
+el.letterGrid.addEventListener("click", (e) => {
+  const chip = e.target.closest("[data-tip-text]");
+  if (chip) showTip(chip);
+});

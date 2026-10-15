@@ -9,6 +9,9 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="theme-color" content="#121317">
+  <!-- the light theme, set before the page is drawn so it never flashes dark
+       first (settings.js keeps it up to date afterwards) -->
+  <script>try { if (localStorage.getItem("tt.theme") === "light") document.documentElement.dataset.theme = "light"; } catch {}</script>
 </head>
 <body class="splashing">
   <!-- Start screen: the logo types itself, a random phrase, then the logo
@@ -18,35 +21,19 @@
     <p class="splash-phrase" id="splash-phrase">&nbsp;</p>
     <div class="splash-logo" id="splash-logo"><span class="splash-type">type<b>trainer</b></span></div>
   </div>
+  <!-- The header: who and where. The logo on the left; on the right the
+       language switch (on a wide screen it stands as a column at the right
+       edge, see .lang-switch in style.css) and the account. -->
   <header class="top">
-    <!-- left: the logo and, right after it, the Type / Stats icons -->
-    <div class="top-side">
     <div class="logo">
       <svg class="logo-key" viewBox="0 0 64 64" aria-hidden="true"><rect x="9" y="12" width="46" height="44" rx="10" fill="#a8851a"/><rect x="9" y="8" width="46" height="42" rx="10" fill="#e2b714"/><rect x="22" y="38" width="20" height="5" rx="2.5" fill="#15171a"/></svg>
       <!-- the small phrase over the name changes while you type (typing.js, setMotto) -->
       <div class="logo-text"><small class="logo-motto" id="logo-motto">&nbsp;</small><span class="logo-name">type<span>trainer</span></span></div>
     </div>
-    <!-- Type / Stats: two quiet icons; a short accent line slides under the chosen one -->
-    <nav class="switch mini view-switch" role="tablist" aria-label="View">
-      <span class="switch-thumb" aria-hidden="true"></span>
-      <button type="button" role="tab" id="tab-type" aria-selected="true" aria-controls="view-type" data-tip="tip.type"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="11" rx="2"/><path d="M7 10.5h.01M10 10.5h.01M13 10.5h.01M16 10.5h.01M8 14h8"/></svg></button>
-      <button type="button" role="tab" id="tab-stats" aria-selected="false" aria-controls="view-stats" data-tip="tip.stats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16"/><path d="M7 16v-5M12 16V7M17 16v-8"/></svg></button>
-    </nav>
-    <!-- Learning / free practice (modes.js). While free practice is locked,
-         its tab shows a lock and starts the typing test. -->
-    <nav class="switch mini mode-switch" id="mode-switch" role="tablist" aria-label="Mode">
-      <span class="switch-thumb" aria-hidden="true"></span>
-      <button type="button" role="tab" id="tab-learn" aria-selected="true" data-tip="tip.learn"><span data-i18n="mode.learn">learning</span></button>
-      <button type="button" role="tab" id="tab-free" aria-selected="false" data-tip="tip.freeLocked"><svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span data-i18n="mode.free">free</span></button>
-    </nav>
-    <!-- "how does this site work?": a short tour that points at each part (tour.js) -->
-    <button type="button" class="tour-btn" id="btn-tour" data-tip="tip.tour"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.8"/><path d="M12 17h.01"/></svg></button>
-    </div>
 
-    <!-- right: the language switch (same quiet look) and the profile -->
-    <div class="top-side right">
+    <div class="top-side">
     <!-- Buttons come from /api/v1/languages. -->
-    <div class="switch mini lang-switch" id="lang-switch" role="tablist" aria-label="Language" data-tip="tip.lang"></div>
+    <div class="switch lang-switch" id="lang-switch" role="tablist" aria-label="Language" data-tip="tip.lang"></div>
     <!-- Profile (profile.js): the account (log in / sign up, kept on the
          server) and a picture that lives only in this browser. Without an
          account the name lives only in this browser too. -->
@@ -124,6 +111,8 @@
           <div class="streak" id="streak" aria-live="polite" data-tier="0" data-tip="tip.streak">
             <svg class="bolt" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2.5 5 13.5h6l-1 8 8.5-11h-6z"/></svg><span id="streak-n">0</span><small class="sr-only" data-i18n="streak.label">clean words</small>
           </div>
+          <!-- touch screens have no Esc: a small "stop" at the end of the line -->
+          <button id="btn-new" type="button" class="stop-btn touch-only" data-tip="tip.new"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/></svg></button>
         </div>
         <div id="text" class="text">loading…</div>
         <div id="caret" class="caret" aria-hidden="true"></div>
@@ -154,12 +143,17 @@
     </section>
 
     <!-- ================= STATS VIEW ================= -->
+    <!-- One screen, no scrolling on a usual desktop: the numbers, the chart,
+         then the keyboard and the letters side by side. Exact values are in
+         tooltips (hover, or keyboard focus), not printed everywhere. -->
     <section id="view-stats" class="view" role="tabpanel" aria-labelledby="tab-stats" hidden>
-      <!-- rounds of different lengths are never mixed: one length at a time (stats.js) -->
-      <div class="length-filter" id="length-filter" role="tablist" aria-label="Round length"></div>
-      <div class="tiles" id="tiles"></div>
+      <div class="stats-top">
+        <!-- rounds of different lengths are never mixed: one length at a time (stats.js) -->
+        <div class="length-filter" id="length-filter" role="tablist" aria-label="Round length"></div>
+        <div class="tiles" id="tiles"></div>
+      </div>
 
-      <div class="panel">
+      <div class="panel chart-panel">
         <div class="panel-head">
           <h2 data-i18n="stats.speed">speed per exercise</h2>
           <span class="panel-note" id="chart-note"></span>
@@ -167,51 +161,83 @@
         <div class="chart" id="chart"></div>
       </div>
 
-      <!-- difficulty heatmap: where on the keyboard it is hard (app.js, drawHeatKeyboard) -->
-      <div class="panel learn-only">
-        <div class="panel-head">
-          <h2 data-i18n="stats.heat">keyboard</h2>
-          <span class="panel-note" data-i18n="stats.heatNote">red = hard · hover or tap a key for the numbers</span>
+      <!-- learning only: where it is hard, and every letter weakest first -->
+      <div class="stats-pair learn-only">
+        <!-- difficulty heatmap: where on the keyboard it is hard (stats.js, drawHeatKeyboard) -->
+        <div class="panel heat-panel">
+          <div class="panel-head">
+            <h2 data-i18n="stats.heat">keyboard</h2>
+            <span class="heat-legend">
+              <span data-i18n="heat.easy">easy</span><i class="heat-scale"></i><span data-i18n="heat.hard">hard</span>
+              <i class="heat-sample"></i><span data-i18n="letter.noData">no data yet</span>
+            </span>
+          </div>
+          <div class="heat-kb" id="heat-kb"></div>
         </div>
-        <div class="heat-kb" id="heat-kb"></div>
-        <div class="heat-legend">
-          <span data-i18n="heat.easy">easy</span><i class="heat-scale"></i><span data-i18n="heat.hard">hard</span>
-          <i class="heat-sample"></i><span data-i18n="letter.noData">no data yet</span>
+        <div class="panel">
+          <div class="panel-head">
+            <h2 data-i18n="stats.letters">letters</h2>
+            <span class="panel-note" data-i18n="stats.lettersNote">weakest first</span>
+          </div>
+          <div class="letter-grid" id="letter-grid"></div>
         </div>
-      </div>
-
-      <div class="panel learn-only">
-        <div class="panel-head">
-          <h2 data-i18n="stats.letters">letters</h2>
-          <span class="panel-note" data-i18n="stats.lettersNote">weakest first · difficulty 0 = easy, 1 = hard</span>
-        </div>
-        <div class="letter-grid" id="letter-grid"></div>
       </div>
     </section>
   </main>
 
-  <!-- The bottom bar: the buttons, then the keyboard shortcuts (small and
-       grey, hidden on phones). One line on a wide screen, so the on-screen
-       keyboard gets the height. -->
-  <footer class="bottom">
-    <!-- Icon buttons; the text of each lives in the tooltip (data-tip). -->
-    <div class="toolbar" role="toolbar">
-      <button id="btn-new" type="button" class="icon touch-only" data-tip="tip.new"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/></svg></button>
-      <button id="btn-intro" type="button" class="icon guide" data-tip="tip.intro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9.5 12 5l9.5 4.5L12 14z"/><path d="M6.5 11.5v4.2c0 1.3 2.5 2.8 5.5 2.8s5.5-1.5 5.5-2.8v-4.2"/><path d="M21.5 9.5v5"/></svg><span data-i18n="btn.guide">beginner guide</span></button>
-      <!-- on-screen keyboard and hands on / off (also Alt+K); their size is automatic -->
-      <button id="btn-kb" type="button" class="icon" data-tip="tip.kb" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="11" rx="2"/><path d="M7 10h.01M10 10h.01M13 10h.01M16 10h.01M8 14h8"/><path class="kb-strike" d="M4 4l16 16"/></svg></button>
-      <!-- save / load all statistics as one JSON file -->
-      <button id="btn-export" type="button" class="icon" data-tip="tip.export"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19h14"/></svg></button>
-      <button id="btn-import" type="button" class="icon" data-tip="tip.import"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M5 19h14"/></svg></button>
-      <input id="import-file" type="file" accept="application/json,.json" hidden>
-      <!-- settings: round length, live numbers, caret (settings.js) -->
-      <div class="settings" id="settings">
-        <button id="btn-settings" type="button" class="icon" data-tip="tip.settings" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings-card"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button>
-        <div class="settings-card" id="settings-card" role="dialog" aria-labelledby="settings-title" hidden></div>
-      </div>
-      <!-- deletes all progress; needs a second click (it turns red first) -->
-      <button id="btn-reset" type="button" class="icon danger" data-tip="tip.reset"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg></button>
+  <!-- The navigation (input.js wires the buttons). On a wide screen a column
+       at the left edge, on a narrow one a bar at the bottom, like an app.
+       Three groups: where you are (typing / statistics), how you practise
+       (learning / free practice), and the two panels (help, settings).
+       To add an item: a button with an icon and a <small> label in the
+       right group, its text in i18n.js, its click in input.js. -->
+  <nav class="rail" id="rail" aria-label="Navigation">
+    <!-- Type / Stats: an accent bar slides to the chosen one -->
+    <div class="switch rail-group view-switch" role="tablist" aria-label="View">
+      <span class="switch-thumb" aria-hidden="true"></span>
+      <button type="button" role="tab" id="tab-type" aria-selected="true" aria-controls="view-type" data-tip="tip.type"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="11" rx="2"/><path d="M7 10.5h.01M10 10.5h.01M13 10.5h.01M16 10.5h.01M8 14h8"/></svg><small data-i18n="nav.type">typing</small></button>
+      <button type="button" role="tab" id="tab-stats" aria-selected="false" aria-controls="view-stats" data-tip="tip.stats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16"/><path d="M7 16v-5M12 16V7M17 16v-8"/></svg><small data-i18n="nav.stats">stats</small></button>
     </div>
+    <!-- Learning / free practice (modes.js). While free practice is locked,
+         its icon carries a lock and the button starts the typing test. -->
+    <div class="switch rail-group mode-switch" id="mode-switch" role="tablist" aria-label="Mode">
+      <span class="switch-thumb" aria-hidden="true"></span>
+      <button type="button" role="tab" id="tab-learn" aria-selected="true" data-tip="tip.learn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9.5 12 5l9.5 4.5L12 14z"/><path d="M6.5 11.5v4.2c0 1.3 2.5 2.8 5.5 2.8s5.5-1.5 5.5-2.8v-4.2"/><path d="M21.5 9.5v5"/></svg><small data-i18n="mode.learn">learning</small></button>
+      <button type="button" role="tab" id="tab-free" aria-selected="false" data-tip="tip.freeLocked"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c-2-2.7-3.6-4-5.5-4a4 4 0 0 0 0 8c1.9 0 3.5-1.3 5.5-4zm0 0c2 2.7 3.6 4 5.5 4a4 4 0 0 0 0-8c-1.9 0-3.5 1.3-5.5 4z"/></svg><svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><small data-i18n="mode.free">free</small></button>
+    </div>
+    <div class="rail-group tools">
+      <!-- help: the two guides (intro.js: touch typing, tour.js: this site) -->
+      <div class="pop" id="help">
+        <button type="button" class="rail-btn" id="btn-help" data-tip="tip.help" aria-haspopup="dialog" aria-expanded="false" aria-controls="help-card"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.8"/><path d="M12 17h.01"/></svg><small data-i18n="nav.help">help</small></button>
+        <div class="pop-card help-card" id="help-card" role="dialog" aria-labelledby="help-title" hidden>
+          <p class="profile-title" id="help-title" data-i18n="help.title">help</p>
+          <button type="button" class="menu-item" id="btn-intro"><b data-i18n="help.basics">touch typing basics</b><small data-i18n="help.basicsNote">where the fingers go, in three short steps</small></button>
+          <button type="button" class="menu-item" id="btn-tour"><b data-i18n="help.site">how this site works</b><small data-i18n="help.siteNote">a short walk around the screen</small></button>
+        </div>
+      </div>
+      <!-- settings: round length, look, keyboard, your data (settings.js) -->
+      <div class="pop settings" id="settings">
+        <button id="btn-settings" type="button" class="rail-btn" data-tip="tip.settings" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings-card"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg><small data-i18n="nav.settings">settings</small></button>
+        <div class="pop-card settings-card" id="settings-card" role="dialog" aria-labelledby="settings-title" hidden>
+          <!-- the choices are drawn by settings.js -->
+          <div id="settings-body"></div>
+          <!-- your data: rare actions, so they live here and not on the screen -->
+          <small class="set-label" data-i18n="settings.data">your statistics</small>
+          <div class="set-row data-row">
+            <button type="button" id="btn-export" data-tip="tip.export"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19h14"/></svg><span data-i18n="data.save">save</span></button>
+            <button type="button" id="btn-import" data-tip="tip.import"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M5 19h14"/></svg><span data-i18n="data.load">load</span></button>
+            <!-- deletes all progress; needs a second click (it turns red first) -->
+            <button type="button" id="btn-reset" class="danger" data-tip="tip.reset"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg><span data-i18n="data.reset">reset</span></button>
+          </div>
+          <input id="import-file" type="file" accept="application/json,.json" hidden>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- The keyboard shortcuts: small and grey under the keyboard. Only where
+       there is a real keyboard (style.css hides them on touch screens). -->
+  <footer class="bottom">
     <div class="hints" aria-label="Shortcuts">
       <span><kbd>esc</kbd> <span data-i18n="hint.new">stop</span></span>
       <span><kbd>shift</kbd> + <kbd>tab</kbd> <span data-i18n="hint.view">typing / statistics</span></span>
