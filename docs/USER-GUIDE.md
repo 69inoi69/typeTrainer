@@ -18,8 +18,8 @@ Everything the trainer does, screen by screen. For a quick overview see the
    statistics. If the port is taken, change `Addr` in
    `internal/config/config.go`.
 6. **Stop** the server with `Ctrl + C`. Without a database (below) progress
-   is lost then: save it first with the export button and load it back next
-   time.
+   is lost then: save it first (settings, **your statistics: save**) and load it
+   back next time.
 
 After `git pull` restart the server: the web files are built into the program.
 Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
@@ -31,8 +31,8 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
 - On the very first visit a short hands-on intro starts: put your fingers on
   the home row and press those eight keys, press space with a thumb, then
   "watch the screen". It reacts to the real keys (physical positions, so it
-  works with any system layout). `Esc` or "skip" closes it; the **beginner guide**
-  button reopens it. At the end: "Start". Everyone starts with a few letters;
+  works with any system layout). `Esc` or "skip" closes it; **help → touch typing basics**
+  reopens it. At the end: "Start". Everyone starts with a few letters;
   if you already type well, the next ones open quickly.
 - Type the grey text. Wrong key = the letter turns red and you keep going, as
   on monkeytype. Backspace fixes the current word (Ctrl+Backspace: the whole
@@ -48,22 +48,31 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
 - The keyboard shows the next key in its finger color; keys you do not need yet
   are dimmed. Above the keyboard two hands light up the finger that presses
   it (space = both thumbs, AltGr letters = right thumb + the finger).
-- The header is quiet, as on monkeytype: on the left the logo and two small
-  icons (typing / statistics), on the right the languages and the profile.
-  The chosen option has a short yellow line under it. From your first
-  keypress until the end of the round the header steps back: the logo turns
-  grey, the controls almost vanish (move the mouse over the header to bring
-  them back) and the small phrase over the logo turns into a "typing" one.
-- **learning · free** in the header chooses the mode. **Learning** is the
+- The screen has three fixed places, as in a real app:
+  - **the header**: the logo on the left; the languages and the account on
+    the right ("log in" with a person icon until you are logged in, then
+    your picture and name);
+  - **the navigation**: a column at the left edge of a wide window, a bar at
+    the bottom of a narrow window or a phone. Three groups: **typing /
+    stats**, **learning / free**, and **help / settings**. The chosen
+    option has a short yellow bar next to it;
+  - **the languages**: on a wide window a column at the right edge, on a
+    narrow one in the header.
+  From your first keypress until the end of the round everything around the
+  text steps back: the logo turns grey, the controls almost vanish (move the
+  mouse over them to bring them back) and the small phrase over the logo
+  turns into a "typing" one.
+- **learning / free** in the navigation chooses the mode. **Learning** is the
   trainer: it picks words for your weak letters and opens new ones.
   **Free practice** gives words from the whole list, keeps its own history
   (the statistics screen shows it while free practice is chosen) and changes
   nothing in learning. Free practice opens when every letter is open, or
   right away if you pass the **typing test**: while it is locked (a small
-  lock on the tab), clicking it starts the test, one round of 30 words at
+  lock on its icon), clicking it starts the test, one round of 30 words at
   30 wpm with 97% accuracy. Only a full round counts (`Esc` stops the test);
   you can take it again any time. The mode is remembered per language.
-- The **gear** in the bottom bar opens the **settings**:
+- **Settings** (the gear in the navigation) opens one panel with everything
+  that is rarely changed:
   - **round length**: 10, 30 or 60 words, or 30 or 60 seconds (default 30
     words). A words round ends with the last letter of its last word, a time
     round when the time is up; the counter in the text card shows the words
@@ -73,6 +82,19 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
     chase speed); then they appear and you can hide them again. The word
     counter and the streak always stay.
   - **caret**: a thin line (default) or a block.
+  - **theme**: dark (default) or light, the same look in light colours.
+  - **keyboard and hands**: show or hide them (same as `Alt + K`; remembered
+    in your browser, separately for learning and for free practice / the
+    test, where they start hidden; on a phone they start hidden too). There
+    is no size setting: the keyboard is always as big as the window allows
+    without making the page scroll.
+  - **your statistics**: **save** writes all languages and the full history
+    to one `.json` file, **load** reads such a file back and **replaces** the
+    current data (use it to keep progress across server restarts or page
+    reloads on the website). **reset** deletes everything: progress in all
+    languages and the settings saved in your browser, as on the very first
+    visit. It needs a second click ("sure?"), so it does not happen by
+    accident.
   The settings only change how much you type and how it looks; what you
   practise is still up to the trainer. They are kept in this browser.
 - The **EN · PL · UK · RU** switch changes the language you practise **and the
@@ -106,22 +128,13 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   it). The texts are picked at random from small pools in every language.
 - Small messages under the letters are only used outside typing (a file
   saved or loaded).
-- **How this site works:** the **?** icon in the header starts a short tour:
-  each part of the page gets a light ring and a sentence or two about it
-  (Enter / → next, Esc closes). On the first visit it starts by itself after
-  the intro.
-- Buttons in the bottom bar (hover for a tooltip): **beginner guide** (the
-  intro again) and the **keyboard** button (hides or shows keyboard and hands,
-  same as `Alt + K`; remembered in your browser, separately for learning and
-  for free practice / the test, where it starts hidden). There is no size setting:
-  the keyboard is always as big as the window allows without making the page
-  scroll, and it grows or shrinks when the window changes.
-- The two arrow buttons save your statistics (all languages, full history) to one
-  `.json` file and load such a file back. Loading **replaces** the current data.
-  Use it to keep progress across server restarts (or page reloads on the website).
-- The red-on-click bin button resets everything: progress in all languages and
-  the settings saved in your browser, as on the very first visit. It needs a
-  second click (the first one turns it red), so it does not happen by accident.
+- **Help** (the **?** in the navigation) opens a small menu with the two
+  guides: **touch typing basics** (the first-visit intro again) and **how
+  this site works**, a short tour where each part of the page gets a light
+  ring and a sentence or two about it (Enter / → next, Esc closes). On the
+  first visit both start by themselves, one after the other.
+- On a touch screen there is no `Esc`: a small square **stop** button at the
+  end of the numbers line ends the round. The shortcut line is hidden there.
 - Shortcuts, also listed small at the bottom of the page: `Esc` stop ·
   `Shift + Tab` type / stats · `Alt + 1…4` language · `Alt + K` keyboard and
   hands on / off. On phones (no Esc key) a "stop" button is shown under
@@ -143,13 +156,20 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   "Keeping progress in PostgreSQL"). The picture (a colour, or your own image) is kept only in
   this browser. On the website (GitHub Pages) there are no accounts: you can
   set a name and a picture, kept only in this browser; "reset" forgets them.
-- The **keyboard / chart** icon switch at the top (or `Shift + Tab`) opens the statistics screen. Rounds of different
-  lengths are never mixed: a row of lengths above the numbers shows the one
-  chosen in the settings, and you can pick another length you have played. Then: totals
-  (with the average consistency of the last 10 rounds),
-  speed of every exercise, a **difficulty keyboard** (grey keys, the redder the
-  harder the letter is for you, dashed = no data yet; hover or tap a key for
-  its numbers), and every letter from weakest to strongest.
+- **stats** in the navigation (or `Shift + Tab`) opens the statistics screen.
+  It fits on one screen without scrolling on a usual desktop (1280×800 and
+  up), so "how am I doing?" takes a glance:
+  - a row of round lengths and the numbers: rounds, best wpm, and the
+    averages of the last 10 rounds (wpm, accuracy, consistency). Rounds of
+    different lengths are never mixed: the row shows the length chosen in
+    the settings, and you can pick another length you have played;
+  - the speed of every round (hover a bar for its numbers);
+  - side by side (learning only): a **difficulty keyboard** (grey keys, the
+    redder the harder the letter is for you, dashed = no data yet) and every
+    letter as a small chip from weakest to strongest, with a thin red bar for
+    how hard it is and a green dot when mastered.
+  The exact numbers are in tooltips: hover, tap, or move to a key or chip
+  with `Tab`.
 
 ## A user study (for the thesis)
 
@@ -181,9 +201,9 @@ Polish uses the standard "Polish (Programmers)" layout: ą, ę, ł... with AltGr
   server stops.
 - **Local server without a database** (`go run .` alone): in the server's
   memory. Stopping the server forgets everything (accounts too), so save a
-  file with the export button first and load it back after the restart.
+  file first (settings, **save**) and load it back after the restart.
 - **Website (GitHub Pages)**: in the open browser tab. Reloading the page
-  forgets it; the export button works the same way.
+  forgets it; **save** and **load** work the same way.
 
 ## Keeping progress in PostgreSQL (Windows)
 

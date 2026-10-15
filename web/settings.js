@@ -1,5 +1,7 @@
-// The settings panel (the gear in the bottom bar): how long a round is,
-// the live numbers on or off, and the look of the caret. Settings change
+// The settings panel (the gear in the navigation): how long a round is,
+// the live numbers on or off, the look of the caret, the colour theme, the
+// on-screen keyboard on or off, and (static, in index.html) saving, loading
+// and resetting the statistics (tools.js does those). Settings change
 // HOW MUCH and HOW IT LOOKS, never WHAT is practised: the words still come
 // from the algorithm (learning) or evenly from the list (free practice), so
 // they are not difficulty switches. The typing test ignores the round
@@ -34,12 +36,18 @@ export function loadSettings() {
   S.settings.length = LENGTHS.includes(length) ? length : DEFAULT_LENGTH;
   S.settings.live = store.get("tt.live") === "1";      // never chosen: hidden (see firstRoundDone)
   S.settings.caret = store.get("tt.caret") === "block" ? "block" : "line";
+  S.settings.theme = store.get("tt.theme") === "light" ? "light" : "dark";
   applySettings();
 }
-// The look: classes on <body>, style.css does the rest.
+// The look: classes on <body> and data-theme on <html>, style.css does the
+// rest. (index.html sets data-theme once more before the page is drawn, so a
+// light page never flashes dark first.)
 function applySettings() {
   document.body.classList.toggle("live-off", !S.settings.live);
   document.body.classList.toggle("caret-block", S.settings.caret === "block");
+  document.documentElement.dataset.theme = S.settings.theme;
+  document.querySelector('meta[name="theme-color"]')
+    ?.setAttribute("content", getComputedStyle(document.documentElement).getPropertyValue("--bg").trim());
 }
 
 // The live numbers are hidden for a brand-new user (a beginner does not care
@@ -57,9 +65,13 @@ export function firstRoundDone() {
 // a new round and reloads the stats).
 let lengthListener = () => {};
 export function onLengthChange(fn) { lengthListener = fn; }
+// The keyboard choice is carried out by input.js (the same as Alt+K), so
+// this module does not need the keyboard module.
+let kbListener = () => {};
+export function onKbToggle(fn) { kbListener = fn; }
 
 // ---------- the panel ----------
-const box = $("settings"), btn = $("btn-settings"), card = $("settings-card");
+const box = $("settings"), btn = $("btn-settings"), card = $("settings-card"), body = $("settings-body");
 
 function choice(key, value, label, chosen) {
   return `<button type="button" data-key="${key}" data-value="${value}" aria-pressed="${chosen}">${label}</button>`;
@@ -69,7 +81,7 @@ function renderCard() {
   const words = LENGTHS.filter((id) => id.startsWith("words-"));
   const time = LENGTHS.filter((id) => id.startsWith("time-"));
   const group = (ids) => ids.map((id) => choice("length", id, lengthOf(id).n, id === s.length)).join("");
-  card.innerHTML =
+  body.innerHTML =
     `<p class="profile-title" id="settings-title">${t("settings.title")}</p>` +
     `<small class="set-label">${t("settings.length")}</small>` +
     `<div class="set-row"><span class="set-unit">${t("settings.words")}</span>${group(words)}</div>` +
@@ -79,7 +91,10 @@ function renderCard() {
     `<small class="set-label">${t("settings.caret")}</small>` +
     `<div class="set-row">${choice("caret", "line", `<i class="cs line"></i>${t("settings.line")}`, s.caret === "line")}` +
     `${choice("caret", "block", `<i class="cs block"></i>${t("settings.block")}`, s.caret === "block")}</div>` +
-    `<p class="set-note">${t("settings.note")}</p>`;
+    `<small class="set-label">${t("settings.theme")}</small>` +
+    `<div class="set-row">${choice("theme", "dark", t("settings.dark"), s.theme === "dark")}${choice("theme", "light", t("settings.light"), s.theme === "light")}</div>` +
+    `<small class="set-label">${t("settings.keyboard")}</small>` +
+    `<div class="set-row">${choice("kb", "1", t("settings.show"), !S.kbHidden)}${choice("kb", "", t("settings.hide"), S.kbHidden)}</div>`;
 }
 card.addEventListener("click", (e) => {
   const b = e.target.closest("button[data-key]");
@@ -96,6 +111,11 @@ card.addEventListener("click", (e) => {
   } else if (key === "caret") {
     S.settings.caret = value;
     store.set("tt.caret", value);
+  } else if (key === "theme") {
+    S.settings.theme = value;
+    store.set("tt.theme", value);
+  } else if (key === "kb") {
+    if (S.kbHidden === (value === "1")) kbListener();   // only a real change
   }
   applySettings();
   renderCard();

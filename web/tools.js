@@ -1,5 +1,5 @@
-// Tooltips of the icon buttons, the reset button and export / import of the
-// statistics.
+// Tooltips of the icon buttons, and the "your statistics" row of the
+// settings panel: reset, export and import.
 // Layer: middle. Imports only the bottom layer.
 
 import { t } from "./i18n.js";
@@ -34,6 +34,13 @@ document.addEventListener("pointerover", (e) => {
   else if (!node && tipFor) hideTip();
 });
 document.addEventListener("pointerdown", hideTip);
+// keyboard users: a focused element with a tooltip shows it too (the stats
+// screen keeps its exact numbers in tooltips)
+document.addEventListener("focusin", (e) => {
+  const node = e.target.closest?.("[data-tip-text]");
+  if (node && node.matches(":focus-visible")) showTip(node);
+});
+document.addEventListener("focusout", () => { if (tipFor) hideTip(); });
 // screen readers: the tooltip text is also the button's name
 export function labelTips() {
   document.querySelectorAll("button[data-tip]").forEach((b) => b.setAttribute("aria-label", t(b.dataset.tip)));
@@ -45,15 +52,18 @@ export function labelTips() {
 // The first click only "arms" the button (red, new tooltip); the second one
 // resets. Moving the mouse away disarms it.
 const btnReset = $("btn-reset");
+const resetLabel = btnReset.querySelector("span");
 function disarmReset() {
   btnReset.classList.remove("armed");
   btnReset.dataset.tip = "tip.reset";
+  resetLabel.textContent = t("data.reset");
   if (tipFor === btnReset) showTip(btnReset);
 }
 btnReset.addEventListener("click", async () => {
   if (!btnReset.classList.contains("armed")) {
     btnReset.classList.add("armed");
     btnReset.dataset.tip = "tip.resetConfirm";
+    resetLabel.textContent = t("data.resetSure");
     FX.shake(btnReset);
     showTip(btnReset);
     return;

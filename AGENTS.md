@@ -115,7 +115,8 @@ Details: `docs/ALGORITHM.md`.
 
 ## Not now
 
-Leaderboards, public profile pages, more languages, themes, frameworks.
+Leaderboards, public profile pages, more languages, more themes (there are
+two: dark and light, as CSS variables in `web/style.css`), frameworks.
 (Accounts exist: sign up / log in / log out on the normal server, kept in
 PostgreSQL when it is configured.) Structure code so they can be added later, but do not build them.
 

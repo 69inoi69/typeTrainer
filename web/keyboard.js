@@ -143,7 +143,6 @@ export function applyKb(animate = false) {
     el.keyboard.classList.toggle("off", S.kbHidden);
     el.hands.classList.toggle("off", S.kbHidden);
   }
-  el.btnKb.setAttribute("aria-pressed", String(!S.kbHidden));
   document.body.classList.toggle("kb-hidden", S.kbHidden);   // phone CSS centres the text then
   store.set(kbKey(), S.kbHidden ? "1" : "");
   requestFit();
@@ -172,7 +171,8 @@ function fitKeyboard() {
   if (el.keyboard.getAnimations().length || el.hands.getAnimations().length) return;
   const rest = document.querySelector(".top").offsetHeight + el.viewType.offsetHeight
     - el.hands.offsetHeight - el.keyboard.offsetHeight
-    + document.querySelector(".bottom").offsetHeight + 12;   // 12 = bottom padding of .views
+    + document.querySelector(".bottom").offsetHeight + 12    // 12 = bottom padding of .views
+    + parseFloat(getComputedStyle(document.body).paddingBottom);   // the bottom navigation bar (narrow windows)
   const fit = Math.max(24, Math.floor((innerHeight - rest - 4) / HANDS_KB_PER_U));
   root.setProperty("--u-fit", fit + "px");
 }
