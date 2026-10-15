@@ -80,11 +80,11 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   each part of the page gets a light ring and a sentence or two about it
   (Enter / → next, Esc closes). On the first visit it starts by itself after
   the intro.
-- Buttons under the keyboard (hover for a tooltip): **beginner guide** (the
-  intro again) and the keyboard switch **off · S · M · L** (hides keyboard and
-  hands, or picks a size; remembered in your browser). The keyboard never makes
-  the page scroll: on a small window it shrinks to fit, L uses all the room,
-  M and S a bit less.
+- Buttons in the bottom bar (hover for a tooltip): **beginner guide** (the
+  intro again) and the **keyboard** button (hides or shows keyboard and hands,
+  same as `Alt + K`; remembered in your browser). There is no size setting:
+  the keyboard is always as big as the window allows without making the page
+  scroll, and it grows or shrinks when the window changes.
 - The two arrow buttons save your statistics (all languages, full history) to one
   `.json` file and load such a file back. Loading **replaces** the current data.
   Use it to keep progress across server restarts (or page reloads on the website).

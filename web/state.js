@@ -20,7 +20,7 @@ export const el = {
   letters: $("letters"), lettersCaption: $("letters-caption"),
   tooltip: $("tooltip"),
   btnNew: $("btn-new"), btnIntro: $("btn-intro"), heatKb: $("heat-kb"),
-  kbSwitch: $("kb-switch"), hands: $("hands"),
+  btnKb: $("btn-kb"), hands: $("hands"),
   intro: $("intro"),
   switch: document.querySelector(".switch"), tabType: $("tab-type"), tabStats: $("tab-stats"),
   viewType: $("view-type"), viewStats: $("view-stats"),
@@ -46,7 +46,6 @@ export const S = {
   pos: 0,                 // index of the character to type next
   busy: false,            // true while talking to the server between exercises
   view: "type",           // "type" or "stats"
-  kbSize: 100,            // keyboard size in %, one of KB_SIZES
   kbHidden: false,        // keyboard and hands switched off
   mottoIndex: 0,          // the small phrase over the logo (set by init)
 };

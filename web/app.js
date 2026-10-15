@@ -12,7 +12,7 @@ import { FX, Splash } from "./fx.js";
 import { el, S, store, isTouch } from "./state.js";
 import { getJSON } from "./api.js";
 import { labelTips } from "./tools.js";
-import { applyKb, nearestKb } from "./keyboard.js";
+import { applyKb } from "./keyboard.js";
 import { showIntro } from "./intro.js";
 import { renderProfile } from "./profile.js";
 import { buildLangSwitch, initialLanguage, loadLanguage } from "./languages.js";
@@ -29,12 +29,10 @@ import "./input.js";   // keys and buttons: it only adds event listeners
   S.mottoIndex = Math.floor(Math.random() * SPLASH_PHRASES);
   const splash = Splash.start();
   if (splash.phrase !== undefined) S.mottoIndex = splash.phrase;   // the logo keeps the start phrase
-  // keyboard size from last time (an old saved 0 meant "hidden")
-  const saved = Number(store.get("tt.kbSize") ?? 100) || 0;
+  // keyboard on or off from last time (an old saved size 0 meant "hidden");
   // never chosen yet: hidden on phones (no physical keys to look up), shown elsewhere
   const hiddenSaved = store.get("tt.kbHidden");
-  S.kbHidden = hiddenSaved === null ? isTouch() : hiddenSaved === "1" || saved === 0;
-  S.kbSize = saved ? nearestKb(saved) : 100;
+  S.kbHidden = hiddenSaved === null ? isTouch() : hiddenSaved === "1" || store.get("tt.kbSize") === "0";
   applyKb();
   labelTips();
   if (isTouch()) el.textBox.classList.add("blurred"); // phone: tap to open the keyboard
