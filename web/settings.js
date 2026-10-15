@@ -9,6 +9,14 @@
 // Everything is kept in this browser (localStorage, "tt." keys); when that
 // is blocked, the defaults are used and the app works the same.
 // Layer: middle. Imports only the bottom layer.
+// Called by: app.js (loadSettings at start), input.js (settingsOpen,
+// closeSettings, onLengthChange, onKbToggle), typing.js and stats.js
+// (lengthOf, lengthLabel, firstRoundDone).
+// To add a setting: a default in S.settings (state.js), reading it in
+// loadSettings(), its look in applySettings() (usually a class on <body>
+// styled in style.css), a row in renderCard(), a branch in the click
+// handler, and its texts in i18n.js. A setting may change how much or how
+// it looks, never what is practised (AGENTS.md).
 
 import { t } from "./i18n.js";
 import { $, S, store } from "./state.js";
@@ -31,6 +39,8 @@ export function lengthLabel(id) {
 }
 
 // ---------- loading and applying ----------
+// Reads the saved choices (anything unknown falls back to the default) and
+// applies them. Called once at start, before the first round.
 export function loadSettings() {
   const length = store.get("tt.length");
   S.settings.length = LENGTHS.includes(length) ? length : DEFAULT_LENGTH;
@@ -122,6 +132,7 @@ card.addEventListener("click", (e) => {
 });
 
 export const settingsOpen = () => !card.hidden;
+// Closes the panel (Esc, a key, a click outside, or the help menu opening).
 export function closeSettings() {
   card.hidden = true;
   btn.setAttribute("aria-expanded", "false");

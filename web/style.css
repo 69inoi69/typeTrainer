@@ -1,3 +1,17 @@
+/* The whole look of the page, in one file (no preprocessor, no build step).
+   Order: the theme variables first, then one section per part of the page,
+   roughly from top to bottom (header, navigation, typing screen, stats,
+   messages, result, guides), then narrow screens, the start screen, the
+   profile, settings and the tour. Almost every colour comes from a
+   variable on :root, so a theme only changes the variables.
+   For a change of look, JavaScript toggles a class (.ok, .bad,
+   body.typing-now, ...) or a data- attribute, and the rules here do the rest.
+   Inline styles from JavaScript are only for what it alone knows: positions
+   (caret, tooltip, tour ring), the key unit (--u-fit) and the finger colours
+   of a layout (--fc).
+   The feel of a keypress (durations, glow, dip) comes from web/feel.js as
+   --feel-* variables. */
+
 /* ---------- theme (all colors in one place) ---------- */
 :root {
   color-scheme: dark;
@@ -29,7 +43,7 @@
   --med: 180ms;
   --ease: cubic-bezier(.2, .8, .2, 1);
 
-  /* controls: the switches on top and the buttons below share one look */
+  /* controls: the language switch and the profile button share one height */
   --ctl: 38px;          /* outer height of every switch and button */
   --track: color-mix(in srgb, var(--text) 5%, var(--panel));
   --ring: inset 0 0 0 1px color-mix(in srgb, var(--text) 8%, transparent);
@@ -722,7 +736,6 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 .note:hover .note-bar { animation-play-state: paused; }   /* reading: wait */
 @keyframes note-bar { to { transform: scaleX(1); } }
 
-/* ----- each kind of message looks different ----- */
 /* ---------- result screen (result.js) ---------- */
 /* It takes the place of the text, in the same fixed window: the text hides,
    the card keeps its size. */
@@ -841,7 +854,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .profile-name { display: none; }      /* only the picture (or the person icon) */
 }
 
-/* ---------- small screens ---------- */
+/* ---------- small screens (phones) ---------- */
 @media (max-width: 640px) {
   /* phone: logo, languages and the account on top; numbers below */
   .top { padding-block: 10px 6px; gap: 8px; }
@@ -925,7 +938,7 @@ body.entering .bottom { animation-delay: .48s; }
 @keyframes rise-in { from { opacity: 0; transform: translateY(12px); } }
 .letters-caption .begin + .begin::before { content: "·"; margin-right: 10px; color: var(--sub); }
 
-/* ---------- profile (placeholder for accounts later) ---------- */
+/* ---------- profile: the account card in the header (profile.js) ---------- */
 .profile { position: relative; }
 .profile-btn {
   display: inline-flex; align-items: center; gap: 8px; height: var(--ctl);

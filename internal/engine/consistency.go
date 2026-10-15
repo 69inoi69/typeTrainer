@@ -19,8 +19,10 @@ import "math"
 // second the same) down towards 0. Inside the tanh are the first terms of the
 // series of artanh(cv), so for small cv the result is close to 100 * (1 - cv).
 // The same formula is used by monkeytype ("kogasa", packages/util/src/numbers.ts).
+// internal/api calls it when a round is saved; the minimum length is
+// config.ConsistencyMinSeconds.
 
-// Consistency of a round, 0..100. perSecond = keypresses in each full second
+// Consistency returns the consistency of a round, 0..100. perSecond = keypresses in each full second
 // of the round, pauses included (a second without keys is a 0). ok is false
 // when the round has fewer than minSeconds seconds (too little to judge) or
 // no keypress at all.

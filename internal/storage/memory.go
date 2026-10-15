@@ -1,3 +1,5 @@
+// The in-memory Store: plain Go maps behind one mutex.
+
 package storage
 
 import (
@@ -10,7 +12,13 @@ import (
 )
 
 // MemoryStore keeps everything in RAM. Data is lost when the server stops.
-// The mutex makes it safe when several requests arrive at the same time.
+// The mutex makes it safe when several requests arrive at the same time:
+// the HTTP server runs every request in its own goroutine, and Go maps must
+// not be read and written at once. One lock for everything is simple, and
+// fast enough here (every operation is a few map lookups).
+//
+// Its methods do what the Store interface (store.go) says; only the ones
+// with something surprising have their own comment.
 type MemoryStore struct {
 	mu    sync.Mutex
 	langs map[key]*langData
@@ -40,6 +48,7 @@ type langData struct {
 	freeplay   []Session // the history of free practice, oldest first
 }
 
+// NewMemoryStore returns an empty store.
 func NewMemoryStore() *MemoryStore {
 	return &MemoryStore{langs: map[key]*langData{}, users: map[string]User{}, names: map[string]string{}, logins: map[string]login{}}
 }
@@ -68,6 +77,7 @@ func (m *MemoryStore) KeyStats(user, lang string) (map[string]engine.KeyStat, er
 	return out, nil
 }
 
+// SaveKeyStats keeps a copy too, for the same reason as KeyStats.
 func (m *MemoryStore) SaveKeyStats(user, lang string, stats map[string]engine.KeyStat) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -231,8 +241,9 @@ func (m *MemoryStore) Reset(user, lang string) error {
 	return nil
 }
 
-// CreateUser gives the new account the id "u1", "u2", ... (a PostgreSQL
-// store would use the table's own counter). Ids never clash with LocalUser.
+// CreateUser gives the new account the id "u1", "u2", ... (PostgresStore
+// uses the table's own counter, with the same "u" in front). Ids never clash
+// with guests (LocalUser, GuestPrefix).
 func (m *MemoryStore) CreateUser(name, passwordHash string, now time.Time) (User, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

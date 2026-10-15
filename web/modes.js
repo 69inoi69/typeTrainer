@@ -1,4 +1,5 @@
-// The modes of the trainer and the switch in the header:
+// The modes of the trainer and the learning / free switch in the navigation
+// (nav.rail in index.html; its clicks are handled in input.js):
 //   learn - the adaptive trainer (internal/engine): the core of the thesis;
 //   free  - free practice (internal/freeplay): words from the whole list,
 //           its own history, nothing goes into the letter statistics;
@@ -9,6 +10,9 @@
 // chosen mode is remembered per language in this browser (tt.mode.<lang>);
 // the test is never remembered, a reload goes back to learning.
 // Layer: middle. Imports the bottom layer and keyboard.js.
+// Called by: languages.js (refreshFreeplay, restoreMode on a language
+// change), input.js (setMode on a click), typing.js (learning() to choose
+// the routes, setMode after the test), letters.js (learning()).
 
 import { i18nVars, t } from "./i18n.js";
 import { $, el, S, store } from "./state.js";
@@ -17,6 +21,7 @@ import { restoreKb } from "./keyboard.js";
 
 const sw = $("mode-switch");
 
+// Is the current mode learning (the adaptive trainer)?
 export const learning = () => S.mode === "learn";
 
 // Free practice of this language: is it open, its history, the test rules.
@@ -35,6 +40,8 @@ export function restoreMode() {
   renderModes();
 }
 
+// Switches to mode m ("learn", "free" or "test") and remembers it for this
+// language (not the test). The caller starts the new round.
 export function setMode(m) {
   S.mode = m;
   if (m !== "test") store.set(`tt.mode.${S.lang}`, m);

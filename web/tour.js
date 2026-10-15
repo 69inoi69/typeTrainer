@@ -5,6 +5,9 @@
 // right after guide A (intro.js) on the first visit, and again from Help.
 // Keys: Enter / Space / → next, Esc closes.
 // Layer: middle. Imports only the bottom layer.
+// Called by: intro.js (maybeStartTour after guide A), input.js (tourOpen and
+// tourKey: every key goes here while the tour is open). Its menu item in
+// Help (#btn-tour) is wired at the bottom of this file.
 
 import { t } from "./i18n.js";
 import { $, S, store, focusText } from "./state.js";
@@ -27,6 +30,8 @@ let at = 0;                // index in steps
 
 export const tourOpen = () => !root.hidden;
 
+// Opens the tour at its first step. Only on the typing screen: the parts it
+// points at are not on the stats screen.
 export function startTour() {
   if (S.view !== "type") return;
   const visible = (node) => node && node.getClientRects().length > 0 && node.offsetHeight > 0;
@@ -71,6 +76,8 @@ function show() {
 function next() {
   if (at < steps.length - 1) { at++; show(); } else closeTour();
 }
+// Closes the tour (done, skip or Esc) and remembers it, so it does not start
+// by itself again.
 export function closeTour() {
   root.hidden = true;
   store.set("tt.tourDone", "1");

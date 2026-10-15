@@ -2,16 +2,29 @@
 //
 // It knows NOTHING about HTTP or databases: statistics go in, numbers and
 // exercise text come out. That keeps it easy to test and easy to explain.
+// It must not import anything from this project or anything about HTTP,
+// JSON handlers or storage (docs/ARCHITECTURE.md, "Dependency rule").
+// internal/api calls it to update a user's letters and to build the next
+// words; internal/sim and tools/sim call it to simulate a typist;
+// internal/storage uses only its KeyStat type. Its numbers come from
+// internal/config.
+//
+// The files:
+//   - model.go: per-letter statistics and difficulty (this file)
+//   - generator.go: unlock order, unlocking and word choice
+//   - consistency.go: how even the speed of a finished round was
 //
 // This file is the MATH: how one letter's statistics are updated and how
 // they become a difficulty score. generator.go uses these scores to pick
 // words and to decide when a new letter is unlocked.
-// The full explanation with reasoning is in docs/ALGORITHM.md.
+// The full explanation with reasoning is in docs/ALGORITHM.md, sections 4-5.
 package engine
 
 import "math"
 
-// Params are the tunable numbers of the model. Values live in internal/config.
+// Params are the tunable numbers of the model and of the word choice.
+// Values and the reasons for them live in internal/config (Default) and
+// docs/ALGORITHM.md section 8.
 type Params struct {
 	Alpha         float64 // EMA smoothing factor (0..1); bigger = reacts faster, forgets faster
 	MaxIntervalMs float64 // a gap longer than this is a pause, not a reaction time
@@ -51,10 +64,12 @@ type Params struct {
 }
 
 // TargetMs converts TargetWPM to milliseconds per character.
-// Standard definition: 1 word = 5 characters, so ms = 60000 / (WPM * 5).
+// Standard definition: 1 word = 5 characters, so ms = 60000 / (WPM * 5),
+// which is 12000 / WPM (30 WPM -> 400 ms).
 func (p Params) TargetMs() float64 { return 12000 / p.TargetWPM }
 
-// Sample is ONE occurrence of a character in an exercise, sent by the browser.
+// Sample is ONE occurrence of a character in an exercise, sent by the browser
+// (web/typing.js measures it, POST /api/v1/results brings it here).
 //   - Errors: wrong keys pressed at this position, also when later fixed
 //     with Backspace (0 = clean)
 //   - Ms:     time from the previous keypress to the first press here;
@@ -65,7 +80,8 @@ type Sample struct {
 	Ms     float64 `json:"ms"`
 }
 
-// KeyStat is everything we remember about one letter.
+// KeyStat is everything we remember about one letter. The storage keeps one
+// per user, language and letter; a missing letter is the zero KeyStat.
 type KeyStat struct {
 	Count      int     `json:"count"`      // occurrences typed (lifetime)
 	Mistakes   int     `json:"mistakes"`   // occurrences with at least one error (lifetime)
@@ -74,7 +90,8 @@ type KeyStat struct {
 	TimedCount int     `json:"timedCount"` // samples included in TimeEMA
 }
 
-// emaStep is the smoothing factor for the n-th sample.
+// emaStep is the smoothing factor for the n-th sample (docs/ALGORITHM.md
+// section 4).
 //
 // Plain EMA:   new = old + alpha * (x - old)
 // Problem: the very first samples would be pulled towards the start value 0.
@@ -86,6 +103,8 @@ func emaStep(n int, alpha float64) float64 {
 }
 
 // Update adds one sample to a letter's statistics and returns the new stats.
+// The lifetime counters (Count, Mistakes) only grow; the EMAs follow the
+// recent past.
 func Update(s KeyStat, smp Sample, p Params) KeyStat {
 	s.Count++
 	miss := 0.0
@@ -104,7 +123,9 @@ func Update(s KeyStat, smp Sample, p Params) KeyStat {
 	return s
 }
 
-// Apply adds a whole exercise of samples. The input map is not modified.
+// Apply adds a whole exercise of samples. The input map is not modified
+// (a copy is returned), so the caller can still compare before and after.
+// A letter seen for the first time starts from the zero KeyStat.
 func Apply(stats map[string]KeyStat, samples []Sample, p Params) map[string]KeyStat {
 	out := make(map[string]KeyStat, len(stats))
 	for k, v := range stats {
@@ -118,7 +139,8 @@ func Apply(stats map[string]KeyStat, samples []Sample, p Params) map[string]KeyS
 
 func clamp01(x float64) float64 { return math.Max(0, math.Min(1, x)) }
 
-// RawDifficulty is what the data alone says, from 0 (easy) to 1 (hard):
+// RawDifficulty is what the data alone says, from 0 (easy) to 1 (hard)
+// (docs/ALGORITHM.md section 5.1):
 //
 //	errorPart = clamp(ErrEMA / MaxErrorRate)
 //	speedPart = clamp((TimeEMA - TargetMs) / (SlowMs - TargetMs))
@@ -137,7 +159,8 @@ func RawDifficulty(s KeyStat, p Params) float64 {
 }
 
 // Difficulty is the raw difficulty pulled towards a prior while data is scarce
-// ("shrinkage", the same idea as a Bayesian average):
+// ("shrinkage", the same idea as a Bayesian average; docs/ALGORITHM.md
+// section 5.2):
 //
 //	difficulty = (n * raw + k * prior) / (n + k)
 //
@@ -156,7 +179,9 @@ func Difficulty(s KeyStat, p Params) float64 {
 // Mastered says whether a letter has reached the goal: enough samples,
 // few mistakes, and at least target speed. This is a plain yes/no rule on
 // the raw numbers so it is easy to explain to a user ("type e at 30 WPM
-// with under 5% mistakes").
+// with under 5% mistakes"). It uses the raw numbers, not Difficulty, so the
+// prior never holds a letter back once the data is there (docs/ALGORITHM.md
+// section 6).
 func Mastered(s KeyStat, p Params) bool {
 	return s.Count >= p.MasteryMinSamples &&
 		s.ErrEMA <= p.MasteryErrorRate &&
@@ -168,8 +193,9 @@ func Mastered(s KeyStat, p Params) bool {
 //	weight = exp(difficulty / Temperature)
 //	P(letter) = weight / sum of all weights
 //
-// Temperature controls focus. With T = 0.25, a letter with difficulty 1
-// is e^4 ~ 55 times more likely than one with difficulty 0. With a large T
+// Temperature controls focus. With T = 0.1 (the current value in
+// internal/config), a letter with difficulty 1 is e^10 ~ 22000 times more
+// likely than one with difficulty 0; with T = 0.25 it would be e^4 ~ 55. With a large T
 // all letters become almost equally likely. exp() is never 0, so no letter
 // ever disappears completely.
 func SoftmaxWeight(difficulty float64, p Params) float64 {

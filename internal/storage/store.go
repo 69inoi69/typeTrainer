@@ -1,6 +1,17 @@
 // Package storage hides WHERE data is kept behind the Store interface.
-// Right now there is an in-memory version (memory.go). Later you add
-// postgres.go implementing the same interface and change one line in setup.go.
+// There are two versions of it:
+//   - MemoryStore (memory.go): everything in RAM, lost on restart. The
+//     default, the tests' store, and the only one on GitHub Pages
+//     (a browser has no database).
+//   - PostgresStore (postgres.go): a PostgreSQL database, used by the normal
+//     server when DATABASE_URL is set (build_server.go).
+//
+// The rest of the app (internal/api) only ever sees the Store interface, so
+// it does not know or care which one it talks to. Both must behave exactly
+// alike: the same tests run against both (store_test.go).
+//
+// This package also defines the shapes that are stored (Session, User)
+// and the user ids of guests (LocalUser, GuestPrefix).
 package storage
 
 import (
@@ -67,6 +78,7 @@ func (s Session) Summary() Session {
 
 // LocalUser is the user id of a guest where browsers cannot be told apart:
 // on GitHub Pages (no cookies) and for a browser that refuses cookies.
+// The tests use it too.
 const LocalUser = "local"
 
 // GuestPrefix starts the id of a guest the server knows by their guest
@@ -87,9 +99,13 @@ type User struct {
 	CreatedAt    time.Time `json:"createdAt"`
 }
 
+// The errors a Store returns on purpose; callers check them with errors.Is.
+// Any other error means the store itself failed (a broken database).
 var (
+	// ErrNameTaken is returned by CreateUser for a name that already has an account.
 	ErrNameTaken = errors.New("storage: name taken")
-	ErrNotFound  = errors.New("storage: not found")
+	// ErrNotFound is returned for no such user, or an unknown or expired login.
+	ErrNotFound = errors.New("storage: not found")
 )
 
 // Store is every data operation the app needs. Nothing outside this
@@ -101,7 +117,18 @@ var (
 //   - the language ("en", "pl", ...): each language has its own letter
 //     statistics, its own unlock progress and its own history, because being
 //     good at English says nothing about Ukrainian.
+//
+// Reading language data that was never stored is not an error: a new user
+// or language reads as empty (no statistics, 0 letters open, no history).
+//
+// To add a method: add it here, implement it in BOTH memory.go and
+// postgres.go, and add a test to storeTests in store_test.go, so the two
+// stores are checked against the same behaviour. If it needs a new table
+// or column, see migrations/.
 type Store interface {
+	// KeyStats is the letter model (engine.KeyStat per letter); the caller
+	// may change the returned map freely. SaveKeyStats replaces the whole
+	// set: a letter left out is gone.
 	KeyStats(user, lang string) (map[string]engine.KeyStat, error)
 	SaveKeyStats(user, lang string, stats map[string]engine.KeyStat) error
 
@@ -109,7 +136,8 @@ type Store interface {
 	Unlocked(user, lang string) (int, error)
 	SetUnlocked(user, lang string, n int) error
 
-	// History. length picks rounds of one length ("words-30"); "" = all.
+	// History of learning. length picks rounds of one length ("words-30");
+	// "" = all. A session without a length is stored as DefaultLength.
 	AddSession(user, lang string, s Session) error
 	RecentSessions(user, lang, length string, limit int) ([]Session, error) // newest first
 	SessionCount(user, lang, length string) (int, error)                    // finished rounds
@@ -119,14 +147,14 @@ type Store interface {
 	// it is how far the user is into the ramp of engine.MaxRank.
 	LettersTyped(user, lang string, unlocked int) (int, error)
 
-	// Free practice (internal/freeplay) is kept apart from learning: its
-	// own history, and a flag set once the typing test is passed. Its
-	// rounds never change the letter statistics above.
 	// Group is the study group of the language ("" or GroupRandom), set
 	// through a hidden link for a user study. Reset clears it.
 	Group(user, lang string) (string, error)
 	SetGroup(user, lang, group string) error
 
+	// Free practice (internal/freeplay) is kept apart from learning: its
+	// own history, and a flag set once the typing test is passed. Its
+	// rounds never change the letter statistics above.
 	TestPassed(user, lang string) (bool, error)
 	SetTestPassed(user, lang string, passed bool) error
 	AddFreeplaySession(user, lang string, s Session) error

@@ -12,6 +12,8 @@ export const API = "/api/v1";
 function withLang(path, lang = S.lang) {
   return path + (path.includes("?") ? "&" : "?") + "lang=" + encodeURIComponent(lang);
 }
+// GET a route and return its JSON; throws on an error status.
+// global = true: a route that is not about one language (no ?lang=).
 export async function getJSON(path, global = false) {
   const res = await fetch(API + (global ? path : withLang(path)));
   if (!res.ok) throw new Error(path + " -> " + res.status);

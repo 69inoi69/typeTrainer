@@ -25,7 +25,8 @@ type Params struct {
 	TestAccuracy float64 // ...and with at least this accuracy (percent)
 }
 
-// Picker draws words for free practice.
+// Picker draws words for free practice. Not safe for parallel use (its
+// random source is not), so the api package calls it under Server.genMu.
 type Picker struct {
 	words []string
 	rng   *rand.Rand

@@ -1,6 +1,9 @@
 // The language switch and loading a language: its layout, keyboard,
-// interface texts, statistics and first exercise.
+// interface texts, statistics and first round. The typing language is also
+// the interface language.
 // Layer: middle. Imports the bottom layer and the other middle modules.
+// Called by: app.js (buildLangSwitch, initialLanguage, loadLanguage at
+// start), input.js (switchLanguage on Alt+1...4).
 
 import { i18nVars, setUiLang, t, applyI18n } from "./i18n.js";
 import { FX } from "./fx.js";
@@ -15,7 +18,7 @@ import { renderProfile } from "./profile.js";
 import { refreshFreeplay, restoreMode } from "./modes.js";
 
 // ---------- languages ----------
-// The switch is built once; changing language only moves the yellow thumb
+// The switch is built once; changing language only moves the thumb
 // (CSS variable --i), so the slide animation can run.
 export function buildLangSwitch() {
   el.langSwitch.style.setProperty("--n", S.languages.length);
@@ -26,6 +29,7 @@ export function buildLangSwitch() {
     switchLanguage(b.dataset.lang);
   }));
 }
+// A click or Alt+1...4: load another language (not while a round is saved).
 export function switchLanguage(id) {
   if (S.busy || id === S.lang) return;
   loadLanguage(id).catch((err) => console.error(err));
@@ -44,6 +48,8 @@ export function initialLanguage() {
   return ids.includes(browser) ? browser : ids[0];
 }
 
+// Loads language id and everything that depends on it, then starts a round.
+// S.busy blocks typing and a second switch until it is done.
 export async function loadLanguage(id) {
   S.busy = true;
   try {

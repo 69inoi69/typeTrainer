@@ -1,6 +1,13 @@
 // Package language describes the supported typing languages as DATA
-// (data/languages.json). Adding a language = one entry there, one layout file
-// and one word list; no code changes.
+// (data/languages.json). setup.go reads that file with Parse and cleans each
+// word list with Words; the api package sends the list to the browser
+// (/api/v1/languages).
+//
+// To add a language: one entry in data/languages.json, one layout file in
+// data/layouts/ and one word list in data/langs/<id>/words.txt (made by
+// tools/wordlists/build.py); no code changes. The interface texts in
+// web/i18n.js are a separate matter. See "Adding a layout or language" in
+// docs/ARCHITECTURE.md.
 package language
 
 import (
@@ -9,6 +16,7 @@ import (
 	"strings"
 )
 
+// Language is one entry of data/languages.json.
 type Language struct {
 	ID           string `json:"id"`           // "en", "pl", "uk", "ru"; also the folder in data/langs/
 	Name         string `json:"name"`         // shown to the user, in the language itself

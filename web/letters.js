@@ -4,6 +4,8 @@
 // locked letters dimmed on the keyboard. In free practice and the test there
 // is nothing to learn: the bar is empty and every key is open.
 // Layer: middle. Imports the bottom layer and modes.js.
+// Called by: typing.js (renderLetters when a portion or round changes the
+// letters; markNewLetter / markMastered just before).
 
 import { t } from "./i18n.js";
 import { el, S } from "./state.js";
@@ -26,6 +28,8 @@ const STAT_ICONS = {
   // next: a key, the one that opens the next letter
   key: '<circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M21 12v2.5"/>',
 };
+// Draws the bar, the status line and the dimmed keys from S.exercise (the
+// portion being typed) and S.lastStats. Runs on a portion change, never per key.
 export function renderLetters() {
   if (!learning()) { renderFreeLetters(); return; }
   if (!S.exercise) return;

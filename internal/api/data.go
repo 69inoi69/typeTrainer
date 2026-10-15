@@ -12,8 +12,9 @@ import (
 )
 
 // POST /api/v1/reset?lang= -> deletes all statistics, unlocked letters and
-// history of the language. Used by the reset button while there are no user
-// accounts: the browser calls it once for every language.
+// history of the language (learning and free practice), for whoever asks:
+// the logged-in account or this browser's guest. Used by the reset button
+// of the settings panel (web/tools.js), which calls it once for every language.
 func (s *Server) handleReset(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
@@ -35,6 +36,7 @@ type langExport struct {
 	Freeplay *freeplayExport `json:"freeplay,omitempty"`
 }
 
+// freeplayExport is the free practice part of langExport.
 type freeplayExport struct {
 	TestPassed bool              `json:"testPassed"`
 	Sessions   []storage.Session `json:"sessions"` // OLDEST first
@@ -111,6 +113,11 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request, user strin
 
 // POST /api/v1/import?lang= <the JSON from /export> -> REPLACES everything stored
 // for the language. The data is checked first; if anything is wrong nothing changes.
+// The import is Reset followed by the same writes a normal round makes, all
+// under writeMu, so no other write (a round, a second import) mixes in.
+// A store error in the middle (a broken database) can still leave it half
+// written: the store has no "import everything" method that would make it
+// one step.
 func (s *Server) handleImport(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	r.Body = http.MaxBytesReader(w, r.Body, int64(s.cfg.MaxImportBytes))
 	var in langExport

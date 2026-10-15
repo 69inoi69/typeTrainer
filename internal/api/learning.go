@@ -13,6 +13,8 @@ import (
 	"typingtrainer/internal/storage"
 )
 
+// portionRequest is the body of /portion: what the browser typed since the
+// last call, and what is already on the screen (so no word repeats too soon).
 type portionRequest struct {
 	Samples []engine.Sample `json:"samples"` // the portion just typed (empty at the start)
 	Recent  []string        `json:"recent"`  // words already in the stream, oldest first
@@ -44,6 +46,8 @@ func (s *Server) handlePortion(w http.ResponseWriter, r *http.Request, user stri
 		return
 	}
 
+	// learn reads, changes and saves the statistics: writeMu makes that one
+	// step, so two quick calls cannot both start from the old numbers
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 	stats, unlocked, newLetter, err := s.learn(user, l, req.Samples)
@@ -71,6 +75,7 @@ func (s *Server) handlePortion(w http.ResponseWriter, r *http.Request, user stri
 		count = min(p.AheadPortions+1, p.RoundPortions)
 	}
 	out := make([]engine.Portion, count)
+	// the generator's random source is shared by every request
 	s.genMu.Lock()
 	for i := range out {
 		if group == storage.GroupRandom { // the control group of a study: random open words
@@ -120,6 +125,8 @@ func (s *Server) learn(user string, l *Language, samples []engine.Sample) (stats
 	return
 }
 
+// resultsRequest is the body of /results, and (with fewer fields used) of
+// /freeplay/results and /freeplay/test.
 type resultsRequest struct {
 	// Samples: the keypresses not yet learned with /portion. The model
 	// learns from these.
@@ -189,9 +196,10 @@ func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, user stri
 	writeJSON(w, http.StatusOK, map[string]any{"unlocked": unlocked, "newLetter": newLetter, "consistency": consistency})
 }
 
-// POST /api/v1/progress?lang= {"unlockAll": true} -> for people who can already
-// touch type: skip the lessons and open every letter. {"unlockAll": false}
-// goes back to the first lesson (statistics are kept).
+// POST /api/v1/progress?lang= {"unlockAll": true} -> opens every letter;
+// {"unlockAll": false} goes back to the first lesson (statistics are kept).
+// For development and tests only: the interface does not call it, because
+// everyone starts from the first letters (AGENTS.md, product decisions).
 func (s *Server) handleProgress(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	var req struct {
 		UnlockAll bool `json:"unlockAll"`
@@ -213,6 +221,7 @@ func (s *Server) handleProgress(w http.ResponseWriter, r *http.Request, user str
 	writeJSON(w, http.StatusOK, map[string]int{"unlocked": n})
 }
 
+// keyInfo is one letter in the answer of /stats.
 type keyInfo struct {
 	Char       string  `json:"char"`
 	Count      int     `json:"count"`
@@ -281,7 +290,8 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, user string
 	})
 }
 
-// validLength: is this a round length the server accepts (validLength)?
+// validLength checks a round length against the limits in the config
+// (MaxRoundWords, MaxRoundSeconds); the rule itself is in validate.go.
 func (s *Server) validLength(length string) bool {
 	return validLength(length, s.cfg.MaxRoundWords, s.cfg.MaxRoundSeconds)
 }

@@ -1,11 +1,22 @@
 // The typing screen: the text stream (portions of words added while you
-// type, in rounds of the length chosen in the settings), the caret, what every keypress does, the
-// clean-word streak, the live WPM / accuracy, and sending the result when a
-// round ends. The letters bar is in letters.js, the result screen in result.js. The same screen serves every mode
+// type, in rounds of the length chosen in the settings), the caret, what
+// every keypress does, the clean-word streak, the live WPM / accuracy, and
+// sending the result when a round ends. The letters bar is in letters.js,
+// the result screen in result.js. The same screen serves every mode
 // (modes.js): learning talks to /portion and /results, free practice and the
 // typing test to /freeplay/*.
 // Layer: middle. Imports the bottom layer, keyboard.js, stats.js, result.js,
 // letters.js, modes.js and settings.js.
+// Called by: input.js (handleChar, backspace, nudge, stopRound and the rest
+// on keys and clicks) and languages.js (loadExercise, hideWarn, setMotto
+// when the language changes).
+//
+// Speed rule (AGENTS.md): this code runs on every keypress, so it must stay
+// light. A keypress only flips the classes of the 1-2 <span>s that changed;
+// the one layout read (where the caret goes) happens once per animation frame
+// in placeCaret(); animations are CSS transitions or element.animate, never
+// JS timers. Reading layout right after changing classes would force the
+// browser to recompute the page on every key, which shows as lag.
 
 import { FEEL } from "./feel.js";
 import { t, tPick } from "./i18n.js";
@@ -47,7 +58,7 @@ let backWord = -1, backErrors = 0;
 let fixedWords = new Set(); // starts of words that were gone back into and retyped without a mistake
 
 // The text window always shows TEXT_LINES lines at one font size (style.css,
-// .text): it never changes size between exercises. A text that needs more
+// .text): it never changes size between rounds. A text that needs more
 // lines scrolls: the line you type stays the second one (as on monkeytype).
 // fitText runs on a new text and on resize, never on a keypress: it reads the
 // line height once and starts at the top.
@@ -63,7 +74,9 @@ export function fitText() {
 
 // ---------- caret ----------
 // One caret element that slides to the current letter (CSS transition on
-// transform). We read the letter's position once per animation frame.
+// translate). We read the letter's position once per animation frame:
+// several calls in one frame (fast typing) cost a single layout read.
+// jump = true: move at once, without the glide (a new text, a resize).
 let caretFrame = 0;
 export function placeCaret(jump) {
   cancelAnimationFrame(caretFrame);
@@ -284,6 +297,10 @@ function resetStream() {
   el.text.replaceChildren(el.caret);          // the caret lives inside the text
 }
 
+// Starts a new round in the current mode: an empty text and the first
+// portions from the server. (The name is older than the word "round".)
+// Called on start, on a language or mode change, by Esc before the first key
+// and after every result screen.
 export async function loadExercise() {
   resetStream();
   const id = streamId;
@@ -344,7 +361,7 @@ function setState(i, s) {
 function record(i, wrong, now) {
   let r = records[i];
   if (!r) {
-    // not measured: the first press of the exercise, and a press right after a
+    // not measured: the first press of the round, and a press right after a
     // Backspace (that time is spent correcting, not moving a finger)
     const ms = lastTime === null || afterBackspace ? 0 : Math.round(now - lastTime);
     r = records[i] = { char: S.text[i], errors: 0, ms };
@@ -557,6 +574,7 @@ function showWarn(kind) {
   el.warn.classList.add("show");
   $("caption-slot").classList.add("warning");   // the status line fades out under it
 }
+// Hides the Caps Lock / wrong system layout warning (also on a language change).
 export function hideWarn() {
   wrongScript = 0;
   el.warn.classList.remove("show");
@@ -600,9 +618,9 @@ function updateLive() {
 }
 
 // ---------- "typing now": the header steps back ----------
-// From the first keypress to the end of the exercise the body has the class
-// "typing-now": the logo turns grey and the header controls almost vanish
-// (style.css), and the small phrase over the logo changes to a typing one.
+// From the first keypress to the end of the round the body has the class
+// "typing-now": the logo turns grey, the languages, the account and the
+// navigation almost vanish (style.css), and the small phrase over the logo changes to a typing one.
 let typingNow = false;
 export function setTyping(on) {
   if (on === typingNow) return;
@@ -618,7 +636,9 @@ export function setMotto(typing = typingNow) {
 }
 
 // Twice a second: a long pause ends the round, and so does the end of the
-// time in a time round (whose counter shows the seconds left).
+// time in a time round (whose counter shows the seconds left). A timer is
+// fine here: it is a clock, not an animation, and it never runs per keypress.
+// It also catches a time round that ends while no key is pressed.
 setInterval(() => {
   if (startTime === null || S.busy) return;
   const now = performance.now();

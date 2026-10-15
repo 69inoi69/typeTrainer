@@ -22,6 +22,8 @@ import (
 	"typingtrainer/internal/storage"
 )
 
+// The two cookies. Both hold only a random token, never a user id, so
+// a browser cannot claim to be someone else by editing its cookie.
 const (
 	loginCookie = "tt_login"
 	guestCookie = "tt_guest"
@@ -118,6 +120,7 @@ func (s *Server) tooManyAttempts(w http.ResponseWriter, ip string) bool {
 	return true
 }
 
+// credentials is the body of a sign-up or login request.
 type credentials struct {
 	Name     string `json:"name"`
 	Password string `json:"password"`
@@ -269,6 +272,8 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
+// dummy is the hash made by dummyHash; sync.Once makes sure it is made
+// only once, even when two logins arrive at the same moment.
 var (
 	dummyOnce sync.Once
 	dummy     string

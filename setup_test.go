@@ -31,6 +31,8 @@ func guestRequest(method, path, body string) *http.Request {
 	return req
 }
 
+// call sends one request from the test browser and returns the status and
+// the JSON answer as a map.
 func call(t *testing.T, h http.Handler, method, path, body string) (int, map[string]any) {
 	t.Helper()
 	rec := httptest.NewRecorder()
@@ -40,6 +42,8 @@ func call(t *testing.T, h http.Handler, method, path, body string) (int, map[str
 	return rec.Code, out
 }
 
+// Every language in data/languages.json loads, builds a first round and
+// serves its layout.
 func TestApp_AllLanguagesLoad(t *testing.T) {
 	h, _, err := newApp()
 	if err != nil {
@@ -64,6 +68,7 @@ func TestApp_AllLanguagesLoad(t *testing.T) {
 	}
 }
 
+// An unknown ?lang= is refused instead of falling back to the default.
 func TestApp_UnknownLanguageIs400(t *testing.T) {
 	h, _, _ := newApp()
 	if code, _ := call(t, h, "POST", "/api/v1/portion?lang=xx", "{}"); code != 400 {
@@ -71,6 +76,8 @@ func TestApp_UnknownLanguageIs400(t *testing.T) {
 	}
 }
 
+// A round counts only in its own language, and letters of another alphabet
+// are refused.
 func TestApp_ResultsAreKeptPerLanguage(t *testing.T) {
 	h, _, _ := newApp()
 	body := `{"samples":[{"char":"ж","errors":0,"ms":300},{"char":" ","errors":0,"ms":200}],"wpm":30,"accuracy":100}`
@@ -89,6 +96,7 @@ func TestApp_ResultsAreKeptPerLanguage(t *testing.T) {
 	}
 }
 
+// Reset clears one language (history and open letters) and leaves the others.
 func TestApp_ResetClearsOneLanguage(t *testing.T) {
 	h, _, _ := newApp()
 	body := `{"samples":[{"char":"ж","errors":0,"ms":300},{"char":" ","errors":0,"ms":200}],"wpm":30,"accuracy":100}`

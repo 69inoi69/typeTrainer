@@ -31,6 +31,10 @@ import (
 //go:embed migrations/*.sql
 var migrations embed.FS
 
+// PostgresStore is the Store kept in PostgreSQL (see the top of this file).
+// Its methods do what the Store interface (store.go) says; only the ones
+// with something surprising have their own comment. A *sql.DB is safe for
+// many requests at once: it keeps a pool of connections by itself.
 type PostgresStore struct {
 	db *sql.DB
 }
@@ -61,7 +65,8 @@ func (p *PostgresStore) Close() error { return p.db.Close() }
 // yet, in the order of their numbers, each in its own transaction. The
 // table schema_migrations remembers which ones ran. So a new version of the
 // app updates an old database by itself, and running it twice changes
-// nothing.
+// nothing. This is also why an old migration file must never be edited:
+// a database that already ran it would never see the change.
 func migrate(db *sql.DB) error {
 	if _, err := db.Exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
 		version INTEGER PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())`); err != nil {
@@ -209,11 +214,14 @@ func (p *PostgresStore) SetTestPassed(user, lang string, passed bool) error {
 
 // ---------- history (learning and free practice) ----------
 
+// Learning and free practice share the sessions table; the mode column
+// keeps the two histories apart (every query below filters on it).
 const (
 	modeLearning = "learning"
 	modeFreeplay = "freeplay"
 )
 
+// addSession stores one round in the history of one mode.
 func (p *PostgresStore) addSession(user, lang, mode string, s Session) error {
 	var keys []byte // nil -> NULL: no raw record
 	if len(s.Keys) > 0 {
@@ -230,7 +238,9 @@ func (p *PostgresStore) addSession(user, lang, mode string, s Session) error {
 	return err
 }
 
-// In the queries below, length = ” means "every length".
+// recentSessions reads up to limit rounds of one mode, newest first (by id,
+// the order they were stored in). In this query and the two below, an empty
+// length means "every length".
 func (p *PostgresStore) recentSessions(user, lang, mode, length string, limit int) ([]Session, error) {
 	rows, err := p.db.Query(`SELECT wpm, accuracy, chars, consistency, unlocked, keys, finished_at, length, study_group
 		FROM sessions WHERE user_id = $1 AND lang = $2 AND mode = $3 AND ($4 = '' OR length = $4)
@@ -319,6 +329,8 @@ func (p *PostgresStore) FreeplaySessionLengths(user, lang string) ([]string, err
 }
 
 // Reset deletes the user's language from all three tables in one transaction.
+// The table names are fixed strings, never user input. Accounts and logins
+// are not per language, so they stay.
 func (p *PostgresStore) Reset(user, lang string) error {
 	return p.inTx(func(tx *sql.Tx) error {
 		for _, table := range []string{"progress", "key_stats", "sessions"} {
@@ -350,6 +362,9 @@ func (p *PostgresStore) CreateUser(name, passwordHash string, now time.Time) (Us
 	return User{ID: userID(n), Name: name, PasswordHash: passwordHash, CreatedAt: now}, nil
 }
 
+// user reads one account. where is always a fixed string from this file,
+// never user input, so building the query with + is safe; the value itself
+// goes in as $1.
 func (p *PostgresStore) user(where string, arg any) (User, error) {
 	var u User
 	var n int64

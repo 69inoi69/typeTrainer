@@ -4,6 +4,7 @@ import (
 	"testing"
 )
 
+// RankWeight on hand-computed values: 1 up to the limit, then halves per step.
 func TestRankWeight(t *testing.T) {
 	p := testParams // RankStep 200, RankPenalty 0.5
 	for _, c := range []struct {
@@ -48,6 +49,7 @@ func TestRankWeight_Off(t *testing.T) {
 	}
 }
 
+// Rank is the first place of a word in the list, -1 for an unknown word.
 func TestRank(t *testing.T) {
 	g := NewGenerator([]string{"the", "to", "the", "and"}, newRng(1), testParams)
 	for w, want := range map[string]int{"the": 0, "to": 1, "and": 3, "zebra": -1} {

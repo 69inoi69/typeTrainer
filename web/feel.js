@@ -4,6 +4,11 @@
 // The CSS reads the same values as custom properties (--feel-*), set below.
 // None of this changes what is measured or sent to the server.
 // Layer: bottom. Imports nothing.
+// Used by: keyboard.js (key dip, red tint, hand size), typing.js (caret
+// flinch), and style.css through the --feel-* properties.
+// To add a knob: a field in FEEL with its unit and what "more" does, then
+// either read FEEL.x in the JavaScript or add a root.setProperty line below
+// and use var(--feel-x) in style.css.
 
 export const FEEL = {
   // A letter typed right "settles": it starts slightly brighter (a stronger

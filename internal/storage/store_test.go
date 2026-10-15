@@ -16,7 +16,8 @@ import (
 // u is the user of the tests that are not about users.
 const u = LocalUser
 
-// storeTests: every behaviour a Store must have.
+// storeTests: every behaviour a Store must have. To test a new Store
+// method, add a function here; it then runs against both stores.
 var storeTests = map[string]func(*testing.T, Store){
 	"LanguagesAreSeparate":      testLanguagesAreSeparate,
 	"KeyStatsIsACopy":           testKeyStatsIsACopy,
@@ -40,6 +41,7 @@ func runStoreTests(t *testing.T, newStore func(t *testing.T) Store) {
 	}
 }
 
+// TestMemoryStore runs every store test against MemoryStore.
 func TestMemoryStore(t *testing.T) {
 	runStoreTests(t, func(*testing.T) Store { return NewMemoryStore() })
 }
@@ -61,6 +63,7 @@ func testLanguagesAreSeparate(t *testing.T, m Store) {
 	}
 }
 
+// Changing the map KeyStats returned must not change what is stored.
 func testKeyStatsIsACopy(t *testing.T, m Store) {
 	m.SaveKeyStats(u, "en", map[string]engine.KeyStat{"a": {Count: 1}})
 	s, _ := m.KeyStats(u, "en")
@@ -70,6 +73,7 @@ func testKeyStatsIsACopy(t *testing.T, m Store) {
 	}
 }
 
+// RecentSessions returns the newest rounds first and no more than limit.
 func testRecentSessionsNewestFirst(t *testing.T, m Store) {
 	for _, w := range []float64{10, 20, 30} {
 		m.AddSession(u, "pl", Session{WPM: w})
@@ -181,6 +185,8 @@ func TestSession_Summary(t *testing.T) {
 	}
 }
 
+// Accounts: unique names, distinct ids, lookup by name and by id, and the
+// guest is never an account.
 func testUsers(t *testing.T, m Store) {
 	now := time.Now()
 	a, err := m.CreateUser("ann", "hash-a", now)
@@ -310,6 +316,8 @@ func testLengths(t *testing.T, m Store) {
 	}
 }
 
+// LettersTyped adds up the letters of this user's learning rounds in this
+// language that ended with enough letters open; free practice never counts.
 func testLettersTyped(t *testing.T, m Store) {
 	if n, err := m.LettersTyped(u, "en", 26); err != nil || n != 0 {
 		t.Fatalf("no history: %d, %v; want 0", n, err)
@@ -332,6 +340,8 @@ func testLettersTyped(t *testing.T, m Store) {
 	}
 }
 
+// The study group is kept per language, does not touch the rest of the
+// progress, is stored with each round, and Reset clears it.
 func testGroup(t *testing.T, m Store) {
 	if g, err := m.Group(u, "en"); err != nil || g != "" {
 		t.Fatalf("new user: %q, %v; want \"\"", g, err)

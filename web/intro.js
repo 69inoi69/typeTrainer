@@ -2,7 +2,11 @@
 // space bar, eyes up. It opens by itself on the very first visit and again
 // from Help. Everyone starts from the first letters: there is no "open all
 // letters". Guide B, "how this site works", is tour.js.
-// Layer: middle. Imports the bottom layer and keyboard.js.
+// Layer: middle. Imports the bottom layer, keyboard.js (to draw keys) and
+// tour.js (guide B follows guide A on the first visit).
+// Called by: app.js (showIntro on the first visit), languages.js
+// (drawIntroKeys for the new layout), input.js (introKey: every key goes here
+// while the guide is open). Its menu item in Help (#btn-intro) is wired below.
 
 import { FX } from "./fx.js";
 import { $, el, S, store, introOpen, focusText } from "./state.js";
@@ -53,6 +57,7 @@ export function drawIntroKeys() {
   });
 }
 
+// Opens guide A at its first step (from app.js or the Help menu).
 export function showIntro() {
   introStep = 0;
   introPressed = new Set();

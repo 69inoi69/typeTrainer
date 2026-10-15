@@ -6,8 +6,10 @@ import (
 	"testing"
 )
 
+// newRng is a seeded random source, so every test run is the same.
 func newRng(seed int64) *rand.Rand { return rand.New(rand.NewSource(seed)) }
 
+// A new user's portion: PortionWords words of open letters, an open focus.
 func TestPortion_NewUserOpenLettersOnly(t *testing.T) {
 	g := newTestGen(2)
 	por := g.Portion(nil, 0, 0, nil, nil, testParams) // no stats, nothing stored yet
@@ -47,6 +49,7 @@ func TestPortion_EveryWordHasTheFocus(t *testing.T) {
 	}
 }
 
+// No word twice in a row across portions, even when the last word is a retry.
 func TestPortion_NoWordTwiceInARow(t *testing.T) {
 	g := newTestGen(3)
 	var stream []string
@@ -64,6 +67,8 @@ func TestPortion_NoWordTwiceInARow(t *testing.T) {
 	}
 }
 
+// Up to RetryWords mistyped words come back, but never one with a locked
+// letter or one that is not in the list.
 func TestPortion_RetryWordsComeBack(t *testing.T) {
 	g := newTestGen(6)
 	all := len(g.Order())
@@ -124,6 +129,7 @@ func make20(w string) []string {
 	return out
 }
 
+// No words per portion, no dictionary, or one word: no panic, no endless loop.
 func TestPortion_ZeroAndEmpty(t *testing.T) {
 	p := testParams
 	p.PortionWords = 0

@@ -2,6 +2,11 @@
 // hashing, random login tokens and the rules for names and passwords.
 // Standard library only. It knows nothing about HTTP or storage: the api
 // package puts tokens in cookies, the storage package keeps the hashes.
+//
+// The rule behind it: never keep a secret itself, only its hash. A
+// password is hashed slowly (PBKDF2), because people pick guessable
+// passwords; a login token is hashed fast (SHA-256), because it is already
+// random. Limiter (limit.go) slows down guessing over the network.
 package auth
 
 import (
@@ -44,7 +49,7 @@ const (
 // PBKDF2 runs SHA-256 `iterations` times, so checking one guess is slow on
 // purpose. The random salt makes the same password hash differently for
 // every user. The iterations are part of the string, so they can be raised
-// later without breaking old hashes.
+// later without breaking old hashes. PBKDF2 is described in RFC 8018.
 func HashPassword(password string, iterations int) (string, error) {
 	salt := make([]byte, saltBytes)
 	if _, err := rand.Read(salt); err != nil {
