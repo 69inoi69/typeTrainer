@@ -685,9 +685,14 @@ func TestApp_RareWordsAfterTheAlphabet(t *testing.T) {
 			rank[w] = i
 		}
 	}
+	// The words are random, so the mean is taken over 100 portions: with 30
+	// the ratio after the ramp ranged from 1.9 to 2.7 and the test failed
+	// about once in 40 runs. With 100 it stays between 2.1 and 2.4, and free
+	// practice stays between 0.9 and 1.1, so the limits 1.5 and 1.8 below
+	// sit well clear of both.
 	meanRank := func() float64 {
 		sum, n := 0, 0
-		for i := 0; i < 30; i++ {
+		for i := 0; i < 100; i++ {
 			_, out := call(t, h, "POST", "/api/v1/portion?lang=en", `{"start":true}`)
 			for _, p := range out["portions"].([]any) {
 				for _, w := range p.(map[string]any)["words"].([]any) {
@@ -708,7 +713,7 @@ func TestApp_RareWordsAfterTheAlphabet(t *testing.T) {
 	if code, out := call(t, h, "POST", "/api/v1/results?lang=en", body); code != 200 {
 		t.Fatalf("results: %d %v", code, out)
 	}
-	if end := meanRank(); end < 2*start {
+	if end := meanRank(); end < 1.8*start {
 		t.Fatalf("after the ramp: mean rank %v, want much higher than %v", end, start)
 	}
 }
