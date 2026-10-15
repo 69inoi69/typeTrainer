@@ -27,7 +27,7 @@ type portionRequest struct {
 // A new round ({"start": true}) gets the portion to type plus AheadPortions
 // waiting after it; later calls get one portion each. "round" = portions per
 // round: the browser stops asking when the round has them all.
-func (s *Server) handlePortion(w http.ResponseWriter, r *http.Request, l *Language) {
+func (s *Server) handlePortion(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	var req portionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -46,7 +46,7 @@ func (s *Server) handlePortion(w http.ResponseWriter, r *http.Request, l *Langua
 
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	stats, unlocked, newLetter, err := s.learn(l, req.Samples)
+	stats, unlocked, newLetter, err := s.learn(user, l, req.Samples)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -72,12 +72,12 @@ func (s *Server) handlePortion(w http.ResponseWriter, r *http.Request, l *Langua
 // learn applies samples to the statistics of the language and opens the next
 // letter if every open letter is mastered. The caller holds writeMu.
 // newLetter is "" if nothing opened.
-func (s *Server) learn(l *Language, samples []engine.Sample) (stats map[string]engine.KeyStat, unlocked int, newLetter string, err error) {
+func (s *Server) learn(user string, l *Language, samples []engine.Sample) (stats map[string]engine.KeyStat, unlocked int, newLetter string, err error) {
 	id := l.Info.ID
-	if stats, err = s.store.KeyStats(id); err != nil {
+	if stats, err = s.store.KeyStats(user, id); err != nil {
 		return
 	}
-	before, err := s.store.Unlocked(id)
+	before, err := s.store.Unlocked(user, id)
 	if err != nil {
 		return
 	}
@@ -86,11 +86,11 @@ func (s *Server) learn(l *Language, samples []engine.Sample) (stats map[string]e
 		return stats, before, "", nil
 	}
 	stats = engine.Apply(stats, samples, s.cfg.Engine)
-	if err = s.store.SaveKeyStats(id, stats); err != nil {
+	if err = s.store.SaveKeyStats(user, id, stats); err != nil {
 		return
 	}
 	unlocked = l.Gen.NextUnlocked(stats, before, s.cfg.Engine)
-	if err = s.store.SetUnlocked(id, unlocked); err != nil {
+	if err = s.store.SetUnlocked(user, id, unlocked); err != nil {
 		return
 	}
 	if unlocked > before {
@@ -112,7 +112,7 @@ type resultsRequest struct {
 // history. Samples are the ones not yet sent with /portion (may be empty).
 // Answer: {"unlocked": 8, "newLetter": "s", "consistency": 81.4}
 // (newLetter is "" if nothing opened; consistency is null for a round too short to judge).
-func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, l *Language) {
+func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20) // 1 MB is plenty
 	var req resultsRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -129,7 +129,7 @@ func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, l *Langua
 
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	_, unlocked, newLetter, err := s.learn(l, req.Samples)
+	_, unlocked, newLetter, err := s.learn(user, l, req.Samples)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -138,7 +138,7 @@ func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, l *Langua
 	if v, ok := engine.Consistency(req.PerSecond, s.cfg.ConsistencyMinSeconds); ok {
 		consistency = &v
 	}
-	err = s.store.AddSession(l.Info.ID, storage.Session{
+	err = s.store.AddSession(user, l.Info.ID, storage.Session{
 		WPM: req.WPM, Accuracy: req.Accuracy, Chars: req.Chars, Consistency: consistency, FinishedAt: time.Now(),
 	})
 	if err != nil {
@@ -151,7 +151,7 @@ func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, l *Langua
 // POST /api/v1/progress?lang= {"unlockAll": true} -> for people who can already
 // touch type: skip the lessons and open every letter. {"unlockAll": false}
 // goes back to the first lesson (statistics are kept).
-func (s *Server) handleProgress(w http.ResponseWriter, r *http.Request, l *Language) {
+func (s *Server) handleProgress(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	var req struct {
 		UnlockAll bool `json:"unlockAll"`
 	}
@@ -165,7 +165,7 @@ func (s *Server) handleProgress(w http.ResponseWriter, r *http.Request, l *Langu
 	}
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	if err := s.store.SetUnlocked(l.Info.ID, n); err != nil {
+	if err := s.store.SetUnlocked(user, l.Info.ID, n); err != nil {
 		serverError(w, err)
 		return
 	}
@@ -184,14 +184,14 @@ type keyInfo struct {
 
 // GET /api/v1/stats?lang= -> every letter (hardest first), the last 50 sessions
 // (newest first) and the total number of finished exercises.
-func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, l *Language) {
+func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	id := l.Info.ID
-	stats, err := s.store.KeyStats(id)
+	stats, err := s.store.KeyStats(user, id)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	unlocked, err := s.store.Unlocked(id)
+	unlocked, err := s.store.Unlocked(user, id)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -208,12 +208,12 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, l *Language
 		})
 	}
 	sort.SliceStable(keys, func(i, j int) bool { return keys[i].Difficulty > keys[j].Difficulty })
-	sessions, err := s.store.RecentSessions(id, 50)
+	sessions, err := s.store.RecentSessions(user, id, 50)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	count, err := s.store.SessionCount(id)
+	count, err := s.store.SessionCount(user, id)
 	if err != nil {
 		serverError(w, err)
 		return

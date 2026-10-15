@@ -20,34 +20,41 @@ type Session struct {
 	FinishedAt  time.Time `json:"finishedAt"`
 }
 
+// LocalUser is the user id of everyone while there are no accounts: the
+// person sitting at this server or browser tab.
+const LocalUser = "local"
+
 // Store is every data operation the app needs. Nothing outside this
 // package should know how the data is actually stored.
 //
-// Every method takes the language id ("en", "pl", ...): each language has its
-// own letter statistics, its own unlock progress and its own history,
-// because being good at English says nothing about Ukrainian.
+// Every method takes two ids:
+//   - the user ("local" for now, see LocalUser): each person has their own
+//     data. With accounts this becomes the account id.
+//   - the language ("en", "pl", ...): each language has its own letter
+//     statistics, its own unlock progress and its own history, because being
+//     good at English says nothing about Ukrainian.
 type Store interface {
-	KeyStats(lang string) (map[string]engine.KeyStat, error)
-	SaveKeyStats(lang string, stats map[string]engine.KeyStat) error
+	KeyStats(user, lang string) (map[string]engine.KeyStat, error)
+	SaveKeyStats(user, lang string, stats map[string]engine.KeyStat) error
 
 	// Unlocked is how many letters of the unlock order are open (0 = new user).
-	Unlocked(lang string) (int, error)
-	SetUnlocked(lang string, n int) error
+	Unlocked(user, lang string) (int, error)
+	SetUnlocked(user, lang string, n int) error
 
-	AddSession(lang string, s Session) error
-	RecentSessions(lang string, limit int) ([]Session, error) // newest first
-	SessionCount(lang string) (int, error)                    // all finished exercises
+	AddSession(user, lang string, s Session) error
+	RecentSessions(user, lang string, limit int) ([]Session, error) // newest first
+	SessionCount(user, lang string) (int, error)                    // all finished exercises
 
 	// Free practice (internal/freeplay) is kept apart from learning: its
 	// own history, and a flag set once the typing test is passed. Its
 	// rounds never change the letter statistics above.
-	TestPassed(lang string) (bool, error)
-	SetTestPassed(lang string, passed bool) error
-	AddFreeplaySession(lang string, s Session) error
-	RecentFreeplaySessions(lang string, limit int) ([]Session, error) // newest first
-	FreeplaySessionCount(lang string) (int, error)
+	TestPassed(user, lang string) (bool, error)
+	SetTestPassed(user, lang string, passed bool) error
+	AddFreeplaySession(user, lang string, s Session) error
+	RecentFreeplaySessions(user, lang string, limit int) ([]Session, error) // newest first
+	FreeplaySessionCount(user, lang string) (int, error)
 
-	// Reset deletes everything stored for the language, free practice
-	// included: it is new again.
-	Reset(lang string) error
+	// Reset deletes everything the user has stored for the language, free
+	// practice included: it is new again. Other users and languages stay.
+	Reset(user, lang string) error
 }

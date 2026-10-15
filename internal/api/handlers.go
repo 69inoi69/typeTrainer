@@ -2,6 +2,7 @@
 // engine and the store, and turns the answers back into JSON.
 // All routes start with /api/v1/. Every route except /languages takes
 // ?lang=<id> (default: the first language in data/languages.json).
+// Every handler also knows whose data it works with (userOf).
 package api
 
 import (
@@ -63,9 +64,12 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/freeplay/stats", s.withLang(s.handleFreeplayStats))
 }
 
-type langHandler func(w http.ResponseWriter, r *http.Request, l *Language)
+// langHandler gets, besides the request, WHOSE data it works with and in
+// which language. Every handler passes both on to the store.
+type langHandler func(w http.ResponseWriter, r *http.Request, user string, l *Language)
 
-// withLang reads ?lang= and passes the matching Language to the handler.
+// withLang reads ?lang= and passes the matching Language to the handler,
+// together with the user the request belongs to (userOf).
 // An unknown language is a 400 error, an empty one means the default.
 func (s *Server) withLang(h langHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -78,8 +82,15 @@ func (s *Server) withLang(h langHandler) http.HandlerFunc {
 				return
 			}
 		}
-		h(w, r, l)
+		h(w, r, s.userOf(r), l)
 	}
+}
+
+// userOf says whose data a request works with. There are no accounts yet,
+// so every request belongs to storage.LocalUser. When login is added, this
+// is the one place that reads the session and returns the logged-in user.
+func (s *Server) userOf(r *http.Request) string {
+	return storage.LocalUser
 }
 
 // GET /api/v1/languages -> the list for the language switch.
@@ -92,7 +103,7 @@ func (s *Server) handleLanguages(w http.ResponseWriter, r *http.Request) {
 }
 
 // GET /api/v1/layout?lang= -> the keyboard layout JSON, as is.
-func (s *Server) handleLayout(w http.ResponseWriter, r *http.Request, l *Language) {
+func (s *Server) handleLayout(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(l.LayoutJSON)
 }
