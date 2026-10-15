@@ -27,6 +27,13 @@ export const FEEL = {
   // wrong = red letter; skipped = dim with a dotted underline;
   // extra = struck through. Thickness of those lines, px.
   markLine: 2,
+
+  // The hands above the keyboard (issue #19): the finger to use is the main
+  // signal, the key itself is only hinted.
+  handScale: 1.4,           // hand width in keys: 2 * handScale (1 = the old size)
+  fingerLiftPx: 8,          // how far the finger to use lifts
+  fingerGlowPx: 7,          // its soft glow: a see-through outline, in the hand drawing's units
+  nextKeyTint: 38,          // how strongly the next key takes its finger colour, % (100 = solid)
 };
 
 // The CSS custom properties: style.css uses var(--feel-...).
@@ -34,3 +41,7 @@ const root = document.documentElement.style;
 root.setProperty("--feel-settle-ms", FEEL.charSettleMs + "ms");
 root.setProperty("--feel-settle-glow", FEEL.charSettleGlow + "px");
 root.setProperty("--feel-mark-line", FEEL.markLine + "px");
+root.setProperty("--feel-hand", String(FEEL.handScale));
+root.setProperty("--feel-finger-lift", -FEEL.fingerLiftPx + "px");
+root.setProperty("--feel-finger-glow", String(FEEL.fingerGlowPx));
+root.setProperty("--feel-next-tint", FEEL.nextKeyTint + "%");

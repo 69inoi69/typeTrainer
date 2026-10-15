@@ -154,7 +154,8 @@ export function applyKb(animate = false) {
 // Everything else is measured once (it does not depend on --u), and --u-fit
 // caps the unit so the rest fits. Runs on load, resize, a new text and when
 // the keyboard is switched on: never on a keypress.
-const HANDS_KB_PER_U = 6.04;   // hands 1.68 u (2 u wide, 100:84) + keyboard 4.36 u (4 rows, 3 gaps of .12 u)
+// hands 1.68 u * handScale (2 u wide, 100:84) + keyboard 4.36 u (4 rows, 3 gaps of .12 u)
+const HANDS_KB_PER_U = 1.68 * FEEL.handScale + 4.36;
 let fitFrame = 0;
 export function requestFit() {
   cancelAnimationFrame(fitFrame);
