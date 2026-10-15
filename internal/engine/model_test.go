@@ -15,6 +15,7 @@ var testParams = Params{
 	MasteryMinSamples: 20, MasteryErrorRate: 0.05,
 	StartLetters: 6, MinWords: 30, RepeatPenalty: 0.3, ExerciseWords: 20,
 	PortionWords: 6, AheadPortions: 2, RecentWords: 20, RetryWords: 2, RoundPortions: 5,
+	RankStart: 200, RankStep: 200, RankPenalty: 0.5,
 }
 
 func near(a, b float64) bool { return math.Abs(a-b) < 1e-9 }

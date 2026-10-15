@@ -53,6 +53,10 @@ func Default() Config {
 			RecentWords:   20, // "do not repeat" looks at the last 20 words, as one exercise did
 			RetryWords:    2,  // up to 2 words with a mistake are typed again
 			RoundPortions: 5,  // a round is 30 words: a clear end, then the result
+
+			RankStart:   200, // first lesson: the 200 most common words come freely (monkeytype "200")
+			RankStep:    200, // every 200 places further down the list...
+			RankPenalty: 0.5, // ...halve the chance of a word
 		},
 		// A made-up typist: assumptions of the simulation, not measured values.
 		// docs/ALGORITHM.md section 11 explains them.

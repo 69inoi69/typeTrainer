@@ -28,6 +28,7 @@ import (
 	"math"
 	"math/rand"
 	"strings"
+	"unicode/utf8"
 
 	"typingtrainer/internal/engine"
 )
@@ -323,6 +324,7 @@ type Result struct {
 	Reached   bool    // false = gave up after MaxExercises
 	AllOpenAt int     // exercise after which every letter was unlocked (0 = never)
 	Variety   Variety // over the first FirstExercises exercises (the first lessons)
+	Letters   float64 // mean letters per word over the whole run (NaN without words)
 }
 
 // typeNext lets the typist type the strategy's next text. Inside a round of
@@ -343,8 +345,9 @@ func Run(gen *engine.Generator, s Strategy, t *Typist, ep engine.Params, p Param
 	stats := map[string]engine.KeyStat{}
 	unlocked := gen.Start()
 	res := Result{}
-	v := variety{size: ep.ExerciseWords}
+	v := variety{size: ep.ExerciseWords, rankOf: gen.Rank}
 	exercises := func(words int) int { return (words + ep.ExerciseWords - 1) / ep.ExerciseWords }
+	letters := 0
 	for words := 0; words < p.MaxExercises*ep.ExerciseWords; {
 		text := s.Text(stats, unlocked)
 		if len(text) == 0 {
@@ -355,6 +358,8 @@ func Run(gen *engine.Generator, s Strategy, t *Typist, ep engine.Params, p Param
 		}
 		samples := typeNext(s, t, text)
 		words += len(strings.Fields(text))
+		letters += len(samples) // one sample per letter
+		res.Letters = float64(letters) / float64(words)
 		s.Observe(samples)
 		stats = engine.Apply(stats, samples, ep)
 		unlocked = gen.NextUnlocked(stats, unlocked, ep)
@@ -369,6 +374,9 @@ func Run(gen *engine.Generator, s Strategy, t *Typist, ep engine.Params, p Param
 	}
 	res.Exercises = p.MaxExercises
 	res.Variety = v.result()
+	if letters == 0 {
+		res.Letters = math.NaN()
+	}
 	return res
 }
 
@@ -378,6 +386,8 @@ type Variety struct {
 	Distinct float64 // share of different words in one exercise (1 = no word twice)
 	Repeated float64 // share of words that were also in the previous exercise
 	TopShare float64 // share of words that contain the exercise's most common letter
+	Letters  float64 // mean letters per word (not a share): how long the words are
+	Rank     float64 // mean place of the words in the frequency list (0 = most common)
 }
 
 // RunOpen measures variety the way an experienced typist meets it: every
@@ -387,7 +397,7 @@ type Variety struct {
 func RunOpen(gen *engine.Generator, s Strategy, t *Typist, ep engine.Params, n int) Variety {
 	stats := map[string]engine.KeyStat{}
 	all := len(gen.Order())
-	v := variety{size: ep.ExerciseWords}
+	v := variety{size: ep.ExerciseWords, rankOf: gen.Rank}
 	for words := 0; words < n*ep.ExerciseWords; {
 		text := s.Text(stats, all)
 		if len(text) == 0 {
@@ -410,6 +420,8 @@ type variety struct {
 	buf                     []string // words not measured yet
 	n                       int
 	distinct, repeated, top float64
+	letters, rank           float64
+	rankOf                  func(string) int // the word's place in the frequency list
 	prev                    map[string]bool
 }
 
@@ -431,6 +443,18 @@ func (v *variety) block(words []string) {
 		}
 	}
 	v.distinct += float64(len(cur)) / float64(len(words))
+	n := 0
+	for _, w := range words {
+		n += utf8.RuneCountInString(w)
+	}
+	v.letters += float64(n) / float64(len(words))
+	if v.rankOf != nil {
+		k := 0
+		for _, w := range words {
+			k += v.rankOf(w)
+		}
+		v.rank += float64(k) / float64(len(words))
+	}
 	inWords := map[rune]int{} // how many words contain each letter
 	best := 0
 	for _, w := range words {
@@ -457,12 +481,17 @@ func (v *variety) block(words []string) {
 // previous one, so Repeated is averaged over one exercise fewer.
 func (v *variety) result() Variety {
 	if v.n == 0 {
-		return Variety{math.NaN(), math.NaN(), math.NaN()}
+		return Variety{math.NaN(), math.NaN(), math.NaN(), math.NaN(), math.NaN()}
 	}
 	out := Variety{
 		Distinct: v.distinct / float64(v.n),
 		Repeated: math.NaN(),
 		TopShare: v.top / float64(v.n),
+		Letters:  v.letters / float64(v.n),
+		Rank:     math.NaN(),
+	}
+	if v.rankOf != nil {
+		out.Rank = v.rank / float64(v.n)
 	}
 	if v.n > 1 {
 		out.Repeated = v.repeated / float64(v.n-1)

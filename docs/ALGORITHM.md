@@ -259,11 +259,48 @@ one letter at a time, but never on the same one for long.
 
 ```
 D(word)   = average difficulty of the word's letters (each occurrence counts)
-P(word)  ~ exp(D(word) / T) * RepeatPenalty^(uses in the last RecentWords words)
+F(word)   = RankPenalty^(max(0, rank(word) - MaxRank) / RankStep)
+P(word)  ~ exp(D(word) / T) * F(word) * RepeatPenalty^(uses in the last RecentWords words)
 ```
 
 Among words that contain the focus letter, the ones that also contain other weak
-letters are preferred. `RepeatPenalty = 0.3` makes a word that was used in the
+letters are preferred.
+
+**Common words first.** `F(word)` works like monkeytype's "English 200",
+"1k", "2k" word lists, but without a switch: at the start the text is made of
+the most common words, and rarer words come in step by step as the user
+progresses. The word lists are sorted by frequency (section 12), so a word's
+place in its list, its **rank** (0 = the most common word), says how common
+it is.
+
+```
+MaxRank  = RankStart + (words in the list - RankStart) * progress
+progress = (unlocked letters - letters of the first lesson) / (all letters - letters of the first lesson)
+```
+
+With `RankStart = 200`, `RankStep = 200` and `RankPenalty = 0.5`, the first
+lesson allows the 200 most common words freely, and every 200 places further
+down the list halve a word's chance (rank 1000: 1/16). With half of the
+letters open the limit is about rank 1100, with all letters open it is the
+whole list (2000) and the penalty is gone. Choices behind this:
+
+- **Why it is needed.** Without it, words are drawn evenly from the whole
+  list: whatever the open letters are, about half of the possible words are
+  from the rare end of the list (ranks 1000-2000), already in the first
+  lesson. So a beginner types `sister`, `arrest`, `easier` as often as `is`,
+  `at`, `see`. Common words are also short, so this rule makes the first
+  lessons shorter too (11.1).
+- **Progress = unlocked letters.** A letter opens only when every open letter is
+  mastered (accurate and at `TargetWPM`), so the count measures real skill, it
+  already exists, and it needs no new stored data. Counting sessions or typed
+  characters would also reward someone who types a lot but badly.
+- **A soft penalty, not a ban.** The weight is never 0, so rare words stay
+  possible, and a letter whose words are all rare still gets practised. Early
+  lessons have few words at all (in English 49 in the first lesson, only 9 of
+  them among the 200 most common), so a hard limit would leave the user with
+  a handful of words. The penalty only makes the common ones much more likely.
+- `RankPenalty` outside `(0, 1)` or `RankStep <= 0` turns the penalty off.
+  A word list shorter than `RankStart` gets no penalty at all. `RepeatPenalty = 0.3` makes a word that was used in the
 last `RecentWords = 20` words of the stream unlikely, and the same word never
 appears twice in a row (also across the border of two portions). If the
 focus letter has too few words, a word without it is taken.
@@ -327,6 +364,9 @@ All in `internal/config/config.go`.
 | `RecentWords` | 20 | the repeat penalty looks at this many last words | the same window as one exercise had |
 | `RetryWords` | 2 | most mistyped words put back into one portion | at most a third of a portion is repetition |
 | `RoundPortions` | 5 | portions per round (30 words), one result in the history | chosen by the owner: a clear end; about 1-2 minutes for a beginner, 20 seconds for a fast typist |
+| `RankStart` | 200 | words up to this frequency rank come without a penalty in the first lesson | the size of monkeytype's smallest list ("English 200"): the core words of a language |
+| `RankStep` | 200 | distance in ranks that halves a word's chance | one "200 words" block per halving: rank 1000 in the first lesson is 16 times rarer |
+| `RankPenalty` | 0.5 | weight multiplier per `RankStep` over the limit | halving is easy to explain; with `T = 0.1` one step equals about 0.07 of difficulty, so weak letters still decide first |
 
 The values were chosen by reasoning, not fitted to data. Tuning them on real
 user data is a good subject for the evaluation chapter (section 11).
@@ -396,7 +436,7 @@ every letter's **hidden** values meet the mastery goal (≤ 5 % errors,
 ≤ 400 ms). The hidden values are used only to judge the result; the strategies
 see only what a real browser would send.
 
-**Four strategies,** all with the same statistics (`engine.Apply`), the same
+**Five strategies,** all with the same statistics (`engine.Apply`), the same
 unlocking rule (`NextUnlocked`), and for each run the same typist and the same
 random numbers:
 
@@ -409,7 +449,9 @@ random numbers:
    statistics updated after each exercise (the app before the stream);
 4. **stream:** this project's `Generator.Portion` exactly as the app uses it
    now (section 7): rounds of 5 portions of 6 words, 2 waiting, statistics
-   updated after each portion, mistyped words come back.
+   updated after each portion, mistyped words come back;
+5. **stream, no frequency penalty:** the same, with `RankPenalty` off, to show
+   what the "common words first" rule of section 7 changes.
 
 Strategies 1-3 work in exercises of 20 words. The stream has no exercises, so
 everything is counted in words and reported in "exercises" of 20 words: 163
@@ -422,7 +464,10 @@ also measures how repetitive the exercises are (means over exercises):
 - `dist`: share of different words in one exercise (100 % = no word twice);
 - `rep`: share of words that were also in the previous exercise;
 - `top`: share of words that contain the exercise's most common letter
-  (how hard one letter is pushed).
+  (how hard one letter is pushed);
+- `len`: mean letters per word, and `rank`: mean place of the words in the
+  frequency list, 0 = the most common word (printed by the tool, not in the
+  table below; quoted in the bullets).
 
 They are measured twice: on the **first 30 exercises** of the beginner above
 (few open letters), and on an **experienced typist** who opens every letter in
@@ -431,30 +476,38 @@ exercises.
 
 **Result** (20 typists per strategy; "exercises" = mean number of exercises
 until the goal, a run gives up after 3000; variety in the format
-dist / rep / top):
+dist / rep / top). The rows "adaptive, T = 0.1" and "stream, T = 0.1" use the
+word frequency penalty of section 7; "stream, no frequency penalty" is the
+same stream with `RankPenalty` turned off. The `T = 0.25` rows and the
+comparisons in the first bullets below were measured before the frequency
+penalty existed:
 
 | Language | Strategy | Exercises | Variety, first 30 | Variety, expert |
 |---|---|---|---|---|
 | en | random words | 2447 | 87 / 28 / 73 | 100 / 1 / 60 |
 | en | best of 20 | 292 | 47 / 55 / 94 | 96 / 8 / 75 |
 | en | adaptive, T = 0.25 | 299 | 94 / 28 / 73 | 100 / 2 / 62 |
-| en | adaptive, T = 0.1 | 173 | 89 / 31 / 83 | 99 / 3 / 62 |
-| en | stream, T = 0.1 | 163 | 88 / 29 / 82 | 98 / 5 / 65 |
+| en | adaptive, T = 0.1 | 176 | 79 / 45 / 78 | 99 / 3 / 62 |
+| en | stream, T = 0.1 | 171 | 79 / 39 / 77 | 98 / 5 / 65 |
+| en | stream, no frequency penalty | 163 | 88 / 29 / 82 | 98 / 5 / 65 |
 | pl | random words | 1520 | 81 / 40 / 70 | 100 / 1 / 55 |
 | pl | best of 20 | 274 | 33 / 64 / 83 | 96 / 8 / 69 |
 | pl | adaptive, T = 0.25 | 450 | 86 / 50 / 71 | 100 / 1 / 55 |
-| pl | adaptive, T = 0.1 | 246 | 77 / 49 / 79 | 100 / 2 / 56 |
-| pl | stream, T = 0.1 | 229 | 75 / 47 / 80 | 99 / 4 / 59 |
+| pl | adaptive, T = 0.1 | 245 | 69 / 56 / 75 | 100 / 2 / 56 |
+| pl | stream, T = 0.1 | 232 | 67 / 53 / 76 | 99 / 4 / 59 |
+| pl | stream, no frequency penalty | 229 | 75 / 47 / 80 | 99 / 4 / 59 |
 | uk | random words | 1818 | 81 / 39 / 61 | 100 / 1 / 51 |
 | uk | best of 20 | 286 | 34 / 59 / 85 | 96 / 8 / 68 |
 | uk | adaptive, T = 0.25 | 464 | 90 / 44 / 66 | 100 / 2 / 53 |
-| uk | adaptive, T = 0.1 | 247 | 85 / 46 / 76 | 100 / 2 / 54 |
-| uk | stream, T = 0.1 | 233 | 82 / 40 / 77 | 99 / 4 / 57 |
+| uk | adaptive, T = 0.1 | 254 | 72 / 57 / 70 | 100 / 2 / 54 |
+| uk | stream, T = 0.1 | 242 | 70 / 50 / 72 | 99 / 4 / 57 |
+| uk | stream, no frequency penalty | 233 | 82 / 40 / 77 | 99 / 4 / 57 |
 | ru | random words | 3000 (none reached) | 83 / 38 / 60 | 100 / 1 / 56 |
 | ru | best of 20 | 1175 | 34 / 59 / 81 | 96 / 8 / 72 |
 | ru | adaptive, T = 0.25 | 490 | 91 / 42 / 67 | 99 / 4 / 58 |
-| ru | adaptive, T = 0.1 | 247 | 86 / 40 / 77 | 98 / 4 / 59 |
-| ru | stream, T = 0.1 | 251 | 85 / 34 / 77 | 97 / 5 / 62 |
+| ru | adaptive, T = 0.1 | 259 | 78 / 48 / 73 | 98 / 4 / 59 |
+| ru | stream, T = 0.1 | 259 | 77 / 43 / 75 | 97 / 5 / 62 |
+| ru | stream, no frequency penalty | 251 | 85 / 34 / 77 | 97 / 5 / 62 |
 
 `go run ./tools/sim -temps 0.1,0.15,0.2,0.25` prints the in-between values
 too: exercises fall steadily as T falls (en 299, 264, 229, 173).
@@ -486,6 +539,19 @@ What this shows:
   larger (161, 221, 227, 247): each new round starts with three portions built
   from the same statistics. The owner chose rounds anyway, for a clear end and
   a result screen.
+- **Common words first** (section 7). In the first 30 exercises the mean
+  rank of the words falls from 905 to 391 (en), 680 to 269 (pl), 823 to 337
+  (uk), 737 to 347 (ru): the text is made of common words, as intended. The
+  words also get shorter: 3.7 against 4.3 letters (en), 3.5 against 4.0 (pl),
+  3.4 against 4.2 (uk), 3.9 against 4.4 (ru). The price: the common words of a
+  small alphabet are few, so the first lessons repeat more (`dist` 8-12 points
+  lower, `rep` 6-10 points higher), and reaching the goal takes 1-5 % more
+  words (171 against 163, 232 against 229, 242 against 233, 259 against 251;
+  the larger gaps are about the spread of 20 runs). The experienced typist has
+  every letter open, so nothing changes there.
+- A milder version, a penalty on long words instead of rare ones (tried
+  first), changed the first lessons by only 0.1-0.4 letters per word: unlocking
+  already keeps early words short, but it does not keep them common.
 - Most repetition in the first lessons comes from the **small alphabet**, not
   from the strategy: even random words repeat 28-40 % of the previous exercise.
   That part is controlled by `StartLetters` and `MinWords`, not by `T`.
