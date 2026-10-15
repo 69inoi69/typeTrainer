@@ -151,6 +151,22 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   harder the letter is for you, dashed = no data yet; hover or tap a key for
   its numbers), and every letter from weakest to strongest.
 
+## A user study (for the thesis)
+
+To compare the algorithm with random words on real people, give half of the
+participants this link (with your own address):
+
+```
+http://localhost:3000/?group=random
+```
+
+and the other half the normal address. In the "random" group the words are
+chosen at random from the open letters; everything else is the same, and
+nothing on the screen says which group it is. Every round remembers its
+group, and **Export** saves it, so you can compare the two groups later.
+`?group=adaptive` puts a browser back to normal. A reset clears the group:
+open the link again after one.
+
 ## Languages and layouts
 
 English, Polish, Ukrainian and Russian, chosen with the switch at the top. Each

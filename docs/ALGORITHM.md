@@ -505,7 +505,20 @@ These are directions, not things that are built:
   (`TestDifficulty_ShrinkageNeedsEvidence`), only open letters are used.
 - **Simulation** (built, see section 11.1).
 - **Small user study.** Two groups (adaptive vs. random words), the same total
-  practice time, compare WPM and accuracy before and after.
+  practice time, compare WPM and accuracy before and after. The control group
+  is built in and hidden: opening the site with `?group=random` puts that
+  browser (or account) into it in every language, `?group=adaptive` takes it
+  back (`web/app.js`, `POST /api/v1/group`). In the control group learning
+  works as usual (the same letter model, the same unlocking, the same rounds
+  and history) except the word choice: `Generator.RandomPortion` draws the
+  open words uniformly, never the same word twice in a row, with no focus
+  letter, no frequency penalty and no mistyped words coming back, like the
+  "random words" strategy of the simulation (11.1). Every learning round
+  stores its group (`Session.Group`, in `/export` too), so the two groups'
+  rounds can be told apart in the data. The interface does not show the
+  group, so participants do not know which one they are in; the letters bar
+  only shows no focus letter. A reset or a new browser drops the group: open
+  the link again.
 - **Raw data.** Every round in the history keeps its raw keypresses
   (`keys`: letter, mistakes, time, in order; ARCHITECTURE.md, "Raw round
   records"), and `/export` writes them to the file. Replaying them through

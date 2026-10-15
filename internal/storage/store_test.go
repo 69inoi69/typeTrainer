@@ -30,6 +30,7 @@ var storeTests = map[string]func(*testing.T, Store){
 	"KeyStatsFields":            testKeyStatsFields,
 	"Lengths":                   testLengths,
 	"LettersTyped":              testLettersTyped,
+	"Group":                     testGroup,
 }
 
 // runStoreTests runs every test on a fresh, empty store from newStore.
@@ -328,5 +329,35 @@ func testLettersTyped(t *testing.T, m Store) {
 	m.Reset(u, "en")
 	if n, _ := m.LettersTyped(u, "en", 0); n != 0 {
 		t.Fatalf("after reset: %d, want 0", n)
+	}
+}
+
+func testGroup(t *testing.T, m Store) {
+	if g, err := m.Group(u, "en"); err != nil || g != "" {
+		t.Fatalf("new user: %q, %v; want \"\"", g, err)
+	}
+	m.SetUnlocked(u, "en", 7) // the group must not touch the progress row's other fields
+	m.SetGroup(u, "en", GroupRandom)
+	if g, _ := m.Group(u, "en"); g != GroupRandom {
+		t.Fatalf("group = %q, want %q", g, GroupRandom)
+	}
+	if n, _ := m.Unlocked(u, "en"); n != 7 {
+		t.Fatalf("unlocked changed to %d", n)
+	}
+	if g, _ := m.Group(u, "pl"); g != "" {
+		t.Fatalf("another language got group %q", g)
+	}
+	m.AddSession(u, "en", Session{WPM: 30, Group: GroupRandom})
+	if got, _ := m.RecentSessions(u, "en", "", 1); len(got) != 1 || got[0].Group != GroupRandom {
+		t.Fatalf("session group lost: %+v", got)
+	}
+	m.SetGroup(u, "en", "")
+	if g, _ := m.Group(u, "en"); g != "" {
+		t.Fatalf("back to normal: %q", g)
+	}
+	m.SetGroup(u, "en", GroupRandom)
+	m.Reset(u, "en")
+	if g, _ := m.Group(u, "en"); g != "" {
+		t.Fatalf("after reset: %q", g)
 	}
 }

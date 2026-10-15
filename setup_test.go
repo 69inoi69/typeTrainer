@@ -704,3 +704,48 @@ func TestApp_RareWordsAfterTheAlphabet(t *testing.T) {
 		t.Fatalf("after the ramp: mean rank %v, want much higher than %v", end, start)
 	}
 }
+
+// The hidden study group: random words in learning, kept per language, on
+// every round, in the stats and in export/import.
+func TestApp_StudyGroup(t *testing.T) {
+	h, _, _ := newApp()
+	if code, _ := call(t, h, "POST", "/api/v1/group?lang=en", `{"group":"lazy"}`); code != 400 {
+		t.Fatalf("unknown group: %d, want 400", code)
+	}
+	if code, _ := call(t, h, "POST", "/api/v1/group?lang=en", `{"group":"random"}`); code != 200 {
+		t.Fatalf("group: %d", code)
+	}
+	_, out := call(t, h, "POST", "/api/v1/portion?lang=en", `{"start":true}`)
+	for _, p := range out["portions"].([]any) {
+		if p.(map[string]any)["focus"] != "" {
+			t.Fatalf("random group: a portion has a focus letter: %v", p)
+		}
+	}
+	call(t, h, "POST", "/api/v1/results?lang=en", `{"samples":[],"chars":40,"wpm":30,"accuracy":95}`)
+	_, st := call(t, h, "GET", "/api/v1/stats?lang=en", "")
+	sess := st["sessions"].([]any)[0].(map[string]any)
+	if st["group"] != "random" || sess["group"] != "random" {
+		t.Fatalf("stats: group %v, round group %v", st["group"], sess["group"])
+	}
+	if _, pl := call(t, h, "GET", "/api/v1/stats?lang=pl", ""); pl["group"] != "" {
+		t.Fatalf("another language got the group: %v", pl["group"])
+	}
+	_, out = call(t, h, "POST", "/api/v1/portion?lang=pl", `{"start":true}`)
+	if out["portions"].([]any)[0].(map[string]any)["focus"] == "" {
+		t.Fatal("the normal app must still have a focus letter")
+	}
+
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, guestRequest("GET", "/api/v1/export?lang=en", ""))
+	exported := rec.Body.String()
+	call(t, h, "POST", "/api/v1/reset?lang=en", "")
+	if _, st := call(t, h, "GET", "/api/v1/stats?lang=en", ""); st["group"] != "" {
+		t.Fatal("reset must clear the group")
+	}
+	if code, out := call(t, h, "POST", "/api/v1/import?lang=en", exported); code != 200 {
+		t.Fatalf("import: %d %v", code, out)
+	}
+	if _, st := call(t, h, "GET", "/api/v1/stats?lang=en", ""); st["group"] != "random" {
+		t.Fatal("import lost the group")
+	}
+}

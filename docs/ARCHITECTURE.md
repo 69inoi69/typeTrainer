@@ -163,6 +163,7 @@ All responses are JSON. Every route except `/languages` and `/auth/*` takes `?la
 | POST | `/api/v1/portion` | `{samples: [{char, errors, ms}], recent: [words], retry: [words], start: bool, last: bool}` | `{portions: [{words, focus, weakest, unlocked, locked}], newLetter, round}`; one portion, `AheadPortions + 1` with `start`, none with `last` |
 | POST | `/api/v1/results` | `{samples: [{char, errors, ms}], keys: [the same shape, the whole round], chars, wpm, accuracy, perSecond: [keypresses in each full second], length}` | `{unlocked, newLetter, consistency}` (`consistency` 0–100, `null` for a round under `ConsistencyMinSeconds`); the round is over: one history entry |
 | POST | `/api/v1/progress` | `{unlockAll: true\|false}` | `{unlocked}`; for development only, the interface no longer calls it |
+| POST | `/api/v1/group` | `{group: "random"\|""}` | `{group}`; the study group of the language (hidden: only the study link `?group=random` / `?group=adaptive` calls it, `web/app.js`). `/stats` returns `group`, every learning round stores it |
 | POST | `/api/v1/reset` | | `{ok: true}`; deletes all data of the language (reset button, until there are user accounts) |
 | GET | `/api/v1/export` | | `{unlocked, keys: {char: {count, mistakes, errEma, timeEma, timedCount}}, sessions: [all, OLDEST first, each with its raw keys], freeplay: {testPassed, sessions}}`; everything stored for the language (`freeplay` is missing in older files) |
 | POST | `/api/v1/import` | the same JSON as `/export` | `{unlocked, sessions}`; REPLACES the language's data, or changes nothing if the data is invalid |
@@ -324,7 +325,8 @@ in git. How to install PostgreSQL on Windows: USER-GUIDE.md.
   says 1.25 (1.24 is no longer supported by the Go team either). The
   WebAssembly build does not include it (`postgres.go` has a build tag).
 - **Tables** (`internal/storage/migrations/001_init.sql`): `users`, `logins`
-  (token hashes), `progress` (unlocked letters, typing test), `key_stats`
+  (token hashes), `progress` (unlocked letters, typing test, study group),
+  `key_stats`
   (the letter model) and `sessions` (the history of both modes, `mode`
   column; the raw keys as `JSONB`). Every data table is keyed by user and
   language. `user_id` is text and not a foreign key, because guests

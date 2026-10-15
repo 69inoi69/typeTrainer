@@ -36,7 +36,15 @@ type Session struct {
 	// Unlocked is how many letters were open after the round (learning
 	// only; 0 in free practice and in old history).
 	Unlocked int `json:"unlocked,omitempty"`
+	// Group: the study group the round was typed in (learning only):
+	// "" = the adaptive trainer, GroupRandom = the control group.
+	Group string `json:"group,omitempty"`
 }
+
+// GroupRandom is the control group of a user study (docs/ALGORITHM.md
+// section 11): learning works as usual, but the words of the open letters
+// are drawn at random instead of by the algorithm. "" = the normal app.
+const GroupRandom = "random"
 
 // DefaultLength is the length of every round from before the settings
 // existed: 30 words.
@@ -114,6 +122,11 @@ type Store interface {
 	// Free practice (internal/freeplay) is kept apart from learning: its
 	// own history, and a flag set once the typing test is passed. Its
 	// rounds never change the letter statistics above.
+	// Group is the study group of the language ("" or GroupRandom), set
+	// through a hidden link for a user study. Reset clears it.
+	Group(user, lang string) (string, error)
+	SetGroup(user, lang, group string) error
+
 	TestPassed(user, lang string) (bool, error)
 	SetTestPassed(user, lang string, passed bool) error
 	AddFreeplaySession(user, lang string, s Session) error

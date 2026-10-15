@@ -51,6 +51,11 @@ func (s *Server) handlePortion(w http.ResponseWriter, r *http.Request, user stri
 		serverError(w, err)
 		return
 	}
+	group, err := s.store.Group(user, l.Info.ID)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
 	typed := 0 // letters typed since every letter was open: how far MaxRank has grown
 	if all := len(l.Gen.Order()); unlocked == all {
 		if typed, err = s.store.LettersTyped(user, l.Info.ID, all); err != nil {
@@ -68,6 +73,15 @@ func (s *Server) handlePortion(w http.ResponseWriter, r *http.Request, user stri
 	out := make([]engine.Portion, count)
 	s.genMu.Lock()
 	for i := range out {
+		if group == storage.GroupRandom { // the control group of a study: random open words
+			last := ""
+			if len(recent) > 0 {
+				last = recent[len(recent)-1]
+			}
+			out[i] = l.Gen.RandomPortion(unlocked, last, p)
+			recent = append(recent, out[i].Words...)
+			continue
+		}
 		out[i] = l.Gen.Portion(stats, unlocked, typed, recent, req.Retry, p)
 		recent = append(recent, out[i].Words...)
 		req.Retry = nil // mistyped words come back once, in the first portion
@@ -159,9 +173,14 @@ func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, user stri
 	if v, ok := engine.Consistency(req.PerSecond, s.cfg.ConsistencyMinSeconds); ok {
 		consistency = &v
 	}
+	group, err := s.store.Group(user, l.Info.ID)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
 	err = s.store.AddSession(user, l.Info.ID, storage.Session{
 		WPM: req.WPM, Accuracy: req.Accuracy, Chars: req.Chars, Consistency: consistency, FinishedAt: time.Now(),
-		Keys: req.Keys, Unlocked: unlocked, Length: req.Length,
+		Keys: req.Keys, Unlocked: unlocked, Length: req.Length, Group: group,
 	})
 	if err != nil {
 		serverError(w, err)
@@ -251,9 +270,14 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, user string
 		serverError(w, err)
 		return
 	}
+	group, err := s.store.Group(user, id)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"lang": id, "keys": keys, "sessions": summaries(sessions), "sessionCount": count, "targetWpm": p.TargetWPM,
-		"lengths": lengths,
+		"lengths": lengths, "group": group,
 	})
 }
 
