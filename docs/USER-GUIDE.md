@@ -77,7 +77,9 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   right away if you pass the **typing test**: while it is locked (a small
   lock on its icon), clicking it starts the test, one round of 30 words at
   30 wpm with 97% accuracy. Only a full round counts (`Esc` stops the test);
-  you can take it again any time. The mode is remembered per language.
+  if it does not pass, the result's button says **Try again** and starts
+  the test once more (the Learn tab goes back to learning). The mode is
+  remembered per language.
 - **Settings** (the gear in the navigation) opens one panel with everything
   that is rarely changed, in three sections (round, screen, your progress);
   every option has a one-line note on what it does:

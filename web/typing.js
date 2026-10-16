@@ -763,13 +763,14 @@ async function finishFree(wpm, accuracy, keys, perSecond) {
 // The end of the typing test. Only a full round counts (Esc or a long pause
 // stops the test). The server checks the numbers (freeplay.Passed) and
 // remembers a pass; the test is in no history. A pass goes on to free
-// practice, anything else back to learning.
+// practice; otherwise the next round is the test again ("Try again" on the
+// result, owner 2026-10-16), and the Learn tab leaves it.
 async function finishTest(wpm, accuracy, chars) {
   const full = wordsTyped >= roundWords;
   const res = full ? await postJSON("/freeplay/test", { wpm, accuracy, chars }) : { passed: false };
   await refreshFreeplay();
   if (res.passed) FX.burstFrom(el.wpm, 80);
   await showResult({ wpm, accuracy, test: !full ? "stopped" : res.passed ? "pass" : "fail", words: typedWords(), ...roundFacts() });
-  setMode(res.passed ? "free" : "learn");
+  if (res.passed) setMode("free");
   await loadExercise();
 }

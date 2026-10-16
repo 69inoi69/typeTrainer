@@ -110,7 +110,7 @@ const I18N = {
     "result.newLetter": "New letter opened:",
     "result.faster": "Faster",
     "result.slower": "Slower",
-    "result.nextBtn": "Next round",
+    "result.nextBtn": "Next round", "result.tryAgain": "Try again",
     "result.words": "Words", "result.wordWpm": "{wpm} wpm",
     "result.chartTip": "{word}: {wpm} wpm", "result.chartLabel": "Speed of each word",
     "result.chars": "Characters", "result.charsTip": "Correct, wrong, extra, missed",

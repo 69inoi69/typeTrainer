@@ -94,7 +94,8 @@ export function showResult(r) {
       speedChart(r.words, bands) + `<p class="r-wordlist">${r.words.map(word).join(" ")}</p></div>`);
   }
 
-  return open(lines);
+  // a test that did not pass: the button starts it again
+  return open(lines, r.test && r.test !== "pass" ? "result.tryAgain" : "result.nextBtn");
 }
 
 // Splits the speeds of this round's words into SPEED_BANDS equal steps
@@ -150,9 +151,9 @@ function speedChart(words, bands) {
 
 // Puts the lines into the window and waits until the result is closed.
 // Each line is its own section; style.css draws a thin line between them.
-function open(lines) {
+function open(lines, btn) {
   box.innerHTML = `<div class="r-body">${lines.map((l) => `<div class="r-sec">${l}</div>`).join("")}</div>` +
-    `<p class="r-foot"><button type="button" class="btn r-next">${t("result.nextBtn")}${isTouch() ? "" : " <kbd>enter</kbd>"}</button></p>`;
+    `<p class="r-foot"><button type="button" class="btn r-next">${t(btn)}${isTouch() ? "" : " <kbd>enter</kbd>"}</button></p>`;
   // phones have no hover: a tap on a word, a dot of the chart or the
   // characters shows its tooltip (and must not reach the text window, which would open the phone keyboard)
   box.querySelector(".r-body").addEventListener("click", (e) => {
