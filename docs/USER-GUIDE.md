@@ -145,11 +145,14 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   saved or loaded).
 - **Help** (the **?** in the navigation) opens a panel about the screen you
   are on: a few short points for Learn, Freetype, the typing test or Stats
-  (bold start, read in seconds), then the guides (**Touch typing basics**
+  (bold start, read in seconds), then **Walkthroughs** (**Touch typing basics**
   everywhere, **Tour of this screen** on Learn; Enter / → next, Esc closes;
   from the stats screen they first go back to typing), then the keys.
 - On a touch screen there is no `Esc`: a small **stop** button under the text
-  card ends the round. The shortcut line is hidden there.
+  card ends the round (it appears with the first letter). The shortcut line
+  is hidden there; on the stats screen it shows only the keys that work
+  there.
+- On a narrow screen the page dims behind Help and Settings.
 - Shortcuts, also listed small at the bottom of the page: `Esc` stop ·
   `Shift + Tab` Learn / stats · `Alt + K` keyboard and hands on / off.
 - **Stats**: nothing on the page can be selected by dragging; instead the

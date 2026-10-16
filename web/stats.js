@@ -45,6 +45,8 @@ export function renderStats() {
   renderModeFilter(free);
   renderLengthFilter(s.lengths ?? [], length);
   const sessions = [...s.sessions].reverse(); // oldest first
+  // nothing to share before the first round of this length
+  document.getElementById("btn-copy").disabled = document.getElementById("btn-image").disabled = !s.sessionCount;
   el.tiles.innerHTML = summary(s).map(([v, l]) => `<div class="tile"><b>${v}</b><small>${t(l)}</small></div>`).join("");
 
   drawChart(sessions, free ? s.testWpm : s.targetWpm, s.sessionCount);
@@ -233,9 +235,12 @@ function drawChart(sessions, target, total) {
     });
   });
 }
-function niceMax(v) {                 // round the axis up to 20, 40, 60, 80, 100, 150, 200...
-  const steps = [20, 40, 60, 80, 100, 120, 150, 200, 250, 300, 400];
-  return steps.find((s) => s >= v * 1.05) ?? Math.ceil(v / 100) * 100;
+// The top of the axis: four equal round steps, so every grid line has a
+// round label (0 / 20 / 40 / 60 / 80, not 0 / 63 / 125 / 188 / 250).
+function niceMax(v) {
+  const steps = [5, 10, 15, 20, 25, 30, 40, 50, 60, 75, 100, 125, 150, 200, 250];
+  const step = steps.find((s) => s * 4 >= v * 1.05) ?? Math.ceil(v * 1.05 / 400) * 100;
+  return step * 4;
 }
 
 // Every letter as a small chip, weakest first: the letter, and under it a

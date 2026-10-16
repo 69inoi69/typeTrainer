@@ -112,11 +112,12 @@ input, textarea { user-select: text; -webkit-user-select: text; }
    and bright: it is the content. What never changes (labels, menu items,
    explanations) is the system's plain font, smaller and grey: it is the
    frame around the content. So the eye tells them apart at a glance.
-   .lbl-ui is the look of a fixed label: small capitals, a little spaced. */
+   .lbl-ui is the look of a fixed label: small and grey, in sentence case
+   like every other text (all capitals read as template chrome and are
+   harder to read; owner, 2026-10-16: capitals only at the start). */
 .lbl-ui, .metric small, .stat .lbl, .tile small, .r-lbl,
 .panel-note, .heat-legend, .profile-field small, .profile-label, .tour-step, .intro-kicker {
-  font-family: var(--ui); font-size: .66rem; font-weight: 600; letter-spacing: .08em;
-  text-transform: uppercase; color: var(--sub);
+  font-family: var(--ui); font-size: .75rem; font-weight: 500; color: var(--sub);
 }
 /* buttons, menus, tooltips and guides: the plain font, normal case */
 button, .tooltip, .menu-item, .hints, .rail small, .tour-text, .intro p, .intro h2, .account-msg,
@@ -235,6 +236,9 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
   display: none; align-items: center; gap: 4px; cursor: default;   /* the words are in the tooltip */
 }
 .streak.show { display: flex; animation: streak-in var(--med) var(--ease); }
+/* only while a round is being typed: a streak carried over from the last
+   round, shown before the first key, read as an unexplained number */
+.text-box:not(.typing) .streak.show { display: none; }
 @keyframes streak-in { from { opacity: 0; transform: translateY(-4px); } }
 .streak span {
   font-size: 1.3rem; line-height: 1; color: var(--sc); font-variant-numeric: tabular-nums; display: inline-block;
@@ -332,6 +336,16 @@ body[data-mode="free"] .learn-only { display: none; }
   animation: note-in .2s var(--ease);
 }
 .pop-card[hidden] { display: none; }
+/* narrow screens: help and settings open over the content, so the page
+   behind them dims and the card's edge does not cut through it. The bottom
+   bar stays bright (it is above this layer) and taps still go through. */
+@media (max-width: 999px) {
+  body:has(.pop-card:not([hidden]))::before {
+    content: ""; position: fixed; inset: 0; z-index: 7; pointer-events: none;
+    background: color-mix(in srgb, var(--bg) 65%, transparent); backdrop-filter: blur(2px);
+    animation: view-in .2s var(--ease);
+  }
+}
 .menu-item {
   display: flex; align-items: center; gap: 12px; width: 100%;
   padding: 8px 8px; margin: 6px 0 0; border-radius: 10px; background: none; text-align: left;
@@ -380,8 +394,11 @@ body[data-mode="free"] .learn-only { display: none; }
   flex: 1; width: 100%; max-width: calc(var(--tw) + 32px); margin: 0 auto; padding: 0 16px 12px;
   display: flex; flex-direction: column;
 }
-/* auto margins in a flex column = vertically centred; stats stay at the top */
-#view-type { margin-block: auto; padding-bottom: 1.5vh; }
+/* The text starts at the same height on every tab, with or without the
+   keyboard under it: centring it moved the text whenever the keyboard
+   came or went (Learn has it, Freetype hides it), and on a phone it left a
+   big hole under the header. */
+#view-type { margin-block: clamp(4px, 3vh, 32px) auto; }
 .view { animation: view-in var(--med) var(--ease); }
 @keyframes view-in { from { opacity: 0; transform: translateY(6px); } }
 
@@ -664,6 +681,7 @@ body:not(.caret-block) .caret {
 }
 .hints kbd { background: var(--panel); color: color-mix(in srgb, var(--text) 60%, var(--sub)); padding: 1px 6px; border-radius: 4px; }
 @media (pointer: coarse) { .bottom { display: none; } }
+body[data-view="stats"] .hints .type-only { display: none; }   /* nothing to stop, no keyboard on stats */
 button {
   color: var(--sub); background: var(--panel); border: 0;
   padding: 8px 14px; border-radius: 8px; cursor: pointer;
@@ -682,7 +700,8 @@ button:disabled:active { transform: none; }
   border-radius: 999px; color: var(--sub); background: none; box-shadow: var(--ring); font-size: .78rem;
 }
 .stop-btn:hover, .stop-btn:active { color: var(--text); }
-.text-box.resulting + .stop-btn { visibility: hidden; }   /* the round is over already */
+.text-box.resulting + .stop-btn,
+.text-box:not(.typing) + .stop-btn { visibility: hidden; }   /* nothing to stop yet, or the round is over already (keeps its room: nothing jumps) */
 .stop-btn svg { width: 14px; height: 14px; fill: currentColor; stroke: none; }
 
 /* ---------- stats view ---------- */
@@ -701,6 +720,7 @@ button:disabled:active { transform: none; }
 .tile b { display: block; font-size: 1.4rem; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1.2; }
 .tile small { display: block; line-height: 1.4; margin-top: 2px; }
 .chart { height: clamp(140px, 30vh, 340px); }
+.chart:has(> .empty) { height: auto; }   /* no rounds yet: one line of text, not an empty half screen */
 /* free practice has no letters: the chart takes their room */
 body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 /* the keyboard a little wider than the letters; one under the other on a narrow screen */
@@ -844,20 +864,25 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 /* the phone keyboard closes when a round ends; the "tap here" hint must not
    cover the result */
 .text-box.resulting .focus-hint { display: none; }
+.text-box.resulting .live { display: none; }   /* the result shows the same numbers, bigger: once is enough */
+/* a compact block in the middle of the window, not stretched across it
+   (owner, 2026-10-16: too wide, too much empty room) */
 .result {
-  position: relative; font-size: clamp(1.1rem, 3.6vw, 1.6rem);
+  position: relative; width: 100%; max-width: 36rem; margin-inline: auto; font-size: 1rem;
   display: flex; flex-direction: column;
   animation: view-in .25s var(--ease);
 }
 .result[hidden] { display: none; }
 .result p { margin: 0; }
 .r-body { display: flex; flex-direction: column; }
-.r-body > * + * { margin-top: 18px; }
-.r-body > :last-child { padding-right: 9.5em; min-height: 40px; }   /* room for the button, at least its height */
-/* the numbers: value big, its label small under it */
-.r-nums { display: flex; flex-wrap: wrap; gap: 8px 32px; }
-.r-num { display: flex; flex-direction: column; gap: 2px; }
-.r-num b { font-size: 1.9em; font-weight: 400; line-height: 1.1; color: var(--accent-text); font-variant-numeric: tabular-nums; }
+.result .r-body > * + * { margin-top: 16px; }   /* .result: stronger than ".result p { margin: 0 }" above */
+.r-body > :last-child { padding-right: 10rem; min-height: 40px; }   /* room for the button, at least its height */
+/* the numbers: three equal columns, the label on top (readable, not tiny),
+   the value under it */
+.r-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.r-num { display: flex; flex-direction: column; gap: 4px; }
+.r-num .r-lbl { font-size: .8rem; }
+.r-num b { font-size: 2rem; font-weight: 400; line-height: 1.1; color: var(--accent-text); font-variant-numeric: tabular-nums; }
 .r-num b small { font-size: .55em; margin-left: 2px; color: var(--sub); }
 .r-main { display: flex; align-items: center; font-size: .9rem; color: var(--text); line-height: 1.5; }
 /* good news (a new letter, a record): in the accent colour, on a soft tint */
@@ -988,12 +1013,14 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .lang-switch button { padding: 0 6px; }
   .live { gap: 12px; margin-bottom: 6px; }
   .metric > span, .streak span { font-size: 1.1rem; }
-  .metric small { margin-left: 4px; letter-spacing: .04em; font-size: .6rem; }
+  .metric small { margin-left: 4px; font-size: .7rem; }
   .bolt { width: 18px; height: 18px; }
   .metric.raw { display: none; }          /* phone: no room, wpm + acc are enough */
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 100%; }
   .tile:last-child:nth-child(odd) { grid-column: span 2; }   /* 5 tiles: the last one takes the whole row */
-  .letter-row { gap: 4px; flex-wrap: wrap; }   /* phone: one row would make the chips tiny */
+  /* phone: one row would make the chips tiny, so two rows of 13 (26
+     letters; a plain wrap gave 15 + 11) */
+  .letter-row { display: grid; grid-template-columns: repeat(13, auto); justify-content: center; gap: 4px; }
   .chip { font-size: .8rem; flex: none; width: 1.6em; height: 1.6em; }
   .letters-caption { gap: 4px; }
   /* test / freetype: the note goes under the pill (it never changes during
@@ -1002,18 +1029,13 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .letters-caption .mode-note { flex-basis: 100%; text-align: center; white-space: nowrap; }
   .stat { padding: 0 9px 0 7px; gap: 5px; }
   .stat .mini { display: none; }       /* phone: the number says it, the bar takes the room */
-  /* phone: no vertical centring (it left a big hole under the header, and
-     the phone keyboard covers the bottom anyway): content starts right
-     under the header */
-  #view-type { margin-block: 4px 0; padding-bottom: 0; }
-  /* ...but with the on-screen keyboard hidden there is room: centre again */
-  body.kb-hidden #view-type { margin-block: auto; padding-bottom: 8vh; }
+  #view-type { margin-block: 4px auto; }   /* phone: right under the header (the phone keyboard covers the bottom) */
   .note { font-size: .78rem; border-radius: 14px; }   /* phone: a long message may take two lines */
   .text-box { padding: 14px 16px 14px 34px; border-radius: 12px; }
   .text-box::before { left: 14px; top: 48px; }   /* 14 + 28 + 6 */
   .text-box.resulting { padding-left: 16px; }   /* no prompt sign: the result uses the room */
   .r-main { font-size: .85rem; }
-  .r-num b { font-size: 1.6em; }
+  .r-num b { font-size: 1.7rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

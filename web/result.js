@@ -1,6 +1,6 @@
 // The result screen: when typing stops, the text window shows what just
 // happened instead of the text. First the numbers (speed, accuracy,
-// consistency), big, like on the live line; then one plain line when
+// consistency), each under its label; then one plain line when
 // something happened (a new letter, a record, mastered letters); then which
 // letters got faster or slower, as "before -> now" in milliseconds per press
 // (a percentage was not clear). No jokes or tips: the owner wants plain
@@ -32,9 +32,9 @@ export const resultOpen = () => done !== null;
 //      faster/slower: [{c, from, to}] (ms per press before and after), test: "pass" | "fail" | "stopped" (the typing test only) }
 export function showResult(r) {
   const lines = [];
-  // 1. the numbers: value big, a fixed label under it
+  // 1. the numbers: a fixed label on top, the value under it
   const num = (value, unit, label) =>
-    `<span class="r-num"><b>${value}<small>${unit}</small></b><span class="lbl-ui">${t(label)}</span></span>`;
+    `<span class="r-num"><span class="r-lbl">${t(label)}</span><b>${value}<small>${unit}</small></b></span>`;
   const nums = [num(Math.round(r.wpm), "", "result.wpm"), num(Math.round(r.accuracy), "%", "result.acc")];
   if (r.consistency != null) nums.push(num(Math.round(r.consistency), "%", "result.cons"));
   lines.push(`<p class="r-nums">${nums.join("")}</p>`);

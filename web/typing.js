@@ -694,6 +694,7 @@ async function finishRound() {
 
     const r = compareStats(roundBefore, S.lastStats, typed);
     markMastered(r.mastered);
+    renderLetters();        // the letters bar agrees with the result at once, not only after it closes
     if (r.best) FX.burstFrom(el.wpm, 80);
     await showResult({ wpm, accuracy, consistency: res.consistency, newLetter: roundNewLetter, ...r });
     await loadExercise();   // built from the UPDATED model

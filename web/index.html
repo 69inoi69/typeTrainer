@@ -225,7 +225,7 @@
             <ul class="win-list help-list" id="help-ctx"></ul>
           </div>
           <div class="win-sec">
-            <small class="lbl-ui" data-i18n="help.guides">Guides</small>
+            <small class="lbl-ui" data-i18n="help.guides">Walkthroughs</small>
             <!-- two guides, two different icons: hands on keys / a map of the page -->
             <button type="button" class="menu-item basics" id="btn-intro"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="12" width="19" height="8" rx="2"/><path d="M7 12V5.5a1.5 1.5 0 0 1 3 0V12M10 9V4.5a1.5 1.5 0 0 1 3 0V12M13 9.5V6a1.5 1.5 0 0 1 3 0V12"/></svg><span><b data-i18n="help.basics">touch typing basics</b><small data-i18n="help.basicsNote">where the fingers go</small></span></button>
             <button type="button" class="menu-item site" id="btn-tour"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span><b data-i18n="help.site">tour of this screen</b><small data-i18n="help.siteNote">what each part shows</small></span></button>
@@ -274,10 +274,10 @@
        there is a real keyboard (style.css hides them on touch screens). -->
   <footer class="bottom">
     <div class="hints" aria-label="Shortcuts">
-      <span><kbd>esc</kbd> <span data-i18n="hint.new">stop</span></span>
-      <span><kbd>shift</kbd> + <kbd>tab</kbd> <span data-i18n="hint.view">typing / statistics</span></span>
+      <span class="type-only"><kbd>esc</kbd> <span data-i18n="hint.new">stop</span></span>
+      <span><kbd>shift</kbd> + <kbd>tab</kbd> <span data-i18n="hint.view">learn / stats</span></span>
       <span class="lang-hint"><kbd>alt</kbd> + <kbd>1</kbd>…<kbd>4</kbd> <span data-i18n="hint.lang">language</span></span>
-      <span><kbd>alt</kbd> + <kbd>k</kbd> <span data-i18n="hint.kb">keyboard</span></span>
+      <span class="type-only"><kbd>alt</kbd> + <kbd>k</kbd> <span data-i18n="hint.kb">keyboard</span></span>
     </div>
   </footer>
 
@@ -307,7 +307,7 @@
         <!-- step 0: what touch typing is, with a small map of the keyboard
              where every key has the colour of the finger that presses it -->
         <section class="intro-step" data-step="0">
-          <p class="intro-kicker" data-i18n="intro.kickerWhat">1 / 4 · touch typing</p>
+          <p class="intro-kicker" data-i18n="intro.kickerWhat">Touch typing</p>
           <h2 id="intro-title" data-i18n="intro.titleWhat">All ten fingers, eyes on the text</h2>
           <div class="intro-map" id="intro-map" aria-hidden="true"></div>
           <p data-i18n="intro.pWhat">Every finger has its own keys: the colours show whose. Once the fingers know them, you stop looking down: fewer typos, more speed.</p>
@@ -315,21 +315,21 @@
           <p class="intro-do" data-i18n="intro.doWhat">press any key</p>
         </section>
         <section class="intro-step" data-step="1">
-          <p class="intro-kicker" data-i18n="intro.kicker0">2 / 4 · home row</p>
+          <p class="intro-kicker" data-i18n="intro.kicker0">Home row</p>
           <h2 data-i18n="intro.title0">Put your fingers on the middle row</h2>
           <div class="home-row" id="intro-home" aria-hidden="true"></div>
           <p data-i18n="intro.p0">Left hand on A S D F, right hand on J K L ;. Feel the bumps on F and J.</p>
           <p class="intro-do" data-i18n="intro.do0">press all eight keys</p>
         </section>
         <section class="intro-step" data-step="2">
-          <p class="intro-kicker" data-i18n="intro.kicker1">2 / 3 · thumbs</p>
+          <p class="intro-kicker" data-i18n="intro.kicker1">Thumbs</p>
           <h2 data-i18n="intro.title1">Thumbs rest on the space bar</h2>
           <div class="intro-space" id="intro-space" aria-hidden="true"><span data-i18n="key.space">space</span></div>
           <p data-i18n="intro.p1">Either thumb can press it.</p>
           <p class="intro-do" data-i18n="intro.do1">press space</p>
         </section>
         <section class="intro-step" data-step="3">
-          <p class="intro-kicker" data-i18n="intro.kicker2">3 / 3 · eyes up</p>
+          <p class="intro-kicker" data-i18n="intro.kicker2">Eyes up</p>
           <h2 data-i18n="intro.title2">Watch the screen, not your hands</h2>
           <div class="hands intro-hands" id="intro-hands" aria-hidden="true"></div>
           <p data-i18n="intro.p2">The yellow key is the next one, and the hands show which finger presses it. Mistakes are fine: the trainer uses them to pick your next words.</p>

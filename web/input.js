@@ -40,6 +40,7 @@ window.addEventListener("resize", () => {
 // ---------- screens: typing / stats ----------
 function setView(name) {
   S.view = name;
+  document.body.dataset.view = name;          // style.css hides the typing shortcuts on stats
   const stats = name === "stats";
   renderNav();
   el.viewType.hidden = stats;
