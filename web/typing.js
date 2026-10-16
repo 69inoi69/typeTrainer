@@ -683,8 +683,11 @@ async function finishRound() {
     await showResult({ wpm, accuracy, consistency: res.consistency, newLetter: roundNewLetter, resisted, ...r });
     await loadExercise();   // built from the UPDATED model
   } catch (err) {
+    // said where the eyes are (it used to go only to the screen-reader
+    // line), and a fresh round starts, so the screen never stays frozen
     console.error(err);
-    el.hint.textContent = t("err.server");
+    FX.toast(t("err.save"));
+    loadExercise().catch(console.error);
   } finally {
     S.busy = false;
   }
