@@ -60,19 +60,19 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
     with a person icon until you are logged in, then your picture and name);
   - **the navigation**: a column at the left edge of a wide window, a bar at
     the bottom of a narrow window or a phone. Two groups: the three screens
-    **type**, **freetype** and **stats**, then **help** and **settings**.
+    **learn**, **freetype** and **stats**, then **help** and **settings**.
     The chosen screen has a short yellow bar next to it.
   From your first keypress until the end of the round everything around the
   text steps back: the logo turns grey and the controls almost vanish (move
   the mouse over them to bring them back).
 - Two kinds of text: what changes (the words, letters, numbers, messages) is
-  monospace and bright; what never changes (labels, menus, explanations) is
-  the plain system font, labels in small grey capitals.
-- **type** and **freetype** in the navigation choose the mode. **type** is
+  bright; what never changes (labels, menus, explanations) is quieter,
+  labels in small grey capitals. Everything uses the same monospace font.
+- **learn** and **freetype** in the navigation choose the mode. **learn** is
   learning, the trainer: it picks words for your weak letters and opens new
   ones. **freetype** is free practice: words from the whole list, its own
   history, and nothing changes in learning. **stats** shows the statistics
-  of the mode you were in; once freetype is open, a small type / freetype
+  of the mode you were in; once freetype is open, a small learn / freetype
   switch on the stats screen changes the mode there too. Freetype opens when every letter is open, or
   right away if you pass the **typing test**: while it is locked (a small
   lock on its icon), clicking it starts the test, one round of 30 words at
@@ -129,22 +129,24 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   letter of each portion is tinted in the text, the caret keeps one colour,
   and the numbers line changes once per word (calm, not every key).
 - **When the round ends** the text window shows the result instead of the
-  text: one main line (a new letter with a joke about it, a new record,
-  mastered letters, or a short verdict on accuracy), which letters got faster
-  or slower, the **consistency** of your speed (how even the pace was, 100 % =
-  every second the same; rounds under 5 seconds get none), and now and then a tip. Space, Enter or any letter goes on at
-  once; otherwise the next text comes when the thin bar is full (hover pauses
-  it). The texts are picked at random from small pools in every language.
+  text: the numbers first (speed in wpm, accuracy and the **consistency** of
+  your speed: how even the pace was, 100 % = every second the same; rounds
+  under 5 seconds get none), then one plain line if something happened (a
+  new letter, a new record, mastered letters), then which letters got faster
+  or slower, as the time per press before and now (for example
+  `s 320→250ms`). No jokes or tips there. The result stays until you go on
+  on purpose: **Enter**, **Esc**, **Tab** or the **next** button (letters do
+  nothing there, and there is no timer).
 - Small messages under the letters are only used outside typing (a file
   saved or loaded).
 - **Help** (the **?** in the navigation) opens a panel: the two guides
   (**touch typing basics** and a **tour of this screen**; Enter / → next, Esc
-  closes; from the stats screen they first go back to typing), how the
-  trainer works in four short steps, the two modes, and the keys.
+  closes; from the stats screen they first go back to typing), the two
+  modes, and the keys.
 - On a touch screen there is no `Esc`: a small **stop** button under the text
   card ends the round. The shortcut line is hidden there.
 - Shortcuts, also listed small at the bottom of the page: `Esc` stop ·
-  `Shift + Tab` type / stats · `Alt + K` keyboard and hands on / off.
+  `Shift + Tab` learn / stats · `Alt + K` keyboard and hands on / off.
 - **Stats**: nothing on the page can be selected by dragging; instead the
   stats screen has **copy** (a short text summary: mode, length, rounds,
   best and last-10 numbers, letters) and **image** (a PNG card with the same

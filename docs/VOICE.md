@@ -16,10 +16,9 @@ sense of humour, not a stand-up comedian and not a robot.
    coming".
 3. **Calm, never loud.** No exclamation marks, no CAPS, no "!!!", no emoji.
    Praise is specific ("<b>r</b> mastered") rather than generic ("amazing").
-4. **Humour stays, but quieter.** At most one light joke per message, and
-   only where the user has a moment: the result screen, a new letter. Never
-   in errors, warnings, buttons or the settings. A kaomoji `(◕‿◕)` is the
-   rare exception (a record), never more than one in a message.
+4. **No jokes for now.** The result screen is plain numbers and facts
+   (owner, 2026-10-16). Fun lines may come back later, written to the owner's
+   own wording; never in errors, warnings, buttons or the settings.
 5. **Speak to one person, as a friend would.** "you" in English, "ty" in
    Polish, "ти" in Ukrainian, "ты" in Russian. Lower case for short labels
    and messages, as on monkeytype; sentences in guides start with a capital.
@@ -43,13 +42,13 @@ sense of humour, not a stand-up comedian and not a robot.
 | speed | wpm | wpm | wpm | wpm |
 
 `wpm` and `raw` stay in English in every language, as on monkeytype, and so
-do the tab names `type` and `freetype`.
+do the tab names `learn` and `freetype`.
 
 ## Two kinds of text
 
-What changes (the words, letters, numbers, messages) is monospace and
-bright; what never changes (labels, menu items, explanations) is the plain
-system font, and a fixed label is small grey capitals (`.lbl-ui` in
+What changes (the words, letters, numbers, messages) is bright; what never
+changes (labels, menu items, explanations) is quieter, and a fixed label is
+small grey capitals. One font everywhere: the monospace one (`.lbl-ui` in
 `style.css`). A new label follows the same rule, so the two never mix.
 
 ## Where each kind of text goes
@@ -57,7 +56,7 @@ system font, and a fixed label is small grey capitals (`.lbl-ui` in
 - **Label** (button, tab, tile): one to three words, no full stop.
 - **Tooltip**: what it is, then the shortcut after "·". One line.
 - **Status line and messages**: one short line; a number in `<b>`.
-- **Result screen**: one main line (it may carry the one joke), then facts.
+- **Result screen**: the numbers, then one plain line if something happened, then the letters that changed. No jokes or tips (owner, 2026-10-16).
 - **Guides** (intro, tour): two or three short sentences per screen. The key
   idea in `<b>` at the start.
 - **Errors**: what went wrong and what to do. No humour.
