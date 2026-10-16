@@ -58,7 +58,9 @@ uses "·", before its shortcut). One font everywhere: the monospace one (`.lbl-u
 ## Where each kind of text goes
 
 - **Label** (button, tab, tile): one to three words, no full stop.
-- **Tooltip**: what it is, then the shortcut after "·". One line.
+- **Tooltip**: what it is, then the shortcut after "·". One line. A rule
+  with numbers (mastery, the typing test) states them; they come from the
+  server (`{target}`, `{min}`, `{err}`, `{testWpm}`, `{testAcc}`).
 - **Status line and messages**: one short line; a number in `<b>`.
 - **Result screen**: the numbers, then one plain line if something happened, then the letters that changed. No jokes or tips (owner, 2026-10-16).
 - **Guides** (intro, tour): two or three short sentences per screen. The key

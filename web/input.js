@@ -234,7 +234,18 @@ el.input.addEventListener("input", (e) => {
 el.input.addEventListener("focus", resetInput);
 resetInput();
 
-el.textBox.addEventListener("click", () => { el.input.focus({ preventScroll: true }); focusText(); });
+// A tap on the text window opens the phone keyboard, but not while the
+// result is shown (its sides are part of the window too), and not when the
+// tap only closed a panel (help, settings, profile): checked at pointerdown,
+// in the capture phase, before those panels close themselves.
+let tapClosedPanel = false;
+document.addEventListener("pointerdown", () => {
+  tapClosedPanel = helpOpen() || settingsOpen() || profileOpen();
+}, true);
+el.textBox.addEventListener("click", () => {
+  if (resultOpen() || tapClosedPanel) return;
+  el.input.focus({ preventScroll: true }); focusText();
+});
 el.input.addEventListener("blur", () => { if (isTouch()) el.textBox.classList.add("blurred"); });
 
 el.btnNew.addEventListener("click", (e) => { e.currentTarget.blur(); stopRound(); });

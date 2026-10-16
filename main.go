@@ -16,6 +16,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("Typing trainer running. Open http://%s in your browser", cfg.Addr)
+	log.Printf("typeTrainer running. Open http://%s in your browser", cfg.Addr)
 	log.Fatal(http.ListenAndServe(cfg.Addr, handler))
 }

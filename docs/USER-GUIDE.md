@@ -11,7 +11,7 @@ Everything the trainer does, screen by screen. For a quick overview see the
 3. **Go to the project folder**, for example
    `cd C:\Users\YOUR_NAME\Desktop\typetrainer`.
 4. **Start the server:** `go run .`. After a few seconds it prints
-   `Typing trainer running. Open http://localhost:3000 in your browser`.
+   `typeTrainer running. Open http://localhost:3000 in your browser`.
    If Windows asks about the firewall, "Allow" is fine.
 5. **Open** <http://localhost:3000>. Always use this address: double-clicking
    `web/index.html` opens the page without the server, with no words and no
@@ -22,7 +22,7 @@ Everything the trainer does, screen by screen. For a quick overview see the
    back next time.
 
 After `git pull` restart the server: the web files are built into the program.
-Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
+Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
 
 ## Typing screen
 
@@ -48,7 +48,10 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   mistake still counts for the letter's statistics.
 - The row of letters at the top shows your progress: open letters, the letter in
   **focus** (yellow, your weakest right now), mastered letters (a small green tick), and
-  locked letters (outlined). Master every open letter and the next one opens.
+  locked letters (outlined). A letter is mastered when you have typed it at
+  least 20 times, recently with under 5% mistakes and at 30 wpm or faster
+  (the numbers come from the server's settings). Master every open letter
+  and the next one opens.
   Under it, small status pills: focus letter, mastered open letters (with a
   bar) and the next letter; hover them for details. Caps Lock and wrong layout
   warnings appear in the same place, on top of the pills, so nothing moves.

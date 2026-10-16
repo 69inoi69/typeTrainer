@@ -41,10 +41,10 @@ export const resultOpen = () => done !== null;
 export function showResult(r) {
   const lines = [];
   // 1. the numbers: a fixed label on top, the value under it
-  const num = (value, unit, label) =>
-    `<span class="r-num"><span class="r-lbl">${t(label)}</span><b>${value}<small>${unit}</small></b></span>`;
+  const num = (value, unit, label, tip) =>
+    `<span class="r-num"${tip ? ` tabindex="0" data-tip-text="${t(tip)}"` : ""}><span class="r-lbl">${t(label)}</span><b>${value}<small>${unit}</small></b></span>`;
   const nums = [num(Math.round(r.wpm), "", "result.wpm"), num(Math.round(r.accuracy), "%", "result.acc")];
-  if (r.consistency != null) nums.push(num(Math.round(r.consistency), "%", "result.cons"));
+  if (r.consistency != null) nums.push(num(Math.round(r.consistency), "%", "result.cons", "result.consTip"));
   // under them, smaller: the characters (right / wrong / extra / missed, as
   // on monkeytype, explained in a tooltip) and the time of the round
   let facts = "";

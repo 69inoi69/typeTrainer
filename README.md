@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="web/favicon.svg" width="64" alt="typetrainer logo">
+  <img src="web/favicon.svg" width="64" alt="typeTrainer logo">
 </p>
 
-<h1 align="center">typetrainer</h1>
+<h1 align="center">typeTrainer</h1>
 
 <p align="center">
   An adaptive touch-typing trainer that finds your weakest letters<br>

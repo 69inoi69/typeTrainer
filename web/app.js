@@ -1,4 +1,4 @@
-// Typing trainer frontend. Plain JavaScript, no frameworks, no build step:
+// typeTrainer frontend. Plain JavaScript, no frameworks, no build step:
 // native ES modules (see the import rule at the top of state.js).
 // This is the entry point: it loads input.js and starts the app.
 // Layer: top. index.html loads only this file; it imports what init() needs.
