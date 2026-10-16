@@ -7,7 +7,7 @@
 <p align="center">
   An adaptive touch-typing trainer that finds your weakest letters<br>
   and keeps building the text from real words around them while you type.<br><br>
-  <a href="https://69inoi69.github.io/typetrainer/"><b>Try it in your browser</b></a>
+  <a href="https://69inoi69.github.io/typeTrainer/"><b>Try it in your browser</b></a>
 </p>
 
 ---
@@ -32,7 +32,7 @@ Lublin University of Technology (2027).
   letter from weakest to strongest. You can copy a short summary or save it
   as a picture.
 - **Settings:** round length (10, 30 or 60 words, or 30 or 60 seconds), live
-  speed, keyboard, caret style, dark or light theme.
+  speed, keyboard (on a computer), caret style, dark or light theme.
 - **Works on a phone.**
 - **English only for now.** Polish, Ukrainian and Russian data is in the
   repository and comes back later.
@@ -63,6 +63,7 @@ code compiled to WebAssembly.
 
 - [docs/USER-GUIDE.md](docs/USER-GUIDE.md): running it on Windows, every screen, button and shortcut
 - [docs/ALGORITHM.md](docs/ALGORITHM.md): how the trainer picks letters and words, every formula and number
+- [docs/ALGORITHM-AUDIT.md](docs/ALGORITHM-AUDIT.md): an audit of the algorithm: what is measured, what is assumed, known weak points
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the code is organised, the API
 - [docs/LITERATURE.md](docs/LITERATURE.md): research the algorithm builds on
 - [docs/GUIDELINES.md](docs/GUIDELINES.md): principles for product, layout and interface work

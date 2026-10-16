@@ -97,7 +97,7 @@ story.append(Paragraph("How the practical part of the engineering thesis was bui
                        ParagraphStyle("c", parent=body, alignment=TA_CENTER, fontSize=10.5, leading=15, textColor=INK)))
 story.append(Spacer(1, 1.6 * cm))
 story.append(Paragraph("Reference material for writing the thesis · Lublin University of Technology · @69inoi69<br/>"
-                       "Live: 69inoi69.github.io/typing-trainer · Code: github.com/69inoi69/typing-trainer",
+                       "Live: 69inoi69.github.io/typeTrainer · Code: github.com/69inoi69/typeTrainer",
                        ParagraphStyle("c2", parent=small, alignment=TA_CENTER)))
 story.append(Spacer(1, 3.2 * cm))
 story.append(Paragraph(
