@@ -1,13 +1,12 @@
 // The result screen: when typing stops, the text window shows what just
-// happened instead of the text. First the numbers (speed, accuracy,
-// consistency), each under its label, and under them the characters and the
-// time; then one plain line when
-// something happened (a new letter, a record, mastered letters); then which
-// letters got faster or slower, as "before -> now" in milliseconds per press
-// (a percentage was not clear); then the words of the round: a small chart
-// of their speeds and the words themselves, coloured by speed, each with its
-// own speed on hover or tap. A thin line separates the parts. No jokes or tips: the owner wants plain
-// results here (2026-10-16); fun lines may come back later on their word.
+// happened instead of the text. The layout follows monkeytype, but is our
+// own (owner, 2026-10-16, variant "A"): on top, the two main numbers big on
+// the left (speed, accuracy) and a wide chart of each word's speed on the
+// right; under them one row of smaller facts (consistency, time, the
+// characters) and, at its right end, what happened (a new letter, letters
+// mastered, the test verdict); then the words themselves, coloured by speed,
+// each with its own speed on hover or tap. No jokes or tips: the owner wants
+// plain results here (2026-10-16); fun lines may come back later on their word.
 // It sits in the same fixed window as the text, so the page never moves.
 // The "next round" button has its own row at the bottom, centred (full width
 // on a phone), under everything else.
@@ -22,7 +21,7 @@
 // Layer: middle. Imports the bottom layer and tools.js (tooltips).
 // Called by: typing.js (showResult, compareStats at the end of a round),
 // input.js (resultOpen, closeResult: Enter / Esc / Tab go on).
-// To add a line: push another <p> in showResult, its text in i18n.js.
+// To add a fact: another cell in the row in showResult, its text in i18n.js.
 
 import { t } from "./i18n.js";
 import { $, el, isTouch } from "./state.js";
@@ -35,60 +34,25 @@ let done = null;           // resolves the promise of the open result
 export const resultOpen = () => done !== null;
 
 // r: { wpm, accuracy, consistency (null = too short), newLetter, best, mastered: [chars],
-//      faster/slower: [{c, from, to}] (ms per press before and after), test: "pass" | "fail" | "stopped" (the typing test only),
+//      test: "pass" | "fail" | "stopped" (the typing test only),
 //      words: [{letters: [{c, bad}], wpm}] (typing.js typedWords),
 //      chars: {correct, wrong, extra, missed}, seconds (typing.js roundFacts) }
 export function showResult(r) {
-  const lines = [];
-  // 1. the numbers: a fixed label on top, the value under it
-  const num = (value, unit, label, tip) =>
-    `<span class="r-num"${tip ? ` tabindex="0" data-tip-text="${t(tip)}"` : ""}><span class="r-lbl">${t(label)}</span><b>${value}<small>${unit}</small></b></span>`;
-  // a new best speed: a small tag right above the numbers, in the same part
-  // (owner, 2026-10-16: a separate block for it looked like too much)
+  // a number: a fixed label on top, the value under it; size "big" (the
+  // two main numbers) or "mid" (the row of facts)
+  const num = (value, unit, label, size, tip) =>
+    `<span class="r-num ${size}"${tip ? ` tabindex="0" data-tip-text="${t(tip)}"` : ""}><span class="r-lbl">${t(label)}</span><b>${value}<small>${unit}</small></b></span>`;
+
+  // 1. the top: speed and accuracy big on the left; a new best speed is a
+  // small tag above them (owner, 2026-10-16: a separate block was too much)
   const best = r.best && !r.test ? `<p class="r-best">${t("result.best")}</p>` : "";
-  const nums = [num(Math.round(r.wpm), "", "result.wpm"), num(Math.round(r.accuracy), "%", "result.acc")];
-  if (r.consistency != null) nums.push(num(Math.round(r.consistency), "%", "result.cons", "result.consTip"));
-  // the time of the round: a big number of its own, easy to see (owner, 2026-10-16)
-  if (r.seconds != null) nums.push(num(Math.round(r.seconds), "s", "result.time"));
-  lines.push(best + `<p class="r-nums">${nums.join("")}</p>`);
-  // the characters are about the typed words, so they go under them; each
-  // number has its own word (owner, 2026-10-16: "97/20/19/4" said nothing).
-  // Extra and missed are not obvious: a tooltip says what they count.
-  let chars = "";
-  if (r.chars) {
-    const c = r.chars;
-    const part = (n, key, cls, tip) =>
-      `<span class="r-cc${cls}"${tip ? ` tabindex="0" data-tip-text="${t(tip)}"` : ""}><b>${n}</b> ${t(key)}</span>`;
-    chars = `<p class="r-chars">${part(c.correct, "result.correct", "")}${part(c.wrong, "result.wrong", c.wrong ? " bad" : "")}` +
-      `${part(c.extra, "result.extra", c.extra ? " bad" : "", "result.extraTip")}${part(c.missed, "result.missed", "", "result.missedTip")}</p>`;
-  }
-
-  // 2. one plain line: what happened, the most important thing first
-  const mastered = (r.mastered ?? []).join(" ");
-  let main = "", cls = "";
-  if (r.test) { main = `<span>${t(`result.test.${r.test}`)}</span>`; cls = r.test === "pass" ? " k-best" : ""; }
-  else if (r.newLetter) { main = `<span>${t("result.newLetter")}</span><span class="r-badge">${r.newLetter}</span>`; cls = " k-letter"; }
-  if (main) lines.push(`<p class="r-main${cls}">${main}</p>`);
-  // letters mastered in this round (when nothing above outranks them): a
-  // column of their own between Faster and Slower (owner, 2026-10-16), a
-  // green tick and the letters as small keys, as in the status line above
-  const masteredCol = !main && mastered
-    ? `<p class="r-col mid"><span class="lbl-ui"><svg class="r-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>${t("result.masteredLabel")}</span>` +
-      `${r.mastered.map((c) => `<b class="r-key">${c}</b>`).join("")}</p>` : "";
-
-  // 3. letters that changed: time per press before and now, green = faster,
-  // red = slower. Faster always on the left, Slower on the right, the
-  // mastered letters between them (style.css), one letter per line.
-  const chip = (x, c) => `<span class="r-ch ${c}"><b>${x.c}</b>${x.from}→${x.to}<small>ms</small></span>`;
-  const changed = [];
-  if (masteredCol) changed.push(masteredCol);
-  if (r.faster?.length) changed.push(`<p class="r-col up"><span class="lbl-ui">${t("result.faster")}</span>${r.faster.map((x) => chip(x, "up")).join("")}</p>`);
-  if (r.slower?.length) changed.push(`<p class="r-col down"><span class="lbl-ui">${t("result.slower")}</span>${r.slower.map((x) => chip(x, "down")).join("")}</p>`);
-  if (changed.length) lines.push(`<div class="r-letters">${changed.join("")}</div>`);
-
-  // 4. the words of the round as typed (as on monkeytype): each word is
-  // coloured by its speed (speedBands), a letter that had a mistake is
-  // underlined in red; hover (or tap, on a phone) shows the word's speed
+  const hero = `<div class="r-hero">${best}${num(Math.round(r.wpm), "", "result.wpm", "big")}` +
+    `${num(Math.round(r.accuracy), "%", "result.acc", "big")}</div>`;
+  // ... and on the right the speed of each word (as on monkeytype): the
+  // label, the legend of the colours, the chart. The words themselves come
+  // last; each is coloured by its speed (speedBands), a letter that had a
+  // mistake is underlined in red; hover (or tap, on a phone) shows its speed
+  let graph = "", list = "";
   if (r.words?.length) {
     const bands = speedBands(r.words.map((w) => w.wpm).filter((v) => v != null));
     const word = (w) => {
@@ -97,12 +61,38 @@ export function showResult(r) {
     };
     const legend = bands.labels.length
       ? `<span class="r-legend" aria-hidden="true">${bands.labels.map((l, i) => `<span class="s${i + 1}">${l}</span>`).join("")}</span>` : "";
-    lines.push(`<div class="r-words"><p class="r-words-head"><span class="lbl-ui">${t("result.words")}</span>${legend}</p>` +
-      speedChart(r.words, bands) + `<p class="r-wordlist">${r.words.map(word).join(" ")}</p>` + chars + `</div>`);
-  } else if (chars) lines.push(chars);
+    graph = `<div class="r-graph"><p class="r-words-head"><span class="lbl-ui">${t("result.words")}</span>${legend}</p>${speedChart(r.words, bands)}</div>`;
+    list = `<p class="r-wordlist">${r.words.map(word).join(" ")}</p>`;
+  }
 
+  // 2. the row of facts: consistency, time, the characters (each number
+  // with its word: "97/20/19/4" said nothing; extra and missed are not
+  // obvious, a tooltip says what they count)
+  const row = [];
+  if (r.consistency != null) row.push(num(Math.round(r.consistency), "%", "result.cons", "mid", "result.consTip"));
+  if (r.seconds != null) row.push(num(Math.round(r.seconds), "s", "result.time", "mid"));
+  if (r.chars) {
+    const c = r.chars;
+    const part = (n, key, cls, tip) =>
+      `<span class="r-cc${cls}"${tip ? ` tabindex="0" data-tip-text="${t(tip)}"` : ""}><b>${n}</b> ${t(key)}</span>`;
+    row.push(`<span class="r-num mid"><span class="r-lbl">${t("result.chars")}</span><span class="r-chars">` +
+      `${part(c.correct, "result.correct", "")}${part(c.wrong, "result.wrong", c.wrong ? " bad" : "")}` +
+      `${part(c.extra, "result.extra", c.extra ? " bad" : "", "result.extraTip")}${part(c.missed, "result.missed", "", "result.missedTip")}</span></span>`);
+  }
+  // at the row's right end, what happened, the most important thing
+  // first: the test verdict, a new letter, or the letters mastered in
+  // this round (a green tick and the letters as small keys)
+  if (r.test) row.push(`<p class="r-main${r.test === "pass" ? " k-best" : ""}"><span>${t(`result.test.${r.test}`)}</span></p>`);
+  else if (r.newLetter) row.push(`<p class="r-main k-letter"><span>${t("result.newLetter")}</span><span class="r-badge">${r.newLetter}</span></p>`);
+  else if (r.mastered?.length) {
+    row.push(`<span class="r-num mid r-mastered"><span class="r-lbl"><svg class="r-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>${t("result.masteredLabel")}</span>` +
+      `<span class="r-keys">${r.mastered.map((c) => `<b class="r-key">${c}</b>`).join("")}</span></span>`);
+  }
+
+  const body = `<div class="r-top${graph ? "" : " solo"}">${hero}${graph}</div>` +
+    (row.length ? `<div class="r-row">${row.join("")}</div>` : "") + list;
   // a test that did not pass: the button starts it again
-  return open(lines, r.test && r.test !== "pass" ? "result.tryAgain" : "result.nextBtn");
+  return open(body, r.test && r.test !== "pass" ? "result.tryAgain" : "result.nextBtn");
 }
 
 // Splits the speeds of this round's words into SPEED_BANDS equal steps
@@ -161,10 +151,9 @@ function speedChart(words, bands) {
 const ICON_NEXT = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>`;
 const ICON_AGAIN = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>`;
 
-// Puts the lines into the window and waits until the result is closed.
-// Each line is its own section; style.css draws a thin line between them.
-function open(lines, btn) {
-  box.innerHTML = `<div class="r-body">${lines.map((l) => `<div class="r-sec">${l}</div>`).join("")}</div>` +
+// Puts the result into the window and waits until it is closed.
+function open(body, btn) {
+  box.innerHTML = `<div class="r-body">${body}</div>` +
     `<p class="r-foot"><button type="button" class="btn r-next">${btn === "result.tryAgain" ? ICON_AGAIN : ICON_NEXT}<span>${t(btn)}</span>${isTouch() ? "" : "<kbd>enter</kbd>"}</button></p>`;
   // phones have no hover: a tap on a word, a dot of the chart or the
   // characters shows its tooltip (and must not reach the text window, which would open the phone keyboard)
@@ -200,22 +189,12 @@ export function closeResult() {
   resolve();
 }
 
-// What one round changed: a new record, letters mastered, and which
-// letters got faster or slower (smoothed time per letter, avgMs, before and
-// after). Only letters typed in this round count. Display only.
-const CHANGE_MIN = 0.03;   // a letter must change by 3 % or more to be named
-export function compareStats(before, after, samples) {
+// What one round changed: a new record and letters mastered in it.
+// Display only.
+export function compareStats(before, after) {
   const prev = Object.fromEntries((before?.keys ?? []).map((k) => [k.char, k]));
-  const typed = new Set(samples.map((x) => x.char).filter((c) => c !== " "));
   const best = (before?.sessionCount ?? 0) > 0 &&
     (after.sessions[0]?.wpm ?? 0) > Math.max(0, ...before.sessions.map((x) => x.wpm));   // /stats: newest first
   const mastered = after.keys.filter((k) => k.mastered && !prev[k.char]?.mastered).map((k) => k.char);
-  const change = after.keys
-    .filter((k) => typed.has(k.char) && prev[k.char]?.count > 0 && prev[k.char].avgMs > 0)
-    .map((k) => ({ c: k.char, from: Math.round(prev[k.char].avgMs), to: Math.round(k.avgMs),
-      pct: Math.round((1 - k.avgMs / prev[k.char].avgMs) * 100) }))
-    .filter((x) => Math.abs(x.pct) >= CHANGE_MIN * 100);
-  const faster = change.filter((x) => x.pct > 0).sort((a, b) => b.pct - a.pct).slice(0, 3);
-  const slower = change.filter((x) => x.pct < 0).sort((a, b) => a.pct - b.pct).slice(0, 2);
-  return { best, mastered, faster, slower };
+  return { best, mastered };
 }
