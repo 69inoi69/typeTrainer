@@ -66,9 +66,8 @@ let lineH = 0;
 export function fitText() {
   if (S.view !== "type") return;
   lineH = parseFloat(getComputedStyle(el.text).lineHeight) || 0;
-  el.text.style.scrollBehavior = "auto";     // a new text starts at the top at once
-  el.text.scrollTop = 0;
-  el.text.style.removeProperty("scroll-behavior");
+  cancelAnimationFrame(scrollFrame);
+  el.text.scrollTop = 0;                     // a new text starts at the top at once
 }
 
 // ---------- caret ----------
@@ -93,15 +92,34 @@ export function placeCaret(jump) {
     // "scale", and scale must not multiply the position (the caret flew away)
     el.caret.style.translate = `${x - 1}px ${s.offsetTop + h * 0.09}px`;
     // keep the current line in view: from the third line on, scroll so that
-    // it is the second one (at once or smooth: web/feel.js lineScrollSmooth)
+    // it is the second one
     if (lineH) {
       const line = Math.round(s.offsetTop / lineH);
       const top = Math.max(0, Math.min(line - 1, Math.ceil(el.text.scrollHeight / lineH) - TEXT_LINES)) * lineH;
-      if (Math.abs(el.text.scrollTop - top) > 1) el.text.scrollTop = top;
+      if (Math.abs(el.text.scrollTop - top) > 1) scrollText(top, jump);
     }
     if (jump) requestAnimationFrame(() => el.caret.classList.remove("jump"));
   });
 }
+// Moves the text window to scrollTop = top in FEEL.lineScrollMs, fast at the
+// start, soft at the end. The browser's own smooth scroll cannot be timed and
+// takes ~400 ms, which felt like honey. scrollTop cannot be animated by CSS or
+// element.animate(), so this one is stepped once per animation frame (the
+// same frames the caret uses; no timers). A newer target replaces the old one.
+let scrollFrame = 0;
+function scrollText(top, jump) {
+  cancelAnimationFrame(scrollFrame);
+  const from = el.text.scrollTop, ms = jump ? 0 : FEEL.lineScrollMs;
+  if (!ms) { el.text.scrollTop = top; return; }
+  const start = performance.now();
+  const step = (now) => {
+    const k = Math.min(1, (now - start) / ms);
+    el.text.scrollTop = from + (top - from) * (1 - (1 - k) ** 3);   // ease-out
+    if (k < 1) scrollFrame = requestAnimationFrame(step);
+  };
+  scrollFrame = requestAnimationFrame(step);
+}
+
 // ---------- the stream ----------
 // The text is not built in one go: it is a stream of short portions (a few
 // words around one focus letter, Generator.Portion on the server). When the

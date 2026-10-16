@@ -466,7 +466,7 @@ body[data-mode="free"] .learn-only { display: none; }
   /* A fixed window of 3 lines, like a screen: only its content changes, the
      card never grows or shrinks between exercises. A longer text scrolls up
      line by line while you type (typing.js, placeCaret). */
-  height: calc(3 * 1.7em); overflow: hidden; scroll-behavior: var(--feel-scroll, auto);
+  height: calc(3 * 1.7em); overflow: hidden;
   letter-spacing: .02em; color: var(--sub); word-break: break-word;
   text-align: left;                /* like a terminal: lines start at the prompt */
   transition: filter var(--med), opacity var(--med);
@@ -527,7 +527,7 @@ body[data-mode="free"] .learn-only { display: none; }
   border-radius: 3px; pointer-events: none;
   box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 35%, transparent);
   will-change: translate;
-  transition: translate var(--feel-caret-ms, 0ms) ease-out;   /* a short glide (web/feel.js) */
+  transition: translate var(--feel-caret-ms, 0ms) cubic-bezier(.15, .85, .35, 1);   /* starts at once, settles softly (web/feel.js) */
   animation: blink 1s steps(1) infinite;
 }
 .caret.jump { transition: none; }   /* new round, resize: no glide */
