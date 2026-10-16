@@ -47,7 +47,7 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   word at most, so you can finish a word you skipped. Space in the middle of a word jumps to the next one. A fixed
   mistake still counts for the letter's statistics.
 - The row of letters at the top shows your progress: open letters, the letter in
-  **focus** (yellow, your weakest right now), mastered letters (green dot), and
+  **focus** (yellow, your weakest right now), mastered letters (a small green tick), and
   locked letters (outlined). Master every open letter and the next one opens.
   Under it, small status pills: focus letter, mastered open letters (with a
   bar) and the next letter; hover them for details. Caps Lock and wrong layout
@@ -131,15 +131,28 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
 - **When the round ends** the text window shows the result instead of the
   text: the numbers first (speed in wpm, accuracy and the **consistency** of
   your speed: how even the pace was, 100 % = every second the same; rounds
-  under 5 seconds get none), then one plain line if something happened (a
-  new letter, a new record, mastered letters), then which letters got faster
+  under 5 seconds get none). Under them, smaller: Characters (right, wrong,
+  extra and missed letters, for example `128/3/0/1`; hover for what each
+  number is) and the Time of the round, from the first to the last press.
+  Then one plain line if something happened (a
+  new letter ("New letter opened:" and the letter on a yellow key, the tint only as wide as the text), a new record, mastered letters), then which letters got faster
   or slower, as the time per press before and now (for example
   `s 320→250ms`), Faster on the left and Slower on the right, then the
-  words of the round as you typed them, a letter that had a mistake in red.
+  words of the round as you typed them, a letter that had a mistake
+  underlined in red. Each word is coloured by its speed in this round, from
+  red (your slowest words) through yellow to green (your fastest); the
+  legend next to "Words" shows the wpm range of each colour. The steps are
+  equal parts between your slowest and fastest word, as on Monkeytype, so
+  the colours compare words of one round, not you with anyone. When every
+  word had about the same speed, all are yellow and there is no legend.
+  Above the words, a small chart shows the speed of each word in the order
+  you typed them: one dot per word in its speed colour, a red cross above a
+  word that had a mistake (hover or tap a dot for the word and its speed).
+  Thin lines separate the parts of the result.
   Hover a word (or tap it on a phone) to see its own speed: the average
   time per press of its letters and the space after it, in wpm. Each part
   is its own block with some air between (good news, a new letter or a
-  record, on a soft yellow tint), and the window is only as tall as what it
+  record, on a soft yellow tint), and the window is only as wide and as tall as what it
   shows (a long list of words scrolls inside). No
   jokes or tips there. The result stays until you go on on purpose:
   **Enter**, **Esc**, **Tab** or the yellow-outlined **Next round** button
@@ -191,7 +204,7 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   - side by side (learning only): a **difficulty keyboard** (grey keys, the
     redder the harder the letter is for you, dashed = no data yet) and every
     letter as a small chip from weakest to strongest, with a thin red bar for
-    how hard it is and a green dot when mastered.
+    how hard it is and a green tick when mastered.
   The exact numbers are in tooltips: hover, tap, or move to a key or chip
   with `Tab`.
 

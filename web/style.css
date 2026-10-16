@@ -414,10 +414,23 @@ body[data-mode="free"] .learn-only { display: none; }
   transition: background var(--med), color var(--med), transform var(--med);
 }
 .chip.mastered { color: var(--text); }
-.chip.mastered::after {             /* small dot = mastered */
-  content: ""; position: absolute; top: 3px; right: 3px; width: 4px; height: 4px;
-  border-radius: 50%; background: var(--ok);
+/* mastered: a small green tick in a dark round badge at the top right
+   corner, so it stays visible on any chip, the yellow focus one too
+   (owner, 2026-10-16: the plain green dot vanished on yellow).
+   ::before is the badge, ::after the tick (a mask, so it takes var(--ok)). */
+.chip.mastered::before, .lchip.mastered::before {
+  content: ""; position: absolute; top: -4px; right: -4px; width: 11px; height: 11px;
+  border-radius: 50%; background: var(--bg); z-index: 1;
 }
+.chip.mastered::after, .lchip.mastered::after {
+  content: ""; position: absolute; top: -2px; right: -2px; width: 7px; height: 7px; z-index: 2;
+  background: var(--ok);
+  -webkit-mask: var(--tick) center / contain no-repeat; mask: var(--tick) center / contain no-repeat;
+}
+/* the stats chips are big: the badge sits inside the corner */
+.lchip.mastered::before { top: 4px; right: 4px; }
+.lchip.mastered::after { top: 6px; right: 6px; }
+:root { --tick: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 12.5l5 5L20 6.5' fill='none' stroke='black' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 .chip.focus { background: var(--accent); color: var(--on-accent); }
 .chip.locked { background: transparent; color: color-mix(in srgb, var(--sub) 55%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 30%, transparent); }
 .chip.pop { animation: pop 340ms cubic-bezier(.2, 1.6, .4, 1); }   /* a letter just opened */
@@ -750,9 +763,9 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
   outline: 1px dashed color-mix(in srgb, var(--sub) 80%, transparent); outline-offset: -1px;
 }
 .key.hk.locked { opacity: .45; }
-.key.hk.mastered::before {                             /* same green dot as on the letter chips */
-  content: ""; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px;
-  border-radius: 50%; background: var(--ok); z-index: 1;
+.key.hk.mastered::before {                             /* the same green tick as on the letter chips (keys are dark: no badge needed) */
+  content: ""; position: absolute; top: 3px; right: 3px; width: 8px; height: 8px; z-index: 1;
+  background: var(--ok); -webkit-mask: var(--tick) center / contain no-repeat; mask: var(--tick) center / contain no-repeat;
 }
 .heat-legend { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .heat-scale {
@@ -791,9 +804,6 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 .lchip .meter::after {
   content: ""; position: absolute; inset: 0; width: calc(var(--d) * 100%); border-radius: 2px;
   background: color-mix(in srgb, var(--error) calc(40% + var(--d) * 60%), var(--sub));
-}
-.lchip.mastered::after {         /* same green dot as on the letter chips of the typing screen */
-  content: ""; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; border-radius: 50%; background: var(--ok);
 }
 .lchip.nodata .meter { background: none; outline: 1px dashed color-mix(in srgb, var(--sub) 60%, transparent); }
 .lchip.locked { background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 25%, transparent); }
@@ -865,17 +875,29 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
    cover the result */
 .text-box.resulting .focus-hint { display: none; }
 .text-box.resulting .live { display: none; }   /* the result shows the same numbers, bigger: once is enough */
-/* a compact block in the middle of the window, not stretched across it
-   (owner, 2026-10-16: too wide, too much empty room) */
+/* The card itself shrinks to what it shows (owner, 2026-10-16: no empty
+   room around the result): during the result it is as wide as its content
+   and centred, never wider than the text window. The content is at most
+   --r-w wide; a long list of words fills that and wraps. */
+.text-box.resulting {
+  --r-pad: 28px;
+  width: fit-content; max-width: var(--tw); margin-inline: auto;
+  padding: 22px var(--r-pad);
+}
 .result {
-  position: relative; width: 100%; max-width: 36rem; margin-inline: auto; font-size: 1rem;
+  position: relative; font-size: 1rem;
+  width: max-content; max-width: min(36rem, var(--tw) - 2 * var(--r-pad));
   display: flex; flex-direction: column;
   animation: view-in .25s var(--ease);
 }
 .result[hidden] { display: none; }
 .result p { margin: 0; }
 .r-body { display: flex; flex-direction: column; }
-.result .r-body > * + * { margin-top: 16px; }   /* .result: stronger than ".result p { margin: 0 }" above */
+/* each part is a section with a thin line between (owner, 2026-10-16:
+   neat lines with enough room, so the card reads as blocks); the room is
+   the same above and below each line */
+.result .r-sec + .r-sec { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+.r-sec { min-width: 0; }   /* a long word list or chart never pushes the card wider */
 /* the numbers: three equal columns, the label on top (readable, not tiny),
    the value under it */
 .r-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -883,15 +905,26 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 .r-num .r-lbl { font-size: .8rem; }
 .r-num b { font-size: 2rem; font-weight: 400; line-height: 1.1; color: var(--accent-text); font-variant-numeric: tabular-nums; }
 .r-num b small { font-size: .55em; margin-left: 2px; color: var(--sub); }
+/* the characters and the time: the same columns as the numbers, smaller
+   and in the text colour (the big numbers above stay the main thing) */
+.result .r-facts-row { margin-top: 12px; }
+.r-num.r-sub { outline: none; }
+.r-num.r-sub[data-tip-text] { cursor: default; }
+.r-num.r-sub b { font-size: 1.1rem; color: var(--text); }
+.r-num.r-sub b small, .r-num.r-sub .sl { color: var(--sub); }
+.r-num.r-sub .bad { color: var(--error); }
+.r-num.r-sub .miss { color: var(--sub); }
+.r-num.r-sub .sl { font-style: normal; margin: 0 1px; }
 .r-main { display: flex; align-items: center; font-size: .9rem; color: var(--text); line-height: 1.5; }
 /* good news (a new letter, a record): in the accent colour, on a soft tint */
 .r-main.k-letter, .r-main.k-best {
-  display: flex; align-items: center; padding: 8px 12px; border-radius: 10px;
+  display: flex; align-items: center; align-self: flex-start; width: fit-content;   /* as wide as its text, not the card */
+  padding: 8px 12px; border-radius: 10px;
   color: var(--accent-text); background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 .r-main b { color: var(--accent-text); font-weight: 500; }
 .r-badge {                         /* the new letter itself */
-  display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; margin-right: 10px; border-radius: 7px; vertical-align: middle;
+  display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; margin-left: 10px; border-radius: 7px; vertical-align: middle;
   background: var(--accent); color: var(--on-accent); font-weight: 600;
   animation: letter-pop .6s cubic-bezier(.2, 1.6, .4, 1) .1s both;
 }
@@ -901,6 +934,10 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 .r-letters { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: .85rem; }
 .r-col.up { grid-column: 1; }
 .r-col.down { grid-column: 2; }
+/* only one kind: it takes the whole row and its letters flow side by side,
+   so no empty half is left */
+.r-col:only-child { grid-column: 1 / -1; flex-flow: row wrap; align-items: baseline; }
+.r-col:only-child > .lbl-ui { flex-basis: 100%; }
 /* one column per kind (faster, slower): the label on top, one letter per line */
 .r-col { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .r-ch { display: inline-flex; gap: 5px; align-items: baseline; padding: 1px 8px; border-radius: 6px; background: var(--panel); font-variant-numeric: tabular-nums; }
@@ -908,16 +945,48 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 .r-ch small { font-size: .8em; margin-left: 1px; color: var(--sub); }
 .r-ch.up { color: var(--ok); }
 .r-ch.down { color: var(--error); }
-/* the words of the round: plain text in the text font, a mistyped letter
-   red; a long round scrolls inside (about five lines) */
+/* the words of the round in the text font, each coloured by its speed in
+   this round (result.js speedBands): s1 slowest = red, through yellow, to
+   s5 fastest = green; a mistyped letter is underlined in red. A long round
+   scrolls inside (about five lines) */
 .r-words { display: flex; flex-direction: column; gap: 6px; }
+.r-words .s1 { --sp: var(--error); }
+.r-words .s2 { --sp: color-mix(in srgb, var(--error) 50%, var(--accent-text)); }
+.r-words .s3 { --sp: var(--accent-text); }
+.r-words .s4 { --sp: color-mix(in srgb, var(--accent-text) 50%, var(--ok)); }
+.r-words .s5 { --sp: var(--ok); }
+/* the chart of word speeds: the wpm scale on the left, the plot on the
+   right; the dots are placed in percent, so it fits any width */
+.r-chart { display: flex; gap: 8px; height: 88px; margin: 4px 0 6px; }
+@media (max-width: 640px) { .r-chart { height: 72px; } }   /* phone: the button stays closer */
+.r-axis {
+  display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end;
+  font-size: .65rem; line-height: 1; color: var(--sub); font-variant-numeric: tabular-nums;
+  margin: -0.3em 0;   /* the middle of each number sits on its grid line */
+}
+.r-plot { position: relative; flex: 1; min-width: 0; margin-right: 4px; }
+.r-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.r-grid { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; fill: none; }
+.r-line { stroke: color-mix(in srgb, var(--text) 45%, transparent); stroke-width: 1.5; vector-effect: non-scaling-stroke; fill: none; stroke-linejoin: round; }
+.r-dot, .r-err { position: absolute; translate: -50% -50%; }
+.r-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sp); cursor: default; }
+.r-dot::after { content: ""; position: absolute; inset: -6px; }   /* a bigger target for the finger */
+.r-err {                            /* a mistake in this word: a small red cross above its dot */
+  width: 7px; height: 7px; margin-top: -10px; pointer-events: none;
+  background: linear-gradient(45deg, transparent 42%, var(--error) 42% 58%, transparent 58%),
+              linear-gradient(-45deg, transparent 42%, var(--error) 42% 58%, transparent 58%);
+}
+.result .r-words-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+/* the legend: one small coloured cell per band with its wpm range */
+.r-legend { display: inline-flex; border-radius: 4px; overflow: hidden; font-size: .7rem; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.r-legend > span { padding: 0 6px; background: var(--sp); color: var(--on-accent); }
 .r-wordlist {
   font-family: var(--mono); font-size: .95rem; line-height: 1.75; color: color-mix(in srgb, var(--text) 80%, var(--sub));
   max-height: calc(1.75em * 5); overflow-y: auto; scrollbar-width: thin;
 }
-.r-w { border-radius: 4px; padding: 1px 0; cursor: default; transition: background var(--fast), color var(--fast); }
-.r-w:hover, .r-w:focus-visible { background: color-mix(in srgb, var(--text) 10%, transparent); color: var(--text); outline: none; }
-.r-w i { font-style: normal; color: var(--error); }
+.r-w { border-radius: 4px; padding: 1px 0; cursor: default; color: var(--sp, inherit); transition: background var(--fast); }
+.r-w:hover, .r-w:focus-visible { background: color-mix(in srgb, var(--text) 10%, transparent); outline: none; }
+.r-w i { font-style: normal; text-decoration: underline 2px var(--error); text-underline-offset: 4px; }
 .r-facts { font-size: .8rem; color: color-mix(in srgb, var(--text) 65%, var(--sub)); }
 .result .r-foot { display: flex; justify-content: flex-end; margin-top: 20px; }   /* the only way on, with Enter / Esc / Tab */
 /* mastered letters: a green tick, the label, each letter as a small key
@@ -1055,7 +1124,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .note { font-size: .78rem; border-radius: 14px; }   /* phone: a long message may take two lines */
   .text-box { padding: 14px 16px 14px 34px; border-radius: 12px; }
   .text-box::before { left: 14px; top: 48px; }   /* 14 + 28 + 6 */
-  .text-box.resulting { padding-left: 16px; }   /* no prompt sign: the result uses the room */
+  .text-box.resulting { --r-pad: 16px; padding: 16px var(--r-pad); }   /* no prompt sign: the result uses the room */
   .r-main { font-size: .85rem; }
   .r-num b { font-size: 1.7rem; }
   .r-next { width: 100%; justify-content: center; min-height: 46px; }   /* phone: the whole width, easy to hit */

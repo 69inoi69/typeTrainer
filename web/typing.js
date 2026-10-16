@@ -407,6 +407,21 @@ export function typedWords() {
   }
   return out;
 }
+// The characters and the time of the round, for the result screen (as on
+// monkeytype): how many letters are right, wrong, extra (typed past the end
+// of a word) and missed (skipped with a space), and how long the round took
+// from the first to the last press. Display only, read once at the end.
+export function roundFacts(end = lastTime) {
+  const chars = { correct: 0, wrong: 0, extra: 0, missed: 0 };
+  for (let i = 0; i < S.pos; i++) {
+    if (state[i] === 1) chars.correct++;
+    else if (state[i] === 2) chars.wrong++;
+    else if (state[i] === 3) chars.missed++;
+  }
+  for (const list of extras.values()) chars.extra += list.length;
+  const seconds = startTime === null || end === null ? 0 : (end - startTime) / 1000;
+  return { chars, seconds };
+}
 const wordHasError = (start, end) =>
   state.subarray(start, end).some((s) => s >= 2) || (extras.get(end)?.length ?? 0) > 0;
 function mistake() {
@@ -719,7 +734,7 @@ async function finishRound() {
     markMastered(r.mastered);
     renderLetters();        // the letters bar agrees with the result at once, not only after it closes
     if (r.best) FX.burstFrom(el.wpm, 80);
-    await showResult({ wpm, accuracy, consistency: res.consistency, newLetter: roundNewLetter, ...r, words: typedWords() });
+    await showResult({ wpm, accuracy, consistency: res.consistency, newLetter: roundNewLetter, ...r, words: typedWords(), ...roundFacts(end) });
     await loadExercise();   // built from the UPDATED model
   } catch (err) {
     // said where the eyes are (it used to go only to the screen-reader
@@ -741,7 +756,7 @@ async function finishFree(wpm, accuracy, keys, perSecond) {
   await refreshFreeplay();
   const best = before.length > 0 && wpm > Math.max(...before.map((x) => x.wpm));
   if (best) FX.burstFrom(el.wpm, 80);
-  await showResult({ wpm, accuracy, consistency: res.consistency, best, words: typedWords() });
+  await showResult({ wpm, accuracy, consistency: res.consistency, best, words: typedWords(), ...roundFacts() });
   await loadExercise();
 }
 
@@ -754,7 +769,7 @@ async function finishTest(wpm, accuracy, chars) {
   const res = full ? await postJSON("/freeplay/test", { wpm, accuracy, chars }) : { passed: false };
   await refreshFreeplay();
   if (res.passed) FX.burstFrom(el.wpm, 80);
-  await showResult({ wpm, accuracy, test: !full ? "stopped" : res.passed ? "pass" : "fail", words: typedWords() });
+  await showResult({ wpm, accuracy, test: !full ? "stopped" : res.passed ? "pass" : "fail", words: typedWords(), ...roundFacts() });
   setMode(res.passed ? "free" : "learn");
   await loadExercise();
 }
