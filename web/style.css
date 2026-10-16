@@ -112,11 +112,12 @@ input, textarea { user-select: text; -webkit-user-select: text; }
    and bright: it is the content. What never changes (labels, menu items,
    explanations) is the system's plain font, smaller and grey: it is the
    frame around the content. So the eye tells them apart at a glance.
-   .lbl-ui is the look of a fixed label: small capitals, a little spaced. */
+   .lbl-ui is the look of a fixed label: small and grey, in sentence case
+   like every other text (all capitals read as template chrome and are
+   harder to read; owner, 2026-10-16: capitals only at the start). */
 .lbl-ui, .metric small, .stat .lbl, .tile small, .r-lbl,
 .panel-note, .heat-legend, .profile-field small, .profile-label, .tour-step, .intro-kicker {
-  font-family: var(--ui); font-size: .66rem; font-weight: 600; letter-spacing: .08em;
-  text-transform: uppercase; color: var(--sub);
+  font-family: var(--ui); font-size: .75rem; font-weight: 500; color: var(--sub);
 }
 /* buttons, menus, tooltips and guides: the plain font, normal case */
 button, .tooltip, .menu-item, .hints, .rail small, .tour-text, .intro p, .intro h2, .account-msg,
@@ -994,7 +995,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .lang-switch button { padding: 0 6px; }
   .live { gap: 12px; margin-bottom: 6px; }
   .metric > span, .streak span { font-size: 1.1rem; }
-  .metric small { margin-left: 4px; letter-spacing: .04em; font-size: .6rem; }
+  .metric small { margin-left: 4px; font-size: .7rem; }
   .bolt { width: 18px; height: 18px; }
   .metric.raw { display: none; }          /* phone: no room, wpm + acc are enough */
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 100%; }
