@@ -106,6 +106,7 @@ func (s *Server) handleFreeplayResults(w http.ResponseWriter, r *http.Request, u
 		WPM: req.WPM, Accuracy: req.Accuracy, Chars: req.Chars, Consistency: consistency, FinishedAt: time.Now(),
 		Keys:   req.Keys, // kept as the raw record only, never learned from
 		Length: req.Length,
+		Device: req.Device,
 	})
 	if err != nil {
 		serverError(w, err)

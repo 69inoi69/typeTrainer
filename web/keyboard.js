@@ -134,13 +134,15 @@ export function glowKey(ch) {
 const kbKey = () => (S.mode === "learn" ? "tt.kbHidden" : "tt.kbHidden.free");
 
 // Read the saved choice of the current mode and show / hide the keyboard.
-// Never chosen yet: learning hides it only on phones (no physical keys to
-// look up), free practice always hides it.
+// Touch screens never show it: you type with your thumbs on the phone's own
+// keyboard, which also covers this part of the screen (owner, 2026-10-16).
+// Never chosen yet: learning shows it, free practice hides it.
 // animate = true when the user switches the mode: it folds away smoothly.
 export function restoreKb(animate = false) {
   const saved = store.get(kbKey());
   const was = S.kbHidden;
-  if (S.mode === "learn") S.kbHidden = saved === null ? isTouch() : saved === "1";
+  if (isTouch()) S.kbHidden = true;
+  else if (S.mode === "learn") S.kbHidden = saved === "1";
   else S.kbHidden = saved === null || saved === "1";
   applyKb(animate && was !== S.kbHidden);
 }
@@ -154,7 +156,7 @@ export function applyKb(animate = false) {
     el.hands.classList.toggle("off", S.kbHidden);
   }
   document.body.classList.toggle("kb-hidden", S.kbHidden);   // phone CSS centres the text then
-  store.set(kbKey(), S.kbHidden ? "1" : "");
+  if (!isTouch()) store.set(kbKey(), S.kbHidden ? "1" : "");   // a phone never chose it
   requestFit();
 }
 

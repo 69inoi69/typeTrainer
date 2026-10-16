@@ -23,8 +23,10 @@ import { settingsOpen, closeSettings, onLengthChange, onKbToggle } from "./setti
 import { setMode, refreshFreeplay, renderNav } from "./modes.js";
 import "./share.js";   // the copy / image buttons of the stats screen: it wires them itself
 
-// the keyboard choice in the settings and Alt+K: keyboard and hands off, or back on
+// the keyboard choice in the settings and Alt+K: keyboard and hands off, or
+// back on (never on a touch screen, see restoreKb)
 function toggleKb() {
+  if (isTouch()) return;
   S.kbHidden = !S.kbHidden;
   applyKb(true);
   placeCaret(true);

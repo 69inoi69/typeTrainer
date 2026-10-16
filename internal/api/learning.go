@@ -143,6 +143,9 @@ type resultsRequest struct {
 	// Length: the round length chosen in the settings ("words-30",
 	// "time-60"); "" = storage.DefaultLength.
 	Length string `json:"length"`
+	// Device: what the round was typed on, storage.DeviceKeyboard or
+	// storage.DeviceTouch; "" = not sent (older pages). Recorded only.
+	Device string `json:"device"`
 }
 
 // POST /api/v1/results?lang= -> the round is over: stores it in the
@@ -187,7 +190,7 @@ func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, user stri
 	}
 	err = s.store.AddSession(user, l.Info.ID, storage.Session{
 		WPM: req.WPM, Accuracy: req.Accuracy, Chars: req.Chars, Consistency: consistency, FinishedAt: time.Now(),
-		Keys: req.Keys, Unlocked: unlocked, Length: req.Length, Group: group,
+		Keys: req.Keys, Unlocked: unlocked, Length: req.Length, Group: group, Device: req.Device,
 	})
 	if err != nil {
 		serverError(w, err)

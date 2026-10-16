@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -759,5 +760,24 @@ func TestApp_StudyGroup(t *testing.T) {
 	}
 	if _, st := call(t, h, "GET", "/api/v1/stats?lang=en", ""); st["group"] != "random" {
 		t.Fatal("import lost the group")
+	}
+}
+
+// What a round was typed on is kept with it (learning), an unknown device
+// is refused, and a page that does not send it stores "".
+func TestApp_RoundDevice(t *testing.T) {
+	h, _, _ := newApp()
+	if code, _ := call(t, h, "POST", "/api/v1/results?lang=en", `{"samples":[],"chars":40,"wpm":30,"accuracy":95,"device":"fridge"}`); code != 400 {
+		t.Fatalf("unknown device: %d, want 400", code)
+	}
+	call(t, h, "POST", "/api/v1/results?lang=en", `{"samples":[],"chars":40,"wpm":30,"accuracy":95}`)
+	call(t, h, "POST", "/api/v1/results?lang=en", `{"samples":[],"chars":40,"wpm":30,"accuracy":95,"device":"touch"}`)
+	_, st := call(t, h, "GET", "/api/v1/stats?lang=en", "")
+	var devices []any
+	for _, s := range st["sessions"].([]any) {
+		devices = append(devices, s.(map[string]any)["device"])
+	}
+	if len(devices) != 2 || !slices.Contains(devices, "touch") || !slices.Contains(devices, nil) {
+		t.Fatalf("devices in the history: %v", devices)
 	}
 }

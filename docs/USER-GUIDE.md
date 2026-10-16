@@ -100,7 +100,8 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
     its own colours rather than the dark theme turned inside out.
   - **keyboard** (the keys and the hands): on or off (same as `Alt + K`; remembered
     in your browser, separately for learning and for free practice / the
-    test, where they start hidden; on a phone they start hidden too). There
+    test, where they start hidden). Not on a phone or tablet: there you type
+    on the device's own keyboard, so the option is not shown. There
     is no size setting: the keyboard is always as big as the window allows
     without making the page scroll.
   - **your progress**: **backup · save** writes all languages and the full history

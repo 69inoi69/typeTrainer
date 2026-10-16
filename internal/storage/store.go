@@ -50,7 +50,18 @@ type Session struct {
 	// Group: the study group the round was typed in (learning only):
 	// "" = the adaptive trainer, GroupRandom = the control group.
 	Group string `json:"group,omitempty"`
+	// Device: what the round was typed on, DeviceKeyboard or DeviceTouch;
+	// "" = not known (history from before it was kept). Only recorded for
+	// now: the letter model learns from both alike. Kept so the thesis can
+	// check whether phone rounds should count differently.
+	Device string `json:"device,omitempty"`
 }
+
+// The devices a round can be typed on (Session.Device).
+const (
+	DeviceKeyboard = "keyboard" // a physical keyboard
+	DeviceTouch    = "touch"    // a touch screen (phone, tablet)
+)
 
 // GroupRandom is the control group of a user study (docs/ALGORITHM.md
 // section 11): learning works as usual, but the words of the open letters

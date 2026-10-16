@@ -19,7 +19,7 @@
 // it looks, never what is practised (AGENTS.md).
 
 import { t } from "./i18n.js";
-import { $, S, store } from "./state.js";
+import { $, S, store, isTouch } from "./state.js";
 
 // Round lengths: "words-N" ends after N words, "time-N" after N seconds.
 // Each round keeps its length on the server (storage.Session.Length), and
@@ -104,7 +104,7 @@ function renderCard() {
     opt("settings.time", null, lengths(time, t("settings.sec"))) +
     `</div><div class="win-sec"><small class="lbl-ui">${t("settings.look")}</small>` +
     opt("settings.live", "settings.liveNote", onOff("live", s.live)) +
-    opt("settings.keyboard", "settings.keyboardNote", onOff("kb", !S.kbHidden)) +
+    (isTouch() ? "" : opt("settings.keyboard", "settings.keyboardNote", onOff("kb", !S.kbHidden))) +   // no keyboard on touch screens
     opt("settings.caret", null, seg([
       choice("caret", "line", `<i class="cs line"></i>${t("settings.line")}`, s.caret === "line"),
       choice("caret", "block", `<i class="cs block"></i>${t("settings.block")}`, s.caret === "block")])) +

@@ -232,9 +232,9 @@ func (p *PostgresStore) addSession(user, lang, mode string, s Session) error {
 	}
 	s = s.WithLength()
 	_, err := p.db.Exec(`INSERT INTO sessions
-		(user_id, lang, mode, wpm, accuracy, chars, consistency, unlocked, keys, finished_at, length, study_group)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-		user, lang, mode, s.WPM, s.Accuracy, s.Chars, s.Consistency, s.Unlocked, keys, s.FinishedAt, s.Length, s.Group)
+		(user_id, lang, mode, wpm, accuracy, chars, consistency, unlocked, keys, finished_at, length, study_group, device)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+		user, lang, mode, s.WPM, s.Accuracy, s.Chars, s.Consistency, s.Unlocked, keys, s.FinishedAt, s.Length, s.Group, s.Device)
 	return err
 }
 
@@ -242,7 +242,7 @@ func (p *PostgresStore) addSession(user, lang, mode string, s Session) error {
 // the order they were stored in). In this query and the two below, an empty
 // length means "every length".
 func (p *PostgresStore) recentSessions(user, lang, mode, length string, limit int) ([]Session, error) {
-	rows, err := p.db.Query(`SELECT wpm, accuracy, chars, consistency, unlocked, keys, finished_at, length, study_group
+	rows, err := p.db.Query(`SELECT wpm, accuracy, chars, consistency, unlocked, keys, finished_at, length, study_group, device
 		FROM sessions WHERE user_id = $1 AND lang = $2 AND mode = $3 AND ($4 = '' OR length = $4)
 		ORDER BY id DESC LIMIT $5`, user, lang, mode, length, limit)
 	if err != nil {
@@ -254,7 +254,7 @@ func (p *PostgresStore) recentSessions(user, lang, mode, length string, limit in
 		var s Session
 		var consistency sql.NullFloat64
 		var keys []byte
-		if err := rows.Scan(&s.WPM, &s.Accuracy, &s.Chars, &consistency, &s.Unlocked, &keys, &s.FinishedAt, &s.Length, &s.Group); err != nil {
+		if err := rows.Scan(&s.WPM, &s.Accuracy, &s.Chars, &consistency, &s.Unlocked, &keys, &s.FinishedAt, &s.Length, &s.Group, &s.Device); err != nil {
 			return nil, err
 		}
 		if consistency.Valid {

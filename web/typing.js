@@ -21,7 +21,7 @@
 import { FEEL } from "./feel.js";
 import { t } from "./i18n.js";
 import { FX } from "./fx.js";
-import { $, el, S, introOpen } from "./state.js";
+import { $, el, S, introOpen, isTouch } from "./state.js";
 import { postJSON } from "./api.js";
 import { highlightNextKey, pulseKey, glowKey, requestFit } from "./keyboard.js";
 import { refreshStats } from "./stats.js";
@@ -724,7 +724,7 @@ async function finishRound() {
     if (S.mode === "free") { await finishFree(wpm, accuracy, typed, fullSeconds(end)); return; }
     // keys: the whole round, kept by the server as its raw record (it learns only from samples)
     const res = await postJSON("/results", {
-      samples, keys: typed, chars: typed.length, wpm, accuracy, perSecond: fullSeconds(end), length: S.settings.length,
+      samples, keys: typed, chars: typed.length, wpm, accuracy, perSecond: fullSeconds(end), length: S.settings.length, device: device(),
     });
     firstRoundDone();
     await refreshStats();
@@ -749,9 +749,13 @@ async function finishRound() {
 
 // The end of a free practice round: it goes to the free practice history
 // only (POST /freeplay/results), never to the letter statistics.
+// What the round is typed on, stored with it (recorded only, for the thesis:
+// phone rounds may later count differently, docs/ALGORITHM.md section 9)
+const device = () => (isTouch() ? "touch" : "keyboard");
+
 async function finishFree(wpm, accuracy, keys, perSecond) {
   const before = S.free?.sessions ?? [];
-  const res = await postJSON("/freeplay/results", { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length });
+  const res = await postJSON("/freeplay/results", { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length, device: device() });
   firstRoundDone();
   await refreshFreeplay();
   const best = before.length > 0 && wpm > Math.max(...before.map((x) => x.wpm));
