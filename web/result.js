@@ -3,8 +3,8 @@
 // consistency), each under its label; then one plain line when
 // something happened (a new letter, a record, mastered letters); then which
 // letters got faster or slower, as "before -> now" in milliseconds per press
-// (a percentage was not clear); then the words of the round, each with its
-// own speed on hover or tap. No jokes or tips: the owner wants plain
+// (a percentage was not clear); then the words of the round, coloured by
+// speed, each with its own speed on hover or tap. No jokes or tips: the owner wants plain
 // results here (2026-10-16); fun lines may come back later on their word.
 // It sits in the same fixed window as the text, so the page never moves.
 // The "next round" button has its own row at the bottom (full width on a
@@ -67,15 +67,46 @@ export function showResult(r) {
   if (r.slower?.length) changed.push(`<p class="r-col down"><span class="lbl-ui">${t("result.slower")}</span>${r.slower.map((x) => chip(x, "down")).join("")}</p>`);
   if (changed.length) lines.push(`<div class="r-letters">${changed.join("")}</div>`);
 
-  // 4. the words of the round as typed (as on monkeytype): a letter that had
-  // a mistake is red; hover (or tap, on a phone) shows the word's speed
+  // 4. the words of the round as typed (as on monkeytype): each word is
+  // coloured by its speed (speedBands), a letter that had a mistake is
+  // underlined in red; hover (or tap, on a phone) shows the word's speed
   if (r.words?.length) {
-    const word = (w) => `<span class="r-w"${w.wpm != null ? ` tabindex="0" data-tip-text="${t("result.wordWpm", { wpm: w.wpm })}"` : ""}>` +
-      w.letters.map((x) => x.bad ? `<i>${x.c}</i>` : x.c).join("") + `</span>`;
-    lines.push(`<div class="r-words"><span class="lbl-ui">${t("result.words")}</span><p class="r-wordlist">${r.words.map(word).join(" ")}</p></div>`);
+    const bands = speedBands(r.words.map((w) => w.wpm).filter((v) => v != null));
+    const word = (w) => {
+      const sp = w.wpm != null ? ` s${bands.level(w.wpm)}" tabindex="0" data-tip-text="${t("result.wordWpm", { wpm: w.wpm })}` : "";
+      return `<span class="r-w${sp}">` + w.letters.map((x) => x.bad ? `<i>${x.c}</i>` : x.c).join("") + `</span>`;
+    };
+    const legend = bands.labels.length
+      ? `<span class="r-legend" aria-hidden="true">${bands.labels.map((l, i) => `<span class="s${i + 1}">${l}</span>`).join("")}</span>` : "";
+    lines.push(`<div class="r-words"><p class="r-words-head"><span class="lbl-ui">${t("result.words")}</span>${legend}</p>` +
+      `<p class="r-wordlist">${r.words.map(word).join(" ")}</p></div>`);
   }
 
   return open(lines);
+}
+
+// Splits the speeds of this round's words into SPEED_BANDS equal steps
+// between the slowest and the fastest word, as monkeytype does: the colour
+// says "slow or fast for this round", not compared with anyone else.
+// level(wpm) is 1 (slowest, red) to SPEED_BANDS (fastest, green); labels
+// are the ranges for the legend ("<39", "39-57", ..., "93+"). When all
+// words have about the same speed there is nothing to compare: every word
+// gets the middle colour and there is no legend.
+const SPEED_BANDS = 5;
+const MIN_SPREAD = 5;   // wpm; a smaller gap between the slowest and fastest word is noise
+export function speedBands(speeds) {
+  const lo = Math.min(...speeds), hi = Math.max(...speeds);
+  if (!speeds.length || hi - lo < MIN_SPREAD) {
+    return { level: () => Math.ceil(SPEED_BANDS / 2), labels: [] };
+  }
+  const step = (hi - lo) / SPEED_BANDS;
+  // edges[i] is the first speed of band i+2, rounded to whole wpm
+  const edges = Array.from({ length: SPEED_BANDS - 1 }, (_, i) => Math.round(lo + step * (i + 1)));
+  const level = (v) => 1 + edges.filter((e) => v >= e).length;
+  const labels = [`<${edges[0]}`];
+  for (let i = 1; i < edges.length; i++) labels.push(`${edges[i - 1]}-${edges[i] - 1}`);
+  labels.push(`${edges[edges.length - 1]}+`);
+  return { level, labels };
 }
 
 // Puts the lines into the window and waits until the result is closed.

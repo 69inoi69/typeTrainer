@@ -919,16 +919,27 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 .r-ch small { font-size: .8em; margin-left: 1px; color: var(--sub); }
 .r-ch.up { color: var(--ok); }
 .r-ch.down { color: var(--error); }
-/* the words of the round: plain text in the text font, a mistyped letter
-   red; a long round scrolls inside (about five lines) */
+/* the words of the round in the text font, each coloured by its speed in
+   this round (result.js speedBands): s1 slowest = red, through yellow, to
+   s5 fastest = green; a mistyped letter is underlined in red. A long round
+   scrolls inside (about five lines) */
 .r-words { display: flex; flex-direction: column; gap: 6px; }
+.r-words .s1 { --sp: var(--error); }
+.r-words .s2 { --sp: color-mix(in srgb, var(--error) 50%, var(--accent-text)); }
+.r-words .s3 { --sp: var(--accent-text); }
+.r-words .s4 { --sp: color-mix(in srgb, var(--accent-text) 50%, var(--ok)); }
+.r-words .s5 { --sp: var(--ok); }
+.result .r-words-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+/* the legend: one small coloured cell per band with its wpm range */
+.r-legend { display: inline-flex; border-radius: 4px; overflow: hidden; font-size: .7rem; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.r-legend > span { padding: 0 6px; background: var(--sp); color: var(--on-accent); }
 .r-wordlist {
   font-family: var(--mono); font-size: .95rem; line-height: 1.75; color: color-mix(in srgb, var(--text) 80%, var(--sub));
   max-height: calc(1.75em * 5); overflow-y: auto; scrollbar-width: thin;
 }
-.r-w { border-radius: 4px; padding: 1px 0; cursor: default; transition: background var(--fast), color var(--fast); }
-.r-w:hover, .r-w:focus-visible { background: color-mix(in srgb, var(--text) 10%, transparent); color: var(--text); outline: none; }
-.r-w i { font-style: normal; color: var(--error); }
+.r-w { border-radius: 4px; padding: 1px 0; cursor: default; color: var(--sp, inherit); transition: background var(--fast); }
+.r-w:hover, .r-w:focus-visible { background: color-mix(in srgb, var(--text) 10%, transparent); outline: none; }
+.r-w i { font-style: normal; text-decoration: underline 2px var(--error); text-underline-offset: 4px; }
 .r-facts { font-size: .8rem; color: color-mix(in srgb, var(--text) 65%, var(--sub)); }
 .result .r-foot { display: flex; justify-content: flex-end; margin-top: 20px; }   /* the only way on, with Enter / Esc / Tab */
 /* mastered letters: a green tick, the label, each letter as a small key
