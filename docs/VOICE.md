@@ -43,7 +43,8 @@ sense of humour, not a stand-up comedian and not a robot.
 | speed | wpm | wpm | wpm | wpm |
 
 `wpm` and `raw` stay in English in every language, as on monkeytype, and so
-do the mode names Learn and Freetype.
+do the mode names Learn and Freetype. After a number it is a unit, `wpm`
+("30 wpm"); as a label on its own it is an abbreviation, `WPM`.
 
 ## Two kinds of text
 

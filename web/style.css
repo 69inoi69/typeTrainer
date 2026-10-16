@@ -550,12 +550,13 @@ body[data-mode="free"] .learn-only { display: none; }
    and height. "scale" stays free for the Tab nudge and scales in place. */
 .caret {
   /* a block caret, one character wide (the font is monospace, so 1ch is
-     exactly one letter), drawn over the letter in a see-through accent */
+     exactly one letter), drawn over the letter in a see-through accent:
+     light enough that the letter under it stays easy to read, and no bar
+     under it (owner, 2026-10-16: the yellow underline looked odd) */
   position: absolute; left: 1px; top: 0; width: calc(1ch + .02em); height: 1.2em;
-  background: color-mix(in srgb, var(--accent) 38%, transparent);
-  border-bottom: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
   border-radius: 3px; pointer-events: none;
-  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 35%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 20%, transparent);
   will-change: translate;
   transition: translate var(--feel-caret-ms, 0ms) cubic-bezier(.15, .85, .35, 1);   /* starts at once, settles softly (web/feel.js) */
   animation: blink 1s steps(1) infinite;
@@ -565,7 +566,7 @@ body[data-mode="free"] .learn-only { display: none; }
    the left edge of the next letter, same glide and blink. The block above is
    the "block" setting (body.caret-block, settings.js). */
 body:not(.caret-block) .caret {
-  width: 2px; background: var(--accent); border-bottom: 0; border-radius: 1px;
+  width: 2px; background: var(--accent); border-radius: 1px;
   box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 .text-box.typing .caret { animation: none; }             /* solid while typing */
@@ -857,9 +858,8 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 /* ---------- result screen (result.js) ---------- */
 /* It takes the place of the text and is as tall as what it shows: only the
    numbers = a short card, numbers + letters = a taller one (owner,
-   2026-10-16). Each part is its own block with air between (no lines); the
-   button sits at the bottom right, next to the last block, not in a row of
-   its own. */
+   2026-10-16). Each part is its own block with air between (no lines, the
+   owner did not want dividers); the button has its own row at the bottom. */
 .text-box.resulting .text, .text-box.resulting::before { display: none; }
 /* the phone keyboard closes when a round ends; the "tap here" hint must not
    cover the result */
@@ -876,7 +876,6 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 .result p { margin: 0; }
 .r-body { display: flex; flex-direction: column; }
 .result .r-body > * + * { margin-top: 16px; }   /* .result: stronger than ".result p { margin: 0 }" above */
-.r-body > :last-child { padding-right: 10rem; min-height: 40px; }   /* room for the button, at least its height */
 /* the numbers: three equal columns, the label on top (readable, not tiny),
    the value under it */
 .r-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -897,7 +896,11 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
   animation: letter-pop .6s cubic-bezier(.2, 1.6, .4, 1) .1s both;
 }
 @keyframes letter-pop { 0% { transform: scale(.3) rotate(-25deg); opacity: 0; } 70% { transform: scale(1.18) rotate(6deg); opacity: 1; } }
-.r-letters { display: flex; flex-wrap: wrap; gap: 12px 32px; font-size: .85rem; }
+/* Faster on the left, Slower on the right, side by side: one column alone
+   keeps its own half, so the two never swap places */
+.r-letters { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: .85rem; }
+.r-col.up { grid-column: 1; }
+.r-col.down { grid-column: 2; }
 /* one column per kind (faster, slower): the label on top, one letter per line */
 .r-col { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .r-ch { display: inline-flex; gap: 5px; align-items: baseline; padding: 1px 8px; border-radius: 6px; background: var(--panel); font-variant-numeric: tabular-nums; }
@@ -905,8 +908,27 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 .r-ch small { font-size: .8em; margin-left: 1px; color: var(--sub); }
 .r-ch.up { color: var(--ok); }
 .r-ch.down { color: var(--error); }
+/* the words of the round: plain text in the text font, a mistyped letter
+   red; a long round scrolls inside (about five lines) */
+.r-words { display: flex; flex-direction: column; gap: 6px; }
+.r-wordlist {
+  font-family: var(--mono); font-size: .95rem; line-height: 1.75; color: color-mix(in srgb, var(--text) 80%, var(--sub));
+  max-height: calc(1.75em * 5); overflow-y: auto; scrollbar-width: thin;
+}
+.r-w { border-radius: 4px; padding: 1px 0; cursor: default; transition: background var(--fast), color var(--fast); }
+.r-w:hover, .r-w:focus-visible { background: color-mix(in srgb, var(--text) 10%, transparent); color: var(--text); outline: none; }
+.r-w i { font-style: normal; color: var(--error); }
 .r-facts { font-size: .8rem; color: color-mix(in srgb, var(--text) 65%, var(--sub)); }
-.r-foot { position: absolute; right: 0; bottom: 0; }   /* the only way on, with Enter / Esc / Tab */
+.result .r-foot { display: flex; justify-content: flex-end; margin-top: 20px; }   /* the only way on, with Enter / Esc / Tab */
+/* mastered letters: a green tick, the label, each letter as a small key
+   (the same chip as "Next n" in the status line) */
+.r-main.r-mastered { gap: 8px; }
+.r-main.r-mastered .r-lbl { font-size: .9rem; margin-right: 2px; }
+.r-tick { width: 16px; height: 16px; fill: none; stroke: var(--ok); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.r-key {
+  display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; border-radius: 5px;
+  color: var(--text); font-weight: 500; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ok) 55%, transparent);
+}
 .r-next {                          /* the one button here: easy to see and to hit */
   min-height: 40px; padding: 0 16px; color: var(--accent-text);
   box-shadow: inset 0 0 0 1.5px var(--accent);
@@ -1036,6 +1058,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .text-box.resulting { padding-left: 16px; }   /* no prompt sign: the result uses the room */
   .r-main { font-size: .85rem; }
   .r-num b { font-size: 1.7rem; }
+  .r-next { width: 100%; justify-content: center; min-height: 46px; }   /* phone: the whole width, easy to hit */
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1146,7 +1169,7 @@ body.live-off .live .metric.num { display: none; }
 /* small pictures of the two carets */
 .cs { display: inline-block; height: 12px; border-radius: 1px; background: currentColor; }
 .cs.line { width: 2px; }
-.cs.block { width: 8px; opacity: .55; border-bottom: 2px solid currentColor; }
+.cs.block { width: 8px; opacity: .4; }
 /* the stats screen: whose stats and one round length at a time (.seg look) */
 .mode-filter:empty { display: none; }
 

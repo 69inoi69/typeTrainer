@@ -84,7 +84,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `intro.js` | Guide A, "touch typing basics" (what it is, home row, space, eyes up); opens by itself on the first visit. |
 | middle | `languages.js` | The language switch and `loadLanguage()`. |
 | middle | `profile.js` | The account in the top right corner ("log in" for a guest where accounts work): the account (log in / sign up / log out; the page reloads after each), and a picture kept only in the browser. |
-| middle | `result.js` | The result screen in the text window: `showResult(r)` shows what changed and resolves when the user goes on; `compareStats()` works out what a learning round changed. |
+| middle | `result.js` | The result screen in the text window: `showResult(r)` shows what changed and resolves when the user goes on; `compareStats()` works out what a learning round changed. The words of the round with their own speed come from `typedWords()` in `typing.js`. |
 | middle | `modes.js` | The modes (learning / free practice / typing test), the navigation tabs that show them (`renderNav`: learn · freetype · stats), `refreshFreeplay()` (`S.free`), the mode remembered per language. |
 | middle | `settings.js` | The settings panel (gear in the navigation): round length, live numbers, caret, theme, keyboard on / off (carried out by `input.js`); kept in `localStorage` (`S.settings`). The data row (save / load / reset) is static HTML wired by `tools.js`. |
 | middle | `tour.js` | Guide B, "how this site works": the idea of the trainer, then a ring around each part of the page and a short card. |
