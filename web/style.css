@@ -176,6 +176,18 @@ button, .tooltip, .menu-item, .hints, .rail small, .tour-text, .intro p, .intro 
 .seg button[aria-pressed="true"], .length-filter button[aria-selected="true"], .mode-filter button[aria-selected="true"] {
   background: var(--accent); color: var(--on-accent);
 }
+/* the stats' round lengths (all five, always): on a phone the row takes
+   the whole width with equal-ish buttons; on a very narrow one it becomes
+   two tidy rows, the three word lengths over the two time lengths */
+@media (max-width: 640px) {
+  .length-filter { display: flex; flex-wrap: nowrap; width: 100%; }
+  .length-filter button { flex: 1 1 auto; padding: 4px 6px; white-space: nowrap; }
+}
+@media (max-width: 380px) {
+  .length-filter { display: grid; grid-template-columns: repeat(6, 1fr); }
+  .length-filter button { grid-column: span 2; }
+  .length-filter button[data-length^="time"] { grid-column: span 3; }
+}
 /* a plain button in a panel */
 .btn {
   display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 8px;

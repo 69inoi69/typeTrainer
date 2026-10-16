@@ -200,8 +200,9 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   up), so "how am I doing?" takes a glance:
   - a row of round lengths and the numbers: rounds, best wpm, and the
     averages of the last 10 rounds (wpm, accuracy, consistency). Rounds of
-    different lengths are never mixed: the row shows the length chosen in
-    the settings, and you can pick another length you have played;
+    different lengths are never mixed: the row always has all five lengths
+    (10, 30, 60 words, 30, 60 s), it opens on the one chosen in the
+    settings, and a length with no rounds yet shows empty numbers;
   - the speed of every round (hover a bar for its numbers);
   - side by side (learning only): a **difficulty keyboard** (grey keys, the
     redder the harder the letter is for you, dashed = no data yet) and every
