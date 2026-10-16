@@ -1022,7 +1022,8 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
   box-shadow: inset 0 0 0 1.5px var(--accent);
 }
 .r-next:hover, .r-next:focus-visible { background: color-mix(in srgb, var(--accent) 14%, transparent); }
-.r-next kbd { margin-left: 6px; background: var(--panel); }
+.r-next svg { width: 18px; height: 18px; stroke-width: 2.4; }   /* the icon leads, the label sits beside it */
+.r-next kbd { margin-left: 4px; background: var(--panel); }
 
 /* ---------- intro ---------- */
 .intro {

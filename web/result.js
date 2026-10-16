@@ -149,11 +149,16 @@ function speedChart(words, bands) {
     `<polyline class="r-line" points="${line}"/></svg>${dots}</div></div>`;
 }
 
+// The button's icon: an arrow for the next round (new words), a circle
+// arrow for "Try again" after a failed typing test.
+const ICON_NEXT = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>`;
+const ICON_AGAIN = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>`;
+
 // Puts the lines into the window and waits until the result is closed.
 // Each line is its own section; style.css draws a thin line between them.
 function open(lines, btn) {
   box.innerHTML = `<div class="r-body">${lines.map((l) => `<div class="r-sec">${l}</div>`).join("")}</div>` +
-    `<p class="r-foot"><button type="button" class="btn r-next">${t(btn)}${isTouch() ? "" : " <kbd>enter</kbd>"}</button></p>`;
+    `<p class="r-foot"><button type="button" class="btn r-next">${btn === "result.tryAgain" ? ICON_AGAIN : ICON_NEXT}<span>${t(btn)}</span>${isTouch() ? "" : "<kbd>enter</kbd>"}</button></p>`;
   // phones have no hover: a tap on a word, a dot of the chart or the
   // characters shows its tooltip (and must not reach the text window, which would open the phone keyboard)
   box.querySelector(".r-body").addEventListener("click", (e) => {
