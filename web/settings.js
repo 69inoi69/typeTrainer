@@ -96,7 +96,7 @@ function renderCard() {
   const words = LENGTHS.filter((id) => id.startsWith("words-"));
   const time = LENGTHS.filter((id) => id.startsWith("time-"));
   const lengths = (ids, unit) => seg(ids.map((id) => choice("length", id, lengthOf(id).n + unit, id === s.length)));
-  const onOff = (key, on) => seg([choice(key, "1", t("settings.on"), on), choice(key, "", t("settings.off"), !on)]);
+  const onOff = (key, on) => seg([choice(key, "", t("settings.off"), !on), choice(key, "1", t("settings.on"), on)]);   // on on the right, as on a switch
   body.innerHTML =
     `<div class="win-sec first"><small class="lbl-ui">${t("settings.round")}</small>` +
     opt("settings.words", "settings.wordsNote", lengths(words, "")) +

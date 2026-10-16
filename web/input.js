@@ -9,7 +9,7 @@
 // a <small> label and data-tip), its texts in i18n.js, and its click here
 // (the "views", "modes" and "help" sections below are the pattern).
 
-import { applyI18n } from "./i18n.js";
+import { applyI18n, t, hasText } from "./i18n.js";
 import { $, el, S, introOpen, isTouch, focusText } from "./state.js";
 import { applyKb, requestFit } from "./keyboard.js";
 import { refreshStats, renderStats, onStatsMode } from "./stats.js";
@@ -63,13 +63,24 @@ el.tabStats.addEventListener("click", (e) => { e.currentTarget.blur(); setView("
 // the language changes (learning keeps every portion sent so far).
 // The stats screen can switch the mode too (its own small switch, stats.js):
 // then it stays on the stats screen.
+// The result screen stays open until "new round", and the round counts as
+// busy until then. Going to another mode from there closes the result: the
+// ending round then loads its next text, already in the new mode. (Before,
+// the tabs ignored every click while a result was open somewhere.)
 function chooseMode(m, stay = false) {
-  if (S.busy) return;
   if (m === "free" && !S.free?.unlocked) m = "test";
   if (m !== S.mode) {
-    setMode(m);
-    el.live.classList.remove("final");
-    loadExercise().catch(console.error);
+    if (resultOpen()) {
+      setMode(m);
+      el.live.classList.remove("final");
+      closeResult();                         // the round ends and loads the next text itself
+    } else if (S.busy) {
+      return;                                // a round is being saved right now: a moment
+    } else {
+      setMode(m);
+      el.live.classList.remove("final");
+      loadExercise().catch(console.error);
+    }
   }
   if (stay && m !== "test") renderStats();
   else if (S.view !== "type") setView("type");
@@ -91,10 +102,23 @@ helpBtn.addEventListener("click", () => {
   helpBtn.blur();
   if (helpOpen()) { closeHelp(); return; }
   closeSettings();
+  fillHelp();
   applyI18n(helpCard);                        // fills {target} with the current goal
   helpCard.hidden = false;
   helpBtn.setAttribute("aria-expanded", "true");
 });
+// The first section is about the screen you are on: help.<screen>.title and
+// its points help.<screen>.1, .2, ... (i18n.js). The tour shows the parts of
+// the Learn screen, so it is offered only there.
+// To add help for a new screen: its keys in i18n.js and its name here.
+function fillHelp() {
+  const screen = S.view === "stats" ? "stats" : S.mode;   // learn | free | test
+  $("help-ctx-title").textContent = t(`help.${screen}.title`);
+  const items = [];
+  for (let i = 1; hasText(`help.${screen}.${i}`); i++) items.push(`<li>${t(`help.${screen}.${i}`)}</li>`);
+  $("help-ctx").innerHTML = items.join("");
+  $("btn-tour").hidden = screen !== "learn";
+}
 helpCard.addEventListener("click", (e) => { if (e.target.closest(".menu-item")) closeHelp(); });
 // Both guides are about the typing screen (the tour points at its parts), so
 // from the stats screen a guide first goes back there. Capture phase: this
