@@ -107,7 +107,7 @@ const I18N = {
     "result.wpm": "WPM", "result.acc": "Accuracy", "result.cons": "Consistency",
     "result.best": "New best!",
     "result.mastered": "Mastered: <b>{letters}</b>", "result.masteredLabel": "Mastered",
-    "result.newLetter": "New letter: <b>{letter}</b>. It shows up in the next words",
+    "result.newLetter": "New letter opened:",
     "result.faster": "Faster",
     "result.slower": "Slower",
     "result.nextBtn": "Next round",

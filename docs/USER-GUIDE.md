@@ -132,7 +132,7 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   text: the numbers first (speed in wpm, accuracy and the **consistency** of
   your speed: how even the pace was, 100 % = every second the same; rounds
   under 5 seconds get none), then one plain line if something happened (a
-  new letter, a new record, mastered letters), then which letters got faster
+  new letter ("New letter opened:" and the letter on a yellow key, the tint only as wide as the text), a new record, mastered letters), then which letters got faster
   or slower, as the time per press before and now (for example
   `s 320→250ms`), Faster on the left and Slower on the right, then the
   words of the round as you typed them, a letter that had a mistake in red.

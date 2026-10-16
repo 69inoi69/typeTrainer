@@ -48,7 +48,7 @@ export function showResult(r) {
   const mastered = (r.mastered ?? []).join(" ");
   let main = "", cls = "";
   if (r.test) { main = `<span>${t(`result.test.${r.test}`)}</span>`; cls = r.test === "pass" ? " k-best" : ""; }
-  else if (r.newLetter) { main = `<span class="r-badge">${r.newLetter}</span><span>${t("result.newLetter", { letter: r.newLetter })}</span>`; cls = " k-letter"; }
+  else if (r.newLetter) { main = `<span>${t("result.newLetter")}</span><span class="r-badge">${r.newLetter}</span>`; cls = " k-letter"; }
   else if (r.best) { main = t("result.best"); cls = " k-best"; }
   else if (mastered) {
     // the same look as the status line above: a green tick, the label, the letters as small keys
