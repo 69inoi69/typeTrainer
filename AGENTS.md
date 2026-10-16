@@ -20,6 +20,14 @@ exercises from real words around the user's weak letters.
   you to commit, work in a separate branch, push it and open a pull request;
   I merge it myself. Never push to `main` directly.
 
+## Guidelines
+
+Before changing a feature or the interface, read `docs/GUIDELINES.md`
+(product, layout, responsive design, hierarchy, interaction, accessibility,
+implementation, testing, scope) and `docs/UI-TEXT.md` (every text the user
+sees). They are principles to apply with judgment; the rules in this file
+win where they differ.
+
 ## Stack (do not change without asking)
 
 - Backend: Go 1.25+, **standard library only** (`net/http`), no frameworks, no
@@ -150,4 +158,6 @@ the site stays on the old version.
 1. `gofmt -w .`, `go vet ./...` and `go test ./...` all pass.
 2. New engine logic has unit tests, including edge cases (no data yet, zero values).
 3. Docs updated if behaviour or the API changed.
-4. A short summary for me: what changed, which files, how to check it in the browser.
+4. An interface change is checked in a browser at phone and desktop width
+   (`docs/GUIDELINES.md`, section 10).
+5. A short summary for me: what changed, which files, how to check it in the browser.
