@@ -236,6 +236,9 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
   display: none; align-items: center; gap: 4px; cursor: default;   /* the words are in the tooltip */
 }
 .streak.show { display: flex; animation: streak-in var(--med) var(--ease); }
+/* only while a round is being typed: a streak carried over from the last
+   round, shown before the first key, read as an unexplained number */
+.text-box:not(.typing) .streak.show { display: none; }
 @keyframes streak-in { from { opacity: 0; transform: translateY(-4px); } }
 .streak span {
   font-size: 1.3rem; line-height: 1; color: var(--sc); font-variant-numeric: tabular-nums; display: inline-block;
