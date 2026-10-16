@@ -25,6 +25,10 @@ const STAT_ICONS = {
   // focus: a crosshair, the trainer has "locked on" this letter
   focus: '<circle cx="12" cy="12" r="6.5"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  // the typing test: a flag at the finish line
+  test: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+  // freetype: the same infinity sign as its tab
+  free: '<path d="M12 12c-2-2.7-3.6-4-5.5-4a4 4 0 0 0 0 8c1.9 0 3.5-1.3 5.5-4zm0 0c2 2.7 3.6 4 5.5 4a4 4 0 0 0 0-8c-1.9 0-3.5 1.3-5.5 4z"/>',
   // next: a key, the one that opens the next letter
   key: '<circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M21 12v2.5"/>',
 };
@@ -65,9 +69,6 @@ export function renderLetters() {
   const all = openCount + S.exercise.locked.length;
   const mastered = S.exercise.unlocked.filter((c) => info[c]?.mastered).length;
   const started = (S.lastStats?.keys ?? []).some((k) => k.count > 0);   // anything typed yet
-  const pill = (icon, cls, tip, label, value) =>
-    `<span class="stat ${cls}" data-tip="${tip}"><svg viewBox="0 0 24 24" aria-hidden="true">${STAT_ICONS[icon]}</svg>` +
-    `<span class="lbl">${label}</span>${value}</span>`;
   const parts = [];
   if (!started) {
     parts.push(pill("open", "", "tip.open", t("stat.open"), `<b>${openCount}/${all}</b>`));
@@ -84,11 +85,20 @@ export function renderLetters() {
   justMastered = new Set();
 }
 
+// One pill of the status line: an icon, a fixed label (small capitals) and
+// the value that changes (monospace).
+const pill = (icon, cls, tip, label, value) =>
+  `<span class="stat ${cls}"${tip ? ` data-tip="${tip}"` : ""}><svg viewBox="0 0 24 24" aria-hidden="true">${STAT_ICONS[icon]}</svg>` +
+  `<span class="lbl">${label}</span>${value}</span>`;
+
 // Free practice and the test: no letters to learn. Every key is open, and the
-// status line says what this round is.
+// status line says what this round is: the mode, and for the test the bar
+// to pass.
 function renderFreeLetters() {
   el.letters.replaceChildren();
   for (const key of Object.values(S.keyEls)) key.classList.remove("locked");
   if (S.altgrEl) S.altgrEl.classList.remove("locked");
-  el.lettersCaption.innerHTML = `<span class="begin">${t(S.mode === "test" ? "mode.testCaption" : "mode.freeCaption")}</span>`;
+  el.lettersCaption.innerHTML = S.mode === "test"
+    ? pill("test", "focus", "", t("mode.test"), `<b>${t("mode.testGoal")}</b>`) + `<span class="begin">${t("mode.testCaption")}</span>`
+    : pill("free", "", "", t("mode.free"), "") + `<span class="begin">${t("mode.freeCaption")}</span>`;
 }

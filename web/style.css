@@ -26,6 +26,7 @@
   --error: #ca4754;
   --ok: #8cc97a;        /* mastered letter */
   --mono: ui-monospace, "Cascadia Mono", "JetBrains Mono", Consolas, "Roboto Mono", monospace;
+  --ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
   /* one key unit: the keyboard size is not a setting, it is always the largest
      that fits: never wider than the window allows, never taller than the room
@@ -88,6 +89,23 @@ body { user-select: none; -webkit-user-select: none; }
 .result, #view-stats, input, textarea { user-select: text; -webkit-user-select: text; }
 ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); color: var(--text); }
 
+/* ---------- two kinds of text ---------- */
+/* What changes (the words to type, letters, numbers, messages) is monospace
+   and bright: it is the content. What never changes (labels, menu items,
+   explanations) is the system's plain font, smaller and grey: it is the
+   frame around the content. So the eye tells them apart at a glance.
+   .lbl-ui is the look of a fixed label: small capitals, a little spaced. */
+.lbl-ui, .metric small, .stat .lbl, .tile small, .set-label, .profile-title, .r-lbl,
+.panel-note, .heat-legend, .profile-field small, .profile-label, .tour-step, .intro-kicker {
+  font-family: var(--ui); font-size: .66rem; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--sub);
+}
+/* buttons, menus, tooltips and guides: the plain font, normal case */
+button, .tooltip, .menu-item, .hints, .rail small, .tour-text, .intro p, .intro h2, .account-msg,
+.account-as, .profile-soon, .focus-hint, .letters-caption .begin, .warn, .panel h2 {
+  font-family: var(--ui);
+}
+
 /* ---------- header ---------- */
 /* Only who and where: the logo on the left, the language switch and the
    account on the right. Its edges line up with the text card (--tw). */
@@ -123,15 +141,15 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
 .metric { display: flex; align-items: baseline; }
 .metric.raw span { color: color-mix(in srgb, var(--accent) 55%, var(--sub)); }   /* secondary number */
 .metric.raw { cursor: default; }
-.metric > span { font-size: 1.3rem; color: var(--accent); transition: color var(--med); }
-.metric small { color: var(--sub); margin-left: 5px; white-space: nowrap; font-size: .78rem; }
+.metric > span { font-size: 1.3rem; color: var(--accent); transition: color var(--med); font-variant-numeric: tabular-nums; }
+.metric small { margin-left: 6px; white-space: nowrap; }
+.metric > span.pct { font-size: .9rem; margin-left: 1px; }   /* "98%": the sign belongs to the number */
 .live.final .metric > span { color: var(--text); }   /* result of the last exercise */
 
 
 /* streak: looks like the numbers next to it (big number, small label on the
    same line). The longer the streak, the hotter the colour (data-tier). */
-/* Hidden, it takes no room (display: none): an invisible streak used to
-   push the stop button out of the card on a phone. */
+/* Hidden, it takes no room (display: none). */
 .streak {
   --sc: var(--ok);
   margin-left: auto;              /* the right end of the line */
@@ -209,7 +227,7 @@ body.one-lang .lang-switch, body.one-lang .lang-hint { display: none; }
   width: 21px; height: 21px; flex: none; fill: none; stroke: currentColor;
   stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
 }
-.rail .switch button small, .rail-btn small { font-size: .62rem; font-weight: 500; line-height: 1.3; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.rail .switch button small, .rail-btn small { font-size: .68rem; font-weight: 500; line-height: 1.3; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 /* bottom bar: the thumb's bar sits on the top edge of the chosen button */
 .rail .switch-thumb { top: -4px; left: 0; height: 2px; width: calc(100% / var(--n)); transform: translateX(calc(var(--i) * 100%)); }
 .rail .switch-thumb::after { left: calc(50% - 9px); width: 18px; height: 2px; }
@@ -229,7 +247,7 @@ body[data-mode="free"] .learn-only { display: none; }
    button (wide screens) or above the bottom bar (narrow ones) */
 .pop { position: relative; }
 .pop-card {
-  position: fixed; left: 12px; right: 12px; bottom: calc(66px + env(safe-area-inset-bottom)); z-index: 9;
+  position: fixed; left: 12px; right: 12px; bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 9;
   max-width: 340px; margin-inline: auto; padding: 14px 16px 12px; text-align: left;
   background: var(--panel); border-radius: 14px; box-shadow: var(--ring), var(--shadow);
   animation: note-in .2s var(--ease);
@@ -323,13 +341,14 @@ body[data-mode="free"] .learn-only { display: none; }
 /* status line under the letters: a fixed slot (it never changes height),
    the warning appears in the same place on top of it */
 .caption-slot { position: relative; margin-top: 8px; min-height: 26px; }
+/* always one row (it used to wrap to two on a phone) */
 .letters-caption {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px;
+  display: flex; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 6px; white-space: nowrap;
   color: var(--sub); font-size: .82rem; transition: opacity var(--med), transform var(--med) var(--ease);
 }
 .caption-slot.warning .letters-caption { opacity: 0; transform: translateY(4px); pointer-events: none; }
 .stat {
-  display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px 0 8px;
+  display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px 0 9px; flex: none;
   border-radius: 999px; background: var(--panel); color: color-mix(in srgb, var(--text) 70%, var(--sub));
   cursor: default; transition: background var(--med);
 }
@@ -338,15 +357,14 @@ body[data-mode="free"] .learn-only { display: none; }
   width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor;
   stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; color: var(--sub);
 }
-.stat .lbl { color: var(--sub); }
-.stat b { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
+.stat b { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; font-size: .9rem; }
 .stat .lt { color: var(--accent); font-weight: 600; }
 .stat.focus svg { color: var(--accent); }
 .stat.ok svg { color: var(--ok); }
 .stat.next .lt { color: var(--text); }
 .stat .mini { width: 44px; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
 .stat .mini i { display: block; height: 100%; background: var(--ok); border-radius: 2px; transition: width .5s var(--ease); }
-.letters-caption .begin { padding: 0 4px; }
+.letters-caption .begin { padding: 0 4px; font-size: .8rem; white-space: normal; text-align: left; }
 
 /* ---------- text ---------- */
 /* A dark terminal-like card: left-aligned mono text, a block caret and a
@@ -573,14 +591,13 @@ button:disabled { opacity: .35; cursor: default; }
 button:disabled:hover { color: var(--sub); background: none; }
 button:disabled:active { transform: none; }
 
-/* "stop" at the right end of the live line (touch screens), inside the card */
+/* "stop" under the card (touch screens): small, quiet, in the middle */
 .stop-btn {
-  width: 28px; height: 28px; padding: 0; margin-left: 12px; border-radius: 8px; flex: none;
-  display: grid; place-items: center; color: var(--sub);
-  background: none; box-shadow: var(--ring);
+  display: flex; align-items: center; gap: 6px; margin: 12px auto 0; padding: 6px 14px 6px 10px;
+  border-radius: 999px; color: var(--sub); background: none; box-shadow: var(--ring); font-size: .78rem;
 }
 .stop-btn:hover, .stop-btn:active { color: var(--text); }
-.streak:not(.show) + .stop-btn { margin-left: auto; }
+.text-box.resulting + .stop-btn { visibility: hidden; }   /* the round is over already */
 .stop-btn svg { width: 14px; height: 14px; fill: currentColor; stroke: none; }
 
 /* ---------- stats view ---------- */
@@ -592,8 +609,8 @@ button:disabled:active { transform: none; }
 .stats-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
 .tiles { flex: 1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; min-width: min(100%, 560px); }
 .tile { background: var(--panel); border-radius: 10px; padding: 8px 12px; min-width: 0; }
-.tile b { display: block; font-size: 1.3rem; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1.2; }
-.tile small { display: block; color: var(--sub); font-size: .7rem; line-height: 1.3; }
+.tile b { display: block; font-size: 1.4rem; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1.2; }
+.tile small { display: block; line-height: 1.4; margin-top: 2px; }
 .chart { height: clamp(140px, 30vh, 340px); }
 /* free practice has no letters: the chart takes their room */
 body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
@@ -627,7 +644,7 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
   content: ""; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px;
   border-radius: 50%; background: var(--ok); z-index: 1;
 }
-.heat-legend { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--sub); font-size: .72rem; }
+.heat-legend { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .heat-scale {
   width: 60px; height: 6px; border-radius: 4px;
   background: linear-gradient(to right, color-mix(in srgb, var(--text) 7%, var(--panel)), color-mix(in srgb, var(--error) 85%, var(--panel)));
@@ -637,8 +654,7 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
   outline: 1px dashed color-mix(in srgb, var(--sub) 80%, transparent); outline-offset: -1px;
 }
 .panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin-bottom: 10px; }
-.panel h2 { font-size: .95rem; font-weight: 500; margin: 0; color: var(--text); }
-.panel-note { color: var(--sub); font-size: .8rem; }
+.panel h2 { font-size: .9rem; font-weight: 600; margin: 0; color: var(--text); }
 .empty { color: var(--sub); padding: 28px 0; text-align: center; }
 
 .chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
@@ -751,7 +767,7 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 }
 @keyframes letter-pop { 0% { transform: scale(.3) rotate(-25deg); opacity: 0; } 70% { transform: scale(1.18) rotate(6deg); opacity: 1; } }
 .r-letters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: .85rem; }
-.r-lbl { color: var(--sub); margin-right: 2px; }
+.r-lbl { margin-right: 2px; }
 .r-sep { width: 14px; }
 .r-ch { display: inline-flex; gap: 5px; align-items: baseline; padding: 1px 8px; border-radius: 6px; background: var(--panel); font-variant-numeric: tabular-nums; }
 .r-ch b { font-weight: 500; color: var(--text); }
@@ -781,7 +797,7 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 }
 .intro-step { display: none; animation: view-in .3s var(--ease); }
 .intro-step.active { display: block; }
-.intro-kicker { color: var(--accent); font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; margin: 0 0 8px; }
+.intro-kicker { color: var(--accent); margin: 0 0 8px; }
 .intro h2 { font-size: 1.45rem; font-weight: 500; margin: 0 0 14px; text-wrap: balance; }
 .intro p { color: color-mix(in srgb, var(--text) 80%, var(--sub)); line-height: 1.6; margin: 0 0 12px; }
 .intro p b { color: var(--text); }
@@ -841,7 +857,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 /* ---------- narrow windows: the navigation is a bar at the bottom ---------- */
 @media (max-width: 999px) {
   /* room for the bar, so nothing hides under it (fitKeyboard reads this) */
-  body { padding-bottom: calc(58px + env(safe-area-inset-bottom)); }
+  body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
 }
 @media (max-width: 760px) {
   .profile-name { display: none; }      /* only the picture (or the person icon) */
@@ -862,15 +878,21 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .rail .nav-switch { flex: 3; }
   .rail .switch button, .rail-btn { width: auto; flex: 1; min-width: 0; }
   .rail .pop { flex: 1; display: flex; }
-  .rail .switch button small, .rail-btn small { font-size: .58rem; letter-spacing: -.02em; }
+  .rail .switch button small, .rail-btn small { font-size: .66rem; }
+  .rail .switch button, .rail-btn { height: 54px; }
   .lang-switch button { padding: 0 6px; }
-  .live { gap: 14px; margin-bottom: 6px; }
-  .metric > span, .streak span { font-size: 1.15rem; }
+  .live { gap: 12px; margin-bottom: 6px; }
+  .metric > span, .streak span { font-size: 1.1rem; }
+  .metric small { margin-left: 4px; letter-spacing: .04em; font-size: .6rem; }
+  .bolt { width: 18px; height: 18px; }
   .metric.raw { display: none; }          /* phone: no room, wpm + acc are enough */
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 100%; }
   .tile:last-child:nth-child(odd) { grid-column: span 2; }   /* 5 tiles: the last one takes the whole row */
   .letter-row { gap: 4px; flex-wrap: wrap; }   /* phone: one row would make the chips tiny */
   .chip { font-size: .8rem; flex: none; width: 1.6em; height: 1.6em; }
+  .letters-caption { gap: 4px; }
+  .stat { padding: 0 9px 0 7px; gap: 5px; }
+  .stat .mini { display: none; }       /* phone: the number says it, the bar takes the room */
   /* phone: no vertical centring (it left a big hole under the header, and
      the phone keyboard covers the bottom anyway): content starts right
      under the header */
@@ -950,10 +972,10 @@ body.entering .bottom { animation-delay: .24s; }
   animation: note-in .2s var(--ease);
 }
 .profile-card[hidden] { display: none; }
-.profile-title { margin: 0 0 10px; color: var(--sub); font-size: .75rem; }
+.profile-title { margin: 0 0 10px; }
 .profile-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .profile-field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
-.profile-field small, .profile-label { color: var(--sub); font-size: .72rem; }
+
 .profile-field input {
   width: 100%; padding: 6px 9px; border: 0; border-radius: 8px; outline: none;
   background: var(--bg); color: var(--text); box-shadow: var(--ring); font-size: .9rem;
@@ -996,7 +1018,7 @@ body.live-off .live .metric.num { display: none; }
 .data-row #btn-reset { margin-left: auto; }
 .data-row #btn-reset:hover { color: var(--error); }
 .data-row #btn-reset.armed, .data-row #btn-reset.armed:hover { color: #fff; background: var(--error); box-shadow: none; }
-.set-label { display: block; margin: 10px 0 6px; color: var(--sub); font-size: .72rem; }
+.set-label { display: block; margin: 10px 0 6px; }
 .settings-card .profile-title + .set-label { margin-top: 0; }
 .set-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
 .set-unit { width: 52px; color: var(--sub); font-size: .75rem; }
@@ -1035,7 +1057,7 @@ body.live-off .live .metric.num { display: none; }
   background: var(--panel); border-radius: 14px; box-shadow: var(--ring), var(--shadow);
   transition: left .35s var(--ease), top .35s var(--ease);
 }
-.tour-step { margin: 0 0 6px; color: var(--accent); font-size: .72rem; }
+.tour-step { margin: 0 0 6px; color: var(--accent); }
 .tour-text { margin: 0 0 10px; color: color-mix(in srgb, var(--text) 85%, var(--sub)); font-size: .86rem; line-height: 1.55; }
 .tour-text b { color: var(--text); font-weight: 500; }
 .tour-nav { display: flex; justify-content: space-between; align-items: center; }

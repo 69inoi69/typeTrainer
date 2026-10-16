@@ -102,7 +102,7 @@
           <div class="metric num"><span id="wpm">0</span><small>wpm</small></div>
           <!-- raw: every keypress counts, wrong ones too (display only, never sent) -->
           <div class="metric num raw" data-tip="tip.raw"><span id="raw">0</span><small data-i18n="metric.raw">raw</small></div>
-          <div class="metric num"><span id="acc">100</span><small data-i18n="metric.acc">% acc</small></div>
+          <div class="metric num"><span id="acc">100</span><span class="pct">%</span><small data-i18n="metric.acc">acc</small></div>
           <!-- words typed in this round / words in the round, or the seconds left -->
           <div class="metric"><span id="progress">0/30</span><small id="progress-label" data-i18n="metric.words">words</small></div>
           <!-- clean-word streak: words typed without a single mistake, in a row.
@@ -110,8 +110,6 @@
           <div class="streak" id="streak" aria-live="polite" data-tier="0" data-tip="tip.streak">
             <svg class="bolt" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2.5 5 13.5h6l-1 8 8.5-11h-6z"/></svg><span id="streak-n">0</span><small class="sr-only" data-i18n="streak.label">clean words</small>
           </div>
-          <!-- touch screens have no Esc: a small "stop" at the end of the line -->
-          <button id="btn-new" type="button" class="stop-btn touch-only" data-tip="tip.new"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/></svg></button>
         </div>
         <div id="text" class="text">loading…</div>
         <div id="caret" class="caret" aria-hidden="true"></div>
@@ -119,6 +117,9 @@
         <!-- the result screen takes the place of the text when typing stops (result.js) -->
         <div id="result" class="result" role="status" aria-live="polite" hidden></div>
       </div>
+      <!-- touch screens have no Esc: a small "stop" under the card (as the
+           restart button under the words on monkeytype) -->
+      <button id="btn-new" type="button" class="stop-btn touch-only" data-tip="tip.new"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/></svg><span data-i18n="hint.new">stop</span></button>
       <!-- Invisible input: lets phone keyboards open and send characters. -->
       <input id="hidden-input" class="hidden-input" autocomplete="off" autocapitalize="off"
              autocorrect="off" spellcheck="false" aria-hidden="true">
