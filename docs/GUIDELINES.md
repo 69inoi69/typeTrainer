@@ -24,7 +24,7 @@ there is a reason not to).
   and the focus until the thesis defense; Freetype stays minimal; the typing
   test is provisional (`AGENTS.md`, "Where the work goes").
 - Settings change how much and how it looks, never what is practised. No
-  difficulty switches, no "open all letters", no Tab restart.
+  difficulty switches, no "open all letters". Tab starts a new round.
 - Visual rewards never change what is measured or sent to the server.
 - Not now: leaderboards, public profiles, more languages or themes.
 
@@ -120,8 +120,9 @@ consequences, the same word for the same thing. All text lives in
 - Selected states use `aria-pressed` / `aria-selected` and the accent fill.
 - A destructive action needs a second click (Reset turns red and asks
   "Sure?") and says that it cannot be undone.
-- Results stay on screen until the user presses Next round, Enter, Esc or
-  Tab (Tab only closes the result; it never restarts a round).
+- Results stay on screen until the user presses Next round, Enter or Tab
+  (Tab = new round everywhere). Esc means "stop" while typing, so it does
+  nothing on the result.
 - Short messages go in a toast (`web/fx.js`); live areas use
   `aria-live="polite"`.
 

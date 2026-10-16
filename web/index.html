@@ -212,7 +212,7 @@
     <div class="rail-group tools">
       <!-- help: the two guides (intro.js: touch typing, tour.js: this site) -->
       <div class="pop" id="help">
-        <button type="button" class="rail-btn" id="btn-help" aria-haspopup="dialog" aria-expanded="false" aria-controls="help-card"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.8"/><path d="M12 17h.01"/></svg><small data-i18n="nav.help">Help</small></button>
+        <button type="button" class="rail-btn" id="btn-help" data-tip="nav.help" aria-haspopup="dialog" aria-expanded="false" aria-controls="help-card"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.8"/><path d="M12 17h.01"/></svg><small data-i18n="nav.help">Help</small></button>
         <!-- One window look for every panel (.win in style.css): a title,
              then sections, each with a small heading. -->
         <div class="pop-card win help-card" id="help-card" role="dialog" aria-labelledby="help-title" hidden>
@@ -237,14 +237,14 @@
               <dt><kbd>enter</kbd></dt><dd data-i18n="help.keyNext">Next round (on the result)</dd>
               <dt><kbd>shift</kbd> <kbd>tab</kbd></dt><dd data-i18n="help.keyView">Learn / stats</dd>
               <dt><kbd>alt</kbd> <kbd>k</kbd></dt><dd data-i18n="help.keyKb">Keyboard on / off</dd>
-              <dt><kbd>tab</kbd></dt><dd data-i18n="help.keyTab">No restart: the trainer learns from your mistakes</dd>
+              <dt><kbd>tab</kbd></dt><dd data-i18n="help.keyTab">New round (the one you are typing is not saved)</dd>
             </dl>
           </div>
         </div>
       </div>
       <!-- settings: round length, look, keyboard, your data (settings.js) -->
       <div class="pop settings" id="settings">
-        <button id="btn-settings" type="button" class="rail-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings-card"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg><small data-i18n="nav.settings">Settings</small></button>
+        <button id="btn-settings" type="button" class="rail-btn" data-tip="nav.settings" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings-card"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg><small data-i18n="nav.settings">Settings</small></button>
         <div class="pop-card win settings-card" id="settings-card" role="dialog" aria-labelledby="settings-title" hidden>
           <p class="win-title" id="settings-title" data-i18n="settings.title">Settings</p>
           <!-- the choices are drawn by settings.js -->
@@ -275,7 +275,7 @@
        there is a real keyboard (style.css hides them on touch screens). -->
   <footer class="bottom">
     <div class="hints" aria-label="Shortcuts">
-      <span class="type-only"><kbd>esc</kbd> <span data-i18n="hint.new">Stop</span></span>
+      <span class="type-only stop-hint"><kbd>esc</kbd> <span data-i18n="hint.new">Stop</span></span>
       <span><kbd>shift</kbd> + <kbd>tab</kbd> <span data-i18n="hint.view">Learn / stats</span></span>
       <span class="lang-hint"><kbd>alt</kbd> + <kbd>1</kbd>…<kbd>4</kbd> <span data-i18n="hint.lang">Language</span></span>
       <span class="type-only"><kbd>alt</kbd> + <kbd>k</kbd> <span data-i18n="hint.kb">Keyboard</span></span>

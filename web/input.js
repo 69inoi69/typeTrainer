@@ -13,7 +13,7 @@ import { applyI18n, t, hasText } from "./i18n.js";
 import { $, el, S, introOpen, isTouch, focusText } from "./state.js";
 import { applyKb, requestFit } from "./keyboard.js";
 import { refreshStats, renderStats, onStatsMode } from "./stats.js";
-import { fitText, placeCaret, handleChar, backspace, nudge, setTyping, stopRound, loadExercise, roundStarted } from "./typing.js";
+import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, stopRound, loadExercise, roundStarted } from "./typing.js";
 import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
@@ -182,16 +182,20 @@ document.addEventListener("keydown", (e) => {
     toggleKb();
     return;
   }
-  // the result screen stays until you go on on purpose: Enter, Esc or Tab
-  // (letters do nothing, so a word typed past the end never skips it)
+  // the result screen stays until you go on on purpose: Enter or Tab (Tab
+  // starts a new round everywhere, as on monkeytype). Esc means "stop"
+  // while typing, so here it does nothing (owner, 2026-10-16: it doing
+  // "next round" was confusing); letters do nothing either, so a word typed
+  // past the end never skips the result.
   if (resultOpen()) {
-    if (["Enter", "Escape", "Tab"].includes(e.key)) { e.preventDefault(); closeResult(); }
+    if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); closeResult(); }
+    else if (e.key === "Escape") e.preventDefault();
     else if (e.key.length === 1) e.preventDefault();
     return;
   }
   if (S.view !== "type") return;
   if (e.key === "Escape") { e.preventDefault(); stopRound(); return; }
-  if (e.key === "Tab") { e.preventDefault(); nudge(); return; }   // no restart, see nudge()
+  if (e.key === "Tab") { e.preventDefault(); restartRound(); return; }   // a fresh round, see restartRound()
   if (e.key === "Backspace") {                                    // Alt = Option on a Mac
     e.preventDefault(); focusText(); backspace(e.ctrlKey || e.altKey);
     keyBackspace = true;                     // a phone may delete the sentinel too: not twice

@@ -7,7 +7,7 @@
 // typing test to /freeplay/*.
 // Layer: middle. Imports the bottom layer, keyboard.js, stats.js, result.js,
 // letters.js, modes.js and settings.js.
-// Called by: input.js (handleChar, backspace, nudge, stopRound and the rest
+// Called by: input.js (handleChar, backspace, restartRound, stopRound and the rest
 // on keys and clicks) and languages.js (loadExercise, hideWarn when the
 // language changes).
 //
@@ -88,8 +88,8 @@ export function placeCaret(jump) {
     const h = s.offsetHeight;
     if (jump) el.caret.classList.add("jump");
     el.caret.style.height = Math.round(h * 0.82) + "px";
-    // position in the separate CSS "translate" property: the Tab nudge animates
-    // "scale", and scale must not multiply the position (the caret flew away)
+    // position in the separate CSS "translate" property, so an animation of
+    // "scale" never multiplies the position (the caret flew away once)
     el.caret.style.translate = `${x - 1}px ${s.offsetTop + h * 0.09}px`;
     // keep the current line in view: from the third line on, scroll so that
     // it is the second one
@@ -612,13 +612,16 @@ function renderStreak() {
   el.streak.classList.toggle("show", streak >= 3);
 }
 
-// ---------- Tab: no restarts here ----------
-// Monkeytype habit: Tab restarts the test when typing gets messy. Restarting
-// throws away exactly the mistakes this trainer learns from, so Tab only
-// answers with a small animation.
-export function nudge() {
-  FX.anim(el.caret, [{ scale: "1 1" }, { scale: "2.2 1.3" }, { scale: "1 1" }], { duration: 380, easing: "cubic-bezier(.3,1.6,.5,1)" });
-  FX.anim(el.text, [{ translate: "0" }, { translate: "6px" }, { translate: "-4px" }, { translate: "2px" }, { translate: "0" }], { duration: 420, easing: "ease-out" });
+// ---------- Tab: start the round again ----------
+// As on monkeytype (owner, 2026-10-16, reversing the earlier "no restart"
+// rule): Tab drops the round being typed and starts a fresh one. The dropped
+// round is not saved as a round (no history, no result). The keypresses
+// already sent with its portions stay with the letter model: they were
+// real presses, and the server learned them on the way (/portion).
+export function restartRound() {
+  if (S.busy) return;
+  el.live.classList.remove("final");
+  loadExercise().catch(console.error);
 }
 
 function showWarn(kind) {
