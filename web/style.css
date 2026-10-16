@@ -978,7 +978,9 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 }
 .r-plot { position: relative; flex: 1; min-width: 0; margin-right: 4px; }
 .r-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.r-grid { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; fill: none; }
+/* the chart's grid is dotted and fainter, so it never looks like the solid
+   lines between the parts of the result (owner, 2026-10-16) */
+.r-grid { stroke: color-mix(in srgb, var(--line) 80%, transparent); stroke-width: 1; stroke-dasharray: 2 4; vector-effect: non-scaling-stroke; fill: none; }
 .r-line { stroke: color-mix(in srgb, var(--text) 45%, transparent); stroke-width: 1.5; vector-effect: non-scaling-stroke; fill: none; stroke-linejoin: round; }
 .r-dot, .r-err { position: absolute; translate: -50% -50%; }
 .r-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sp); cursor: default; }
