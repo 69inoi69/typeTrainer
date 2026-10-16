@@ -469,6 +469,12 @@ user data is a good subject for the evaluation chapter (section 11).
   for a guest (ARCHITECTURE.md, "Accounts"). Someone who types as a guest on
   two computers is two learners to the model; the model itself does not know
   about users at all.
+- **One model for every device.** Rounds typed on a phone (two thumbs on a
+  touch screen) and on a physical keyboard update the same letter
+  statistics, although they are different skills: slower phone rounds make
+  letters look slow. Each round records what it was typed on
+  (`Session.Device`: `keyboard` or `touch`), so the history can show whether
+  this matters before the model treats the two differently.
 - **Word lists from subtitles.** The 2000 most frequent words per language,
   counted in film and TV subtitles (section 12). That is spoken, everyday
   language: good for typing practice, but some names or slang may remain after

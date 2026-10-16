@@ -32,6 +32,7 @@ var storeTests = map[string]func(*testing.T, Store){
 	"Lengths":                   testLengths,
 	"LettersTyped":              testLettersTyped,
 	"Group":                     testGroup,
+	"Device":                    testDevice,
 }
 
 // runStoreTests runs every test on a fresh, empty store from newStore.
@@ -369,5 +370,20 @@ func testGroup(t *testing.T, m Store) {
 	m.Reset(u, "en")
 	if g, _ := m.Group(u, "en"); g != "" {
 		t.Fatalf("after reset: %q", g)
+	}
+}
+
+// The device is stored with each round, in both modes; "" stays "".
+func testDevice(t *testing.T, m Store) {
+	m.AddSession(u, "en", Session{WPM: 30, Device: DeviceTouch})
+	m.AddSession(u, "en", Session{WPM: 31})
+	m.AddFreeplaySession(u, "en", Session{WPM: 40, Device: DeviceKeyboard})
+	got, _ := m.RecentSessions(u, "en", "", 2)
+	if len(got) != 2 || got[0].Device != "" || got[1].Device != DeviceTouch {
+		t.Fatalf("learning devices: %+v", got)
+	}
+	free, _ := m.RecentFreeplaySessions(u, "en", "", 1)
+	if len(free) != 1 || free[0].Device != DeviceKeyboard {
+		t.Fatalf("free practice device: %+v", free)
 	}
 }

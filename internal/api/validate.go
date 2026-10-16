@@ -43,6 +43,9 @@ func validate(req resultsRequest, maxEvents int, alphabet string) string {
 			return "perSecond: each count must be between 0 and the number of events"
 		}
 	}
+	if !validDevice(req.Device) {
+		return "device: unknown device"
+	}
 	return ""
 }
 
@@ -68,6 +71,11 @@ func validLength(length string, maxWords, maxSeconds int) bool {
 
 // validGroup accepts "" (the normal app) or storage.GroupRandom.
 func validGroup(g string) bool { return g == "" || g == storage.GroupRandom }
+
+// validDevice accepts "" (not known), storage.DeviceKeyboard or storage.DeviceTouch.
+func validDevice(d string) bool {
+	return d == "" || d == storage.DeviceKeyboard || d == storage.DeviceTouch
+}
 
 // validateSamples accepts at most max samples, every one a single letter of
 // the language's alphabet or a space, so junk keys never end up in the statistics.
@@ -138,6 +146,9 @@ func validateSessions(sessions []storage.Session, max, maxEvents, letters int, a
 		}
 		if !validGroup(sess.Group) {
 			return "sessions: unknown group " + sess.Group
+		}
+		if !validDevice(sess.Device) {
+			return "sessions: unknown device " + sess.Device
 		}
 		if msg := validateSamples(sess.Keys, maxEvents, alphabet); msg != "" {
 			return "sessions: keys: " + msg

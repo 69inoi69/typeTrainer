@@ -230,7 +230,10 @@ learned from. The letter model can be rebuilt from the keys by running
 `engine.Apply` over them round by round, so other parameter values can be
 tried on real data (ALGORITHM.md, section 11). A round with its keys is
 5-7 KB of JSON; `MaxImportBytes` allows about 10 000 rounds in one import.
-History from before this has no keys (the field is missing). `/stats` and
+History from before this has no keys (the field is missing). `device`
+says what the round was typed on (`keyboard` or `touch`; missing in older
+history); it is recorded only, the model does not use it (ALGORITHM.md,
+section 9). `/stats` and
 `/freeplay/stats` drop the keys (`Session.Summary`), `/export` has them.
 
 Every `Store` method takes the user id and the language id, so each user
