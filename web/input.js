@@ -153,7 +153,12 @@ document.addEventListener("keydown", (e) => {
   if (S.view !== "type") return;
   if (e.key === "Escape") { e.preventDefault(); stopRound(); return; }
   if (e.key === "Tab") { e.preventDefault(); nudge(); return; }   // no restart, see nudge()
-  if (e.key === "Backspace") { e.preventDefault(); focusText(); backspace(e.ctrlKey || e.altKey); return; } // Alt = Option on a Mac
+  if (e.key === "Backspace") {                                    // Alt = Option on a Mac
+    e.preventDefault(); focusText(); backspace(e.ctrlKey || e.altKey);
+    keyBackspace = true;                     // a phone may delete the sentinel too: not twice
+    requestAnimationFrame(() => { keyBackspace = false; });
+    return;
+  }
   // A held key repeats every ~30 ms. Those are not finger movements: if the
   // next letter is the same ("ll") a repeat would count as a super fast press.
   if (e.repeat) { e.preventDefault(); return; }
@@ -167,16 +172,30 @@ document.addEventListener("keydown", (e) => {
 });
 
 // Phones: virtual keyboards often report "Unidentified" on keydown, so the
-// character only shows up here, in the hidden input. We read it and clear it.
-// Backspace on a phone keyboard: the input is empty, so it arrives only here.
-el.input.addEventListener("beforeinput", (e) => {
-  if (e.inputType === "deleteContentBackward") { e.preventDefault(); backspace(false); }
-  if (e.inputType === "deleteWordBackward") { e.preventDefault(); backspace(true); }
+// character only shows up here, in the hidden input.
+// Backspace: many phone keyboards (Gboard, SwiftKey, Samsung) send nothing
+// at all for Backspace in an EMPTY field: no key, no input event. So the
+// field always holds one "sentinel" character (a space, as on monkeytype):
+// Backspace deletes it, the field gets shorter, and that is our Backspace.
+// After every change the field is set back to just the sentinel.
+const SENTINEL = " ";
+let keyBackspace = false;    // keydown already did this Backspace (some phones send both)
+function resetInput() {
+  el.input.value = SENTINEL;
+  try { el.input.setSelectionRange(SENTINEL.length, SENTINEL.length); } catch { /* not focused */ }
+}
+el.input.addEventListener("input", (e) => {
+  const v = el.input.value;
+  if (v.length < SENTINEL.length) {
+    if (!keyBackspace) backspace(e.inputType === "deleteWordBackward");
+  } else {
+    for (const ch of v.startsWith(SENTINEL) ? v.slice(SENTINEL.length) : v) handleChar(ch);
+  }
+  keyBackspace = false;
+  resetInput();
 });
-el.input.addEventListener("input", () => {
-  for (const ch of el.input.value) handleChar(ch);
-  el.input.value = "";
-});
+el.input.addEventListener("focus", resetInput);
+resetInput();
 
 el.textBox.addEventListener("click", () => { el.input.focus({ preventScroll: true }); focusText(); });
 el.input.addEventListener("blur", () => { if (isTouch()) el.textBox.classList.add("blurred"); });
