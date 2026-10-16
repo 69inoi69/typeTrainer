@@ -85,10 +85,10 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `languages.js` | The language switch and `loadLanguage()`. |
 | middle | `profile.js` | The account in the top right corner ("log in" for a guest where accounts work): the account (log in / sign up / log out; the page reloads after each), and a picture kept only in the browser. |
 | middle | `result.js` | The result screen in the text window: `showResult(r)` shows what changed and resolves when the user goes on; `compareStats()` works out what a learning round changed. |
-| middle | `modes.js` | The modes (learning / free practice / typing test), the navigation tabs that show them (`renderNav`: type · freetype · stats), `refreshFreeplay()` (`S.free`), the mode remembered per language. |
+| middle | `modes.js` | The modes (learning / free practice / typing test), the navigation tabs that show them (`renderNav`: learn · freetype · stats), `refreshFreeplay()` (`S.free`), the mode remembered per language. |
 | middle | `settings.js` | The settings panel (gear in the navigation): round length, live numbers, caret, theme, keyboard on / off (carried out by `input.js`); kept in `localStorage` (`S.settings`). The data row (save / load / reset) is static HTML wired by `tools.js`. |
 | middle | `tour.js` | Guide B, "how this site works": the idea of the trainer, then a ring around each part of the page and a short card. |
-| top | `input.js` | Keydown and phone input (with the one-space sentinel that makes Backspace work on phone keyboards), the navigation (type · freetype · stats, the help panel), keyboard on / off (settings and Alt+K), window resize: sends each action to the module that handles it. |
+| top | `input.js` | Keydown and phone input (with the one-space sentinel that makes Backspace work on phone keyboards), the navigation (learn · freetype · stats, the help panel), keyboard on / off (settings and Alt+K), window resize: sends each action to the module that handles it. |
 | top | `app.js` | Entry point: `init()`. |
 
 **Import rule:** imports only go down. `state.js` and `i18n.js` import

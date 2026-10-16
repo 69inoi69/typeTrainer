@@ -153,11 +153,11 @@ document.addEventListener("keydown", (e) => {
     toggleKb();
     return;
   }
-  // the result screen: any key (not a lone modifier) goes on to the next text
+  // the result screen stays until you go on on purpose: Enter, Esc or Tab
+  // (letters do nothing, so a word typed past the end never skips it)
   if (resultOpen()) {
-    if (["Shift", "Control", "Alt", "AltGraph", "Meta", "CapsLock", "Tab"].includes(e.key)) return;
-    e.preventDefault();
-    closeResult();
+    if (["Enter", "Escape", "Tab"].includes(e.key)) { e.preventDefault(); closeResult(); }
+    else if (e.key.length === 1) e.preventDefault();
     return;
   }
   if (S.view !== "type") return;

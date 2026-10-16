@@ -27,7 +27,7 @@
   --error: #ca4754;
   --ok: #8cc97a;        /* mastered letter */
   --mono: ui-monospace, "Cascadia Mono", "JetBrains Mono", Consolas, "Roboto Mono", monospace;
-  --ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ui: var(--mono);     /* labels and panels use the same font as everything (owner, 2026-10-16) */
 
   /* one key unit: the keyboard size is not a setting, it is always the largest
      that fits: never wider than the window allows, never taller than the room
@@ -466,7 +466,7 @@ body[data-mode="free"] .learn-only { display: none; }
   /* A fixed window of 3 lines, like a screen: only its content changes, the
      card never grows or shrinks between exercises. A longer text scrolls up
      line by line while you type (typing.js, placeCaret). */
-  height: calc(3 * 1.7em); overflow: hidden; scroll-behavior: var(--feel-scroll, auto);
+  height: calc(3 * 1.7em); overflow: hidden;
   letter-spacing: .02em; color: var(--sub); word-break: break-word;
   text-align: left;                /* like a terminal: lines start at the prompt */
   transition: filter var(--med), opacity var(--med);
@@ -527,7 +527,7 @@ body[data-mode="free"] .learn-only { display: none; }
   border-radius: 3px; pointer-events: none;
   box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 35%, transparent);
   will-change: translate;
-  transition: translate var(--feel-caret-ms, 0ms) ease-out;   /* a short glide (web/feel.js) */
+  transition: translate var(--feel-caret-ms, 0ms) cubic-bezier(.15, .85, .35, 1);   /* starts at once, settles softly (web/feel.js) */
   animation: blink 1s steps(1) infinite;
 }
 .caret.jump { transition: none; }   /* new round, resize: no glide */
@@ -826,15 +826,23 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
    window, so the card keeps its size; if a narrow screen needs more lines,
    the card grows instead of the lines running over each other. */
 .text-box.resulting .text, .text-box.resulting::before { display: none; }
+/* the phone keyboard closes when a round ends; the "tap here" hint must not
+   cover the result */
+.text-box.resulting .focus-hint { display: none; }
 .result {
   position: relative; font-size: clamp(1.1rem, 3.6vw, 1.6rem); min-height: calc(3 * 1.7em);
-  display: flex; flex-direction: column; justify-content: center; gap: 10px; padding-bottom: 22px;
-  cursor: pointer; animation: view-in .25s var(--ease);
+  display: flex; flex-direction: column; justify-content: center; gap: 10px; padding-bottom: 44px;
+  animation: view-in .25s var(--ease);
 }
 .result[hidden] { display: none; }
 .result p { margin: 0; }
 .r-body { display: flex; flex-direction: column; gap: 8px; }
-.r-main { font-size: 1.05rem; color: var(--text); line-height: 1.5; }
+/* the numbers: value big, its label small under it */
+.r-nums { display: flex; flex-wrap: wrap; gap: 8px 32px; }
+.r-num { display: flex; flex-direction: column; gap: 2px; }
+.r-num b { font-size: 1.9em; font-weight: 400; line-height: 1.1; color: var(--accent-text); font-variant-numeric: tabular-nums; }
+.r-num b small { font-size: .55em; margin-left: 2px; color: var(--sub); }
+.r-main { font-size: .9rem; color: var(--text); line-height: 1.5; }
 .r-main b { color: var(--accent-text); font-weight: 500; }
 .r-badge {                         /* the new letter itself */
   display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; margin-right: 10px; border-radius: 7px; vertical-align: middle;
@@ -843,21 +851,16 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 }
 @keyframes letter-pop { 0% { transform: scale(.3) rotate(-25deg); opacity: 0; } 70% { transform: scale(1.18) rotate(6deg); opacity: 1; } }
 .r-letters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: .85rem; }
-.r-lbl { margin-right: 2px; }
+.r-letters .lbl-ui { margin-right: 2px; }
 .r-sep { width: 14px; }
 .r-ch { display: inline-flex; gap: 5px; align-items: baseline; padding: 1px 8px; border-radius: 6px; background: var(--panel); font-variant-numeric: tabular-nums; }
 .r-ch b { font-weight: 500; color: var(--text); }
+.r-ch small { font-size: .8em; margin-left: 1px; color: var(--sub); }
 .r-ch.up { color: var(--ok); }
 .r-ch.down { color: var(--error); }
 .r-facts { font-size: .8rem; color: color-mix(in srgb, var(--text) 65%, var(--sub)); }
-.r-next { position: absolute; right: 0; bottom: 0; margin: 0; font-size: .72rem; color: var(--sub); }
-.r-next kbd { background: var(--panel); }
-.r-bar {                           /* time left; full = the next text */
-  position: absolute; left: 0; right: 0; bottom: -12px; height: 2px; border-radius: 2px;
-  background: color-mix(in srgb, var(--accent) 60%, transparent); transform-origin: left; transform: scaleX(0);
-  animation: note-bar var(--ms, 6000ms) linear forwards;
-}
-.result:hover .r-bar { animation-play-state: paused; }
+.r-next { position: absolute; right: 0; bottom: 0; margin: 0; }   /* the only way on, with Enter / Esc / Tab */
+.r-next kbd { margin-left: 6px; background: var(--panel); }
 
 /* ---------- intro ---------- */
 .intro {
@@ -982,12 +985,13 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .text-box { padding: 14px 16px 14px 34px; border-radius: 12px; }
   .text-box::before { left: 14px; top: 48px; }   /* 14 + 28 + 6 */
   .text-box.resulting { padding-left: 16px; }   /* no prompt sign: the result uses the room */
-  .r-main { font-size: .95rem; }
+  .r-main { font-size: .85rem; }
+  .r-num b { font-size: 1.6em; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
-  .note-bar, .r-bar { animation-duration: var(--ms, 3500ms) !important; } /* it is a timer, not decoration */
+  .note-bar { animation-duration: var(--ms, 3500ms) !important; } /* it is a timer, not decoration */
 }
 
 /* confetti canvas (fx.js), above everything, never catches clicks */

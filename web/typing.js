@@ -50,7 +50,6 @@ let perSecond = [];        // keypresses in each second since startTime (for con
 // Rewards (they change nothing in the statistics, they only feel nice)
 let streak = 0;            // words in a row typed without a single mistake
 let wordClean = true;      // no mistake in the current word so far
-let tabsResisted = 0;      // Tab presses during this round (no restart here)
 // One word back (Backspace at the start of a word): the start of the word
 // the caret went back into (-1: none), and the errors it had then. From
 // inside that word Backspace cannot go back another word.
@@ -67,9 +66,8 @@ let lineH = 0;
 export function fitText() {
   if (S.view !== "type") return;
   lineH = parseFloat(getComputedStyle(el.text).lineHeight) || 0;
-  el.text.style.scrollBehavior = "auto";     // a new text starts at the top at once
-  el.text.scrollTop = 0;
-  el.text.style.removeProperty("scroll-behavior");
+  cancelAnimationFrame(scrollFrame);
+  el.text.scrollTop = 0;                     // a new text starts at the top at once
 }
 
 // ---------- caret ----------
@@ -94,15 +92,34 @@ export function placeCaret(jump) {
     // "scale", and scale must not multiply the position (the caret flew away)
     el.caret.style.translate = `${x - 1}px ${s.offsetTop + h * 0.09}px`;
     // keep the current line in view: from the third line on, scroll so that
-    // it is the second one (at once or smooth: web/feel.js lineScrollSmooth)
+    // it is the second one
     if (lineH) {
       const line = Math.round(s.offsetTop / lineH);
       const top = Math.max(0, Math.min(line - 1, Math.ceil(el.text.scrollHeight / lineH) - TEXT_LINES)) * lineH;
-      if (Math.abs(el.text.scrollTop - top) > 1) el.text.scrollTop = top;
+      if (Math.abs(el.text.scrollTop - top) > 1) scrollText(top, jump);
     }
     if (jump) requestAnimationFrame(() => el.caret.classList.remove("jump"));
   });
 }
+// Moves the text window to scrollTop = top in FEEL.lineScrollMs, fast at the
+// start, soft at the end. The browser's own smooth scroll cannot be timed and
+// takes ~400 ms, which felt like honey. scrollTop cannot be animated by CSS or
+// element.animate(), so this one is stepped once per animation frame (the
+// same frames the caret uses; no timers). A newer target replaces the old one.
+let scrollFrame = 0;
+function scrollText(top, jump) {
+  cancelAnimationFrame(scrollFrame);
+  const from = el.text.scrollTop, ms = jump ? 0 : FEEL.lineScrollMs;
+  if (!ms) { el.text.scrollTop = top; return; }
+  const start = performance.now();
+  const step = (now) => {
+    const k = Math.min(1, (now - start) / ms);
+    el.text.scrollTop = from + (top - from) * (1 - (1 - k) ** 3);   // ease-out
+    if (k < 1) scrollFrame = requestAnimationFrame(step);
+  };
+  scrollFrame = requestAnimationFrame(step);
+}
+
 // ---------- the stream ----------
 // The text is not built in one go: it is a stream of short portions (a few
 // words around one focus letter, Generator.Portion on the server). When the
@@ -287,7 +304,7 @@ function newLetter(l) {
 function resetStream() {
   streamId++;
   queue = Promise.resolve();
-  S.text = ""; S.pos = 0; wordClean = true; tabsResisted = 0; wordsTyped = 0;
+  S.text = ""; S.pos = 0; wordClean = true; wordsTyped = 0;
   state = new Uint8Array(0); focusMask = new Uint8Array(0); records = []; spans = [];
   portions = []; sentUpTo = 0; current = 0; roundNewLetter = ""; wordsLoaded = 0; endAt = -1;
   wordOf = new Int32Array(0); revealAt = 0; shownWords = 0;
@@ -560,9 +577,8 @@ function renderStreak() {
 // ---------- Tab: no restarts here ----------
 // Monkeytype habit: Tab restarts the test when typing gets messy. Restarting
 // throws away exactly the mistakes this trainer learns from, so Tab only
-// answers with a small animation and a kind message, and counts the urge.
+// answers with a small animation.
 export function nudge() {
-  if (startTime !== null) tabsResisted++;
   FX.anim(el.caret, [{ scale: "1 1" }, { scale: "2.2 1.3" }, { scale: "1 1" }], { duration: 380, easing: "cubic-bezier(.3,1.6,.5,1)" });
   FX.anim(el.text, [{ translate: "0" }, { translate: "6px" }, { translate: "-4px" }, { translate: "2px" }, { translate: "0" }], { duration: 420, easing: "ease-out" });
 }
@@ -660,7 +676,6 @@ async function finishRound() {
   el.raw.textContent = Math.round(currentRaw(end));
   el.acc.textContent = Math.round(accuracy);
   if (limit.kind === "time") renderProgress();          // the seconds left when it stopped (0: time is up)
-  const resisted = tabsResisted;
   const typed = records.filter(Boolean);              // every sample of the round
   const samples = records.slice(sentUpTo).filter(Boolean); // the ones not sent with a portion yet
   try {
@@ -668,7 +683,7 @@ async function finishRound() {
     streamId++;                                        // nothing more for this round
     if (!typed.length) { await loadExercise(); return; } // nothing typed: nothing to keep
     if (S.mode === "test") { await finishTest(wpm, accuracy, typed.length); return; }
-    if (S.mode === "free") { await finishFree(wpm, accuracy, typed, fullSeconds(end), resisted); return; }
+    if (S.mode === "free") { await finishFree(wpm, accuracy, typed, fullSeconds(end)); return; }
     // keys: the whole round, kept by the server as its raw record (it learns only from samples)
     const res = await postJSON("/results", {
       samples, keys: typed, chars: typed.length, wpm, accuracy, perSecond: fullSeconds(end), length: S.settings.length,
@@ -680,7 +695,7 @@ async function finishRound() {
     const r = compareStats(roundBefore, S.lastStats, typed);
     markMastered(r.mastered);
     if (r.best) FX.burstFrom(el.wpm, 80);
-    await showResult({ wpm, accuracy, consistency: res.consistency, newLetter: roundNewLetter, resisted, ...r });
+    await showResult({ wpm, accuracy, consistency: res.consistency, newLetter: roundNewLetter, ...r });
     await loadExercise();   // built from the UPDATED model
   } catch (err) {
     // said where the eyes are (it used to go only to the screen-reader
@@ -695,14 +710,14 @@ async function finishRound() {
 
 // The end of a free practice round: it goes to the free practice history
 // only (POST /freeplay/results), never to the letter statistics.
-async function finishFree(wpm, accuracy, keys, perSecond, resisted) {
+async function finishFree(wpm, accuracy, keys, perSecond) {
   const before = S.free?.sessions ?? [];
   const res = await postJSON("/freeplay/results", { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length });
   firstRoundDone();
   await refreshFreeplay();
   const best = before.length > 0 && wpm > Math.max(...before.map((x) => x.wpm));
   if (best) FX.burstFrom(el.wpm, 80);
-  await showResult({ wpm, accuracy, consistency: res.consistency, best, resisted });
+  await showResult({ wpm, accuracy, consistency: res.consistency, best });
   await loadExercise();
 }
 

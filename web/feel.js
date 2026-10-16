@@ -5,17 +5,18 @@
 // None of this changes what is measured or sent to the server.
 // Layer: bottom. Imports nothing.
 // Used by: keyboard.js (key dip, red tint, hand size), typing.js (caret
-// flinch), and style.css (caret glide, word fade, line scroll, settle) through the --feel-* properties.
+// flinch, line scroll), and style.css (caret glide, word fade, settle) through the --feel-* properties.
 // To add a knob: a field in FEEL with its unit and what "more" does, then
 // either read FEEL.x in the JavaScript or add a root.setProperty line below
 // and use var(--feel-x) in style.css.
 
 export const FEEL = {
-  // Speed of everything that moves while you type (owner, 2026-10-16:
-  // "as if smeared with honey", wants it snappy). Lower = snappier.
-  caretGlideMs: 35,         // the caret sliding to the next letter (0 = jumps)
+  // Everything that moves while you type: smooth, but it starts moving at
+  // once (owner, 2026-10-16: first "honey", then "smooth, but as responsive
+  // as possible"). The curve starts fast and slows at the end. Lower = snappier.
+  caretGlideMs: 70,         // the caret sliding to the next letter (0 = jumps)
   wordInMs: 90,             // a newly shown word fading in (0 = appears at once)
-  lineScrollSmooth: false,  // the text moving up a line: false = at once
+  lineScrollMs: 120,        // the text moving up a line (0 = at once)
 
   // A letter typed right "settles": it starts slightly brighter (a stronger
   // glow) and calms down to the normal text colour. 0 ms = off.
@@ -51,7 +52,6 @@ export const FEEL = {
 const root = document.documentElement.style;
 root.setProperty("--feel-caret-ms", FEEL.caretGlideMs + "ms");
 root.setProperty("--feel-word-in-ms", FEEL.wordInMs + "ms");
-root.setProperty("--feel-scroll", FEEL.lineScrollSmooth ? "smooth" : "auto");
 root.setProperty("--feel-settle-ms", FEEL.charSettleMs + "ms");
 root.setProperty("--feel-settle-glow", FEEL.charSettleGlow + "px");
 root.setProperty("--feel-mark-line", FEEL.markLine + "px");
