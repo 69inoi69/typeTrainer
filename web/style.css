@@ -844,20 +844,25 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 /* the phone keyboard closes when a round ends; the "tap here" hint must not
    cover the result */
 .text-box.resulting .focus-hint { display: none; }
+.text-box.resulting .live { display: none; }   /* the result shows the same numbers, bigger: once is enough */
+/* a compact block in the middle of the window, not stretched across it
+   (owner, 2026-10-16: too wide, too much empty room) */
 .result {
-  position: relative; font-size: clamp(1.1rem, 3.6vw, 1.6rem);
+  position: relative; width: 100%; max-width: 36rem; margin-inline: auto; font-size: 1rem;
   display: flex; flex-direction: column;
   animation: view-in .25s var(--ease);
 }
 .result[hidden] { display: none; }
 .result p { margin: 0; }
 .r-body { display: flex; flex-direction: column; }
-.r-body > * + * { margin-top: 18px; }
-.r-body > :last-child { padding-right: 9.5em; min-height: 40px; }   /* room for the button, at least its height */
-/* the numbers: value big, its label small under it */
-.r-nums { display: flex; flex-wrap: wrap; gap: 8px 32px; }
-.r-num { display: flex; flex-direction: column; gap: 2px; }
-.r-num b { font-size: 1.9em; font-weight: 400; line-height: 1.1; color: var(--accent-text); font-variant-numeric: tabular-nums; }
+.result .r-body > * + * { margin-top: 16px; }   /* .result: stronger than ".result p { margin: 0 }" above */
+.r-body > :last-child { padding-right: 10rem; min-height: 40px; }   /* room for the button, at least its height */
+/* the numbers: three equal columns, the label on top (readable, not tiny),
+   the value under it */
+.r-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.r-num { display: flex; flex-direction: column; gap: 4px; }
+.r-num .r-lbl { font-size: .8rem; }
+.r-num b { font-size: 2rem; font-weight: 400; line-height: 1.1; color: var(--accent-text); font-variant-numeric: tabular-nums; }
 .r-num b small { font-size: .55em; margin-left: 2px; color: var(--sub); }
 .r-main { display: flex; align-items: center; font-size: .9rem; color: var(--text); line-height: 1.5; }
 /* good news (a new letter, a record): in the accent colour, on a soft tint */
@@ -1013,7 +1018,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .text-box::before { left: 14px; top: 48px; }   /* 14 + 28 + 6 */
   .text-box.resulting { padding-left: 16px; }   /* no prompt sign: the result uses the room */
   .r-main { font-size: .85rem; }
-  .r-num b { font-size: 1.6em; }
+  .r-num b { font-size: 1.7rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
