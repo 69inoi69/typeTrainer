@@ -208,26 +208,59 @@
       <!-- help: the two guides (intro.js: touch typing, tour.js: this site) -->
       <div class="pop" id="help">
         <button type="button" class="rail-btn" id="btn-help" data-tip="tip.help" aria-haspopup="dialog" aria-expanded="false" aria-controls="help-card"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.8"/><path d="M12 17h.01"/></svg><small data-i18n="nav.help">help</small></button>
-        <div class="pop-card help-card" id="help-card" role="dialog" aria-labelledby="help-title" hidden>
-          <p class="profile-title" id="help-title" data-i18n="help.title">help</p>
+        <!-- One window look for every panel (.win in style.css): a title,
+             then sections, each with a small heading. -->
+        <div class="pop-card win help-card" id="help-card" role="dialog" aria-labelledby="help-title" hidden>
+          <p class="win-title" id="help-title" data-i18n="help.title">help</p>
           <!-- two guides, two different icons: hands on keys / a map of the page -->
-          <button type="button" class="menu-item basics" id="btn-intro"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="12" width="19" height="8" rx="2"/><path d="M7 12V5.5a1.5 1.5 0 0 1 3 0V12M10 9V4.5a1.5 1.5 0 0 1 3 0V12M13 9.5V6a1.5 1.5 0 0 1 3 0V12"/></svg><span><b data-i18n="help.basics">touch typing basics</b><small data-i18n="help.basicsNote">what it is and where the fingers go</small></span></button>
-          <button type="button" class="menu-item site" id="btn-tour"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span><b data-i18n="help.site">how this site works</b><small data-i18n="help.siteNote">how the trainer adapts to you</small></span></button>
+          <button type="button" class="menu-item basics" id="btn-intro"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="12" width="19" height="8" rx="2"/><path d="M7 12V5.5a1.5 1.5 0 0 1 3 0V12M10 9V4.5a1.5 1.5 0 0 1 3 0V12M13 9.5V6a1.5 1.5 0 0 1 3 0V12"/></svg><span><b data-i18n="help.basics">touch typing basics</b><small data-i18n="help.basicsNote">where the fingers go</small></span></button>
+          <button type="button" class="menu-item site" id="btn-tour"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span><b data-i18n="help.site">tour of this screen</b><small data-i18n="help.siteNote">what each part shows</small></span></button>
+          <div class="win-sec">
+            <small class="lbl-ui" data-i18n="help.howTitle">how the trainer works</small>
+            <ol class="win-list">
+              <li data-i18n="help.how1">You start with a few letters. Every word uses only the letters you have.</li>
+              <li data-i18n="help.how2">Every key is measured: how often you miss it and how long it takes.</li>
+              <li data-i18n="help.how3">Your weakest letter is the focus: it comes up more in the next words.</li>
+              <li data-i18n="help.how4">When every letter you have is typed at {target} wpm with under 5% mistakes, the next one opens.</li>
+            </ol>
+          </div>
+          <div class="win-sec">
+            <small class="lbl-ui" data-i18n="help.modesTitle">modes</small>
+            <p class="win-p" data-i18n="help.modes"><b>type</b> is the trainer. <b>freetype</b> gives any words and keeps its own stats; it opens with the whole alphabet, or after a typing test.</p>
+          </div>
+          <div class="win-sec keys-only">
+            <small class="lbl-ui" data-i18n="help.keysTitle">keys</small>
+            <dl class="win-keys">
+              <dt><kbd>esc</kbd></dt><dd data-i18n="help.keyEsc">stop the round</dd>
+              <dt><kbd>shift</kbd> <kbd>tab</kbd></dt><dd data-i18n="help.keyView">type / stats</dd>
+              <dt><kbd>alt</kbd> <kbd>k</kbd></dt><dd data-i18n="help.keyKb">keyboard and hands on / off</dd>
+              <dt><kbd>tab</kbd></dt><dd data-i18n="help.keyTab">never restarts: mistakes are what the trainer learns from</dd>
+            </dl>
+          </div>
         </div>
       </div>
       <!-- settings: round length, look, keyboard, your data (settings.js) -->
       <div class="pop settings" id="settings">
         <button id="btn-settings" type="button" class="rail-btn" data-tip="tip.settings" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings-card"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg><small data-i18n="nav.settings">settings</small></button>
-        <div class="pop-card settings-card" id="settings-card" role="dialog" aria-labelledby="settings-title" hidden>
+        <div class="pop-card win settings-card" id="settings-card" role="dialog" aria-labelledby="settings-title" hidden>
+          <p class="win-title" id="settings-title" data-i18n="settings.title">settings</p>
           <!-- the choices are drawn by settings.js -->
           <div id="settings-body"></div>
-          <!-- your data: rare actions, so they live here and not on the screen -->
-          <small class="set-label" data-i18n="settings.data">your statistics</small>
-          <div class="set-row data-row">
-            <button type="button" id="btn-export" data-tip="tip.export"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19h14"/></svg><span data-i18n="data.save">save</span></button>
-            <button type="button" id="btn-import" data-tip="tip.import"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M5 19h14"/></svg><span data-i18n="data.load">load</span></button>
-            <!-- deletes all progress; needs a second click (it turns red first) -->
-            <button type="button" id="btn-reset" class="danger" data-tip="tip.reset"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg><span data-i18n="data.reset">reset</span></button>
+          <!-- your data: rare actions, so they live here and not on the screen (tools.js) -->
+          <div class="win-sec">
+            <small class="lbl-ui" data-i18n="settings.data">your progress</small>
+            <div class="opt">
+              <span class="opt-text"><b data-i18n="data.backup">backup</b><small data-i18n="data.backupNote">a file with all your rounds and letters</small></span>
+              <span class="opt-ctl">
+                <button type="button" class="btn" id="btn-export" data-tip="tip.export"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19h14"/></svg><span data-i18n="data.save">save</span></button>
+                <button type="button" class="btn" id="btn-import" data-tip="tip.import"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M5 19h14"/></svg><span data-i18n="data.load">load</span></button>
+              </span>
+            </div>
+            <div class="opt">
+              <span class="opt-text"><b data-i18n="data.resetTitle">start over</b><small data-i18n="data.resetNote">deletes every round and letter; cannot be undone</small></span>
+              <!-- needs a second click (it turns red first) -->
+              <span class="opt-ctl"><button type="button" class="btn danger" id="btn-reset" data-tip="tip.reset"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg><span data-i18n="data.reset">reset</span></button></span>
+            </div>
           </div>
           <input id="import-file" type="file" accept="application/json,.json" hidden>
         </div>

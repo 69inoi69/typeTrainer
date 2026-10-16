@@ -113,7 +113,7 @@ body { user-select: none; -webkit-user-select: none; }
    explanations) is the system's plain font, smaller and grey: it is the
    frame around the content. So the eye tells them apart at a glance.
    .lbl-ui is the look of a fixed label: small capitals, a little spaced. */
-.lbl-ui, .metric small, .stat .lbl, .tile small, .set-label, .profile-title, .r-lbl,
+.lbl-ui, .metric small, .stat .lbl, .tile small, .r-lbl,
 .panel-note, .heat-legend, .profile-field small, .profile-label, .tour-step, .intro-kicker {
   font-family: var(--ui); font-size: .66rem; font-weight: 600; letter-spacing: .08em;
   text-transform: uppercase; color: var(--sub);
@@ -123,6 +123,60 @@ button, .tooltip, .menu-item, .hints, .rail small, .tour-text, .intro p, .intro 
 .account-as, .profile-soon, .focus-hint, .letters-caption .begin, .warn, .panel h2 {
   font-family: var(--ui);
 }
+
+/* ---------- shared parts: one look everywhere ---------- */
+/* Every panel that opens over the page (help, settings, profile, tour,
+   guides) is a .win: the same background, corners, edge and shadow, a
+   title, then sections with a small heading. Every choice is a .seg (a row
+   of buttons, the chosen one filled with the accent); every other button in
+   a panel is a .btn. Sizes of corners: 14px windows and the text card, 10px
+   tiles and panels, 8px buttons, 6px inner bits. */
+.win, .pop-card, .profile-card, .tour-card, .intro-card {
+  background: var(--panel); border-radius: 14px; box-shadow: var(--ring), var(--shadow);
+}
+.win-title, .profile-title {
+  margin: 0 0 4px; font-family: var(--ui); font-size: .95rem; font-weight: 600; color: var(--text);
+}
+.win-sec { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.win-sec.first { margin-top: 8px; }
+.win-sec > .lbl-ui { display: block; margin-bottom: 4px; }
+.win-p, .win-list { margin: 6px 0 0; font-family: var(--ui); font-size: .8rem; line-height: 1.5; color: color-mix(in srgb, var(--text) 82%, var(--sub)); }
+.win-p b, .win-list b { color: var(--text); font-weight: 600; }
+.win-list { padding-left: 18px; display: grid; gap: 4px; }
+.win-list li::marker { color: var(--sub); font-size: .75rem; }
+.win-keys { margin: 6px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-items: baseline; font-family: var(--ui); font-size: .78rem; }
+.win-keys dt { white-space: nowrap; }
+.win-keys dd { margin: 0; color: color-mix(in srgb, var(--text) 82%, var(--sub)); }
+.win kbd { background: var(--track); box-shadow: var(--ring); color: var(--text); font-family: var(--mono); }
+@media (pointer: coarse) { .keys-only { display: none; } }   /* no keyboard, no shortcuts */
+/* one option: name and a short note on the left, the control on the right */
+.opt { display: flex; align-items: center; justify-content: space-between; gap: 6px 14px; padding: 7px 0; flex-wrap: wrap; }
+.opt-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 140px; font-family: var(--ui); }
+.opt-text b { font-size: .84rem; font-weight: 500; color: var(--text); }
+.opt-text small { font-size: .72rem; color: var(--sub); line-height: 1.35; }
+.opt-ctl { display: flex; gap: 6px; flex: none; }
+/* a segmented choice */
+.seg, .length-filter, .mode-filter {
+  display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 2px; border-radius: 8px;
+  background: var(--track); box-shadow: var(--ring);
+}
+.seg button, .length-filter button, .mode-filter button {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px;
+  background: none; color: var(--sub); font-size: .78rem; min-width: 34px; justify-content: center;
+}
+.seg button:hover, .length-filter button:hover, .mode-filter button:hover { background: none; color: var(--text); }
+.seg button[aria-pressed="true"], .length-filter button[aria-selected="true"], .mode-filter button[aria-selected="true"] {
+  background: var(--accent); color: var(--on-accent);
+}
+/* a plain button in a panel */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 8px;
+  background: none; color: color-mix(in srgb, var(--text) 80%, var(--sub)); box-shadow: var(--ring); font-size: .8rem;
+}
+.btn:hover { color: var(--text); background: var(--track); }
+.btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.btn.danger:hover { color: var(--error); }
+.btn.danger.armed, .btn.danger.armed:hover { color: #fff; background: var(--error); box-shadow: none; }
 
 /* ---------- header ---------- */
 /* Only who and where: the logo on the left, the language switch and the
@@ -266,17 +320,17 @@ body[data-mode="free"] .learn-only { display: none; }
 .pop { position: relative; }
 .pop-card {
   position: fixed; left: 12px; right: 12px; bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 9;
-  max-width: 340px; margin-inline: auto; padding: 14px 16px 12px; text-align: left;
-  background: var(--panel); border-radius: 14px; box-shadow: var(--ring), var(--shadow);
+  max-width: 380px; margin-inline: auto; padding: 16px 18px 14px; text-align: left;
+  max-height: calc(100dvh - 100px); overflow-y: auto; scrollbar-width: thin;   /* a long card scrolls inside */
   animation: note-in .2s var(--ease);
 }
 .pop-card[hidden] { display: none; }
 .menu-item {
   display: flex; align-items: center; gap: 12px; width: 100%;
-  padding: 9px 10px; margin-bottom: 4px; border-radius: 10px; background: none; text-align: left;
+  padding: 8px 8px; margin: 6px 0 0; border-radius: 10px; background: none; text-align: left;
 }
 .menu-item > span { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.menu-item b { color: var(--text); font-weight: 500; font-size: .86rem; }
+.menu-item b { color: var(--text); font-weight: 500; font-size: .84rem; }
 .menu-item small { color: var(--sub); font-size: .72rem; }
 /* each guide its own colour, so they differ at a glance */
 .menu-item svg {
@@ -285,7 +339,7 @@ body[data-mode="free"] .learn-only { display: none; }
   background: color-mix(in srgb, var(--mc) 14%, transparent);
 }
 .menu-item.site svg { --mc: #6f9fe0; }
-.menu-item:hover { background: color-mix(in srgb, var(--text) 6%, var(--panel)); }
+.menu-item:hover { background: var(--track); }
 
 /* wide screens: the navigation is a column at the left edge, the languages a
    column at the right edge, both in the middle of the height (--side is the
@@ -302,7 +356,7 @@ body[data-mode="free"] .learn-only { display: none; }
   .rail .switch-thumb { top: 0; left: -6px; width: 2px; height: calc(100% / var(--n)); transform: translateY(calc(var(--i) * 100%)); }
   .rail .switch-thumb::after { top: calc(50% - 9px); left: 0; width: 2px; height: 18px; }
   .rail .switch button, .rail-btn { width: 76px; height: 54px; }
-  .pop-card { left: 106px; right: auto; top: 50%; bottom: auto; translate: 0 -50%; width: 300px; margin: 0; }
+  .pop-card { left: 106px; right: auto; top: 50%; bottom: auto; translate: 0 -50%; width: 380px; margin: 0; }
   .lang-switch {
     position: fixed; right: 14px; top: 50%; translate: 0 -50%; height: auto;
     grid-auto-flow: row; grid-auto-rows: 40px; grid-auto-columns: auto;
@@ -392,7 +446,7 @@ body[data-mode="free"] .learn-only { display: none; }
   position: relative; outline: none; cursor: text;
   padding: 16px 32px 22px 52px;    /* room on the left for the prompt sign */
   background: color-mix(in srgb, var(--panel) 70%, var(--bg));
-  border-radius: 16px;
+  border-radius: 14px;
   box-shadow: var(--ring), var(--card-shadow);
   transition: box-shadow var(--med);
   width: var(--tw); margin-inline: calc((100% - var(--tw)) / 2); margin-top: 12px;
@@ -810,8 +864,7 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 .intro.hidden { display: none; }
 @keyframes fade { from { opacity: 0; } }
 .intro-card {
-  width: min(520px, 100%); background: var(--panel); border-radius: 16px;
-  padding: 28px 28px 20px; box-shadow: var(--ring), var(--shadow);
+  width: min(520px, 100%); padding: 28px 28px 20px;
 }
 .intro-step { display: none; animation: view-in .3s var(--ease); }
 .intro-step.active { display: block; }
@@ -985,12 +1038,11 @@ body.entering .bottom { animation-delay: .24s; }
 .avatar.photo { color: transparent; box-shadow: var(--ring); }
 .avatar.big { width: 52px; height: 52px; font-size: 1.3rem; }
 .profile-card {
-  position: absolute; right: 0; top: calc(100% + 8px); width: 290px; padding: 14px 16px 12px;
-  background: var(--panel); border-radius: 14px; box-shadow: var(--ring), var(--shadow);
+  position: absolute; right: 0; top: calc(100% + 8px); width: 300px; padding: 16px 18px 14px;
   animation: note-in .2s var(--ease);
 }
 .profile-card[hidden] { display: none; }
-.profile-title { margin: 0 0 10px; }
+.profile-title { margin: 0 0 12px; }
 .profile-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .profile-field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
 
@@ -1016,12 +1068,13 @@ body.entering .bottom { animation-delay: .24s; }
 .account-msg { margin: 0; min-height: 1.5em; color: var(--sub); font-size: .72rem; line-height: 1.5; }
 .account-msg.bad { color: var(--error); }
 .account-btns { display: flex; gap: 8px; }
-.account-btns button { flex: 1; padding: 6px 10px; font-size: .85rem; box-shadow: var(--ring); }
-.account-btns button.ghost { background: none; }
+.account-btns button { flex: 1; padding: 6px 10px; font-size: .82rem; border-radius: 8px; }
+.account-btns button:not(.ghost) { background: var(--accent); color: var(--on-accent); }
+.account-btns button.ghost { background: none; box-shadow: var(--ring); }
 .account-in { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .account-as { margin: 0; color: var(--sub); font-size: .8rem; overflow: hidden; text-overflow: ellipsis; }
 .account-as b { color: var(--text); font-weight: 600; }
-.account-in button { padding: 6px 12px; font-size: .85rem; box-shadow: var(--ring); }
+.account-in button { padding: 5px 11px; font-size: .8rem; background: none; box-shadow: var(--ring); }
 .profile-soon { margin: 0; padding-top: 10px; border-top: 1px solid var(--line); color: var(--sub); font-size: .72rem; line-height: 1.5; }
 
 /* ---------- settings (settings.js) ---------- */
@@ -1029,36 +1082,12 @@ body.entering .bottom { animation-delay: .24s; }
 body.live-off .live .metric.num { display: none; }
 /* words after the end of a words round are never typed, so not shown */
 .text span.beyond { display: none; }
-/* a long card scrolls inside itself on a short screen */
-.settings-card { max-height: calc(100dvh - 90px); overflow-y: auto; scrollbar-width: thin; }
-/* your statistics: save, load and (red when armed) reset */
-.data-row button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.data-row #btn-reset { margin-left: auto; }
-.data-row #btn-reset:hover { color: var(--error); }
-.data-row #btn-reset.armed, .data-row #btn-reset.armed:hover { color: #fff; background: var(--error); box-shadow: none; }
-.set-label { display: block; margin: 10px 0 6px; }
-.settings-card .profile-title + .set-label { margin-top: 0; }
-.set-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-.set-unit { width: 52px; color: var(--sub); font-size: .75rem; }
-.set-row button {
-  display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 0; border-radius: 8px;
-  background: var(--bg); color: var(--sub); box-shadow: var(--ring); font-size: .8rem; cursor: pointer;
-}
-.set-row button:hover { color: var(--text); }
-.set-row button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); box-shadow: none; }
 /* small pictures of the two carets */
 .cs { display: inline-block; height: 12px; border-radius: 1px; background: currentColor; }
 .cs.line { width: 2px; }
 .cs.block { width: 8px; opacity: .55; border-bottom: 2px solid currentColor; }
-/* the stats screen: one round length at a time */
-.length-filter, .mode-filter { display: flex; flex-wrap: wrap; gap: 6px; }
+/* the stats screen: whose stats and one round length at a time (.seg look) */
 .mode-filter:empty { display: none; }
-.length-filter button, .mode-filter button {
-  padding: 5px 12px; border: 0; border-radius: 999px; background: none; color: var(--sub);
-  box-shadow: var(--ring); font-size: .8rem; cursor: pointer;
-}
-.length-filter button:hover, .mode-filter button:hover { color: var(--text); }
-.length-filter button[aria-selected="true"], .mode-filter button[aria-selected="true"] { background: var(--accent); color: var(--on-accent); box-shadow: none; }
 
 /* ---------- tour (tour.js) ---------- */
 .tour { position: fixed; inset: 0; z-index: 40; }
@@ -1071,8 +1100,7 @@ body.live-off .live .metric.num { display: none; }
 }
 .tour-spot.none { box-shadow: 0 0 0 9999px color-mix(in srgb, var(--bg) 78%, transparent); }
 .tour-card {
-  position: fixed; width: min(340px, calc(100vw - 16px)); padding: 14px 16px 10px;
-  background: var(--panel); border-radius: 14px; box-shadow: var(--ring), var(--shadow);
+  position: fixed; width: min(360px, calc(100vw - 16px)); padding: 16px 18px 12px;
   transition: left .35s var(--ease), top .35s var(--ease);
 }
 .tour-step { margin: 0 0 6px; color: var(--accent-text); }

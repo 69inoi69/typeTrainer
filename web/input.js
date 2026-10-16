@@ -9,6 +9,7 @@
 // a <small> label and data-tip), its texts in i18n.js, and its click here
 // (the "views", "modes" and "help" sections below are the pattern).
 
+import { applyI18n } from "./i18n.js";
 import { $, el, S, introOpen, isTouch, focusText } from "./state.js";
 import { applyKb, requestFit } from "./keyboard.js";
 import { refreshStats, renderStats, onStatsMode } from "./stats.js";
@@ -76,9 +77,9 @@ el.tabLearn.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMod
 el.tabFree.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("free"); });
 onStatsMode((m) => chooseMode(m, true));
 
-// ---------- help: a small menu with the two guides ----------
-// The menu items themselves are wired by intro.js (#btn-intro) and tour.js
-// (#btn-tour); here the menu only opens and closes.
+// ---------- help: the two guides, how the trainer works, the keys ----------
+// The guide buttons themselves are wired by intro.js (#btn-intro) and
+// tour.js (#btn-tour); here the panel only opens and closes.
 const help = $("help"), helpBtn = $("btn-help"), helpCard = $("help-card");
 const helpOpen = () => !helpCard.hidden;
 function closeHelp() {
@@ -89,6 +90,7 @@ helpBtn.addEventListener("click", () => {
   helpBtn.blur();
   if (helpOpen()) { closeHelp(); return; }
   closeSettings();
+  applyI18n(helpCard);                        // fills {target} with the current goal
   helpCard.hidden = false;
   helpBtn.setAttribute("aria-expanded", "true");
 });
