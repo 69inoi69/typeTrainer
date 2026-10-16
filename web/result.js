@@ -6,6 +6,8 @@
 // (a percentage was not clear). No jokes or tips: the owner wants plain
 // results here (2026-10-16); fun lines may come back later on their word.
 // It sits in the same fixed window as the text, so the page never moves.
+// The "next round" button has its own row at the bottom (full width on a
+// phone), under everything else.
 //
 // showResult(r) shows it and resolves when it is closed, and only on purpose
 // (as on monkeytype): Enter, Esc or Tab, or the "new round" button. There is no
@@ -45,16 +47,22 @@ export function showResult(r) {
   if (r.test) { main = `<span>${t(`result.test.${r.test}`)}</span>`; cls = r.test === "pass" ? " k-best" : ""; }
   else if (r.newLetter) { main = `<span class="r-badge">${r.newLetter}</span><span>${t("result.newLetter", { letter: r.newLetter })}</span>`; cls = " k-letter"; }
   else if (r.best) { main = t("result.best"); cls = " k-best"; }
-  else if (mastered) main = `<span>${t("result.mastered", { letters: mastered })}</span>`;
+  else if (mastered) {
+    // the same look as the status line above: a green tick, the label, the letters as small keys
+    main = `<svg class="r-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>` +
+      `<span class="r-lbl">${t("result.masteredLabel")}</span>${r.mastered.map((c) => `<b class="r-key">${c}</b>`).join("")}`;
+    cls = " r-mastered";
+  }
   if (main) lines.push(`<p class="r-main${cls}">${main}</p>`);
 
   // 3. letters that changed: time per press before and now, green = faster,
-  // red = slower. Two columns, one letter per line.
+  // red = slower. Two columns side by side, Faster always on the left and
+  // Slower on the right (style.css), one letter per line.
   const chip = (x, c) => `<span class="r-ch ${c}"><b>${x.c}</b>${x.from}→${x.to}<small>ms</small></span>`;
   const changed = [];
-  if (r.faster?.length) changed.push(`<span class="lbl-ui">${t("result.faster")}</span>${r.faster.map((x) => chip(x, "up")).join("")}`);
-  if (r.slower?.length) changed.push(`<span class="lbl-ui">${t("result.slower")}</span>${r.slower.map((x) => chip(x, "down")).join("")}`);
-  if (changed.length) lines.push(`<div class="r-letters">${changed.map((x) => `<p class="r-col">${x}</p>`).join("")}</div>`);
+  if (r.faster?.length) changed.push(`<p class="r-col up"><span class="lbl-ui">${t("result.faster")}</span>${r.faster.map((x) => chip(x, "up")).join("")}</p>`);
+  if (r.slower?.length) changed.push(`<p class="r-col down"><span class="lbl-ui">${t("result.slower")}</span>${r.slower.map((x) => chip(x, "down")).join("")}</p>`);
+  if (changed.length) lines.push(`<div class="r-letters">${changed.join("")}</div>`);
 
   return open(lines);
 }
