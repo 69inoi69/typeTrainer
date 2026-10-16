@@ -62,7 +62,7 @@ const I18N = {
     "tip.streak": "Clean words in a row: not a single mistake",
     "metric.acc": "Acc", "metric.words": "Words", "metric.seconds": "s left",
     "metric.raw": "Raw", "tip.raw": "Raw speed: every keypress counts, mistakes too",
-    "hint.new": "Stop", "hint.kb": "Keyboard", "hint.view": "Typing / stats", "hint.lang": "Language",
+    "hint.new": "Stop", "hint.kb": "Keyboard", "hint.view": "Learn / stats", "hint.lang": "Language",
     "focusHint": "Tap here to start typing",
     "key.space": "Space",
     "stat.focus": "Focus", "stat.mastered": "Mastered", "stat.next": "Next",
