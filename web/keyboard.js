@@ -187,6 +187,9 @@ function fitKeyboard() {
   if (el.keyboard.getAnimations().length || el.hands.getAnimations().length) return;
   const rest = document.querySelector(".top").offsetHeight + el.viewType.offsetHeight
     - el.hands.offsetHeight - el.keyboard.offsetHeight
+    // the room above the view (not in offsetHeight); when that room only
+    // centres the view (desktop, style.css --view-centred) it is free room
+    + (getComputedStyle(el.viewType).getPropertyValue("--view-centred").trim() === "1" ? 0 : parseFloat(getComputedStyle(el.viewType).marginTop))
     + document.querySelector(".bottom").offsetHeight + 12    // 12 = bottom padding of .views
     + parseFloat(getComputedStyle(document.body).paddingBottom);   // the bottom navigation bar (narrow windows)
   const fit = Math.max(24, Math.floor((innerHeight - rest - 4) / HANDS_KB_PER_U));

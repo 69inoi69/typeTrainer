@@ -102,8 +102,13 @@ let other = null;
 // offer. A length with no rounds yet shows the empty stats.
 function renderLengthFilter(have, shown) {
   const ids = [...LENGTHS, ...new Set(have.filter((id) => !LENGTHS.includes(id)))];
-  el.lengthFilter.innerHTML = ids.map((id) =>
-    `<button type="button" role="tab" data-length="${id}" aria-selected="${id === shown}">${lengthLabel(id)}</button>`).join("");
+  // two switches side by side: rounds of N words, rounds of N seconds
+  // (owner, 2026-10-16: they are different kinds of round, not one row)
+  const btn = (id) => `<button type="button" role="tab" data-length="${id}" aria-selected="${id === shown}">${lengthLabel(id)}</button>`;
+  const isTime = (id) => id.startsWith("time");
+  const words = ids.filter((id) => !isTime(id)), time = ids.filter(isTime);
+  el.lengthFilter.innerHTML = [words, time].filter((g) => g.length)
+    .map((g) => `<span class="lf-group">${g.map(btn).join("")}</span>`).join("");
 }
 el.lengthFilter.addEventListener("click", async (e) => {
   const b = e.target.closest("button[data-length]");

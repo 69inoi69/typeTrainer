@@ -733,7 +733,7 @@ async function finishRound() {
     await refreshStats();
     if (res.newLetter) newLetter(res.newLetter);
 
-    const r = compareStats(roundBefore, S.lastStats, typed);
+    const r = compareStats(roundBefore, S.lastStats);
     markMastered(r.mastered);
     renderLetters();        // the letters bar agrees with the result at once, not only after it closes
     if (r.best) FX.burstFrom(el.wpm, 80);

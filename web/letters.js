@@ -1,6 +1,6 @@
 // The letters bar above the text: one chip per letter of the language (open,
 // mastered, the focus of the portion being typed, still locked), the status
-// line under it (small pills: focus, mastered, next letter), and the keys of
+// line under it (small pills: focus, next letter), and the keys of
 // locked letters dimmed on the keyboard. In free practice and the test there
 // is nothing to learn: the bar is empty and every key is open.
 // Layer: middle. Imports the bottom layer and modes.js.
@@ -46,6 +46,7 @@ export function renderLetters() {
     chip.textContent = c;
     if (c === popLetter) chip.classList.add("pop");
     if (justMastered.has(c)) chip.classList.add("shine");
+    if (cls.includes("mastered")) chip.dataset.tip = "tip.mastered";   // what the tick means
     frag.appendChild(chip);
   };
   for (const c of S.exercise.unlocked) {
@@ -65,7 +66,6 @@ export function renderLetters() {
   // status line: small pills with an icon each (details in their tooltips)
   const openCount = S.exercise.unlocked.length;
   const all = openCount + S.exercise.locked.length;
-  const mastered = S.exercise.unlocked.filter((c) => info[c]?.mastered);
   const started = (S.lastStats?.keys ?? []).some((k) => k.count > 0);   // anything typed yet
   const parts = [];
   if (!started) {
@@ -73,10 +73,8 @@ export function renderLetters() {
     parts.push(`<span class="begin">${t("stat.begin")}</span>`);
   } else {
     if (focusHasData) parts.push(pill("focus", "focus", "tip.focus", t("stat.focus"), `<b class="lt">${S.exercise.focus}</b>`));
-    // the mastered letters themselves, one after another as they come (owner,
-    // 2026-10-16: a count like "2/6" did not say what it meant)
-    parts.push(pill("check", "ok", "tip.mastered", t("stat.mastered"),
-      mastered.length ? mastered.map((c) => `<b class="lt">${c}</b>`).join("") : `<span class="none">${t("stat.masteredNone")}</span>`));
+    // no "mastered" pill: the letters row above already marks every
+    // mastered letter with a tick (owner, 2026-10-16: it said the same twice)
     if (S.exercise.locked.length) parts.push(pill("key", "next", "tip.next", t("stat.next"), `<b class="lt">${S.exercise.locked[0]}</b>`));
   }
   el.lettersCaption.innerHTML = parts.join("");

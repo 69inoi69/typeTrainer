@@ -74,7 +74,7 @@ calling the work done.
 | Option description (Settings) | Only when the name and the control are not enough: one line on what it does, a second sentence for a consequence | "Shows your WPM and accuracy as you type" |
 | Tooltip | Only when it adds something: what it is, then the shortcut after "·". One line, no full stop | "Stop the round and see the result · Esc" |
 | Status line, short messages | One short line, a number in `<b>` | "Type the text to begin" |
-| Result screen | Numbers, then one plain line if something happened, then the letters that changed. No tips | "New letter opened: r" |
+| Result screen | Speed and accuracy big, the chart of word speeds, a row of facts (consistency, time, characters) ending in what happened, then the words. No tips | "New letter opened: r" |
 | Help, first-visit guides | One to three short sentences per item, the key idea first in `<b>` | "<b>Weak letters come back.</b> Letters you miss or type slowly get more words." |
 | Error | What went wrong and what to do | "Could not load this file. Use one made with Save" |
 

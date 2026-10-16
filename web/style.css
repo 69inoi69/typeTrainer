@@ -31,9 +31,9 @@
 
   /* one key unit: the keyboard size is not a setting, it is always the largest
      that fits: never wider than the window allows, never taller than the room
-     left on the screen (--u-fit, set by fitKeyboard in keyboard.js). 84px:
+     left on the screen (--u-fit, set by fitKeyboard in keyboard.js). --u-max:
      even on a huge screen the keys stop growing */
-  --u: min(calc((100vw - 32px - 2 * var(--side)) / 13.6), var(--u-fit, 56px), 84px);
+  --u: min(calc((100vw - 32px - 2 * var(--side)) / 13.6), var(--u-fit, 56px), var(--u-max, 84px));
   /* width of the text card (and of the header, so their edges line up): a
      little wider than the on-screen keyboard (13.4 key units, + 1.2) and
      growing with it, but never narrower than 760px, so the text keeps fitting
@@ -88,6 +88,9 @@
 :root[data-theme="light"] .switch-thumb::after { box-shadow: none; }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; } /* no blue flash on tap (phones) */
 html, body { min-height: 100%; }
+/* a big desktop window: the whole page one step bigger (every size in rem
+   grows together, so the same kind of text stays the same size everywhere) */
+@media (min-width: 1000px) and (min-height: 820px) and (pointer: fine) { html { font-size: 18px; } }
 /* no scrollbar: the typing screen always fits; the stats screen still scrolls with the wheel */
 html { scrollbar-width: none; }
 html::-webkit-scrollbar { display: none; }
@@ -176,17 +179,15 @@ button, .tooltip, .menu-item, .hints, .rail small, .tour-text, .intro p, .intro 
 .seg button[aria-pressed="true"], .length-filter button[aria-selected="true"], .mode-filter button[aria-selected="true"] {
   background: var(--accent); color: var(--on-accent);
 }
-/* the stats' round lengths (all five, always): on a phone the row takes
-   the whole width with equal-ish buttons; on a very narrow one it becomes
-   two tidy rows, the three word lengths over the two time lengths */
+/* the stats' round lengths (all five, always): two separate switches,
+   word rounds and timed rounds (stats.js); on a phone they share the width */
+.length-filter { background: none; box-shadow: none; padding: 0; gap: 8px; flex-wrap: nowrap; }
+.lf-group { display: inline-flex; gap: 2px; padding: 2px; border-radius: 8px; background: var(--track); box-shadow: var(--ring); }
 @media (max-width: 640px) {
-  .length-filter { display: flex; flex-wrap: nowrap; width: 100%; }
-  .length-filter button { flex: 1 1 auto; padding: 4px 6px; white-space: nowrap; }
-}
-@media (max-width: 380px) {
-  .length-filter { display: grid; grid-template-columns: repeat(6, 1fr); }
-  .length-filter button { grid-column: span 2; }
-  .length-filter button[data-length^="time"] { grid-column: span 3; }
+  .length-filter { display: flex; width: 100%; }
+  .lf-group { flex: 3; }
+  .lf-group + .lf-group { flex: 2; }
+  .lf-group button { flex: 1 1 auto; padding: 4px 6px; white-space: nowrap; }
 }
 /* a plain button in a panel */
 .btn {
@@ -387,8 +388,9 @@ body[data-mode="free"] .letter-row { display: none; }
      like it did not belong): icon and label side by side, big enough to
      see; the accent bar slides under the chosen screen */
   .rail {
-    /* right after the logo (about 230px wide), on the header's line */
-    left: calc(50% - var(--tw) / 2 + 250px); right: auto; top: 14px; bottom: auto; translate: none;
+    /* right after the logo (about 14rem wide), on the header's line */
+    /* absolute, not fixed: it scrolls away with the header it sits in */
+    position: absolute; left: calc(50% - var(--tw) / 2 + 15rem); right: auto; top: 14px; bottom: auto; translate: none;
     flex-direction: row; gap: 8px; padding: 0; background: none; backdrop-filter: none; box-shadow: none;
   }
   .rail-group { flex-direction: row; }
@@ -499,20 +501,19 @@ body[data-mode="free"] .letter-row { display: none; }
 }
 .stat.focus .lt { background: var(--accent); color: var(--on-accent); }
 .stat.focus svg { color: var(--accent-text); }
-.stat.ok svg { color: var(--ok); }
-.stat.ok .lt { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
-.stat.ok .lt + .lt { margin-left: -3px; }   /* the letters close together, as one word */
-.stat .none { color: var(--sub); }
 .stat.next .lt { color: var(--text); background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 45%, transparent); }
 .letters-caption .begin { padding: 0 4px; font-size: .8rem; white-space: normal; text-align: left; }
-/* desktop: Focus / Mastered / Next are what you work towards, so they are
-   big enough to see at a glance (owner, 2026-10-16: they looked tiny) */
+/* desktop: one bigger scale for the whole page instead of single parts
+   made bigger (owner, 2026-10-16: sizes jumped around); here only what is
+   not in rem, and some room to breathe */
 @media (min-width: 1000px) and (pointer: fine) {
-  .caption-slot { margin-top: 12px; min-height: 38px; }
-  .letters-caption { zoom: 1.45; }
-  /* the letters themselves bigger and clearer too (owner, 2026-10-16) */
-  .letter-row { gap: 6px; min-height: calc(1.3rem * 1.75); }
-  .chip { font-size: 1.3rem; border-radius: 8px; }
+  .caption-slot { margin-top: 14px; min-height: 2.1rem; }
+  .letters-caption { font-size: .95rem; gap: 10px; }
+  .stat { height: 2.1em; padding: 0 .9em 0 .75em; }
+  .stat svg { width: 1.1em; height: 1.1em; }
+  .stat .lbl, .stat b, .letters-caption .begin { font-size: 1em; }   /* label and value one size */
+  .letter-row { gap: 6px; min-height: calc(1.05rem * 1.75); }
+  .chip { font-size: 1.05rem; border-radius: 7px; }
   .chip.locked { color: color-mix(in srgb, var(--sub) 80%, transparent); }
   /* the mastered tick grows with the chips: easy to see at a glance */
   .chip.mastered::before { top: -7px; right: -7px; width: 18px; height: 18px; }
@@ -559,6 +560,20 @@ body[data-mode="free"] .letter-row { display: none; }
 .text span.new { animation: word-in var(--feel-word-in-ms, 0ms) ease-out; }
 .text span.later { visibility: hidden; }   /* a word not shown yet: keeps its place (typing.js reveal) */
 @keyframes word-in { from { opacity: .2; } }
+/* Desktop (owner, 2026-10-16, variant "T1", after monkeytype): no card,
+   the text stands on the page, bigger; the keyboard a bit smaller (the
+   text is the point); the text, hands and keyboard together in the middle
+   of the free height. The width no longer follows the keyboard, so the
+   header, the letters and the text keep one width. --view-centred tells
+   fitKeyboard (keyboard.js) that the room above the view is only centring,
+   not room taken. */
+@media (min-width: 1000px) and (pointer: fine) {
+  :root { --tw: min(100vw - 32px - 2 * var(--side), 48rem); --u-max: 48px; }
+  .text-box, .text-box:focus-within, .text-box:focus { background: none; box-shadow: none; padding: 0 0 0 40px; margin-top: 0; }
+  .text-box::before { left: 0; top: 38px; }   /* next to the first line: under the live line */
+  .text, .text-box::before { font-size: 2rem; }
+  #view-type { margin-block: auto; --view-centred: 1; }
+}
 .text-box.blurred .text { filter: blur(3px); opacity: .5; }
 .focus-hint {
   position: absolute; inset: 0; display: flex; opacity: 0; pointer-events: none;
@@ -914,12 +929,11 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 .text-box.resulting .focus-hint { display: none; }
 .text-box.resulting .live { display: none; }   /* the result shows the same numbers, bigger: once is enough */
 /* No card behind the result (owner, 2026-10-16: the box was not needed as
-   a background): the result sits on the page, as wide as its content and
-   centred, never wider than the text window. A long list of words fills
-   that width and wraps. */
+   a background): the result sits on the page, as wide as the text window
+   (the letters row above lines up with it). */
 .text-box.resulting, .text-box.resulting:focus-within {
   --r-pad: 0px;
-  width: fit-content; max-width: var(--tw); margin-inline: auto;
+  width: var(--tw); max-width: var(--tw); margin-inline: auto;
   padding: 0; background: none; box-shadow: none; cursor: default;
 }
 /* The keyboard and the hands only help while typing: on the result they are
@@ -932,49 +946,56 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
    letters (owner, 2026-10-16); the view takes all the height, the result
    gets equal room above and below */
 @media (pointer: fine) {
-  #view-type:has(> .text-box.resulting) { flex: 1; display: flex; flex-direction: column; }
+  #view-type:not([hidden]):has(> .text-box.resulting) { flex: 1; display: flex; flex-direction: column; }
   #view-type > .text-box.resulting { margin-block: auto; }
 }
 .result {
   position: relative; font-size: 1rem;
-  width: max-content; max-width: min(36rem, var(--tw) - 2 * var(--r-pad));
+  width: 100%;
   display: flex; flex-direction: column;
   animation: view-in .25s var(--ease);
 }
 .result[hidden] { display: none; }
 .result p { margin: 0; }
 .r-body { display: flex; flex-direction: column; }
-/* each part is a section with a thin line between (owner, 2026-10-16:
-   neat lines with enough room, so the card reads as blocks); the room is
-   the same above and below each line */
-.result .r-sec + .r-sec { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
-.r-sec { min-width: 0; }   /* a long word list or chart never pushes the card wider */
-/* the numbers: three equal columns, the label on top (readable, not tiny),
-   the value under it */
-/* everything above the chart is centred (owner, 2026-10-16): each number
-   in the middle of its column, as many equal columns as there are numbers
-   (three, or two in the test and in the characters / time row) */
-.r-nums { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 12px; }
-.r-num { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
-.r-num .r-lbl { font-size: 1rem; }   /* readable at a glance (owner, 2026-10-16) */
-/* "New best" right above the numbers, small, in the middle */
+/* The layout (owner, 2026-10-16, variant "A", after monkeytype): the top
+   is two columns, the big numbers on the left and the chart on the right;
+   under it a row of smaller facts, then the words. No lines between the
+   parts: the room between them separates them. */
+.r-body { gap: 26px; }
+.r-top { display: grid; grid-template-columns: auto 1fr; gap: 40px; align-items: stretch; }
+.r-top.solo { grid-template-columns: auto; }   /* no words measured: no chart */
+.r-hero { display: flex; flex-direction: column; justify-content: center; gap: 18px; }
+.r-graph { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.r-graph .r-chart { flex: 1; min-height: 120px; margin: 0; }
+.r-row { display: flex; align-items: flex-start; gap: 16px 48px; flex-wrap: wrap; }
+.r-row > .r-main, .r-row > .r-mastered { margin-left: auto; align-self: center; }   /* what happened: at the right end */
+/* every number: the label on top, the value under it, on the left */
+.r-num { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.r-num.big > b { font-size: 3.6rem; line-height: 1; }
+.r-num.mid > b { font-size: 2.1rem; line-height: 1.1; }
+/* every label in the result has one size (owner, 2026-10-16: the same
+   kind of text, the same size) */
+.r-num .r-lbl, .result .lbl-ui { font-size: .85rem; }
+/* "New best" right above the numbers, small */
 .result .r-best {
-  width: fit-content; margin: 0 auto 10px; padding: 2px 10px; border-radius: 6px; font-size: .8rem;
+  width: fit-content; margin: 0 0 -8px; padding: 2px 10px; border-radius: 6px; font-size: .8rem;
   color: var(--accent-text); background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
-.r-num b { font-size: 2rem; font-weight: 400; line-height: 1.1; color: var(--accent-text); font-variant-numeric: tabular-nums; }
-.r-num b small { font-size: .55em; margin-left: 2px; color: var(--sub); }
+.r-num > b { font-weight: 400; color: var(--accent-text); font-variant-numeric: tabular-nums; }
+.r-num > b small { font-size: .45em; margin-left: 2px; color: var(--sub); }
 .r-num[data-tip-text] { outline: none; cursor: default; }   /* consistency: a tooltip explains it */
-/* the characters, under the words: each number with its word, in a row */
-.r-chars { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; margin-top: 14px; font-size: .85rem; color: var(--sub); }
+/* the characters: each number with its word, in a row, on the line of
+   the other facts' values */
+.r-chars { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: .55em; font-size: 1.05rem; color: var(--sub); }
 .r-cc { outline: none; cursor: default; }
-.r-cc b { font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; }
+.r-cc b { font-size: inherit; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
 .r-cc.bad b { color: var(--error); }
 .r-cc[data-tip-text] { text-decoration: underline dotted color-mix(in srgb, var(--sub) 60%, transparent); text-underline-offset: 4px; }
 .r-main { display: flex; align-items: center; justify-content: center; text-align: center; font-size: .9rem; color: var(--text); line-height: 1.5; }
 /* good news (a new letter, a record): in the accent colour, on a soft tint */
 .r-main.k-letter, .r-main.k-best {
-  display: flex; align-items: center; width: fit-content; margin-inline: auto;   /* as wide as its text, in the middle */
+  display: flex; align-items: center; width: fit-content;   /* as wide as its text */
   padding: 8px 12px; border-radius: 10px;
   color: var(--accent-text); background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
@@ -985,50 +1006,32 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
   animation: letter-pop .6s cubic-bezier(.2, 1.6, .4, 1) .1s both;
 }
 @keyframes letter-pop { 0% { transform: scale(.3) rotate(-25deg); opacity: 0; } 70% { transform: scale(1.18) rotate(6deg); opacity: 1; } }
-/* Faster on the left, Slower on the right, side by side: one column alone
-   keeps its own half, so the two never swap places */
-.r-letters { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; font-size: .85rem; }
-.r-col.up { grid-column: 1; }
-.r-col.mid { grid-column: 2; }
-.r-col.down { grid-column: 3; }
-.r-col.mid .lbl-ui { display: inline-flex; align-items: center; gap: 4px; }
-.r-col.mid .r-key { font-size: 1.1em; font-weight: 600; }
-/* only one kind: it takes the whole row */
-.r-col:only-child { grid-column: 1 / -1; }
-/* one column per kind (faster, slower): the label on top, one letter per line */
-.r-col { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.r-ch { display: inline-flex; gap: 5px; align-items: baseline; padding: 1px 8px; border-radius: 6px; background: var(--panel); font-variant-numeric: tabular-nums; }
-.r-ch b { font-weight: 600; font-size: 1.25em; color: var(--text); margin-right: 2px; }   /* the letter is the point */
-.r-ch small { font-size: .8em; margin-left: 1px; color: var(--sub); }
-.r-ch.up { color: var(--ok); }
-.r-ch.down { color: var(--error); }
+/* letters mastered in this round: the label with a green tick, the
+   letters as small keys in a row */
+.r-mastered .r-lbl { display: inline-flex; align-items: center; gap: 4px; }
+.r-keys { display: flex; gap: 6px; margin-top: .45em; }
+.r-keys .r-key { font-size: 1.1rem; font-weight: 600; }
 /* the words of the round in the text font, each coloured by its speed in
    this round (result.js speedBands): s1 slowest = red, through yellow, to
    s5 fastest = green; a mistyped letter is underlined in red. A long round
-   scrolls inside (about five lines) */
-.r-words { display: flex; flex-direction: column; gap: 6px; }
-.r-words .s1 { --sp: var(--error); }
-.r-words .s2 { --sp: color-mix(in srgb, var(--error) 50%, var(--accent-text)); }
-.r-words .s3 { --sp: var(--accent-text); }
-.r-words .s4 { --sp: color-mix(in srgb, var(--accent-text) 50%, var(--ok)); }
-.r-words .s5 { --sp: var(--ok); }
+   scrolls inside (about five lines). The same colours paint the chart. */
+.result .s1 { --sp: var(--error); }
+.result .s2 { --sp: color-mix(in srgb, var(--error) 50%, var(--accent-text)); }
+.result .s3 { --sp: var(--accent-text); }
+.result .s4 { --sp: color-mix(in srgb, var(--accent-text) 50%, var(--ok)); }
+.result .s5 { --sp: var(--ok); }
 /* the chart of word speeds: the wpm scale on the left, the plot on the
    right; the dots are placed in percent, so it fits any width */
-.r-chart { display: flex; gap: 8px; height: 88px; margin: 4px 0 6px; }
-@media (max-width: 640px) { .r-chart { height: 72px; } }   /* phone: the button stays closer */
-/* a short window (a laptop, about 650 px inside the browser): a lower chart,
-   two lines of words (the rest scrolls inside) and less room between the
-   parts, so the whole result still fits without scrolling */
-/* a big desktop window: the whole result a quarter bigger, so it fills the
-   room the hidden keyboard left (owner, 2026-10-16) */
-@media (min-width: 1000px) and (min-height: 820px) {
-  .result { zoom: 1.25; }
-}
+.r-chart { display: flex; gap: 8px; }
+/* a short window (a laptop, about 650 px inside the browser): smaller
+   numbers, two lines of words (the rest scrolls inside) and less room
+   between the parts, so the whole result still fits without scrolling */
 @media (max-height: 720px) and (min-width: 641px) {
-  .r-chart { height: 60px; }
+  .r-body { gap: 16px; }
+  .r-num.big > b { font-size: 2.8rem; }
+  .r-num.mid > b { font-size: 1.7rem; }
+  .r-hero { gap: 10px; }
   .r-wordlist { max-height: calc(1.75em * 2); }
-  .result .r-sec + .r-sec { margin-top: 10px; padding-top: 10px; }
-  .r-num b { font-size: 1.7rem; }
   .result .r-foot { margin-top: 8px; }
 }
 .r-axis {
@@ -1063,11 +1066,7 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
 .r-w:hover, .r-w:focus-visible { background: color-mix(in srgb, var(--text) 10%, transparent); outline: none; }
 .r-w i { font-style: normal; text-decoration: underline 2px var(--error); text-underline-offset: 4px; }
 .r-facts { font-size: .8rem; color: color-mix(in srgb, var(--text) 65%, var(--sub)); }
-.result .r-foot { display: flex; justify-content: center; margin-top: 12px; }   /* the only way on, with Enter / Esc / Tab */
-/* mastered letters: a green tick, the label, each letter as a small key
-   (the same chip as "Next n" in the status line) */
-.r-main.r-mastered { gap: 8px; }
-.r-main.r-mastered .r-lbl { font-size: .9rem; margin-right: 2px; }
+.result .r-foot { display: flex; justify-content: center; margin-top: 26px; }   /* the only way on, with Enter / Esc / Tab */
 .r-tick { width: 16px; height: 16px; fill: none; stroke: var(--ok); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .r-key {
   display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; border-radius: 5px;
@@ -1197,14 +1196,22 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .letters-caption:has(.mode-note) { flex-wrap: wrap; row-gap: 2px; }
   .letters-caption .mode-note { flex-basis: 100%; text-align: center; white-space: nowrap; }
   .stat { padding: 0 9px 0 7px; gap: 5px; }
-  .stat.ok .lbl { display: none; }     /* phone: the tick says "mastered", the letters take the room */
   #view-type { margin-block: 4px auto; }   /* phone: right under the header (the phone keyboard covers the bottom) */
   .note { font-size: .78rem; border-radius: 14px; }   /* phone: a long message may take two lines */
   .text-box { padding: 14px 16px 14px 34px; border-radius: 12px; }
   .text-box::before { left: 14px; top: 48px; }   /* 14 + 28 + 6 */
   .text, .text-box::before { font-size: clamp(1.1rem, 5.2vw, 1.4rem); }
   .r-main { font-size: .85rem; }
-  .r-num b { font-size: 1.7rem; }
+  /* phone: the top stacks, the two big numbers side by side over the chart */
+  .r-body { gap: 18px; }
+  .r-top { grid-template-columns: 1fr; gap: 14px; }
+  .r-hero { flex-direction: row; gap: 32px; }
+  .r-graph .r-chart { flex: none; height: 90px; min-height: 0; }
+  .r-row { gap: 12px 28px; }
+  .r-num.big > b { font-size: 2.6rem; }
+  .r-num.mid > b { font-size: 1.5rem; }
+  .r-chars { font-size: .9rem; }
+  .result .r-foot { margin-top: 18px; }
   .r-next { width: 100%; justify-content: center; min-height: 46px; }   /* phone: the whole width, easy to hit */
 }
 
