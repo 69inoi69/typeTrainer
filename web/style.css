@@ -664,6 +664,7 @@ body:not(.caret-block) .caret {
 }
 .hints kbd { background: var(--panel); color: color-mix(in srgb, var(--text) 60%, var(--sub)); padding: 1px 6px; border-radius: 4px; }
 @media (pointer: coarse) { .bottom { display: none; } }
+body[data-view="stats"] .hints .type-only { display: none; }   /* nothing to stop, no keyboard on stats */
 button {
   color: var(--sub); background: var(--panel); border: 0;
   padding: 8px 14px; border-radius: 8px; cursor: pointer;
