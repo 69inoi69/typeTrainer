@@ -466,18 +466,18 @@ body[data-mode="free"] .learn-only { display: none; }
   /* A fixed window of 3 lines, like a screen: only its content changes, the
      card never grows or shrinks between exercises. A longer text scrolls up
      line by line while you type (typing.js, placeCaret). */
-  height: calc(3 * 1.7em); overflow: hidden; scroll-behavior: smooth;
+  height: calc(3 * 1.7em); overflow: hidden; scroll-behavior: var(--feel-scroll, auto);
   letter-spacing: .02em; color: var(--sub); word-break: break-word;
   text-align: left;                /* like a terminal: lines start at the prompt */
   transition: filter var(--med), opacity var(--med);
 }
 .text.swap { animation: text-in var(--med) var(--ease); }   /* new exercise fades in */
 @keyframes text-in { from { opacity: 0; transform: translateY(4px); } }
-/* words added while you type (typing.js, appendPortions): a soft fade-in,
-   opacity and blur only, so nothing on the screen moves */
-.text span.new { animation: word-in 350ms ease-out; }
+/* words added while you type (typing.js, reveal): a short fade-in,
+   opacity only, so nothing on the screen moves (length: web/feel.js) */
+.text span.new { animation: word-in var(--feel-word-in-ms, 0ms) ease-out; }
 .text span.later { visibility: hidden; }   /* a word not shown yet: keeps its place (typing.js reveal) */
-@keyframes word-in { from { opacity: .2; filter: blur(2px); } }
+@keyframes word-in { from { opacity: .2; } }
 .text-box.blurred .text { filter: blur(3px); opacity: .5; }
 .focus-hint {
   position: absolute; inset: 0; display: flex; opacity: 0; pointer-events: none;
@@ -516,7 +516,7 @@ body[data-mode="free"] .learn-only { display: none; }
 }
 
 /* The caret is ONE element moved with the CSS "translate" property (GPU), so
-   it glides from letter to letter instead of jumping. JS sets its position
+   it glides from letter to letter (briefly: snappy, not floaty). JS sets its position
    and height. "scale" stays free for the Tab nudge and scales in place. */
 .caret {
   /* a block caret, one character wide (the font is monospace, so 1ch is
@@ -527,7 +527,7 @@ body[data-mode="free"] .learn-only { display: none; }
   border-radius: 3px; pointer-events: none;
   box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 35%, transparent);
   will-change: translate;
-  transition: translate 100ms cubic-bezier(.25, .8, .4, 1);   /* glides, no snapping */
+  transition: translate var(--feel-caret-ms, 0ms) ease-out;   /* a short glide (web/feel.js) */
   animation: blink 1s steps(1) infinite;
 }
 .caret.jump { transition: none; }   /* new round, resize: no glide */
