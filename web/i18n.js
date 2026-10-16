@@ -11,7 +11,7 @@
 //
 // Layer: bottom. Imports nothing; almost every module imports t().
 // To add an interface text: one key in the en block below, in the tone of
-// docs/VOICE.md (only English is shown for now, see AGENTS.md; the pl, uk and
+// docs/UI-TEXT.md (only English is shown for now, see AGENTS.md; the pl, uk and
 // ru blocks fall back to English and get redone when those languages return), then t("key") in the code or
 // data-i18n="key" in index.html. Never write interface text in another file
 // (the one exception is file-check.js). For a random choice, number the keys
@@ -26,10 +26,10 @@ const I18N = {
     "settings.round": "Round", "settings.look": "Screen",
     "settings.words": "Words", "settings.wordsNote": "A round ends after this many words",
     "settings.time": "Time", "settings.timeNote": "A round ends after this many seconds", "settings.sec": "s",
-    "settings.live": "Live speed", "settings.liveNote": "WPM and accuracy above the text while you type",
-    "settings.keyboard": "Keyboard", "settings.keyboardNote": "The keys and hands under the text",
-    "settings.caret": "Caret", "settings.caretNote": "The mark where you type", "settings.line": "Line", "settings.block": "Block",
-    "settings.theme": "Theme", "settings.themeNote": "Colours of the whole page", "settings.dark": "Dark", "settings.light": "Light",
+    "settings.live": "Live speed", "settings.liveNote": "Shows your WPM and accuracy as you type",
+    "settings.keyboard": "Keyboard", "settings.keyboardNote": "Shows the keyboard and which finger to use, under the text",
+    "settings.caret": "Caret", "settings.caretNote": "Marks where the next letter goes", "settings.line": "Line", "settings.block": "Block",
+    "settings.theme": "Theme", "settings.dark": "Dark", "settings.light": "Light",
     "settings.on": "On", "settings.off": "Off",
     "len.words": "{n} words", "len.time": "{n} s",
     "tip.resetConfirm": "Click again to delete everything",
@@ -157,8 +157,8 @@ const I18N = {
     "help.keyEsc": "Stop the round", "help.keyNext": "Next round (on the result)", "help.keyView": "Learn / stats", "help.keyKb": "Keyboard on / off",
     "help.keyTab": "No restart: the trainer learns from your mistakes",
     "settings.data": "Your progress", "data.save": "Save", "data.load": "Load", "data.reset": "Reset", "data.resetSure": "Sure?",
-    "data.backup": "Backup", "data.backupNote": "All your progress in one file. Loading a file replaces what is here",
-    "data.resetTitle": "Start over", "data.resetNote": "Deletes all rounds, letters and the typing test result. Cannot be undone",
+    "data.backup": "Backup", "data.backupNote": "Save downloads all your progress as a file. Load replaces your current progress with the one in the file",
+    "data.resetTitle": "Start over", "data.resetNote": "Deletes all your rounds in Learn and Freetype, your letters and the typing test result. This cannot be undone",
     "tour.letters": "<b>Your letters.</b> The yellow one is in focus: your weakest right now. A green tick means mastered. Master every open letter and the next one opens.",
     "tour.text": "<b>Type here.</b> A wrong letter turns red and you keep going. The focus letter is tinted in the text. At the end of a round you see what changed.",
     "tour.lang": "<b>Four languages.</b> Each has its own letters and progress. Switch your system keyboard layout too.",

@@ -18,7 +18,7 @@ Everything the trainer does, screen by screen. For a quick overview see the
    statistics. If the port is taken, change `Addr` in
    `internal/config/config.go`.
 6. **Stop** the server with `Ctrl + C`. Without a database (below) progress
-   is lost then: save it first (settings, **your statistics: save**) and load it
+   is lost then: save it first (**Settings → Your progress → Save**) and load it
    back next time.
 
 After `git pull` restart the server: the web files are built into the program.

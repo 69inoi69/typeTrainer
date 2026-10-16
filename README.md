@@ -15,39 +15,30 @@
 **Work in progress.** The practical part of an engineering thesis at the
 Lublin University of Technology (2027).
 
-## Idea
+## What it does
 
-- **Real words only**, no generated letter combinations.
-- **It adapts to you while you type.** Every keypress is measured; the text
-  is built a few words at a time, so letters you miss or type slowly show up
-  more often a line or two later, and mistyped words come back. Plain
-  statistics, no machine learning, so every step can be explained.
-- **Letters open gradually**, most frequent first, once the open ones are
-  accurate and fast enough.
-- **Two modes: Learn and Freetype.** *Learn* is the learning mode and the
-  main one: the algorithm decides what you practise. *Freetype* (words from
-  the whole list, its own history, nothing shared with learning) opens when
-  every letter is open, or after a one-time typing test. It is kept simple
-  for now.
-- **You see what to practise.** Above the text, a row of letters marks the
-  one in focus, the mastered ones and the next to open. The keyboard and the
-  hands show the finger for the next key. The statistics screen shows every
-  round, a keyboard coloured by difficulty and every letter from weakest to
-  strongest, all on one screen.
-- **Take your numbers with you:** the statistics screen copies a short text
-  summary or saves a picture card with your speed and letters.
-- **Settings change how much and how it looks, never what:** round length
-  (10, 30 or 60 words, or 30 or 60 seconds), live numbers on or off, caret
-  style, a dark and a light theme, keyboard on or off. Help and settings
-  open as panels in the same style as everything else.
-- **Two short first-visit guides:** the basics of touch typing, and how
-  this site works.
-- English for now. Polish, Ukrainian and Russian are ready in the data
-  (word lists, layouts) and come back once the English version is polished.
-- Works on a phone too, with the navigation in a bar at the bottom.
-- **Accounts** (with the local server): sign up, log in, and your progress is
-  kept under your account, in PostgreSQL if `DATABASE_URL` is set, otherwise
-  in the server's memory.
+- **Real words only.** No made-up letter combinations.
+- **Adapts while you type.** Every keypress is timed and every mistake is
+  noted. The text is built a few words at a time, so letters you miss or
+  type slowly come up more often a line or two later. Plain statistics, no
+  machine learning.
+- **Letters open one by one**, most frequent first. A new letter opens when
+  every open letter is typed with few mistakes at 30 words per minute.
+- **Two modes.** *Learn* is the main one: the trainer picks the words.
+  *Freetype* gives words from the whole list and has its own history; it
+  never changes your Learn progress. Freetype opens when every letter is
+  open, or after a one-time typing test.
+- **Statistics:** every round, a keyboard coloured by difficulty, and every
+  letter from weakest to strongest. You can copy a short summary or save it
+  as a picture.
+- **Settings:** round length (10, 30 or 60 words, or 30 or 60 seconds), live
+  speed, keyboard, caret style, dark or light theme.
+- **Works on a phone.**
+- **English only for now.** Polish, Ukrainian and Russian data is in the
+  repository and comes back later.
+- **Accounts** work only when you run the server yourself (see below). The
+  website has no accounts and forgets your progress when you close the tab;
+  to keep it, use Save in Settings and Load it next time.
 
 ## Run it locally
 
@@ -59,24 +50,23 @@ go run .
 
 Then open <http://localhost:3000>. Tests: `go test ./...`
 
-Progress lives in memory until the server stops. To keep it, point the
-server at PostgreSQL:
+Without a database, progress is lost when the server stops. To keep it, use
+PostgreSQL:
 `DATABASE_URL=postgres://user:password@localhost:5432/typetrainer go run .`
-(Windows steps: [docs/USER-GUIDE.md](docs/USER-GUIDE.md)).
+Step by step on Windows: [docs/USER-GUIDE.md](docs/USER-GUIDE.md).
 
-Go standard library plus one module (the PostgreSQL driver), plain
-HTML/CSS/JavaScript, no build step. The
-website runs the same Go code compiled to WebAssembly.
+Built with the Go standard library plus the PostgreSQL driver, and plain
+HTML, CSS and JavaScript with no build step. The website runs the same Go
+code compiled to WebAssembly.
 
 ## Documentation
 
-- [docs/ALGORITHM.md](docs/ALGORITHM.md): the adaptive model, every formula and parameter
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): packages, data flow, API
 - [docs/USER-GUIDE.md](docs/USER-GUIDE.md): running it on Windows, every screen, button and shortcut
-- [docs/LITERATURE.md](docs/LITERATURE.md): research the model builds on
-- [docs/VOICE.md](docs/VOICE.md): how the app talks to users
-- [docs/COMMENTING.md](docs/COMMENTING.md): how comments in the code are written
-- [docs/DEVELOPMENT-LOG.pdf](docs/DEVELOPMENT-LOG.pdf): how the project was built and why
+- [docs/ALGORITHM.md](docs/ALGORITHM.md): how the trainer picks letters and words, every formula and number
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the code is organised, the API
+- [docs/LITERATURE.md](docs/LITERATURE.md): research the algorithm builds on
+- [docs/UI-TEXT.md](docs/UI-TEXT.md): rules for every text in the interface
+- [docs/COMMENTING.md](docs/COMMENTING.md): rules for comments in the code
 
 ## Credits
 
