@@ -735,6 +735,10 @@ async function finishRound() {
 
     const r = compareStats(roundBefore, S.lastStats);
     markMastered(r.mastered);
+    // no focus on the result: it was the letter of the round's last words,
+    // and the next round picks its own; shown here it read like a verdict
+    // on this round. showPortion sets it again when the next round starts.
+    if (S.exercise) S.exercise.focus = "";
     renderLetters();        // the letters bar agrees with the result at once, not only after it closes
     if (r.best) FX.burstFrom(el.wpm, 80);
     await showResult({ wpm, accuracy, consistency: res.consistency, newLetter: roundNewLetter, ...r, words: typedWords(), ...roundFacts(end) });

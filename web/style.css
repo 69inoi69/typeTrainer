@@ -564,15 +564,20 @@ body[data-mode="free"] .letter-row { display: none; }
    the text stands on the page, bigger; the keyboard a bit smaller (the
    text is the point); the text, hands and keyboard together in the middle
    of the free height. The width no longer follows the keyboard, so the
-   header, the letters and the text keep one width. --view-centred tells
-   fitKeyboard (keyboard.js) that the room above the view is only centring,
-   not room taken. */
+   header, the letters and the text keep one width. The letters stay at the
+   top, where the result screen has them too, so they never move when a
+   round ends or starts; the text (with the hands and the keyboard) is
+   centred in the room under them: two equal auto margins, above the text
+   and after the last element (::after, so it works with the keyboard off).
+   --view-centred tells fitKeyboard (keyboard.js) that those margins are
+   only centring, not room taken. */
 @media (min-width: 1000px) and (pointer: fine) {
   :root { --tw: min(100vw - 32px - 2 * var(--side), 48rem); --u-max: 48px; }
-  .text-box, .text-box:focus-within, .text-box:focus { background: none; box-shadow: none; padding: 0 0 0 40px; margin-top: 0; }
+  .text-box, .text-box:focus-within, .text-box:focus { background: none; box-shadow: none; padding: 0 0 0 40px; margin-top: auto; }
   .text-box::before { left: 0; top: 38px; }   /* next to the first line: under the live line */
   .text, .text-box::before { font-size: 2rem; }
-  #view-type { margin-block: auto; --view-centred: 1; }
+  #view-type:not([hidden]) { flex: 1; display: flex; flex-direction: column; margin-block: 0; --view-centred: 1; }
+  #view-type::after { content: ""; margin-top: auto; }
 }
 .text-box.blurred .text { filter: blur(3px); opacity: .5; }
 .focus-hint {
@@ -948,6 +953,7 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
 @media (pointer: fine) {
   #view-type:not([hidden]):has(> .text-box.resulting) { flex: 1; display: flex; flex-direction: column; }
   #view-type > .text-box.resulting { margin-block: auto; }
+  #view-type:has(> .text-box.resulting)::after { content: none; }   /* the typing screen's centring (above): not a third share */
 }
 .result {
   position: relative; font-size: 1rem;
@@ -1205,7 +1211,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   /* phone: the top stacks, the two big numbers side by side over the chart */
   .r-body { gap: 18px; }
   .r-top { grid-template-columns: 1fr; gap: 14px; }
-  .r-hero { flex-direction: row; gap: 32px; }
+  /* two columns, so "New best" (result.js) takes its own line above the
+     numbers, as on a desktop, and never pushes the speed aside */
+  .r-hero { display: grid; grid-template-columns: auto auto; justify-content: center; gap: 10px 32px; }
+  .result .r-best { grid-column: 1 / -1; margin: 0; }
   .r-graph .r-chart { flex: none; height: 90px; min-height: 0; }
   .r-row { gap: 12px 28px; }
   .r-num.big > b { font-size: 2.6rem; }

@@ -47,13 +47,15 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   word at most, so you can finish a word you skipped. Space in the middle of a word jumps to the next one. A fixed
   mistake still counts for the letter's statistics.
 - The row of letters at the top shows your progress: open letters, the letter in
-  **focus** (yellow, your weakest right now), mastered letters (a small green tick), and
+  **focus** (yellow: the next few words are built around it; it is picked
+  anew every few words, weaker letters more often), mastered letters (a small green tick), and
   locked letters (outlined). A letter is mastered when you have typed it at
   least 20 times, recently with under 5% mistakes and at 30 wpm or faster
   (the numbers come from the server's settings). Master every open letter
   and the next one opens.
   Under it, small status pills: focus letter, mastered open letters (with a
-  bar) and the next letter; hover them for details. Caps Lock and wrong layout
+  bar) and the next letter; hover them for details. The result screen shows
+  no focus: the next round picks its own. Caps Lock and wrong layout
   warnings appear in the same place, on top of the pills, so nothing moves.
 - The keyboard shows the next key in its finger color; keys you do not need yet
   are dimmed. Above the keyboard two hands light up the finger that presses
@@ -147,7 +149,7 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   words of the round as you typed them, a letter that had a mistake
   underlined in red. Each word is coloured by its speed in this round, from
   red (your slowest words) through yellow to green (your fastest); the
-  legend next to "Words" shows the wpm range of each colour. The steps are
+  legend above the chart ("Speed of each word, wpm") shows the wpm range of each colour. The steps are
   equal parts between your slowest and fastest word, as on Monkeytype, so
   the colours compare words of one round, not you with anyone. When every
   word had about the same speed, all are yellow and there is no legend.
