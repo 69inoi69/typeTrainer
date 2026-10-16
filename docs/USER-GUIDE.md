@@ -71,13 +71,16 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
 - **Learn** and **Freetype** in the navigation choose the mode. **Learn** is
   learning, the trainer: it picks words for your weak letters and opens new
   ones. **Freetype** is free practice: words from the whole list, its own
-  history, and nothing changes in learning. **stats** shows the statistics
+  history, and nothing changes in learning (nothing is shown above its
+  text). **stats** shows the statistics
   of the mode you were in; once freetype is open, a small learn / freetype
   switch on the stats screen changes the mode there too. Freetype opens when every letter is open, or
   right away if you pass the **typing test**: while it is locked (a small
   lock on its icon), clicking it starts the test, one round of 30 words at
   30 wpm with 97% accuracy. Only a full round counts (`Esc` stops the test);
-  you can take it again any time. The mode is remembered per language.
+  if it does not pass, the result's button says **Try again** and starts
+  the test once more (the Learn tab goes back to learning). The mode is
+  remembered per language.
 - **Settings** (the gear in the navigation) opens one panel with everything
   that is rarely changed, in three sections (round, screen, your progress);
   every option has a one-line note on what it does:
@@ -157,7 +160,9 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   jokes or tips there. The result stays until you go on on purpose:
   **Enter**, **Esc**, **Tab** or the yellow-outlined **Next round** button
   (a tap on it also opens the phone keyboard, so you can type at once) (letters do nothing there, and there is no
-  timer). Switching to another mode from there closes it too.
+  timer). Switching to another mode from there closes it too. On a phone
+  the keyboard closes when the round ends, and it stays closed while the
+  result is open, also after a look at the stats and back.
 - Small messages under the letters are only used outside typing (a file
   saved or loaded).
 - **Help** (the **?** in the navigation) opens a panel about the screen you
@@ -183,7 +188,10 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   colour.
 - The text window has one fixed size (3 lines): only its content changes. A
   longer text scrolls up line by line, the line you type stays the second one.
-- The **profile** in the top right corner: with the local server (`go run .`)
+- The **profile** in the top right corner shows your name on the left of
+  the picture ("Guest" until you set one; "Log in" where accounts work and
+  you are not logged in; on a phone a long name ends with "…"). With the
+  local server (`go run .`)
   you can **sign up** or **log in** there (name: 3–20 of a–z, 0–9, `_`, `-`;
   password: at least 8 characters). Your progress is then kept under your
   account; **log out** returns to the guest. Without an account every
@@ -198,8 +206,9 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   up), so "how am I doing?" takes a glance:
   - a row of round lengths and the numbers: rounds, best wpm, and the
     averages of the last 10 rounds (wpm, accuracy, consistency). Rounds of
-    different lengths are never mixed: the row shows the length chosen in
-    the settings, and you can pick another length you have played;
+    different lengths are never mixed: the row always has all five lengths
+    (10, 30, 60 words, 30, 60 s), it opens on the one chosen in the
+    settings, and a length with no rounds yet shows empty numbers;
   - the speed of every round (hover a bar for its numbers);
   - side by side (learning only): a **difficulty keyboard** (grey keys, the
     redder the harder the letter is for you, dashed = no data yet) and every

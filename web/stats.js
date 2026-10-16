@@ -94,11 +94,12 @@ modeFilter.addEventListener("click", (e) => {
 // other: the rounds of a length other than the chosen one, picked on this
 // screen ({free, length, data: the /stats or /freeplay/stats answer}).
 let other = null;
-// A button per length found in the history, plus the chosen one; known
-// lengths in the settings' order.
+// A button for every round length, always, in the settings' order (owner,
+// 2026-10-16: the row must not change with the history or the settings),
+// plus any older length found in the history that the settings no longer
+// offer. A length with no rounds yet shows the empty stats.
 function renderLengthFilter(have, shown) {
-  const all = new Set([...have, S.settings.length]);
-  const ids = [...LENGTHS.filter((id) => all.has(id)), ...[...all].filter((id) => !LENGTHS.includes(id))];
+  const ids = [...LENGTHS, ...new Set(have.filter((id) => !LENGTHS.includes(id)))];
   el.lengthFilter.innerHTML = ids.map((id) =>
     `<button type="button" role="tab" data-length="${id}" aria-selected="${id === shown}">${lengthLabel(id)}</button>`).join("");
 }
