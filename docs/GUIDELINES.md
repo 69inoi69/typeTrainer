@@ -76,8 +76,10 @@ there is a reason not to).
 - Design each size for how it is used, not as a shrunken desktop: on a phone
   the thumb reaches the bottom, the screen is narrow and the system keyboard
   takes half of it.
-- Check every change at about 390 px, 768 px and 1280 px wide. Nothing may
-  be clipped, overlap, scroll sideways or wrap into one word per line.
+- Check every change at about 390 px, 768 px and 1280 px wide, and drag the
+  window between them: these widths are spot checks, not a guarantee.
+  Nothing may be clipped, overlap, scroll sideways or wrap into one word per
+  line.
 - When a row does not fit, decide what wraps and how (see the length
   filter in `style.css`), instead of letting the browser decide.
 
@@ -117,7 +119,8 @@ consequences, the same word for the same thing. All text lives in
 - Selected states use `aria-pressed` / `aria-selected` and the accent fill.
 - A destructive action needs a second click (Reset turns red and asks
   "Sure?") and says that it cannot be undone.
-- Results stay on screen until the user presses Next round, Enter or Esc.
+- Results stay on screen until the user presses Next round, Enter, Esc or
+  Tab (Tab only closes the result; it never restarts a round).
 - Short messages go in a toast (`web/fx.js`); live areas use
   `aria-live="polite"`.
 
