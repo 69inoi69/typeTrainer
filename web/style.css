@@ -116,7 +116,7 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
 /* Small and dim while you read, brighter while you type: you can glance at
    them, but they do not pull the eye away from the text. */
 .live {
-  display: flex; gap: 18px; align-items: center; height: 28px; margin: 0 0 10px;
+  display: flex; gap: 18px; align-items: center; height: 28px; margin: 0 0 10px; min-width: 0;
   opacity: .5; transition: opacity .4s var(--ease);
 }
 .text-box.typing .live, .live.final { opacity: 1; }
@@ -130,13 +130,15 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
 
 /* streak: looks like the numbers next to it (big number, small label on the
    same line). The longer the streak, the hotter the colour (data-tier). */
+/* Hidden, it takes no room (display: none): an invisible streak used to
+   push the stop button out of the card on a phone. */
 .streak {
   --sc: var(--ok);
   margin-left: auto;              /* the right end of the line */
-  display: flex; align-items: center; gap: 4px; cursor: default;   /* the words are in the tooltip */
-  opacity: 0; transform: translateY(-4px); transition: opacity var(--med), transform var(--med) var(--ease);
+  display: none; align-items: center; gap: 4px; cursor: default;   /* the words are in the tooltip */
 }
-.streak.show { opacity: 1; transform: none; }
+.streak.show { display: flex; animation: streak-in var(--med) var(--ease); }
+@keyframes streak-in { from { opacity: 0; transform: translateY(-4px); } }
 .streak span {
   font-size: 1.3rem; line-height: 1; color: var(--sc); font-variant-numeric: tabular-nums; display: inline-block;
   min-width: 2ch; transition: color .4s var(--ease), text-shadow .4s var(--ease);
@@ -571,14 +573,15 @@ button:disabled { opacity: .35; cursor: default; }
 button:disabled:hover { color: var(--sub); background: none; }
 button:disabled:active { transform: none; }
 
-/* "stop" at the end of the live line (touch screens) */
+/* "stop" at the right end of the live line (touch screens), inside the card */
 .stop-btn {
-  width: 30px; height: 30px; padding: 0; margin-left: 10px; border-radius: 999px; flex: none;
-  display: grid; place-items: center; color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, var(--panel));
+  width: 28px; height: 28px; padding: 0; margin-left: 12px; border-radius: 8px; flex: none;
+  display: grid; place-items: center; color: var(--sub);
+  background: none; box-shadow: var(--ring);
 }
+.stop-btn:hover, .stop-btn:active { color: var(--text); }
 .streak:not(.show) + .stop-btn { margin-left: auto; }
-.stop-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+.stop-btn svg { width: 14px; height: 14px; fill: currentColor; stroke: none; }
 
 /* ---------- stats view ---------- */
 /* One screen, no scrolling at 1280x800 and up: a row of numbers, the chart,
@@ -727,13 +730,13 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 @keyframes note-bar { to { transform: scaleX(1); } }
 
 /* ---------- result screen (result.js) ---------- */
-/* It takes the place of the text, in the same fixed window: the text hides,
-   the card keeps its size. */
-.text-box.resulting .text, .text-box.resulting::before { visibility: hidden; }
+/* It takes the place of the text: at least the height of the 3-line text
+   window, so the card keeps its size; if a narrow screen needs more lines,
+   the card grows instead of the lines running over each other. */
+.text-box.resulting .text, .text-box.resulting::before { display: none; }
 .result {
-  position: absolute; left: 52px; right: 32px; top: 54px;    /* where the text is */
-  font-size: clamp(1.1rem, 3.6vw, 1.6rem); height: calc(3 * 1.7em);
-  display: flex; flex-direction: column; justify-content: center; gap: 8px;
+  position: relative; font-size: clamp(1.1rem, 3.6vw, 1.6rem); min-height: calc(3 * 1.7em);
+  display: flex; flex-direction: column; justify-content: center; gap: 10px; padding-bottom: 22px;
   cursor: pointer; animation: view-in .25s var(--ease);
 }
 .result[hidden] { display: none; }
@@ -755,10 +758,10 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 .r-ch.up { color: var(--ok); }
 .r-ch.down { color: var(--error); }
 .r-facts { font-size: .8rem; color: color-mix(in srgb, var(--text) 65%, var(--sub)); }
-.r-next { position: absolute; right: 0; bottom: 2px; font-size: .72rem; color: var(--sub); }
+.r-next { position: absolute; right: 0; bottom: 0; margin: 0; font-size: .72rem; color: var(--sub); }
 .r-next kbd { background: var(--panel); }
 .r-bar {                           /* time left; full = the next text */
-  position: absolute; left: 0; right: 0; bottom: -10px; height: 2px; border-radius: 2px;
+  position: absolute; left: 0; right: 0; bottom: -12px; height: 2px; border-radius: 2px;
   background: color-mix(in srgb, var(--accent) 60%, transparent); transform-origin: left; transform: scaleX(0);
   animation: note-bar var(--ms, 6000ms) linear forwards;
 }
@@ -876,7 +879,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .note { font-size: .78rem; border-radius: 14px; }   /* phone: a long message may take two lines */
   .text-box { padding: 14px 16px 14px 34px; border-radius: 12px; }
   .text-box::before { left: 14px; top: 48px; }   /* 14 + 28 + 6 */
-  .result { left: 34px; right: 16px; top: 48px; }
+  .text-box.resulting { padding-left: 16px; }   /* no prompt sign: the result uses the room */
+  .r-main { font-size: .95rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

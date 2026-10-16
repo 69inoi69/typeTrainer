@@ -108,7 +108,7 @@ const I18N = {
     "result.faster": "faster",
     "result.slower": "slower",
     "result.consistency": "consistency <b>{pct}%</b>",
-    "result.next": "<kbd>space</kbd> next",
+    "result.next": "<kbd>space</kbd> next", "result.nextTouch": "tap to go on",
     "mode.learn": "learning", "mode.free": "free",
     "tip.learn": "learning: the trainer picks words for your weak letters",
     "tip.free": "free practice: words from the whole list, its own history",

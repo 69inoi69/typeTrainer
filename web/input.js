@@ -92,6 +92,12 @@ helpBtn.addEventListener("click", () => {
   helpBtn.setAttribute("aria-expanded", "true");
 });
 helpCard.addEventListener("click", (e) => { if (e.target.closest(".menu-item")) closeHelp(); });
+// Both guides are about the typing screen (the tour points at its parts), so
+// from the stats screen a guide first goes back there. Capture phase: this
+// runs before the guide's own click handler (intro.js, tour.js) starts it.
+helpCard.addEventListener("click", (e) => {
+  if (e.target.closest(".menu-item") && S.view !== "type") setView("type");
+}, true);
 document.addEventListener("pointerdown", (e) => { if (helpOpen() && !help.contains(e.target)) closeHelp(); });
 $("btn-settings").addEventListener("click", closeHelp);   // one panel at a time
 

@@ -99,3 +99,6 @@ $("tour-next").addEventListener("click", (e) => { e.currentTarget.blur(); next()
 $("tour-skip").addEventListener("click", closeTour);
 $("btn-tour").addEventListener("click", (e) => { e.currentTarget.blur(); startTour(); });
 addEventListener("resize", () => { if (tourOpen()) show(); });
+// a screen that was just switched to slides in (style.css, .view): place the
+// ring again once it has arrived
+addEventListener("animationend", (e) => { if (tourOpen() && e.target.classList?.contains("view")) show(); });
