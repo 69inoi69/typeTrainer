@@ -381,8 +381,11 @@ body[data-mode="free"] .learn-only { display: none; }
   flex: 1; width: 100%; max-width: calc(var(--tw) + 32px); margin: 0 auto; padding: 0 16px 12px;
   display: flex; flex-direction: column;
 }
-/* auto margins in a flex column = vertically centred; stats stay at the top */
-#view-type { margin-block: auto; padding-bottom: 1.5vh; }
+/* The text starts at the same height on every tab, with or without the
+   keyboard under it: centring it moved the text whenever the keyboard
+   came or went (Learn has it, Freetype hides it), and on a phone it left a
+   big hole under the header. */
+#view-type { margin-block: clamp(4px, 3vh, 32px) auto; }
 .view { animation: view-in var(--med) var(--ease); }
 @keyframes view-in { from { opacity: 0; transform: translateY(6px); } }
 
@@ -1009,12 +1012,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .letters-caption .mode-note { flex-basis: 100%; text-align: center; white-space: nowrap; }
   .stat { padding: 0 9px 0 7px; gap: 5px; }
   .stat .mini { display: none; }       /* phone: the number says it, the bar takes the room */
-  /* phone: no vertical centring (it left a big hole under the header, and
-     the phone keyboard covers the bottom anyway): content starts right
-     under the header */
-  #view-type { margin-block: 4px 0; padding-bottom: 0; }
-  /* ...but with the on-screen keyboard hidden there is room: centre again */
-  body.kb-hidden #view-type { margin-block: auto; padding-bottom: 8vh; }
+  #view-type { margin-block: 4px auto; }   /* phone: right under the header (the phone keyboard covers the bottom) */
   .note { font-size: .78rem; border-radius: 14px; }   /* phone: a long message may take two lines */
   .text-box { padding: 14px 16px 14px 34px; border-radius: 12px; }
   .text-box::before { left: 14px; top: 48px; }   /* 14 + 28 + 6 */
