@@ -966,6 +966,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .letter-row { gap: 4px; flex-wrap: wrap; }   /* phone: one row would make the chips tiny */
   .chip { font-size: .8rem; flex: none; width: 1.6em; height: 1.6em; }
   .letters-caption { gap: 4px; }
+  /* test / freetype: the note goes under the pill (it never changes during
+     the round, so the slot growing by a line does not make anything jump) */
+  .letters-caption:has(.mode-note) { flex-wrap: wrap; row-gap: 2px; }
+  .letters-caption .mode-note { flex-basis: 100%; text-align: center; white-space: nowrap; }
   .stat { padding: 0 9px 0 7px; gap: 5px; }
   .stat .mini { display: none; }       /* phone: the number says it, the bar takes the room */
   /* phone: no vertical centring (it left a big hole under the header, and

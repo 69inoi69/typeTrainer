@@ -99,6 +99,6 @@ function renderFreeLetters() {
   for (const key of Object.values(S.keyEls)) key.classList.remove("locked");
   if (S.altgrEl) S.altgrEl.classList.remove("locked");
   el.lettersCaption.innerHTML = S.mode === "test"
-    ? pill("test", "focus", "", t("mode.test"), `<b>${t("mode.testGoal")}</b>`) + `<span class="begin">${t("mode.testCaption")}</span>`
-    : pill("free", "", "", t("mode.free"), "") + `<span class="begin">${t("mode.freeCaption")}</span>`;
+    ? pill("test", "focus", "", t("mode.test"), `<b>${t("mode.testGoal")}</b>`) + `<span class="begin mode-note">${t("mode.testCaption")}</span>`
+    : pill("free", "", "", t("mode.free"), "") + `<span class="begin mode-note">${t("mode.freeCaption")}</span>`;
 }
