@@ -45,31 +45,31 @@
         <div class="profile-row">
           <span class="avatar big" id="avatar-big" aria-hidden="true"></span>
           <span class="profile-big-name" id="profile-big-name"></span>
-          <label class="profile-field" id="profile-field"><small data-i18n="profile.name">name</small>
+          <label class="profile-field" id="profile-field"><small data-i18n="profile.name">Name</small>
             <input id="profile-input" type="text" maxlength="20" autocomplete="off" spellcheck="false"></label>
         </div>
-        <small class="profile-label" data-i18n="profile.picture">picture</small>
+        <small class="profile-label" data-i18n="profile.picture">Picture</small>
         <div class="avatar-picks" id="avatar-picks"></div>
         <input id="avatar-file" type="file" accept="image/*" hidden>
         <!-- the account: shown only where accounts work (not on GitHub Pages) -->
         <div class="account" id="account" hidden>
           <form class="account-form" id="account-form" novalidate>
-            <label class="profile-field"><small data-i18n="account.name">account name</small>
+            <label class="profile-field"><small data-i18n="account.name">Account name</small>
               <input id="account-name" type="text" maxlength="20" autocomplete="username" spellcheck="false" autocapitalize="off"></label>
-            <label class="profile-field"><small data-i18n="account.password">password</small>
+            <label class="profile-field"><small data-i18n="account.password">Password</small>
               <input id="account-pass" type="password" maxlength="128" autocomplete="current-password"></label>
             <p class="account-msg" id="account-msg" aria-live="polite"></p>
             <div class="account-btns">
-              <button type="submit" data-act="login" data-i18n="account.login">log in</button>
-              <button type="submit" data-act="register" class="ghost" data-i18n="account.signup">sign up</button>
+              <button type="submit" data-act="login" data-i18n="account.login">Log in</button>
+              <button type="submit" data-act="register" class="ghost" data-i18n="account.signup">Sign up</button>
             </div>
           </form>
           <div class="account-in" id="account-in" hidden>
             <p class="account-as" id="account-as"></p>
-            <button type="button" id="account-out" data-i18n="account.logout">log out</button>
+            <button type="button" id="account-out" data-i18n="account.logout">Log out</button>
           </div>
         </div>
-        <p class="profile-soon" id="profile-soon" data-i18n="profile.soon">accounts and sync: coming soon™</p>
+        <p class="profile-soon" id="profile-soon" data-i18n="profile.soon">Accounts come with the full site. Here everything stays in this browser.</p>
       </div>
     </div>
     </div>
@@ -101,25 +101,25 @@
           <!-- wpm, raw and accuracy ("num") can be hidden in the settings (settings.js) -->
           <div class="metric num"><span id="wpm">0</span><small>wpm</small></div>
           <!-- raw: every keypress counts, wrong ones too (display only, never sent) -->
-          <div class="metric num raw" data-tip="tip.raw"><span id="raw">0</span><small data-i18n="metric.raw">raw</small></div>
-          <div class="metric num"><span id="acc">100</span><span class="pct">%</span><small data-i18n="metric.acc">acc</small></div>
+          <div class="metric num raw" data-tip="tip.raw"><span id="raw">0</span><small data-i18n="metric.raw">Raw</small></div>
+          <div class="metric num"><span id="acc">100</span><span class="pct">%</span><small data-i18n="metric.acc">Acc</small></div>
           <!-- words typed in this round / words in the round, or the seconds left -->
-          <div class="metric"><span id="progress">0/30</span><small id="progress-label" data-i18n="metric.words">words</small></div>
+          <div class="metric"><span id="progress">0/30</span><small id="progress-label" data-i18n="metric.words">Words</small></div>
           <!-- clean-word streak: words typed without a single mistake, in a row.
                Same shape as the numbers next to it; data-tier makes it "hotter". -->
           <div class="streak" id="streak" aria-live="polite" data-tier="0" data-tip="tip.streak">
-            <svg class="bolt" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2.5 5 13.5h6l-1 8 8.5-11h-6z"/></svg><span id="streak-n">0</span><small class="sr-only" data-i18n="streak.label">clean words</small>
+            <svg class="bolt" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2.5 5 13.5h6l-1 8 8.5-11h-6z"/></svg><span id="streak-n">0</span><small class="sr-only" data-i18n="streak.label">Clean words</small>
           </div>
         </div>
         <div id="text" class="text">loading…</div>
         <div id="caret" class="caret" aria-hidden="true"></div>
-        <div id="focus-hint" class="focus-hint" data-i18n="focusHint">tap here to start typing</div>
+        <div id="focus-hint" class="focus-hint" data-i18n="focusHint">Tap here to start typing</div>
         <!-- the result screen takes the place of the text when typing stops (result.js) -->
         <div id="result" class="result" role="status" aria-live="polite" hidden></div>
       </div>
       <!-- touch screens have no Esc: a small "stop" under the card (as the
            restart button under the words on monkeytype) -->
-      <button id="btn-new" type="button" class="stop-btn touch-only" data-tip="tip.new"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/></svg><span data-i18n="hint.new">stop</span></button>
+      <button id="btn-new" type="button" class="stop-btn touch-only" data-tip="tip.new"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/></svg><span data-i18n="hint.new">Stop</span></button>
       <!-- Invisible input: lets phone keyboards open and send characters. -->
       <input id="hidden-input" class="hidden-input" autocomplete="off" autocapitalize="off"
              autocorrect="off" spellcheck="false" aria-hidden="true">
@@ -154,15 +154,15 @@
         <div class="length-filter" id="length-filter" role="tablist" aria-label="Round length"></div>
         <!-- take the numbers with you: text or a picture (share.js) -->
         <div class="share">
-          <button type="button" class="btn" id="btn-copy" data-tip="tip.copy"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><span data-i18n="share.copy">copy</span></button>
-          <button type="button" class="btn" id="btn-image" data-tip="tip.image"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-8 8"/></svg><span data-i18n="share.image">image</span></button>
+          <button type="button" class="btn" id="btn-copy" data-tip="tip.copy"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><span data-i18n="share.copy">Copy</span></button>
+          <button type="button" class="btn" id="btn-image" data-tip="tip.image"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-8 8"/></svg><span data-i18n="share.image">Image</span></button>
         </div>
         <div class="tiles" id="tiles"></div>
       </div>
 
       <div class="panel chart-panel">
         <div class="panel-head">
-          <h2 data-i18n="stats.speed">speed per exercise</h2>
+          <h2 data-i18n="stats.speed">Speed per round</h2>
           <span class="panel-note" id="chart-note"></span>
         </div>
         <div class="chart" id="chart"></div>
@@ -173,18 +173,18 @@
         <!-- difficulty heatmap: where on the keyboard it is hard (stats.js, drawHeatKeyboard) -->
         <div class="panel heat-panel">
           <div class="panel-head">
-            <h2 data-i18n="stats.heat">keyboard</h2>
+            <h2 data-i18n="stats.heat">Keyboard</h2>
             <span class="heat-legend">
-              <span data-i18n="heat.easy">easy</span><i class="heat-scale"></i><span data-i18n="heat.hard">hard</span>
-              <i class="heat-sample"></i><span data-i18n="letter.noData">no data yet</span>
+              <span data-i18n="heat.easy">Easy</span><i class="heat-scale"></i><span data-i18n="heat.hard">Hard</span>
+              <i class="heat-sample"></i><span data-i18n="letter.noData">No data yet</span>
             </span>
           </div>
           <div class="heat-kb" id="heat-kb"></div>
         </div>
         <div class="panel">
           <div class="panel-head">
-            <h2 data-i18n="stats.letters">letters</h2>
-            <span class="panel-note" data-i18n="stats.lettersNote">weakest first</span>
+            <h2 data-i18n="stats.letters">Letters</h2>
+            <span class="panel-note" data-i18n="stats.lettersNote">Weakest first</span>
           </div>
           <div class="letter-grid" id="letter-grid"></div>
         </div>
@@ -205,18 +205,18 @@
          carries a lock and the button starts the typing test. -->
     <div class="switch rail-group nav-switch" id="nav-switch" role="tablist" aria-label="Screen">
       <span class="switch-thumb" aria-hidden="true"></span>
-      <button type="button" role="tab" id="tab-learn" aria-selected="true" aria-controls="view-type" data-tip="tip.learn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="11" rx="2"/><path d="M7 10.5h.01M10 10.5h.01M13 10.5h.01M16 10.5h.01M8 14h8"/></svg><small data-i18n="mode.learn">type</small></button>
-      <button type="button" role="tab" id="tab-free" aria-selected="false" aria-controls="view-type" data-tip="tip.freeLocked"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c-2-2.7-3.6-4-5.5-4a4 4 0 0 0 0 8c1.9 0 3.5-1.3 5.5-4zm0 0c2 2.7 3.6 4 5.5 4a4 4 0 0 0 0-8c-1.9 0-3.5 1.3-5.5 4z"/></svg><svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><small data-i18n="mode.free">freetype</small></button>
-      <button type="button" role="tab" id="tab-stats" aria-selected="false" aria-controls="view-stats" data-tip="tip.stats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16"/><path d="M7 16v-5M12 16V7M17 16v-8"/></svg><small data-i18n="nav.stats">stats</small></button>
+      <button type="button" role="tab" id="tab-learn" aria-selected="true" aria-controls="view-type" data-tip="tip.learn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="11" rx="2"/><path d="M7 10.5h.01M10 10.5h.01M13 10.5h.01M16 10.5h.01M8 14h8"/></svg><small data-i18n="mode.learn">Learn</small></button>
+      <button type="button" role="tab" id="tab-free" aria-selected="false" aria-controls="view-type" data-tip="tip.freeLocked"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c-2-2.7-3.6-4-5.5-4a4 4 0 0 0 0 8c1.9 0 3.5-1.3 5.5-4zm0 0c2 2.7 3.6 4 5.5 4a4 4 0 0 0 0-8c-1.9 0-3.5 1.3-5.5 4z"/></svg><svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><small data-i18n="mode.free">Freetype</small></button>
+      <button type="button" role="tab" id="tab-stats" aria-selected="false" aria-controls="view-stats" data-tip="tip.stats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16"/><path d="M7 16v-5M12 16V7M17 16v-8"/></svg><small data-i18n="nav.stats">Stats</small></button>
     </div>
     <div class="rail-group tools">
       <!-- help: the two guides (intro.js: touch typing, tour.js: this site) -->
       <div class="pop" id="help">
-        <button type="button" class="rail-btn" id="btn-help" data-tip="tip.help" aria-haspopup="dialog" aria-expanded="false" aria-controls="help-card"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.8"/><path d="M12 17h.01"/></svg><small data-i18n="nav.help">help</small></button>
+        <button type="button" class="rail-btn" id="btn-help" data-tip="tip.help" aria-haspopup="dialog" aria-expanded="false" aria-controls="help-card"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.8"/><path d="M12 17h.01"/></svg><small data-i18n="nav.help">Help</small></button>
         <!-- One window look for every panel (.win in style.css): a title,
              then sections, each with a small heading. -->
         <div class="pop-card win help-card" id="help-card" role="dialog" aria-labelledby="help-title" hidden>
-          <p class="win-title" id="help-title" data-i18n="help.title">help</p>
+          <p class="win-title" id="help-title" data-i18n="help.title">Help</p>
           <!-- first what this screen is about (input.js fills it for the
                screen you are on: Learn, Freetype, the typing test, Stats),
                then the guides, then the keys -->
@@ -227,41 +227,42 @@
           <div class="win-sec">
             <small class="lbl-ui" data-i18n="help.guides">Walkthroughs</small>
             <!-- two guides, two different icons: hands on keys / a map of the page -->
-            <button type="button" class="menu-item basics" id="btn-intro"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="12" width="19" height="8" rx="2"/><path d="M7 12V5.5a1.5 1.5 0 0 1 3 0V12M10 9V4.5a1.5 1.5 0 0 1 3 0V12M13 9.5V6a1.5 1.5 0 0 1 3 0V12"/></svg><span><b data-i18n="help.basics">touch typing basics</b><small data-i18n="help.basicsNote">where the fingers go</small></span></button>
-            <button type="button" class="menu-item site" id="btn-tour"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span><b data-i18n="help.site">tour of this screen</b><small data-i18n="help.siteNote">what each part shows</small></span></button>
+            <button type="button" class="menu-item basics" id="btn-intro"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="12" width="19" height="8" rx="2"/><path d="M7 12V5.5a1.5 1.5 0 0 1 3 0V12M10 9V4.5a1.5 1.5 0 0 1 3 0V12M13 9.5V6a1.5 1.5 0 0 1 3 0V12"/></svg><span><b data-i18n="help.basics">Touch typing basics</b><small data-i18n="help.basicsNote">Where the fingers go, step by step</small></span></button>
+            <button type="button" class="menu-item site" id="btn-tour"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span><b data-i18n="help.site">Tour of this screen</b><small data-i18n="help.siteNote">What each part shows</small></span></button>
           </div>
           <div class="win-sec keys-only">
-            <small class="lbl-ui" data-i18n="help.keysTitle">keys</small>
+            <small class="lbl-ui" data-i18n="help.keysTitle">Keys</small>
             <dl class="win-keys">
-              <dt><kbd>esc</kbd></dt><dd data-i18n="help.keyEsc">stop the round</dd>
-              <dt><kbd>shift</kbd> <kbd>tab</kbd></dt><dd data-i18n="help.keyView">learn / stats</dd>
-              <dt><kbd>alt</kbd> <kbd>k</kbd></dt><dd data-i18n="help.keyKb">keyboard and hands on / off</dd>
-              <dt><kbd>tab</kbd></dt><dd data-i18n="help.keyTab">never restarts: mistakes are what the trainer learns from</dd>
+              <dt><kbd>esc</kbd></dt><dd data-i18n="help.keyEsc">Stop the round</dd>
+              <dt><kbd>enter</kbd></dt><dd data-i18n="help.keyNext">Next round (on the result)</dd>
+              <dt><kbd>shift</kbd> <kbd>tab</kbd></dt><dd data-i18n="help.keyView">Learn / stats</dd>
+              <dt><kbd>alt</kbd> <kbd>k</kbd></dt><dd data-i18n="help.keyKb">Keyboard on / off</dd>
+              <dt><kbd>tab</kbd></dt><dd data-i18n="help.keyTab">No restart: the trainer learns from your mistakes</dd>
             </dl>
           </div>
         </div>
       </div>
       <!-- settings: round length, look, keyboard, your data (settings.js) -->
       <div class="pop settings" id="settings">
-        <button id="btn-settings" type="button" class="rail-btn" data-tip="tip.settings" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings-card"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg><small data-i18n="nav.settings">settings</small></button>
+        <button id="btn-settings" type="button" class="rail-btn" data-tip="tip.settings" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings-card"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg><small data-i18n="nav.settings">Settings</small></button>
         <div class="pop-card win settings-card" id="settings-card" role="dialog" aria-labelledby="settings-title" hidden>
-          <p class="win-title" id="settings-title" data-i18n="settings.title">settings</p>
+          <p class="win-title" id="settings-title" data-i18n="settings.title">Settings</p>
           <!-- the choices are drawn by settings.js -->
           <div id="settings-body"></div>
           <!-- your data: rare actions, so they live here and not on the screen (tools.js) -->
           <div class="win-sec">
-            <small class="lbl-ui" data-i18n="settings.data">your progress</small>
+            <small class="lbl-ui" data-i18n="settings.data">Your progress</small>
             <div class="opt">
-              <span class="opt-text"><b data-i18n="data.backup">backup</b><small data-i18n="data.backupNote">a file with all your rounds and letters</small></span>
+              <span class="opt-text"><b data-i18n="data.backup">Backup</b><small data-i18n="data.backupNote">All your progress in one file. Loading a file replaces what is here</small></span>
               <span class="opt-ctl">
-                <button type="button" class="btn" id="btn-export" data-tip="tip.export"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19h14"/></svg><span data-i18n="data.save">save</span></button>
-                <button type="button" class="btn" id="btn-import" data-tip="tip.import"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M5 19h14"/></svg><span data-i18n="data.load">load</span></button>
+                <button type="button" class="btn" id="btn-export" data-tip="tip.export"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19h14"/></svg><span data-i18n="data.save">Save</span></button>
+                <button type="button" class="btn" id="btn-import" data-tip="tip.import"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M5 19h14"/></svg><span data-i18n="data.load">Load</span></button>
               </span>
             </div>
             <div class="opt">
-              <span class="opt-text"><b data-i18n="data.resetTitle">start over</b><small data-i18n="data.resetNote">deletes every round and letter; cannot be undone</small></span>
+              <span class="opt-text"><b data-i18n="data.resetTitle">Start over</b><small data-i18n="data.resetNote">Deletes all rounds, letters and the typing test result. Cannot be undone</small></span>
               <!-- needs a second click (it turns red first) -->
-              <span class="opt-ctl"><button type="button" class="btn danger" id="btn-reset" data-tip="tip.reset"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg><span data-i18n="data.reset">reset</span></button></span>
+              <span class="opt-ctl"><button type="button" class="btn danger" id="btn-reset" data-tip="tip.reset"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg><span data-i18n="data.reset">Reset</span></button></span>
             </div>
           </div>
           <input id="import-file" type="file" accept="application/json,.json" hidden>
@@ -274,10 +275,10 @@
        there is a real keyboard (style.css hides them on touch screens). -->
   <footer class="bottom">
     <div class="hints" aria-label="Shortcuts">
-      <span class="type-only"><kbd>esc</kbd> <span data-i18n="hint.new">stop</span></span>
-      <span><kbd>shift</kbd> + <kbd>tab</kbd> <span data-i18n="hint.view">learn / stats</span></span>
-      <span class="lang-hint"><kbd>alt</kbd> + <kbd>1</kbd>…<kbd>4</kbd> <span data-i18n="hint.lang">language</span></span>
-      <span class="type-only"><kbd>alt</kbd> + <kbd>k</kbd> <span data-i18n="hint.kb">keyboard</span></span>
+      <span class="type-only"><kbd>esc</kbd> <span data-i18n="hint.new">Stop</span></span>
+      <span><kbd>shift</kbd> + <kbd>tab</kbd> <span data-i18n="hint.view">Learn / stats</span></span>
+      <span class="lang-hint"><kbd>alt</kbd> + <kbd>1</kbd>…<kbd>4</kbd> <span data-i18n="hint.lang">Language</span></span>
+      <span class="type-only"><kbd>alt</kbd> + <kbd>k</kbd> <span data-i18n="hint.kb">Keyboard</span></span>
     </div>
   </footer>
 
@@ -291,8 +292,8 @@
       <p class="tour-step" id="tour-step"></p>
       <p class="tour-text" id="tour-text"></p>
       <div class="tour-nav">
-        <button type="button" class="link" id="tour-skip" data-i18n="tour.skip">skip</button>
-        <button type="button" class="primary" id="tour-next" data-i18n="tour.next">next</button>
+        <button type="button" class="link" id="tour-skip" data-i18n="tour.skip">Skip</button>
+        <button type="button" class="primary" id="tour-next" data-i18n="tour.next">Next</button>
       </div>
     </div>
   </div>
@@ -312,42 +313,42 @@
           <div class="intro-map" id="intro-map" aria-hidden="true"></div>
           <p data-i18n="intro.pWhat">Every finger has its own keys: the colours show whose. Once the fingers know them, you stop looking down: fewer typos, more speed.</p>
           <p class="intro-small" data-i18n="intro.posture">Sit up, shoulders loose, wrists just above the keyboard.</p>
-          <p class="intro-do" data-i18n="intro.doWhat">press any key</p>
+          <p class="intro-do" data-i18n="intro.doWhat">Press any key</p>
         </section>
         <section class="intro-step" data-step="1">
           <p class="intro-kicker" data-i18n="intro.kicker0">Home row</p>
           <h2 data-i18n="intro.title0">Put your fingers on the middle row</h2>
           <div class="home-row" id="intro-home" aria-hidden="true"></div>
           <p data-i18n="intro.p0">Left hand on A S D F, right hand on J K L ;. Feel the bumps on F and J.</p>
-          <p class="intro-do" data-i18n="intro.do0">press all eight keys</p>
+          <p class="intro-do" data-i18n="intro.do0">Press all eight keys</p>
         </section>
         <section class="intro-step" data-step="2">
           <p class="intro-kicker" data-i18n="intro.kicker1">Thumbs</p>
           <h2 data-i18n="intro.title1">Thumbs rest on the space bar</h2>
-          <div class="intro-space" id="intro-space" aria-hidden="true"><span data-i18n="key.space">space</span></div>
-          <p data-i18n="intro.p1">Either thumb can press it.</p>
-          <p class="intro-do" data-i18n="intro.do1">press space</p>
+          <div class="intro-space" id="intro-space" aria-hidden="true"><span data-i18n="key.space">Space</span></div>
+          <p data-i18n="intro.p1">Either thumb can press it. Keep the other fingers where they are.</p>
+          <p class="intro-do" data-i18n="intro.do1">Press space</p>
         </section>
         <section class="intro-step" data-step="3">
           <p class="intro-kicker" data-i18n="intro.kicker2">Eyes up</p>
           <h2 data-i18n="intro.title2">Watch the screen, not your hands</h2>
           <div class="hands intro-hands" id="intro-hands" aria-hidden="true"></div>
           <p data-i18n="intro.p2">The yellow key is the next one, and the hands show which finger presses it. Mistakes are fine: the trainer uses them to pick your next words.</p>
-          <p class="intro-do" data-i18n="intro.do2">press any key</p>
+          <p class="intro-do" data-i18n="intro.do2">Press any key</p>
         </section>
         <section class="intro-step" data-step="4">
-          <p class="intro-kicker"><span data-i18n="intro.kicker3">ready</span><span id="intro-lang"></span></p>
+          <p class="intro-kicker"><span data-i18n="intro.kicker3">Ready</span><span id="intro-lang"></span></p>
           <h2 data-i18n="intro.title3">Start with a few letters</h2>
-          <p data-i18n="intro.p3">New letters open when you type the current ones cleanly at {target} words per minute.</p>
+          <p data-i18n="intro.p3">A new letter opens when you type every open letter with few mistakes at 30 words per minute.</p>
           <div class="intro-choice">
             <button id="intro-new" type="button" class="primary" data-i18n="intro.new">Start <kbd>enter</kbd></button>
           </div>
         </section>
       </div>
       <div class="intro-nav">
-        <button id="intro-skip" type="button" class="link" data-i18n="intro.skip">skip</button>
+        <button id="intro-skip" type="button" class="link" data-i18n="intro.skip">Skip</button>
         <div class="dots" id="intro-dots"><i></i><i></i><i></i><i></i><i></i></div>
-        <button id="intro-next" type="button" class="link" data-i18n="intro.next">next</button>
+        <button id="intro-next" type="button" class="link" data-i18n="intro.next">Next</button>
       </div>
     </div>
   </div>

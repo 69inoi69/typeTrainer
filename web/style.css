@@ -926,8 +926,7 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 /* the characters and the time: the same columns as the numbers, smaller
    and in the text colour (the big numbers above stay the main thing) */
 .result .r-facts-row { margin-top: 12px; }
-.r-num.r-sub { outline: none; }
-.r-num.r-sub[data-tip-text] { cursor: default; }
+.r-num[data-tip-text] { outline: none; cursor: default; }   /* consistency, characters: a tooltip explains them */
 .r-num.r-sub b { font-size: 1.1rem; color: var(--text); }
 .r-num.r-sub b small, .r-num.r-sub .sl { color: var(--sub); }
 .r-num.r-sub .bad { color: var(--error); }

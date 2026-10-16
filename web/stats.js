@@ -23,6 +23,8 @@ export async function refreshStats() {
   other = null;                                     // back to the chosen length
   if (S.lastStats.lengths.length) firstRoundDone(); // finished rounds before: the live numbers are earned
   i18nVars.target = S.lastStats.targetWpm;
+  i18nVars.min = S.lastStats.masteryMin;       // the mastery rule, for its explanations
+  i18nVars.err = Math.round(S.lastStats.masteryErr);
   applyI18n(el.intro);
   if (S.view === "stats") renderStats();
 }

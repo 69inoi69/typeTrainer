@@ -286,6 +286,8 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, user string
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"lang": id, "keys": keys, "sessions": summaries(sessions), "sessionCount": count, "targetWpm": p.TargetWPM,
+		// the mastery rule, for the texts that explain it (engine.Mastered)
+		"masteryMin": p.MasteryMinSamples, "masteryErr": p.MasteryErrorRate * 100,
 		"lengths": lengths, "group": group,
 	})
 }
