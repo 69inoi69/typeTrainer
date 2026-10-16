@@ -5,52 +5,74 @@ tooltips, messages, help. All of them live in `web/i18n.js`. Only English is
 shown for now, so new texts are written in English only; the Polish,
 Ukrainian and Russian blocks get redone when those languages come back.
 
-Read this before adding or changing a text, and check the text against it
-before calling the work done.
+These rules apply to every change, new features included: whoever adds or
+changes something decides on their own what text it needs, how much and
+where, without waiting to be told. Check the text against them before
+calling the work done.
 
-## The main rule
+## Principles
 
-**Say what the thing does, as short as it can be without losing anything
-the user needs.**
+1. **Every text earns its place.** If removing it does not make the
+   interface less clear, remove it.
+2. **Don't explain the obvious.** Familiar labels such as "Theme" or "Your
+   progress" need no description. Never add text to fill space or to keep a
+   pattern.
+3. **Explain what isn't obvious:** unusual behaviour, unfamiliar ideas,
+   important limits, and consequences the user might not expect.
+4. **Match detail to need.** A simple control needs little or nothing; a
+   complex feature may need more. The goal is clarity, not shortness for its
+   own sake.
+5. **Understand the feature first.** Read its code and try it. Write what it
+   really does, not what its name suggests. A rule the user runs into keeps
+   its numbers ("at least 20 presses, under 5% mistakes, 30 wpm"); numbers
+   the server knows come in as placeholders (`{target}`, `{min}`, `{err}`,
+   `{testWpm}`, `{testAcc}`), so the text follows
+   `internal/config/config.go`.
+6. **Consider context.** A label clear in one place may need help in
+   another. Count what is already around it: the heading, the controls, the
+   icons, what the user likely knows.
+7. **Precise, natural language.** No repetition, filler, generic AI
+   phrasing, forced friendliness or vague claims. One thing has one name
+   everywhere (word list below).
+8. **Spell out consequences that matter.** "Load replaces your current
+   progress with the one in the file". "This cannot be undone".
+9. **Don't force uniformity.** Not every setting needs a description, not
+   every button needs a tooltip, not every section needs a note.
+   Consistency means the same reasoning, not the same structure.
+10. **Apply this on your own.** When adding or changing a feature, decide
+    what text it needs, how much and where. Remove what is unneeded and add
+    what is missing without being asked.
+11. **Keep good text.** Change a text only when it gets clearer, more
+    accurate, more consistent or easier to use.
+12. **Text is part of the interface.** Think of the phone: wrapping, how
+    dense the screen gets, whether extra text makes it harder to scan.
 
-- A simple thing gets a short text. "Shows your WPM and accuracy as you type".
-- A thing with a consequence gets the consequence spelled out. "Load replaces
-  your current progress with the one in the file". "This cannot be undone".
-- A thing whose name already says it all gets no description. "Theme" with
-  Dark / Light needs nothing under it.
+### Quick tests
 
-## Rules
+- **Tooltip:** does it say more than the visible label? If it only repeats
+  it, drop it. A tooltip that adds a shortcut or a rule stays.
+- **Description:** would a first-time user get it wrong, or be surprised,
+  without it? If not, drop it.
+- **Help item:** does it tell something the screen does not already show?
 
-1. **Describe what really happens.** Read the code before writing. Never
-   promise something the app does not do, and never leave out a rule the
-   user runs into (a number, a limit, what gets deleted or replaced).
-2. **Keep the numbers.** A rule with numbers states them ("at least 20
-   presses, under 5% mistakes, 30 wpm"). Numbers the server knows come from
-   it as placeholders (`{target}`, `{min}`, `{err}`, `{testWpm}`,
-   `{testAcc}`), so the text follows `internal/config/config.go`.
-3. **No filler.** No text that repeats the label, describes the obvious or
-   only sounds nice. If removing a sentence loses nothing, remove it.
-4. **One thing, one name.** Use the word list below. The same thing is never
-   called two different names.
-5. **Calm and plain.** No exclamation marks, no CAPS, no emoji, no jokes,
-   no advert or chatbot tone. Praise is a fact ("New best speed"), not a
-   cheer.
-6. **Speak to one person.** "you", present tense, active voice: "Deletes
-   all your rounds", not "All rounds will be deleted".
-7. **Mistakes are information.** Never blame. A failed test is "Not passed
-   yet", not "Failed".
-8. **Sentence case everywhere.** Every text starts with a capital letter,
-   labels and buttons too; the rest is lower case except names.
-9. **Leave good text alone.** Change a text only when it is wrong, unclear,
-   missing something or longer than it needs to be.
+## Style
+
+- **Calm and plain.** No exclamation marks, no CAPS, no emoji, no jokes.
+  Praise is a fact ("New best speed"), not a cheer.
+- **Speak to one person:** "you", present tense, active voice ("Deletes all
+  your rounds", not "All rounds will be deleted").
+- **Mistakes are information.** Never blame: a failed test is "Not passed
+  yet", not "Failed".
+- **Sentence case everywhere.** Every text starts with a capital letter,
+  labels and buttons too; the rest is lower case except names.
 
 ## Where each kind of text goes
 
 | Kind | Form | Example |
 |---|---|---|
 | Label (button, tab, option name) | One to three words, no full stop | "Next round", "Start over" |
-| Option description (Settings) | One line saying what it does; a second sentence only for a consequence; none if the name is enough | "Marks where the next letter goes" |
-| Tooltip | What it is, then the shortcut after "·". One line, no full stop | "Stop the round and see the result · Esc" |
+| Option description (Settings) | Only when the name and the control are not enough: one line on what it does, a second sentence for a consequence | "Shows your WPM and accuracy as you type" |
+| Tooltip | Only when it adds something: what it is, then the shortcut after "·". One line, no full stop | "Stop the round and see the result · Esc" |
 | Status line, short messages | One short line, a number in `<b>` | "Type the text to begin" |
 | Result screen | Numbers, then one plain line if something happened, then the letters that changed. No tips | "New letter opened: r" |
 | Help, first-visit guides | One to three short sentences per item, the key idea first in `<b>` | "<b>Weak letters come back.</b> Letters you miss or type slowly get more words." |

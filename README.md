@@ -65,6 +65,7 @@ code compiled to WebAssembly.
 - [docs/ALGORITHM.md](docs/ALGORITHM.md): how the trainer picks letters and words, every formula and number
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the code is organised, the API
 - [docs/LITERATURE.md](docs/LITERATURE.md): research the algorithm builds on
+- [docs/GUIDELINES.md](docs/GUIDELINES.md): principles for product, layout and interface work
 - [docs/UI-TEXT.md](docs/UI-TEXT.md): rules for every text in the interface
 - [docs/COMMENTING.md](docs/COMMENTING.md): rules for comments in the code
 

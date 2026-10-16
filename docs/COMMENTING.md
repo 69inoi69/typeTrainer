@@ -77,6 +77,7 @@ end.
 | How the parts fit together, the API | `docs/ARCHITECTURE.md` |
 | The algorithm and its formulas (the thesis) | `docs/ALGORITHM.md` |
 | Rules for interface text | `docs/UI-TEXT.md` |
+| Product, layout and interface principles | `docs/GUIDELINES.md` |
 | What a package or module is for | its package comment / the top of the file |
 | Why a piece of code is the way it is | a comment next to it |
 | What changed and when | the commit message, not the code |

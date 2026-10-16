@@ -20,6 +20,14 @@ exercises from real words around the user's weak letters.
   you to commit, work in a separate branch, push it and open a pull request;
   I merge it myself. Never push to `main` directly.
 
+## Guidelines
+
+Before changing a feature or the interface, read `docs/GUIDELINES.md`
+(product, layout, responsive design, hierarchy, interaction, accessibility,
+implementation, testing, scope) and `docs/UI-TEXT.md` (every text the user
+sees). They are principles to apply with judgment; the rules in this file
+win where they differ.
+
 ## Stack (do not change without asking)
 
 - Backend: Go 1.25+, **standard library only** (`net/http`), no frameworks, no
@@ -66,9 +74,10 @@ exercises from real words around the user's weak letters.
 - Visual rewards (confetti, bumps, toasts) live in `web/fx.js` and must never
   change what is measured or sent to the server. Tab never restarts an
   exercise: that is a deliberate product decision.
-- Every text the user sees follows `docs/UI-TEXT.md` (say what it does as
-  short as possible, spell out consequences, no filler, no jokes, the same
-  word for the same thing) and lives in `web/i18n.js`.
+- Every text the user sees follows `docs/UI-TEXT.md` (every text earns its
+  place: nothing for the obvious, explain what is not, spell out
+  consequences, the same word for the same thing; decide this yourself for
+  every new feature) and lives in `web/i18n.js`.
   While only English is shown, new and changed texts are written in English
   only (the other blocks fall back to English); the pl/uk/ru blocks get
   redone when those languages come back. Never hard-code interface text in the other `.js` files or
@@ -149,4 +158,6 @@ the site stays on the old version.
 1. `gofmt -w .`, `go vet ./...` and `go test ./...` all pass.
 2. New engine logic has unit tests, including edge cases (no data yet, zero values).
 3. Docs updated if behaviour or the API changed.
-4. A short summary for me: what changed, which files, how to check it in the browser.
+4. An interface change is checked in a browser at phone and desktop width
+   (`docs/GUIDELINES.md`, section 10).
+5. A short summary for me: what changed, which files, how to check it in the browser.

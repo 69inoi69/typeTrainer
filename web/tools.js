@@ -58,9 +58,9 @@ const btnReset = $("btn-reset");
 const resetLabel = btnReset.querySelector("span");
 function disarmReset() {
   btnReset.classList.remove("armed");
-  btnReset.dataset.tip = "tip.reset";
+  delete btnReset.dataset.tip;   // unarmed: the description next to it says enough
   resetLabel.textContent = t("data.reset");
-  if (tipFor === btnReset) showTip(btnReset);
+  if (tipFor === btnReset) hideTip();
 }
 btnReset.addEventListener("click", async () => {
   if (!btnReset.classList.contains("armed")) {
