@@ -1006,7 +1006,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .metric.raw { display: none; }          /* phone: no room, wpm + acc are enough */
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 100%; }
   .tile:last-child:nth-child(odd) { grid-column: span 2; }   /* 5 tiles: the last one takes the whole row */
-  .letter-row { gap: 4px; flex-wrap: wrap; }   /* phone: one row would make the chips tiny */
+  /* phone: one row would make the chips tiny, so two rows of 13 (26
+     letters; a plain wrap gave 15 + 11) */
+  .letter-row { display: grid; grid-template-columns: repeat(13, auto); justify-content: center; gap: 4px; }
   .chip { font-size: .8rem; flex: none; width: 1.6em; height: 1.6em; }
   .letters-caption { gap: 4px; }
   /* test / freetype: the note goes under the pill (it never changes during
