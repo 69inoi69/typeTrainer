@@ -321,7 +321,6 @@ export async function loadExercise() {
   el.text.classList.add("swap");
   el.textBox.classList.remove("typing");
   setTyping(false);
-  el.caret.classList.remove("fast");
   if (!el.live.classList.contains("final")) { el.wpm.textContent = "0"; el.raw.textContent = "0"; el.acc.textContent = "100"; }
   highlightNextKey();
   showPortion(0);
@@ -605,16 +604,12 @@ function fullSeconds(end) {
 function currentAccuracy() {
   return presses ? (correctPresses / presses) * 100 : 100;
 }
-// Called once per word, not per keypress. The caret turns green while the
-// speed is at or over the goal of the trainer (targetWpm), so you can feel
-// the pace without looking at the numbers.
+// Called once per word, not per keypress. The caret keeps one colour all
+// the time: a caret that changed colour with the speed looked random.
 function updateLive() {
-  const wpm = currentWpm();
-  el.wpm.textContent = Math.round(wpm);
+  el.wpm.textContent = Math.round(currentWpm());
   el.raw.textContent = Math.round(currentRaw());
   el.acc.textContent = Math.round(currentAccuracy());
-  const goal = S.lastStats?.targetWpm;
-  el.caret.classList.toggle("fast", !!goal && wpm >= goal);
 }
 
 // ---------- "typing now": the header steps back ----------

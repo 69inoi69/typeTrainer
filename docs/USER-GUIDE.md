@@ -124,8 +124,8 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   from 25, glowing red from 50. New records, mastered letters, new letters and
   the streak at 10 and every 25 words get a small confetti.
 - **While you type** the feedback is where your eyes already are: the focus
-  letter of each portion is tinted in the text, the caret turns green while your speed is at
-  the goal, and the numbers line changes once per word (calm, not every key).
+  letter of each portion is tinted in the text, the caret keeps one colour,
+  and the numbers line changes once per word (calm, not every key).
 - **When the round ends** the text window shows the result instead of the
   text: one main line (a new letter with a joke about it, a new record,
   mastered letters, or a short verdict on accuracy), which letters got faster

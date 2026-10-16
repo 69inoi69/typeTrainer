@@ -438,13 +438,7 @@ body[data-mode="free"] .learn-only { display: none; }
   transition: translate 100ms cubic-bezier(.25, .8, .4, 1);   /* glides, no snapping */
   animation: blink 1s steps(1) infinite;
 }
-.caret.jump { transition: none; }
-/* at or over the goal speed the caret turns green (typing.js, updateLive) */
-.caret { transition: translate 100ms cubic-bezier(.25, .8, .4, 1), background .6s, border-color .6s, box-shadow .6s; }
-.caret.fast {
-  background: color-mix(in srgb, var(--ok) 38%, transparent); border-bottom-color: var(--ok);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--ok) 40%, transparent);
-}                        /* new exercise: no glide */
+.caret.jump { transition: none; }   /* new round, resize: no glide */
 /* The caret is a thin line by default (settings: "line"): 2px of accent at
    the left edge of the next letter, same glide and blink. The block above is
    the "block" setting (body.caret-block, settings.js). */
@@ -452,7 +446,6 @@ body:not(.caret-block) .caret {
   width: 2px; background: var(--accent); border-bottom: 0; border-radius: 1px;
   box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 45%, transparent);
 }
-body:not(.caret-block) .caret.fast { background: var(--ok); box-shadow: 0 0 8px color-mix(in srgb, var(--ok) 45%, transparent); }
 .text-box.typing .caret { animation: none; }             /* solid while typing */
 .text-box.blurred .caret { opacity: 0; }
 @keyframes blink { 50% { opacity: 0; } }
