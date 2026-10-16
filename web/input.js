@@ -11,7 +11,7 @@
 
 import { $, el, S, introOpen, isTouch, focusText } from "./state.js";
 import { applyKb, requestFit } from "./keyboard.js";
-import { refreshStats, renderStats } from "./stats.js";
+import { refreshStats, renderStats, onStatsMode } from "./stats.js";
 import { fitText, placeCaret, handleChar, backspace, nudge, setTyping, stopRound, loadExercise, roundStarted } from "./typing.js";
 import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
@@ -19,7 +19,7 @@ import { profileOpen, closeProfile } from "./profile.js";
 import { resultOpen, closeResult } from "./result.js";
 import { tourOpen, tourKey } from "./tour.js";
 import { settingsOpen, closeSettings, onLengthChange, onKbToggle } from "./settings.js";
-import { setMode, refreshFreeplay } from "./modes.js";
+import { setMode, refreshFreeplay, renderNav } from "./modes.js";
 
 // the keyboard choice in the settings and Alt+K: keyboard and hands off, or back on
 function toggleKb() {
@@ -35,13 +35,11 @@ window.addEventListener("resize", () => {
   if (S.view === "stats") renderStats();
 });
 
-// ---------- views: type / stats ----------
+// ---------- screens: typing / stats ----------
 function setView(name) {
   S.view = name;
   const stats = name === "stats";
-  el.switch.classList.toggle("stats", stats);
-  el.tabType.setAttribute("aria-selected", String(!stats));
-  el.tabStats.setAttribute("aria-selected", String(stats));
+  renderNav();
   el.viewType.hidden = stats;
   el.viewStats.hidden = !stats;
   if (stats) {
@@ -55,25 +53,28 @@ function setView(name) {
     focusText();
   }
 }
-el.tabType.addEventListener("click", (e) => { e.currentTarget.blur(); setView("type"); });
 el.tabStats.addEventListener("click", (e) => { e.currentTarget.blur(); setView("stats"); });
 
-// ---------- modes: learning / free practice ----------
-// While free practice is locked, its tab starts the typing test (modes.js).
+// ---------- modes: type (learning) / freetype (free practice) ----------
+// While freetype is locked, its tab starts the typing test (modes.js).
 // A new mode starts a new round; a round already begun is dropped, as when
 // the language changes (learning keeps every portion sent so far).
-function chooseMode(m) {
+// The stats screen can switch the mode too (its own small switch, stats.js):
+// then it stays on the stats screen.
+function chooseMode(m, stay = false) {
   if (S.busy) return;
   if (m === "free" && !S.free?.unlocked) m = "test";
-  if (m === S.mode) return;
-  setMode(m);
-  el.live.classList.remove("final");
-  if (m === "test" && S.view !== "type") setView("type");
-  if (S.view === "stats") renderStats();
-  loadExercise().catch(console.error);
+  if (m !== S.mode) {
+    setMode(m);
+    el.live.classList.remove("final");
+    loadExercise().catch(console.error);
+  }
+  if (stay && m !== "test") renderStats();
+  else if (S.view !== "type") setView("type");
 }
 el.tabLearn.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("learn"); });
 el.tabFree.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("free"); });
+onStatsMode((m) => chooseMode(m, true));
 
 // ---------- help: a small menu with the two guides ----------
 // The menu items themselves are wired by intro.js (#btn-intro) and tour.js

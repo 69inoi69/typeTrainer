@@ -36,6 +36,7 @@ export function renderStats() {
   const own = free ? S.free : S.lastStats;
   const s = other && other.free === free && other.length !== S.settings.length ? other.data : own;
   if (!s) return;
+  renderModeFilter(free);
   renderLengthFilter(s.lengths ?? [], s === own ? S.settings.length : other.length);
   const sessions = [...s.sessions].reverse(); // oldest first
   const last10 = sessions.slice(-10);
@@ -56,6 +57,23 @@ export function renderStats() {
   drawHeatKeyboard(s.keys);
   drawLetterGrid(s.keys);
 }
+
+// ---------- type or freetype ----------
+// Once freetype is open, a small switch says whose statistics these are; a
+// click changes the mode itself (input.js, chooseMode), as the navigation does.
+const modeFilter = document.getElementById("mode-filter");
+let modeListener = () => {};
+export function onStatsMode(fn) { modeListener = fn; }
+function renderModeFilter(free) {
+  modeFilter.innerHTML = !S.free?.unlocked ? "" : [["learn", "mode.learn"], ["free", "mode.free"]].map(([m, key]) =>
+    `<button type="button" role="tab" data-mode="${m}" aria-selected="${(m === "free") === free}">${t(key)}</button>`).join("");
+}
+modeFilter.addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-mode]");
+  if (!b) return;
+  b.blur();
+  modeListener(b.dataset.mode);
+});
 
 // ---------- one round length at a time ----------
 // other: the rounds of a length other than the chosen one, picked on this

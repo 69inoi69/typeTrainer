@@ -176,7 +176,6 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
   content: ""; position: absolute; border-radius: 2px;
   background: var(--accent); box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent);
 }
-.switch.stats, .switch.second { --i: 1; }
 
 /* the languages: a row in the header (narrow screens), a column at the right
    edge of a wide screen; the bar under / beside the chosen language */
@@ -199,6 +198,7 @@ body.one-lang .lang-switch, body.one-lang .lang-hint { display: none; }
 }
 .rail-group { display: flex; }
 .rail .switch { grid-auto-flow: column; grid-auto-columns: 1fr; }
+.nav-switch { --n: 3; }
 .rail .switch button, .rail-btn {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
   width: 72px; height: 50px; padding: 0 2px; border-radius: 10px; background: none; color: var(--sub);
@@ -213,15 +213,15 @@ body.one-lang .lang-switch, body.one-lang .lang-hint { display: none; }
 /* bottom bar: the thumb's bar sits on the top edge of the chosen button */
 .rail .switch-thumb { top: -4px; left: 0; height: 2px; width: calc(100% / var(--n)); transform: translateX(calc(var(--i) * 100%)); }
 .rail .switch-thumb::after { left: calc(50% - 9px); width: 18px; height: 2px; }
-/* free practice: its icon, with a small lock while it is closed */
-.mode-switch .ico { position: relative; display: block; }
-.mode-switch .ico svg { width: 100%; height: 100%; }
-.mode-switch .lock {
+/* freetype: its icon, with a small lock while it is closed */
+.nav-switch .ico { position: relative; display: block; }
+.nav-switch .ico svg { width: 100%; height: 100%; }
+.nav-switch .lock {
   position: absolute; right: -6px; bottom: -3px; width: 11px !important; height: 11px !important;
   stroke-width: 2.4; display: none; color: var(--sub); background: var(--bg); border-radius: 3px;
 }
-.mode-switch .locked .lock { display: block; }
-.mode-switch .locked:not([aria-selected="true"]) .ico > svg:first-child { opacity: .55; }
+.nav-switch .locked .lock { display: block; }
+.nav-switch .locked:not([aria-selected="true"]) .ico > svg:first-child { opacity: .55; }
 /* free practice has no letters to learn: their panels on the stats screen go */
 body[data-mode="free"] .learn-only { display: none; }
 
@@ -858,7 +858,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .lang-switch { grid-auto-columns: minmax(30px, auto); }
   /* phone: six equal buttons over the whole width */
   .rail { justify-content: space-between; gap: 0; padding-inline: 2px; }
-  .rail-group, .rail .switch { flex: 2; }
+  .rail-group { flex: 2; }
+  .rail .nav-switch { flex: 3; }
   .rail .switch button, .rail-btn { width: auto; flex: 1; min-width: 0; }
   .rail .pop { flex: 1; display: flex; }
   .rail .switch button small, .rail-btn small { font-size: .58rem; letter-spacing: -.02em; }
@@ -1010,13 +1011,14 @@ body.live-off .live .metric.num { display: none; }
 .cs.line { width: 2px; }
 .cs.block { width: 8px; opacity: .55; border-bottom: 2px solid currentColor; }
 /* the stats screen: one round length at a time */
-.length-filter { display: flex; flex-wrap: wrap; gap: 6px; }
-.length-filter button {
+.length-filter, .mode-filter { display: flex; flex-wrap: wrap; gap: 6px; }
+.mode-filter:empty { display: none; }
+.length-filter button, .mode-filter button {
   padding: 5px 12px; border: 0; border-radius: 999px; background: none; color: var(--sub);
   box-shadow: var(--ring); font-size: .8rem; cursor: pointer;
 }
-.length-filter button:hover { color: var(--text); }
-.length-filter button[aria-selected="true"] { background: var(--accent); color: var(--on-accent); box-shadow: none; }
+.length-filter button:hover, .mode-filter button:hover { color: var(--text); }
+.length-filter button[aria-selected="true"], .mode-filter button[aria-selected="true"] { background: var(--accent); color: var(--on-accent); box-shadow: none; }
 
 /* ---------- tour (tour.js) ---------- */
 .tour { position: fixed; inset: 0; z-index: 40; }
