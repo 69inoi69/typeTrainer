@@ -1101,7 +1101,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
 }
 @media (max-width: 760px) {
-  .profile-name { display: none; }      /* only the picture (or the person icon) */
+  .profile-name { max-width: 10ch; }    /* phone: the name stays, a long one is cut with "…" */
 }
 
 /* ---------- small screens (phones) ---------- */
@@ -1197,8 +1197,10 @@ body.entering .bottom { animation-delay: .24s; }
 .profile { position: relative; }
 .profile-btn {
   display: inline-flex; align-items: center; gap: 8px; height: var(--ctl);
-  padding: 0 12px 0 5px; border-radius: 999px; background: none; color: var(--sub);
+  padding: 0 5px 0 12px; border-radius: 999px; background: none; color: var(--sub);
 }
+/* the name on the left of the picture: "Guest" until you set your own
+   (owner, 2026-10-16) */
 .profile-btn:hover, .profile-btn[aria-expanded="true"] { background: var(--panel); color: var(--text); }
 .profile-name { max-width: 14ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .85rem; }
 .avatar {

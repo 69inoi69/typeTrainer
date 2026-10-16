@@ -188,7 +188,10 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   colour.
 - The text window has one fixed size (3 lines): only its content changes. A
   longer text scrolls up line by line, the line you type stays the second one.
-- The **profile** in the top right corner: with the local server (`go run .`)
+- The **profile** in the top right corner shows your name on the left of
+  the picture ("Guest" until you set one; "Log in" where accounts work and
+  you are not logged in; on a phone a long name ends with "…"). With the
+  local server (`go run .`)
   you can **sign up** or **log in** there (name: 3–20 of a–z, 0–9, `_`, `-`;
   password: at least 8 characters). Your progress is then kept under your
   account; **log out** returns to the guest. Without an account every
