@@ -78,6 +78,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `tools.js` | Tooltips, and the "your statistics" row of the settings panel: reset, export / import. |
 | middle | `keyboard.js` | On-screen keyboard and hands from the layout data, the next key and finger, the on / off button (remembered separately for learning and free practice), the automatic size that fits the window. |
 | middle | `stats.js` | The stats screen (tiles, WPM chart, heatmap keyboard, letter cards) and `refreshStats()`. |
+| middle | `share.js` | The "copy" (a text summary) and "image" (a PNG card drawn on a canvas) buttons of the stats screen; both take what the screen shows. |
 | middle | `typing.js` | The text stream (portions added while you type), the caret, `handleChar()` / `backspace()`, the streak, live WPM / accuracy, the "typing now" header mode, sending results. |
 | middle | `letters.js` | The letters bar above the text, its status line, locked keys dimmed on the keyboard. |
 | middle | `intro.js` | Guide A, "touch typing basics" (what it is, home row, space, eyes up); opens by itself on the first visit. |

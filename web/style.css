@@ -100,11 +100,11 @@ body {
   font-family: var(--mono);
 }
 button, input { font: inherit; }
-/* Nothing is selected by dragging the mouse over the text, keys, hands or
-   buttons (it looks broken while typing). Only what a user may want to copy
-   stays selectable: the result screen, the statistics and text fields. */
+/* Nothing is selected by dragging the mouse or a long press, anywhere: it
+   looks broken. Text fields stay selectable; the stats screen has its own
+   "copy" and "image" buttons (share.js) to take the numbers with you. */
 body { user-select: none; -webkit-user-select: none; }
-.result, #view-stats, input, textarea { user-select: text; -webkit-user-select: text; }
+input, textarea { user-select: text; -webkit-user-select: text; }
 ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); color: var(--text); }
 
 /* ---------- two kinds of text ---------- */
@@ -678,7 +678,11 @@ button:disabled:active { transform: none; }
    window (vh), so a taller screen gets a taller chart, not a scrollbar. */
 #view-stats { display: flex; flex-direction: column; gap: 18px; padding-top: 4px; }
 #view-stats[hidden] { display: none; }
-.stats-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.stats-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
+.share { display: flex; gap: 6px; margin-left: auto; order: 2; }
+.stats-top .tiles { order: 3; flex-basis: 100%; }
+.btn.done { color: var(--ok); animation: done-hold 1.6s; }
+@keyframes done-hold { from { color: var(--ok); } to { color: var(--ok); } }
 .tiles { flex: 1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; min-width: min(100%, 560px); }
 .tile { background: var(--panel); border-radius: 10px; padding: 8px 12px; min-width: 0; }
 .tile b { display: block; font-size: 1.4rem; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1.2; }

@@ -21,6 +21,7 @@ import { resultOpen, closeResult } from "./result.js";
 import { tourOpen, tourKey } from "./tour.js";
 import { settingsOpen, closeSettings, onLengthChange, onKbToggle } from "./settings.js";
 import { setMode, refreshFreeplay, renderNav } from "./modes.js";
+import "./share.js";   // the copy / image buttons of the stats screen: it wires them itself
 
 // the keyboard choice in the settings and Alt+K: keyboard and hands off, or back on
 function toggleKb() {

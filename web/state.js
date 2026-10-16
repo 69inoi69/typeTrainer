@@ -4,7 +4,7 @@
 //   bottom: state.js, i18n.js and feel.js import nothing, fx.js only
 //           i18n.js, api.js only state.js
 //   middle: keyboard, typing, letters, stats, intro, languages, tools,
-//           profile, result, tour, modes, settings import the bottom
+//           profile, result, tour, modes, settings, share import the bottom
 //           and each other in one direction only (no cycles)
 //   top:    input.js and app.js may import anything; nothing imports them
 //           (app.js loads input.js)
