@@ -336,6 +336,16 @@ body[data-mode="free"] .learn-only { display: none; }
   animation: note-in .2s var(--ease);
 }
 .pop-card[hidden] { display: none; }
+/* narrow screens: help and settings open over the content, so the page
+   behind them dims and the card's edge does not cut through it. The bottom
+   bar stays bright (it is above this layer) and taps still go through. */
+@media (max-width: 999px) {
+  body:has(.pop-card:not([hidden]))::before {
+    content: ""; position: fixed; inset: 0; z-index: 7; pointer-events: none;
+    background: color-mix(in srgb, var(--bg) 65%, transparent); backdrop-filter: blur(2px);
+    animation: view-in .2s var(--ease);
+  }
+}
 .menu-item {
   display: flex; align-items: center; gap: 12px; width: 100%;
   padding: 8px 8px; margin: 6px 0 0; border-radius: 10px; background: none; text-align: left;
