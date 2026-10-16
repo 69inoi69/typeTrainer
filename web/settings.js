@@ -100,12 +100,12 @@ function renderCard() {
   const onOff = (key, on) => seg([choice(key, "", t("settings.off"), !on), choice(key, "1", t("settings.on"), on)]);   // on on the right, as on a switch
   body.innerHTML =
     `<div class="win-sec first"><small class="lbl-ui">${t("settings.round")}</small>` +
-    opt("settings.words", "settings.wordsNote", lengths(words, "")) +
-    opt("settings.time", "settings.timeNote", lengths(time, t("settings.sec"))) +
+    opt("settings.words", null, lengths(words, "")) +
+    opt("settings.time", null, lengths(time, t("settings.sec"))) +
     `</div><div class="win-sec"><small class="lbl-ui">${t("settings.look")}</small>` +
     opt("settings.live", "settings.liveNote", onOff("live", s.live)) +
     opt("settings.keyboard", "settings.keyboardNote", onOff("kb", !S.kbHidden)) +
-    opt("settings.caret", "settings.caretNote", seg([
+    opt("settings.caret", null, seg([
       choice("caret", "line", `<i class="cs line"></i>${t("settings.line")}`, s.caret === "line"),
       choice("caret", "block", `<i class="cs block"></i>${t("settings.block")}`, s.caret === "block")])) +
     opt("settings.theme", null, seg([
