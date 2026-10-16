@@ -68,8 +68,9 @@ there is a reason not to).
 - Sizes follow the window: the keyboard key size `--u` and the text width
   `--tw` are computed from the viewport, not picked from presets.
 - On touch screens: no keyboard shortcuts shown (`.keys-only`), no hover
-  tooltips, the on-screen keyboard closes at the end of a round and stays
-  closed while the result is open.
+  tooltips, no drawn keyboard and hands (they help only with physical keys;
+  owner, 2026-10-16), and the phone's own keyboard closes at the end of a
+  round and stays closed while the result is open.
 - Long names are cut with "…" instead of pushing other things away.
 
 **Recommended**
