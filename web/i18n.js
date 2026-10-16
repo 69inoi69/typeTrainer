@@ -11,7 +11,7 @@
 //
 // Layer: bottom. Imports nothing; almost every module imports t().
 // To add an interface text: one key in the en block below, in the tone of
-// docs/VOICE.md (only English is shown for now, see AGENTS.md; the pl, uk and
+// docs/UI-TEXT.md (only English is shown for now, see AGENTS.md; the pl, uk and
 // ru blocks fall back to English and get redone when those languages return), then t("key") in the code or
 // data-i18n="key" in index.html. Never write interface text in another file
 // (the one exception is file-check.js). For a random choice, number the keys

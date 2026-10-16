@@ -1,75 +1,95 @@
-# How the app talks
+# Interface text rules
 
-The rules for every text a user sees (`web/i18n.js`). For now only English is
-shown, so new texts are written in English only; the other blocks get redone
-when their languages come back.
-Read them before adding or changing a text. The aim: a calm mentor with a
-sense of humour, not a stand-up comedian and not a robot.
+How to write every text a user sees: labels, buttons, descriptions,
+tooltips, messages, help. All of them live in `web/i18n.js`. Only English is
+shown for now, so new texts are written in English only; the Polish,
+Ukrainian and Russian blocks get redone when those languages come back.
 
-## Seven rules
+Read this before adding or changing a text, and check the text against it
+before calling the work done.
 
-1. **Short and to the point.** One idea per sentence and one sentence per
-   message where possible. Leave out a word if the meaning survives without it.
-   Labels are one to three words.
-2. **Say what happens, then why, if needed.** "New letters open when you
-   type the current ones cleanly at 30 wpm", not "Great news: progress is
-   coming".
-3. **Calm, never loud.** No exclamation marks, no CAPS, no "!!!", no emoji.
-   Praise is specific ("<b>r</b> mastered") rather than generic ("amazing").
-4. **No jokes for now.** The result screen is plain numbers and facts
-   (owner, 2026-10-16). Fun lines may come back later, written to the owner's
-   own wording; never in errors, warnings, buttons or the settings.
-5. **Speak to one person, as a friend would.** "you" in English, "ty" in
-   Polish, "ти" in Ukrainian, "ты" in Russian. Every text starts with a
-   capital letter, labels and buttons too (owner, 2026-10-16: all lower case
-   looked odd). The two modes are names: **Learn** and **Freetype**.
-6. **Mistakes are information, not failure.** Never blame. A typo "becomes
-   your next words"; a failed test is "not yet".
-7. **The same thing has the same name everywhere** (see the word list). One
-   text per place: no repeating on the screen what a label or the tooltip
-   next to it already says.
+## The main rule
 
-## Word list
+**Say what the thing does, as short as it can be without losing anything
+the user needs.**
 
-| Thing | en | pl | uk | ru |
-|---|---|---|---|---|
-| one typing run (10/30/60 words or 30/60 s) | round | runda | раунд | раунд |
-| learning mode (tab: type) | learning, type | nauka | навчання | обучение |
-| free practice mode | free practice, freetype (tab: freetype) | swobodne pisanie (tab: swobodnie) | вільний режим (tab: вільний) | свободный режим (tab: свободный) |
-| the one-time test that opens free practice | typing test | test pisania | тест друку | тест печати |
-| the yellow, weakest letter | focus | ćwiczysz | тренуєш | тренируешь |
-| a letter that meets the goal | mastered | opanowana | опанована | освоена |
-| words without a single mistake in a row | clean words | czyste słowa | чисті слова | чистые слова |
-| speed | wpm | wpm | wpm | wpm |
+- A simple thing gets a short text. "Shows your WPM and accuracy as you type".
+- A thing with a consequence gets the consequence spelled out. "Load replaces
+  your current progress with the one in the file". "This cannot be undone".
+- A thing whose name already says it all gets no description. "Theme" with
+  Dark / Light needs nothing under it.
 
-`wpm` and `raw` stay in English in every language, as on monkeytype, and so
-do the mode names Learn and Freetype. After a number it is a unit, `wpm`
-("30 wpm"); as a label on its own it is an abbreviation, `WPM`.
+## Rules
 
-## Two kinds of text
-
-What changes (the words, letters, numbers, messages) is bright; what never
-changes (labels, menu items, explanations) is quieter, and a fixed label is
-small and grey, in sentence case like everything else (no tracked-out
-capitals). Join parts with words or a comma, not "A · B" (only a tooltip
-uses "·", before its shortcut). One font everywhere: the monospace one (`.lbl-ui` in
-`style.css`). A new label follows the same rule, so the two never mix.
+1. **Describe what really happens.** Read the code before writing. Never
+   promise something the app does not do, and never leave out a rule the
+   user runs into (a number, a limit, what gets deleted or replaced).
+2. **Keep the numbers.** A rule with numbers states them ("at least 20
+   presses, under 5% mistakes, 30 wpm"). Numbers the server knows come from
+   it as placeholders (`{target}`, `{min}`, `{err}`, `{testWpm}`,
+   `{testAcc}`), so the text follows `internal/config/config.go`.
+3. **No filler.** No text that repeats the label, describes the obvious or
+   only sounds nice. If removing a sentence loses nothing, remove it.
+4. **One thing, one name.** Use the word list below. The same thing is never
+   called two different names.
+5. **Calm and plain.** No exclamation marks, no CAPS, no emoji, no jokes,
+   no advert or chatbot tone. Praise is a fact ("New best speed"), not a
+   cheer.
+6. **Speak to one person.** "you", present tense, active voice: "Deletes
+   all your rounds", not "All rounds will be deleted".
+7. **Mistakes are information.** Never blame. A failed test is "Not passed
+   yet", not "Failed".
+8. **Sentence case everywhere.** Every text starts with a capital letter,
+   labels and buttons too; the rest is lower case except names.
+9. **Leave good text alone.** Change a text only when it is wrong, unclear,
+   missing something or longer than it needs to be.
 
 ## Where each kind of text goes
 
-- **Label** (button, tab, tile): one to three words, no full stop.
-- **Tooltip**: what it is, then the shortcut after "·". One line. A rule
-  with numbers (mastery, the typing test) states them; they come from the
-  server (`{target}`, `{min}`, `{err}`, `{testWpm}`, `{testAcc}`).
-- **Status line and messages**: one short line; a number in `<b>`.
-- **Result screen**: the numbers, then one plain line if something happened, then the letters that changed. No jokes or tips (owner, 2026-10-16).
-- **Guides** (intro, tour): two or three short sentences per screen. The key
-  idea in `<b>` at the start.
-- **Errors**: what went wrong and what to do. No humour.
+| Kind | Form | Example |
+|---|---|---|
+| Label (button, tab, option name) | One to three words, no full stop | "Next round", "Start over" |
+| Option description (Settings) | One line saying what it does; a second sentence only for a consequence; none if the name is enough | "Marks where the next letter goes" |
+| Tooltip | What it is, then the shortcut after "·". One line, no full stop | "Stop the round and see the result · Esc" |
+| Status line, short messages | One short line, a number in `<b>` | "Type the text to begin" |
+| Result screen | Numbers, then one plain line if something happened, then the letters that changed. No tips | "New letter opened: r" |
+| Help, first-visit guides | One to three short sentences per item, the key idea first in `<b>` | "<b>Weak letters come back.</b> Letters you miss or type slowly get more words." |
+| Error | What went wrong and what to do | "Could not load this file. Use one made with Save" |
+
+Join parts with words or a comma, not "A · B"; only a tooltip uses "·",
+before its shortcut. Labels, descriptions, tooltips and messages have no full stop at the end
+(a full stop only between two sentences). Help and the first-visit guides
+are full sentences and end with a full stop.
+
+## Word list
+
+| Thing | Word |
+|---|---|
+| one typing run (10/30/60 words or 30/60 s) | round |
+| the learning mode, the main one | Learn |
+| free practice, words from the whole list | Freetype |
+| the one-time test that opens Freetype | typing test |
+| the letter the trainer is drilling now | focus |
+| a letter that meets the goal | mastered |
+| the next letter to open | next letter |
+| the file with all progress | Save / Load (the section is "Backup") |
+| deleting all progress | Start over (the button is "Reset") |
+| speed | wpm after a number ("30 wpm"), WPM as a label on its own |
+
+`wpm`, `raw` and the mode names Learn and Freetype stay in English in every
+language.
+
+## How it looks
+
+What changes (words, letters, numbers, messages) is bright; what never
+changes (labels, descriptions) is quieter, and a fixed label is small and
+grey. One font everywhere: the monospace one (`.lbl-ui` in `style.css`).
 
 ## Before you add a text
 
-- It goes into `web/i18n.js` (English for now, see the top), never into the HTML or
-  another `.js` file (the one exception is `web/file-check.js`).
+- Put it in `web/i18n.js`, never in the HTML or another `.js` file (the one
+  exception is `web/file-check.js`, the page opened from disk). A
+  `data-i18n` element in `index.html` keeps the same English text as a
+  fallback.
 - Check the word list. A new term goes into the list first.
-- Read it aloud. If it sounds like an advert or a chatbot, cut it in half.
+- Read it once aloud. If a word can go without losing meaning, cut it.

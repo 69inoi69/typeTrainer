@@ -76,7 +76,7 @@ end.
 | What the whole program does, how to run it | `README.md`, `docs/USER-GUIDE.md` |
 | How the parts fit together, the API | `docs/ARCHITECTURE.md` |
 | The algorithm and its formulas (the thesis) | `docs/ALGORITHM.md` |
-| How the app talks to users | `docs/VOICE.md` |
+| Rules for interface text | `docs/UI-TEXT.md` |
 | What a package or module is for | its package comment / the top of the file |
 | Why a piece of code is the way it is | a comment next to it |
 | What changed and when | the commit message, not the code |
@@ -91,7 +91,7 @@ These are already marked in the code with "To add ..." comments:
 - a new **tunable number**: `internal/config/config.go`
 - a new **language or layout**: `data/` (see "Adding a layout or language" in
   `docs/ARCHITECTURE.md`)
-- a new **interface text**: `web/i18n.js` (English for now, `docs/VOICE.md`)
+- a new **interface text**: `web/i18n.js` (English for now, `docs/UI-TEXT.md`)
 - a new **setting**: `web/settings.js`
 - a new **navigation item**: `web/index.html` (`nav.rail`) and `web/input.js`
 - a new **tour step**: `web/tour.js`
