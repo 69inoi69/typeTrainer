@@ -60,7 +60,7 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
     with a person icon until you are logged in, then your picture and name);
   - **the navigation**: a column at the left edge of a wide window, a bar at
     the bottom of a narrow window or a phone. Two groups: the three screens
-    **learn**, **freetype** and **stats**, then **help** and **settings**.
+    **Learn**, **Freetype** and **Stats**, then **Help** and **Settings**.
     The chosen screen has a short yellow bar next to it.
   From your first keypress until the end of the round everything around the
   text steps back: the logo turns grey and the controls almost vanish (move
@@ -68,9 +68,9 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
 - Two kinds of text: what changes (the words, letters, numbers, messages) is
   bright; what never changes (labels, menus, explanations) is quieter,
   labels in small grey capitals. Everything uses the same monospace font.
-- **learn** and **freetype** in the navigation choose the mode. **learn** is
+- **Learn** and **Freetype** in the navigation choose the mode. **Learn** is
   learning, the trainer: it picks words for your weak letters and opens new
-  ones. **freetype** is free practice: words from the whole list, its own
+  ones. **Freetype** is free practice: words from the whole list, its own
   history, and nothing changes in learning. **stats** shows the statistics
   of the mode you were in; once freetype is open, a small learn / freetype
   switch on the stats screen changes the mode there too. Freetype opens when every letter is open, or
@@ -134,19 +134,22 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   under 5 seconds get none), then one plain line if something happened (a
   new letter, a new record, mastered letters), then which letters got faster
   or slower, as the time per press before and now (for example
-  `s 320→250ms`). No jokes or tips there. The result stays until you go on
-  on purpose: **Enter**, **Esc**, **Tab** or the **next** button (letters do
-  nothing there, and there is no timer).
+  `s 320→250ms`). Each part is its own block, split by a thin line, and the
+  window is only as tall as what it shows. No jokes or tips there. The
+  result stays until you go on on purpose: **Enter**, **Esc**, **Tab** or
+  the **New round** button (letters do nothing there, and there is no
+  timer). Switching to another mode from there closes it too.
 - Small messages under the letters are only used outside typing (a file
   saved or loaded).
-- **Help** (the **?** in the navigation) opens a panel: the two guides
-  (**touch typing basics** and a **tour of this screen**; Enter / → next, Esc
-  closes; from the stats screen they first go back to typing), the two
-  modes, and the keys.
+- **Help** (the **?** in the navigation) opens a panel about the screen you
+  are on: a few short points for Learn, Freetype, the typing test or Stats
+  (bold start, read in seconds), then the guides (**Touch typing basics**
+  everywhere, **Tour of this screen** on Learn; Enter / → next, Esc closes;
+  from the stats screen they first go back to typing), then the keys.
 - On a touch screen there is no `Esc`: a small **stop** button under the text
   card ends the round. The shortcut line is hidden there.
 - Shortcuts, also listed small at the bottom of the page: `Esc` stop ·
-  `Shift + Tab` learn / stats · `Alt + K` keyboard and hands on / off.
+  `Shift + Tab` Learn / stats · `Alt + K` keyboard and hands on / off.
 - **Stats**: nothing on the page can be selected by dragging; instead the
   stats screen has **copy** (a short text summary: mode, length, rounds,
   best and last-10 numbers, letters) and **image** (a PNG card with the same

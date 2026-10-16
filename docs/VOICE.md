@@ -20,8 +20,9 @@ sense of humour, not a stand-up comedian and not a robot.
    (owner, 2026-10-16). Fun lines may come back later, written to the owner's
    own wording; never in errors, warnings, buttons or the settings.
 5. **Speak to one person, as a friend would.** "you" in English, "ty" in
-   Polish, "ти" in Ukrainian, "ты" in Russian. Lower case for short labels
-   and messages, as on monkeytype; sentences in guides start with a capital.
+   Polish, "ти" in Ukrainian, "ты" in Russian. Every text starts with a
+   capital letter, labels and buttons too (owner, 2026-10-16: all lower case
+   looked odd). The two modes are names: **Learn** and **Freetype**.
 6. **Mistakes are information, not failure.** Never blame. A typo "becomes
    your next words"; a failed test is "not yet".
 7. **The same thing has the same name everywhere** (see the word list). One
@@ -42,7 +43,7 @@ sense of humour, not a stand-up comedian and not a robot.
 | speed | wpm | wpm | wpm | wpm |
 
 `wpm` and `raw` stay in English in every language, as on monkeytype, and so
-do the tab names `learn` and `freetype`.
+do the mode names Learn and Freetype.
 
 ## Two kinds of text
 

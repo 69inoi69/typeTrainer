@@ -217,13 +217,18 @@
              then sections, each with a small heading. -->
         <div class="pop-card win help-card" id="help-card" role="dialog" aria-labelledby="help-title" hidden>
           <p class="win-title" id="help-title" data-i18n="help.title">help</p>
-          <!-- two guides, two different icons: hands on keys / a map of the page -->
-          <button type="button" class="menu-item basics" id="btn-intro"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="12" width="19" height="8" rx="2"/><path d="M7 12V5.5a1.5 1.5 0 0 1 3 0V12M10 9V4.5a1.5 1.5 0 0 1 3 0V12M13 9.5V6a1.5 1.5 0 0 1 3 0V12"/></svg><span><b data-i18n="help.basics">touch typing basics</b><small data-i18n="help.basicsNote">where the fingers go</small></span></button>
-          <button type="button" class="menu-item site" id="btn-tour"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span><b data-i18n="help.site">tour of this screen</b><small data-i18n="help.siteNote">what each part shows</small></span></button>
+          <!-- first what this screen is about (input.js fills it for the
+               screen you are on: Learn, Freetype, the typing test, Stats),
+               then the guides, then the keys -->
+          <div class="win-sec first">
+            <small class="lbl-ui" id="help-ctx-title"></small>
+            <ul class="win-list help-list" id="help-ctx"></ul>
+          </div>
           <div class="win-sec">
-            <small class="lbl-ui" data-i18n="help.modesTitle">modes</small>
-            <p class="win-p" data-i18n="help.modes"><b>learn</b> teaches you to type.</p>
-            <p class="win-p" data-i18n="help.modesFree"><b>freetype</b> is practice with any words.</p>
+            <small class="lbl-ui" data-i18n="help.guides">Guides</small>
+            <!-- two guides, two different icons: hands on keys / a map of the page -->
+            <button type="button" class="menu-item basics" id="btn-intro"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="12" width="19" height="8" rx="2"/><path d="M7 12V5.5a1.5 1.5 0 0 1 3 0V12M10 9V4.5a1.5 1.5 0 0 1 3 0V12M13 9.5V6a1.5 1.5 0 0 1 3 0V12"/></svg><span><b data-i18n="help.basics">touch typing basics</b><small data-i18n="help.basicsNote">where the fingers go</small></span></button>
+            <button type="button" class="menu-item site" id="btn-tour"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span><b data-i18n="help.site">tour of this screen</b><small data-i18n="help.siteNote">what each part shows</small></span></button>
           </div>
           <div class="win-sec keys-only">
             <small class="lbl-ui" data-i18n="help.keysTitle">keys</small>

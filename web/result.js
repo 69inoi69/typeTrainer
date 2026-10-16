@@ -8,7 +8,7 @@
 // It sits in the same fixed window as the text, so the page never moves.
 //
 // showResult(r) shows it and resolves when it is closed, and only on purpose
-// (as on monkeytype): Enter, Esc or Tab, or the "next" button. There is no
+// (as on monkeytype): Enter, Esc or Tab, or the "new round" button. There is no
 // timer and typing a letter does not close it, so a round that ends in the
 // middle of a word never skips the result (owner, 2026-10-16). It does not care WHY typing stopped (the end
 // of the round, Esc or a long pause): the caller passes what to show.
@@ -51,9 +51,9 @@ export function showResult(r) {
   // 3. letters that changed: time per press before and now, green = faster, red = slower
   const chip = (x, c) => `<span class="r-ch ${c}"><b>${x.c}</b>${x.from}→${x.to}<small>ms</small></span>`;
   const changed = [];
-  if (r.faster?.length) changed.push(`<span class="lbl-ui">${t("result.faster")}</span>${r.faster.map((x) => chip(x, "up")).join("")}`);
-  if (r.slower?.length) changed.push(`<span class="lbl-ui">${t("result.slower")}</span>${r.slower.map((x) => chip(x, "down")).join("")}`);
-  if (changed.length) lines.push(`<p class="r-letters">${changed.join('<span class="r-sep"></span>')}</p>`);
+  if (r.faster?.length) changed.push(`<span class="lbl-ui">${t("result.faster")}</span><span class="r-chips">${r.faster.map((x) => chip(x, "up")).join("")}</span>`);
+  if (r.slower?.length) changed.push(`<span class="lbl-ui">${t("result.slower")}</span><span class="r-chips">${r.slower.map((x) => chip(x, "down")).join("")}</span>`);
+  if (changed.length) lines.push(`<div class="r-letters">${changed.map((x) => `<p class="r-row">${x}</p>`).join("")}</div>`);
 
   return open(lines);
 }
@@ -61,7 +61,7 @@ export function showResult(r) {
 // Puts the lines into the window and waits until the result is closed.
 function open(lines) {
   box.innerHTML = `<div class="r-body">${lines.join("")}</div>` +
-    `<button type="button" class="btn r-next">${t("result.nextBtn")}${isTouch() ? "" : " <kbd>enter</kbd>"}</button>`;
+    `<p class="r-foot"><button type="button" class="btn r-next">${t("result.nextBtn")}${isTouch() ? "" : " <kbd>enter</kbd>"}</button></p>`;
   box.querySelector(".r-next").addEventListener("click", (e) => { e.stopPropagation(); closeResult(); });
   box.hidden = false;
   el.textBox.classList.add("resulting");

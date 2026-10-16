@@ -24,8 +24,8 @@ Lublin University of Technology (2027).
   statistics, no machine learning, so every step can be explained.
 - **Letters open gradually**, most frequent first, once the open ones are
   accurate and fast enough.
-- **Two modes: learn and freetype.** *learn* is the learning mode and the
-  main one: the algorithm decides what you practise. *freetype* (words from
+- **Two modes: Learn and Freetype.** *Learn* is the learning mode and the
+  main one: the algorithm decides what you practise. *Freetype* (words from
   the whole list, its own history, nothing shared with learning) opens when
   every letter is open, or after a one-time typing test. It is kept simple
   for now.
