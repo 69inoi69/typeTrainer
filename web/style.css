@@ -908,6 +908,16 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 .r-ch small { font-size: .8em; margin-left: 1px; color: var(--sub); }
 .r-ch.up { color: var(--ok); }
 .r-ch.down { color: var(--error); }
+/* the words of the round: plain text in the text font, a mistyped letter
+   red; a long round scrolls inside (about five lines) */
+.r-words { display: flex; flex-direction: column; gap: 6px; }
+.r-wordlist {
+  font-family: var(--mono); font-size: .95rem; line-height: 1.75; color: color-mix(in srgb, var(--text) 80%, var(--sub));
+  max-height: calc(1.75em * 5); overflow-y: auto; scrollbar-width: thin;
+}
+.r-w { border-radius: 4px; padding: 1px 0; cursor: default; transition: background var(--fast), color var(--fast); }
+.r-w:hover, .r-w:focus-visible { background: color-mix(in srgb, var(--text) 10%, transparent); color: var(--text); outline: none; }
+.r-w i { font-style: normal; color: var(--error); }
 .r-facts { font-size: .8rem; color: color-mix(in srgb, var(--text) 65%, var(--sub)); }
 .result .r-foot { display: flex; justify-content: flex-end; margin-top: 20px; }   /* the only way on, with Enter / Esc / Tab */
 /* mastered letters: a green tick, the label, each letter as a small key

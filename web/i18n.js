@@ -111,6 +111,7 @@ const I18N = {
     "result.faster": "Faster",
     "result.slower": "Slower",
     "result.nextBtn": "Next round",
+    "result.words": "Words", "result.wordWpm": "{wpm} wpm",
     "mode.learn": "Learn", "mode.free": "Freetype",
     "tip.learn": "Learn: words picked for your weak letters",
     "tip.free": "Freetype: any words, its own stats",

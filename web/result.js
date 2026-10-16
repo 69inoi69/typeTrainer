@@ -3,7 +3,8 @@
 // consistency), each under its label; then one plain line when
 // something happened (a new letter, a record, mastered letters); then which
 // letters got faster or slower, as "before -> now" in milliseconds per press
-// (a percentage was not clear). No jokes or tips: the owner wants plain
+// (a percentage was not clear); then the words of the round, each with its
+// own speed on hover or tap. No jokes or tips: the owner wants plain
 // results here (2026-10-16); fun lines may come back later on their word.
 // It sits in the same fixed window as the text, so the page never moves.
 // The "next round" button has its own row at the bottom (full width on a
@@ -16,13 +17,14 @@
 // of the round, Esc or a long pause): the caller passes what to show.
 // compareStats() works out what a learning round changed, for that screen.
 // Display only: nothing here changes what is measured or sent.
-// Layer: middle. Imports only the bottom layer.
+// Layer: middle. Imports the bottom layer and tools.js (tooltips).
 // Called by: typing.js (showResult, compareStats at the end of a round),
 // input.js (resultOpen, closeResult: Enter / Esc / Tab go on).
 // To add a line: push another <p> in showResult, its text in i18n.js.
 
 import { t } from "./i18n.js";
 import { $, el, isTouch } from "./state.js";
+import { showTip } from "./tools.js";
 
 
 const box = $("result");
@@ -31,7 +33,8 @@ let done = null;           // resolves the promise of the open result
 export const resultOpen = () => done !== null;
 
 // r: { wpm, accuracy, consistency (null = too short), newLetter, best, mastered: [chars],
-//      faster/slower: [{c, from, to}] (ms per press before and after), test: "pass" | "fail" | "stopped" (the typing test only) }
+//      faster/slower: [{c, from, to}] (ms per press before and after), test: "pass" | "fail" | "stopped" (the typing test only),
+//      words: [{letters: [{c, bad}], wpm}] (typing.js typedWords) }
 export function showResult(r) {
   const lines = [];
   // 1. the numbers: a fixed label on top, the value under it
@@ -64,6 +67,14 @@ export function showResult(r) {
   if (r.slower?.length) changed.push(`<p class="r-col down"><span class="lbl-ui">${t("result.slower")}</span>${r.slower.map((x) => chip(x, "down")).join("")}</p>`);
   if (changed.length) lines.push(`<div class="r-letters">${changed.join("")}</div>`);
 
+  // 4. the words of the round as typed (as on monkeytype): a letter that had
+  // a mistake is red; hover (or tap, on a phone) shows the word's speed
+  if (r.words?.length) {
+    const word = (w) => `<span class="r-w"${w.wpm != null ? ` tabindex="0" data-tip-text="${t("result.wordWpm", { wpm: w.wpm })}"` : ""}>` +
+      w.letters.map((x) => x.bad ? `<i>${x.c}</i>` : x.c).join("") + `</span>`;
+    lines.push(`<div class="r-words"><span class="lbl-ui">${t("result.words")}</span><p class="r-wordlist">${r.words.map(word).join(" ")}</p></div>`);
+  }
+
   return open(lines);
 }
 
@@ -71,6 +82,13 @@ export function showResult(r) {
 function open(lines) {
   box.innerHTML = `<div class="r-body">${lines.join("")}</div>` +
     `<p class="r-foot"><button type="button" class="btn r-next">${t("result.nextBtn")}${isTouch() ? "" : " <kbd>enter</kbd>"}</button></p>`;
+  // phones have no hover: a tap on a word shows its speed (and must not
+  // reach the text window, which would open the phone keyboard)
+  box.querySelector(".r-wordlist")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const w = e.target.closest("[data-tip-text]");
+    if (w) showTip(w);
+  });
   box.querySelector(".r-next").addEventListener("click", (e) => {
     e.stopPropagation();
     // the tap itself opens the phone keyboard: the next round can be typed

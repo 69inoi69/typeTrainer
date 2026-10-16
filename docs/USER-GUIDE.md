@@ -134,9 +134,13 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   under 5 seconds get none), then one plain line if something happened (a
   new letter, a new record, mastered letters), then which letters got faster
   or slower, as the time per press before and now (for example
-  `s 320→250ms`). Each part is its own block with some air between (good news,
-  a new letter or a record, on a soft yellow tint; faster and slower one
-  letter per line), and the window is only as tall as what it shows. No
+  `s 320→250ms`), Faster on the left and Slower on the right, then the
+  words of the round as you typed them, a letter that had a mistake in red.
+  Hover a word (or tap it on a phone) to see its own speed: the average
+  time per press of its letters and the space after it, in wpm. Each part
+  is its own block with some air between (good news, a new letter or a
+  record, on a soft yellow tint), and the window is only as tall as what it
+  shows (a long list of words scrolls inside). No
   jokes or tips there. The result stays until you go on on purpose:
   **Enter**, **Esc**, **Tab** or the yellow-outlined **Next round** button
   (a tap on it also opens the phone keyboard, so you can type at once) (letters do nothing there, and there is no
