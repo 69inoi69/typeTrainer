@@ -83,14 +83,15 @@ export function onKbToggle(fn) { kbListener = fn; }
 // ---------- the panel ----------
 const box = $("settings"), btn = $("btn-settings"), card = $("settings-card"), body = $("settings-body");
 
-// One option: a name and a one-line explanation on the left, a segmented
+// One option: a name and a one-line explanation (none when the name says
+// it all) on the left, a segmented
 // control on the right (the same .opt / .seg look as everywhere, style.css).
 function choice(key, value, label, chosen) {
   return `<button type="button" data-key="${key}" data-value="${value}" aria-pressed="${chosen}">${label}</button>`;
 }
 const seg = (buttons) => `<span class="seg">${buttons.join("")}</span>`;
 const opt = (name, note, ctl) =>
-  `<div class="opt"><span class="opt-text"><b>${t(name)}</b><small>${t(note)}</small></span><span class="opt-ctl">${ctl}</span></div>`;
+  `<div class="opt"><span class="opt-text"><b>${t(name)}</b>${note ? `<small>${t(note)}</small>` : ""}</span><span class="opt-ctl">${ctl}</span></div>`;
 function renderCard() {
   const s = S.settings;
   const words = LENGTHS.filter((id) => id.startsWith("words-"));
@@ -107,7 +108,7 @@ function renderCard() {
     opt("settings.caret", "settings.caretNote", seg([
       choice("caret", "line", `<i class="cs line"></i>${t("settings.line")}`, s.caret === "line"),
       choice("caret", "block", `<i class="cs block"></i>${t("settings.block")}`, s.caret === "block")])) +
-    opt("settings.theme", "settings.themeNote", seg([
+    opt("settings.theme", null, seg([
       choice("theme", "dark", t("settings.dark"), s.theme === "dark"),
       choice("theme", "light", t("settings.light"), s.theme === "light")])) +
     `</div>`;
