@@ -9,11 +9,11 @@
 // own speed on hover or tap. A thin line separates the parts. No jokes or tips: the owner wants plain
 // results here (2026-10-16); fun lines may come back later on their word.
 // It sits in the same fixed window as the text, so the page never moves.
-// The "next round" button has its own row at the bottom (full width on a
-// phone), under everything else.
+// The "next round" button has its own row at the bottom, centred (full width
+// on a phone), under everything else.
 //
 // showResult(r) shows it and resolves when it is closed, and only on purpose
-// (as on monkeytype): Enter, Esc or Tab, or the "new round" button. There is no
+// (as on monkeytype): Enter, Tab or the "new round" button. There is no
 // timer and typing a letter does not close it, so a round that ends in the
 // middle of a word never skips the result (owner, 2026-10-16). It does not care WHY typing stopped (the end
 // of the round, Esc or a long pause): the caller passes what to show.
@@ -43,38 +43,45 @@ export function showResult(r) {
   // 1. the numbers: a fixed label on top, the value under it
   const num = (value, unit, label, tip) =>
     `<span class="r-num"${tip ? ` tabindex="0" data-tip-text="${t(tip)}"` : ""}><span class="r-lbl">${t(label)}</span><b>${value}<small>${unit}</small></b></span>`;
+  // a new best speed: a small tag right above the numbers, in the same part
+  // (owner, 2026-10-16: a separate block for it looked like too much)
+  const best = r.best && !r.test ? `<p class="r-best">${t("result.best")}</p>` : "";
   const nums = [num(Math.round(r.wpm), "", "result.wpm"), num(Math.round(r.accuracy), "%", "result.acc")];
   if (r.consistency != null) nums.push(num(Math.round(r.consistency), "%", "result.cons", "result.consTip"));
-  // under them, smaller: the characters (right / wrong / extra / missed, as
-  // on monkeytype, explained in a tooltip) and the time of the round
-  let facts = "";
+  // the time of the round: a big number of its own, easy to see (owner, 2026-10-16)
+  if (r.seconds != null) nums.push(num(Math.round(r.seconds), "s", "result.time"));
+  lines.push(best + `<p class="r-nums">${nums.join("")}</p>`);
+  // the characters are about the typed words, so they go under them; each
+  // number has its own word (owner, 2026-10-16: "97/20/19/4" said nothing).
+  // Extra and missed are not obvious: a tooltip says what they count.
+  let chars = "";
   if (r.chars) {
     const c = r.chars;
-    facts = `<span class="r-num r-sub" tabindex="0" data-tip-text="${t("result.charsTip")}"><span class="r-lbl">${t("result.chars")}</span>` +
-      `<b>${c.correct}<i class="sl">/</i><span class="bad">${c.wrong}</span><i class="sl">/</i><span class="bad">${c.extra}</span><i class="sl">/</i><span class="miss">${c.missed}</span></b></span>` +
-      `<span class="r-num r-sub"><span class="r-lbl">${t("result.time")}</span><b>${Math.round(r.seconds)}<small>s</small></b></span>`;
+    const part = (n, key, cls, tip) =>
+      `<span class="r-cc${cls}"${tip ? ` tabindex="0" data-tip-text="${t(tip)}"` : ""}><b>${n}</b> ${t(key)}</span>`;
+    chars = `<p class="r-chars">${part(c.correct, "result.correct", "")}${part(c.wrong, "result.wrong", c.wrong ? " bad" : "")}` +
+      `${part(c.extra, "result.extra", c.extra ? " bad" : "", "result.extraTip")}${part(c.missed, "result.missed", "", "result.missedTip")}</p>`;
   }
-  lines.push(`<p class="r-nums">${nums.join("")}</p>` + (facts ? `<p class="r-nums r-facts-row">${facts}</p>` : ""));
 
   // 2. one plain line: what happened, the most important thing first
   const mastered = (r.mastered ?? []).join(" ");
   let main = "", cls = "";
   if (r.test) { main = `<span>${t(`result.test.${r.test}`)}</span>`; cls = r.test === "pass" ? " k-best" : ""; }
   else if (r.newLetter) { main = `<span>${t("result.newLetter")}</span><span class="r-badge">${r.newLetter}</span>`; cls = " k-letter"; }
-  else if (r.best) { main = t("result.best"); cls = " k-best"; }
-  else if (mastered) {
-    // the same look as the status line above: a green tick, the label, the letters as small keys
-    main = `<svg class="r-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>` +
-      `<span class="r-lbl">${t("result.masteredLabel")}</span>${r.mastered.map((c) => `<b class="r-key">${c}</b>`).join("")}`;
-    cls = " r-mastered";
-  }
   if (main) lines.push(`<p class="r-main${cls}">${main}</p>`);
+  // letters mastered in this round (when nothing above outranks them): a
+  // column of their own between Faster and Slower (owner, 2026-10-16), a
+  // green tick and the letters as small keys, as in the status line above
+  const masteredCol = !main && mastered
+    ? `<p class="r-col mid"><span class="lbl-ui"><svg class="r-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>${t("result.masteredLabel")}</span>` +
+      `${r.mastered.map((c) => `<b class="r-key">${c}</b>`).join("")}</p>` : "";
 
   // 3. letters that changed: time per press before and now, green = faster,
-  // red = slower. Two columns side by side, Faster always on the left and
-  // Slower on the right (style.css), one letter per line.
+  // red = slower. Faster always on the left, Slower on the right, the
+  // mastered letters between them (style.css), one letter per line.
   const chip = (x, c) => `<span class="r-ch ${c}"><b>${x.c}</b>${x.from}→${x.to}<small>ms</small></span>`;
   const changed = [];
+  if (masteredCol) changed.push(masteredCol);
   if (r.faster?.length) changed.push(`<p class="r-col up"><span class="lbl-ui">${t("result.faster")}</span>${r.faster.map((x) => chip(x, "up")).join("")}</p>`);
   if (r.slower?.length) changed.push(`<p class="r-col down"><span class="lbl-ui">${t("result.slower")}</span>${r.slower.map((x) => chip(x, "down")).join("")}</p>`);
   if (changed.length) lines.push(`<div class="r-letters">${changed.join("")}</div>`);
@@ -91,8 +98,8 @@ export function showResult(r) {
     const legend = bands.labels.length
       ? `<span class="r-legend" aria-hidden="true">${bands.labels.map((l, i) => `<span class="s${i + 1}">${l}</span>`).join("")}</span>` : "";
     lines.push(`<div class="r-words"><p class="r-words-head"><span class="lbl-ui">${t("result.words")}</span>${legend}</p>` +
-      speedChart(r.words, bands) + `<p class="r-wordlist">${r.words.map(word).join(" ")}</p></div>`);
-  }
+      speedChart(r.words, bands) + `<p class="r-wordlist">${r.words.map(word).join(" ")}</p>` + chars + `</div>`);
+  } else if (chars) lines.push(chars);
 
   // a test that did not pass: the button starts it again
   return open(lines, r.test && r.test !== "pass" ? "result.tryAgain" : "result.nextBtn");

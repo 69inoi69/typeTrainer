@@ -65,7 +65,7 @@ export function renderLetters() {
   // status line: small pills with an icon each (details in their tooltips)
   const openCount = S.exercise.unlocked.length;
   const all = openCount + S.exercise.locked.length;
-  const mastered = S.exercise.unlocked.filter((c) => info[c]?.mastered).length;
+  const mastered = S.exercise.unlocked.filter((c) => info[c]?.mastered);
   const started = (S.lastStats?.keys ?? []).some((k) => k.count > 0);   // anything typed yet
   const parts = [];
   if (!started) {
@@ -73,9 +73,10 @@ export function renderLetters() {
     parts.push(`<span class="begin">${t("stat.begin")}</span>`);
   } else {
     if (focusHasData) parts.push(pill("focus", "focus", "tip.focus", t("stat.focus"), `<b class="lt">${S.exercise.focus}</b>`));
-    const pct = openCount ? Math.round((mastered / openCount) * 100) : 0;
+    // the mastered letters themselves, one after another as they come (owner,
+    // 2026-10-16: a count like "2/6" did not say what it meant)
     parts.push(pill("check", "ok", "tip.mastered", t("stat.mastered"),
-      `<span class="mini"><i style="width:${pct}%"></i></span><b>${mastered}/${openCount}</b>`));
+      mastered.length ? mastered.map((c) => `<b class="lt">${c}</b>`).join("") : `<span class="none">${t("stat.masteredNone")}</span>`));
     if (S.exercise.locked.length) parts.push(pill("key", "next", "tip.next", t("stat.next"), `<b class="lt">${S.exercise.locked[0]}</b>`));
   }
   el.lettersCaption.innerHTML = parts.join("");

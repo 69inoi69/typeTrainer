@@ -72,8 +72,9 @@ win where they differ.
   (standard library only); never store a password or a login token itself,
   only its hash.
 - Visual rewards (confetti, bumps, toasts) live in `web/fx.js` and must never
-  change what is measured or sent to the server. Tab never restarts an
-  exercise: that is a deliberate product decision.
+  change what is measured or sent to the server. Tab starts a new round
+  (as on monkeytype; owner, 2026-10-16, reversing the earlier "no restart"):
+  the dropped round is not saved, its presses already sent stay learned.
 - Every text the user sees follows `docs/UI-TEXT.md` (every text earns its
   place: nothing for the obvious, explain what is not, spell out
   consequences, the same word for the same thing; decide this yourself for

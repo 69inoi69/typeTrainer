@@ -116,10 +116,9 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
 - For now only English is offered. When Polish, Ukrainian and Russian come
   back, a language switch changes the language you practise **and the
   language of the interface**.
-- **Tab does not restart.** Restarting throws away exactly the mistakes the
-  trainer learns from, so Tab only answers with a small animation; the result
-  screen then says how many times you resisted. `Esc` (stop) ends the round
-  early and shows its result.
+- **Tab starts a new round** (as on monkeytype): the round you were typing
+  is dropped and not saved; the keypresses already sent on the way stay with
+  your letters. `Esc` (stop) ends the round early and shows its result.
 - **Rounds of 30 words, picked while you type.** The text is not ready in
   advance: it grows a few words at a time (a portion of 6 words around one
   focus letter), and every new portion is chosen from your newest statistics.
@@ -162,7 +161,7 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   record, on a soft yellow tint), and the window is only as wide and as tall as what it
   shows (a long list of words scrolls inside). No
   jokes or tips there. The result stays until you go on on purpose:
-  **Enter**, **Esc**, **Tab** or the yellow-outlined **Next round** button
+  **Enter**, **Tab** or the yellow **Next round** button
   (a tap on it also opens the phone keyboard, so you can type at once) (letters do nothing there, and there is no
   timer). Switching to another mode from there closes it too. On a phone
   the keyboard closes when the round ends, and it stays closed while the

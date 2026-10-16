@@ -180,6 +180,8 @@ function fitKeyboard() {
   // the time, and the page may scroll there; no cap
   if (isTouch()) { root.removeProperty("--u-fit"); return; }
   if (S.kbHidden || S.view !== "type") return;
+  // the result hides the keyboard (style.css): measure again with the next text
+  if (el.textBox.classList.contains("resulting")) return;
   // while the keyboard folds / unfolds its height and the margins of the hands
   // are half-way: a measure now would give a wrong (too big) size
   if (el.keyboard.getAnimations().length || el.hands.getAnimations().length) return;
