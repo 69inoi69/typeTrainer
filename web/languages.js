@@ -12,7 +12,7 @@ import { getJSON } from "./api.js";
 import { labelTips } from "./tools.js";
 import { drawKeyboard, applyKb } from "./keyboard.js";
 import { refreshStats, renderStats } from "./stats.js";
-import { loadExercise, hideWarn, setMotto } from "./typing.js";
+import { loadExercise, hideWarn } from "./typing.js";
 import { drawIntroKeys } from "./intro.js";
 import { renderProfile } from "./profile.js";
 import { refreshFreeplay, restoreMode } from "./modes.js";
@@ -20,7 +20,10 @@ import { refreshFreeplay, restoreMode } from "./modes.js";
 // ---------- languages ----------
 // The switch is built once; changing language only moves the thumb
 // (CSS variable --i), so the slide animation can run.
+// With one language (the others hidden in data/languages.json) there is
+// nothing to switch: the switch and its shortcut hint are not shown.
 export function buildLangSwitch() {
+  document.body.classList.toggle("one-lang", S.languages.length < 2);
   el.langSwitch.style.setProperty("--n", S.languages.length);
   el.langSwitch.innerHTML = `<span class="switch-thumb" aria-hidden="true"></span>` +
     S.languages.map((l) => `<button type="button" role="tab" data-lang="${l.id}" title="${l.name}">${l.label}</button>`).join("");
@@ -73,7 +76,6 @@ export async function loadLanguage(id) {
     // home-row keys for the intro text ("bumps on F and J" / "on А and О")
     const home = S.layout.rows.flat().filter((k) => k.home).map((k) => k.char.toUpperCase());
     [i18nVars.f, i18nVars.j] = home;
-    setMotto();                             // the phrase over the logo, in the new language
     const row = S.layout.rows[1].map((k) => k.char.toUpperCase());
     i18nVars.l = row.slice(0, 4).join(" ");
     i18nVars.r = row.slice(6, 10).join(" ");

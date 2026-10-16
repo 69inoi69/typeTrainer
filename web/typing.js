@@ -8,8 +8,8 @@
 // Layer: middle. Imports the bottom layer, keyboard.js, stats.js, result.js,
 // letters.js, modes.js and settings.js.
 // Called by: input.js (handleChar, backspace, nudge, stopRound and the rest
-// on keys and clicks) and languages.js (loadExercise, hideWarn, setMotto
-// when the language changes).
+// on keys and clicks) and languages.js (loadExercise, hideWarn when the
+// language changes).
 //
 // Speed rule (AGENTS.md): this code runs on every keypress, so it must stay
 // light. A keypress only flips the classes of the 1-2 <span>s that changed;
@@ -19,7 +19,7 @@
 // browser to recompute the page on every key, which shows as lag.
 
 import { FEEL } from "./feel.js";
-import { t, tPick } from "./i18n.js";
+import { t } from "./i18n.js";
 import { FX } from "./fx.js";
 import { $, el, S, introOpen } from "./state.js";
 import { postJSON } from "./api.js";
@@ -321,7 +321,6 @@ export async function loadExercise() {
   el.text.classList.add("swap");
   el.textBox.classList.remove("typing");
   setTyping(false);
-  el.caret.classList.remove("fast");
   if (!el.live.classList.contains("final")) { el.wpm.textContent = "0"; el.raw.textContent = "0"; el.acc.textContent = "100"; }
   highlightNextKey();
   showPortion(0);
@@ -605,34 +604,23 @@ function fullSeconds(end) {
 function currentAccuracy() {
   return presses ? (correctPresses / presses) * 100 : 100;
 }
-// Called once per word, not per keypress. The caret turns green while the
-// speed is at or over the goal of the trainer (targetWpm), so you can feel
-// the pace without looking at the numbers.
+// Called once per word, not per keypress. The caret keeps one colour all
+// the time: a caret that changed colour with the speed looked random.
 function updateLive() {
-  const wpm = currentWpm();
-  el.wpm.textContent = Math.round(wpm);
+  el.wpm.textContent = Math.round(currentWpm());
   el.raw.textContent = Math.round(currentRaw());
   el.acc.textContent = Math.round(currentAccuracy());
-  const goal = S.lastStats?.targetWpm;
-  el.caret.classList.toggle("fast", !!goal && wpm >= goal);
 }
 
 // ---------- "typing now": the header steps back ----------
 // From the first keypress to the end of the round the body has the class
 // "typing-now": the logo turns grey, the languages, the account and the
-// navigation almost vanish (style.css), and the small phrase over the logo changes to a typing one.
+// navigation almost vanish (style.css).
 let typingNow = false;
 export function setTyping(on) {
   if (on === typingNow) return;
   typingNow = on;
   document.body.classList.toggle("typing-now", on);
-  setMotto(on);
-}
-// The small phrase over the logo: a random "typing" one while you type, the
-// start phrase otherwise. Changes with a short fade.
-export function setMotto(typing = typingNow) {
-  el.motto.textContent = typing ? tPick("motto.typing") : t(`splash.${S.mottoIndex}`);
-  FX.anim(el.motto, [{ opacity: 0, transform: "translateY(3px)" }, { opacity: 1, transform: "none" }], { duration: 250, easing: "ease-out" });
 }
 
 // Twice a second: a long pause ends the round, and so does the end of the
@@ -695,8 +683,11 @@ async function finishRound() {
     await showResult({ wpm, accuracy, consistency: res.consistency, newLetter: roundNewLetter, resisted, ...r });
     await loadExercise();   // built from the UPDATED model
   } catch (err) {
+    // said where the eyes are (it used to go only to the screen-reader
+    // line), and a fresh round starts, so the screen never stays frozen
     console.error(err);
-    el.hint.textContent = t("err.server");
+    FX.toast(t("err.save"));
+    loadExercise().catch(console.error);
   } finally {
     S.busy = false;
   }

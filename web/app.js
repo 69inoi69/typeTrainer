@@ -11,7 +11,7 @@
 // the round ends (its length from the settings, Esc or a pause) ->
 // POST /api/v1/results (the history).
 
-import { SPLASH_PHRASES, setUiLang, t } from "./i18n.js";
+import { setUiLang, t } from "./i18n.js";
 import { FX, Splash } from "./fx.js";
 import { el, S, store, isTouch } from "./state.js";
 import { getJSON, postJSON } from "./api.js";
@@ -47,10 +47,7 @@ async function joinStudy() {
   const guess = store.get("tt.lang") || (navigator.language || "").slice(0, 2).toLowerCase();
   setUiLang(guess);
   renderProfile();
-  // the small phrase over the logo: the same one the start screen showed
-  S.mottoIndex = Math.floor(Math.random() * SPLASH_PHRASES);
   const splash = Splash.start();
-  if (splash.phrase !== undefined) S.mottoIndex = splash.phrase;   // the logo keeps the start phrase
   loadSettings();   // round length, live numbers, caret (settings.js)
   restoreKb();   // keyboard on or off from last time (learning until the mode is known)
   labelTips();

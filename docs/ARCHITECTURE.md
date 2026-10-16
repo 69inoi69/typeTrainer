@@ -78,16 +78,17 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `tools.js` | Tooltips, and the "your statistics" row of the settings panel: reset, export / import. |
 | middle | `keyboard.js` | On-screen keyboard and hands from the layout data, the next key and finger, the on / off button (remembered separately for learning and free practice), the automatic size that fits the window. |
 | middle | `stats.js` | The stats screen (tiles, WPM chart, heatmap keyboard, letter cards) and `refreshStats()`. |
+| middle | `share.js` | The "copy" (a text summary) and "image" (a PNG card drawn on a canvas) buttons of the stats screen; both take what the screen shows. |
 | middle | `typing.js` | The text stream (portions added while you type), the caret, `handleChar()` / `backspace()`, the streak, live WPM / accuracy, the "typing now" header mode, sending results. |
 | middle | `letters.js` | The letters bar above the text, its status line, locked keys dimmed on the keyboard. |
 | middle | `intro.js` | Guide A, "touch typing basics" (what it is, home row, space, eyes up); opens by itself on the first visit. |
 | middle | `languages.js` | The language switch and `loadLanguage()`. |
 | middle | `profile.js` | The account in the top right corner ("log in" for a guest where accounts work): the account (log in / sign up / log out; the page reloads after each), and a picture kept only in the browser. |
 | middle | `result.js` | The result screen in the text window: `showResult(r)` shows what changed and resolves when the user goes on; `compareStats()` works out what a learning round changed. |
-| middle | `modes.js` | The modes (learning / free practice / typing test), the learning / free switch of the navigation, `refreshFreeplay()` (`S.free`), the mode remembered per language. |
+| middle | `modes.js` | The modes (learning / free practice / typing test), the navigation tabs that show them (`renderNav`: type · freetype · stats), `refreshFreeplay()` (`S.free`), the mode remembered per language. |
 | middle | `settings.js` | The settings panel (gear in the navigation): round length, live numbers, caret, theme, keyboard on / off (carried out by `input.js`); kept in `localStorage` (`S.settings`). The data row (save / load / reset) is static HTML wired by `tools.js`. |
 | middle | `tour.js` | Guide B, "how this site works": the idea of the trainer, then a ring around each part of the page and a short card. |
-| top | `input.js` | Keydown and phone input, the navigation (Type / Stats, the mode switch, the help menu), keyboard on / off (settings and Alt+K), window resize: sends each action to the module that handles it. |
+| top | `input.js` | Keydown and phone input (with the one-space sentinel that makes Backspace work on phone keyboards), the navigation (type · freetype · stats, the help panel), keyboard on / off (settings and Alt+K), window resize: sends each action to the module that handles it. |
 | top | `app.js` | Entry point: `init()`. |
 
 **Import rule:** imports only go down. `state.js` and `i18n.js` import
@@ -112,12 +113,14 @@ Its one sentence is the only interface text outside `i18n.js`.
 Three fixed places, the same in every view (`index.html`, `style.css`):
 
 - **header**: the logo, the language switch and the account (`profile.js`);
-- **navigation** (`nav.rail`, wired in `input.js`): typing / stats,
-  learning / free, help / settings. A column at the left edge of a wide
+- **navigation** (`nav.rail`, wired in `input.js`): the three screens
+  type (learning), freetype (free practice) and stats, then help and
+  settings. A column at the left edge of a wide
   window (`--side` keeps the text and keyboard clear of it), a bar at the
   bottom below 1000 px;
 - **languages**: a column at the right edge of a wide window, in the header
-  of a narrow one (the same element, moved by CSS).
+  of a narrow one (the same element, moved by CSS). Hidden while only one
+  language is offered (`"hidden": true` in `data/languages.json`).
 
 Colours are CSS variables on `:root`; the light theme redefines them under
 `:root[data-theme="light"]` (set by `settings.js`, and by a one-line script

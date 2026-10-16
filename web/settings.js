@@ -83,28 +83,34 @@ export function onKbToggle(fn) { kbListener = fn; }
 // ---------- the panel ----------
 const box = $("settings"), btn = $("btn-settings"), card = $("settings-card"), body = $("settings-body");
 
+// One option: a name and a one-line explanation on the left, a segmented
+// control on the right (the same .opt / .seg look as everywhere, style.css).
 function choice(key, value, label, chosen) {
   return `<button type="button" data-key="${key}" data-value="${value}" aria-pressed="${chosen}">${label}</button>`;
 }
+const seg = (buttons) => `<span class="seg">${buttons.join("")}</span>`;
+const opt = (name, note, ctl) =>
+  `<div class="opt"><span class="opt-text"><b>${t(name)}</b><small>${t(note)}</small></span><span class="opt-ctl">${ctl}</span></div>`;
 function renderCard() {
   const s = S.settings;
   const words = LENGTHS.filter((id) => id.startsWith("words-"));
   const time = LENGTHS.filter((id) => id.startsWith("time-"));
-  const group = (ids) => ids.map((id) => choice("length", id, lengthOf(id).n, id === s.length)).join("");
+  const lengths = (ids, unit) => seg(ids.map((id) => choice("length", id, lengthOf(id).n + unit, id === s.length)));
+  const onOff = (key, on) => seg([choice(key, "1", t("settings.on"), on), choice(key, "", t("settings.off"), !on)]);
   body.innerHTML =
-    `<p class="profile-title" id="settings-title">${t("settings.title")}</p>` +
-    `<small class="set-label">${t("settings.length")}</small>` +
-    `<div class="set-row"><span class="set-unit">${t("settings.words")}</span>${group(words)}</div>` +
-    `<div class="set-row"><span class="set-unit">${t("settings.time")}</span>${group(time)}</div>` +
-    `<small class="set-label">${t("settings.live")}</small>` +
-    `<div class="set-row">${choice("live", "1", t("settings.show"), s.live)}${choice("live", "", t("settings.hide"), !s.live)}</div>` +
-    `<small class="set-label">${t("settings.caret")}</small>` +
-    `<div class="set-row">${choice("caret", "line", `<i class="cs line"></i>${t("settings.line")}`, s.caret === "line")}` +
-    `${choice("caret", "block", `<i class="cs block"></i>${t("settings.block")}`, s.caret === "block")}</div>` +
-    `<small class="set-label">${t("settings.theme")}</small>` +
-    `<div class="set-row">${choice("theme", "dark", t("settings.dark"), s.theme === "dark")}${choice("theme", "light", t("settings.light"), s.theme === "light")}</div>` +
-    `<small class="set-label">${t("settings.keyboard")}</small>` +
-    `<div class="set-row">${choice("kb", "1", t("settings.show"), !S.kbHidden)}${choice("kb", "", t("settings.hide"), S.kbHidden)}</div>`;
+    `<div class="win-sec first"><small class="lbl-ui">${t("settings.round")}</small>` +
+    opt("settings.words", "settings.wordsNote", lengths(words, "")) +
+    opt("settings.time", "settings.timeNote", lengths(time, t("settings.sec"))) +
+    `</div><div class="win-sec"><small class="lbl-ui">${t("settings.look")}</small>` +
+    opt("settings.live", "settings.liveNote", onOff("live", s.live)) +
+    opt("settings.keyboard", "settings.keyboardNote", onOff("kb", !S.kbHidden)) +
+    opt("settings.caret", "settings.caretNote", seg([
+      choice("caret", "line", `<i class="cs line"></i>${t("settings.line")}`, s.caret === "line"),
+      choice("caret", "block", `<i class="cs block"></i>${t("settings.block")}`, s.caret === "block")])) +
+    opt("settings.theme", "settings.themeNote", seg([
+      choice("theme", "dark", t("settings.dark"), s.theme === "dark"),
+      choice("theme", "light", t("settings.light"), s.theme === "light")])) +
+    `</div>`;
 }
 card.addEventListener("click", (e) => {
   const b = e.target.closest("button[data-key]");

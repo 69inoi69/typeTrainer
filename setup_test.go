@@ -43,7 +43,7 @@ func call(t *testing.T, h http.Handler, method, path, body string) (int, map[str
 }
 
 // Every language in data/languages.json loads, builds a first round and
-// serves its layout.
+// serves its layout, the hidden ones too; /languages lists only the shown ones.
 func TestApp_AllLanguagesLoad(t *testing.T) {
 	h, _, err := newApp()
 	if err != nil {
@@ -52,11 +52,10 @@ func TestApp_AllLanguagesLoad(t *testing.T) {
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, httptest.NewRequest("GET", "/api/v1/languages", nil))
 	var langs []map[string]any
-	if err := json.Unmarshal(rec.Body.Bytes(), &langs); err != nil || len(langs) != 4 {
+	if err := json.Unmarshal(rec.Body.Bytes(), &langs); err != nil || len(langs) != 1 || langs[0]["id"] != "en" {
 		t.Fatalf("languages: %s", rec.Body.String())
 	}
-	for _, l := range langs {
-		id := l["id"].(string)
+	for _, id := range []string{"en", "pl", "uk", "ru"} {
 		code, out := call(t, h, "POST", "/api/v1/portion?lang="+id, `{"start":true}`)
 		if code != 200 || len(out["portions"].([]any)) != 3 { // AheadPortions = 2, plus the one to type
 			t.Fatalf("%s: portion %d %v", id, code, out)

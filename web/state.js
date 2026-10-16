@@ -4,7 +4,7 @@
 //   bottom: state.js, i18n.js and feel.js import nothing, fx.js only
 //           i18n.js, api.js only state.js
 //   middle: keyboard, typing, letters, stats, intro, languages, tools,
-//           profile, result, tour, modes, settings import the bottom
+//           profile, result, tour, modes, settings, share import the bottom
 //           and each other in one direction only (no cycles)
 //   top:    input.js and app.js may import anything; nothing imports them
 //           (app.js loads input.js)
@@ -26,15 +26,14 @@ export const $ = (id) => document.getElementById(id);
 export const el = {
   textBox: $("text-box"), text: $("text"), caret: $("caret"), input: $("hidden-input"),
   keyboard: $("keyboard"), hint: $("finger-hint"),
-  live: $("live"), wpm: $("wpm"), raw: $("raw"), acc: $("acc"), progress: $("progress"), progressLabel: $("progress-label"), motto: $("logo-motto"),
+  live: $("live"), wpm: $("wpm"), raw: $("raw"), acc: $("acc"), progress: $("progress"), progressLabel: $("progress-label"),
   letters: $("letters"), lettersCaption: $("letters-caption"),
   tooltip: $("tooltip"),
   btnNew: $("btn-new"), btnIntro: $("btn-intro"), heatKb: $("heat-kb"),
   hands: $("hands"),
   intro: $("intro"),
-  switch: document.querySelector(".view-switch"), tabType: $("tab-type"), tabStats: $("tab-stats"),
+  nav: $("nav-switch"), tabLearn: $("tab-learn"), tabFree: $("tab-free"), tabStats: $("tab-stats"),
   viewType: $("view-type"), viewStats: $("view-stats"),
-  tabLearn: $("tab-learn"), tabFree: $("tab-free"),
   lengthFilter: $("length-filter"), tiles: $("tiles"), chart: $("chart"), chartNote: $("chart-note"), letterGrid: $("letter-grid"),
   langSwitch: $("lang-switch"), warn: $("layout-warn"),
   streak: $("streak"), streakN: $("streak-n"),
@@ -64,7 +63,6 @@ export const S = {
   free: null,             // last /freeplay/stats answer
   settings: { length: "words-30", live: false, caret: "line", theme: "dark" },   // settings.js
   kbHidden: false,        // keyboard and hands switched off
-  mottoIndex: 0,          // the small phrase over the logo (set by init)
 };
 
 // ---------- small helpers ----------

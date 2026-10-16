@@ -26,8 +26,8 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
 
 ## Typing screen
 
-- The app opens with a short start screen: the logo types itself, a random
-  phrase in your language, then the page slides in. Any key or click skips it.
+- The app opens with a short start screen: the logo types itself and flies
+  into the header, then the page slides in. Any key or click skips it.
 - On the very first visit two short guides run, one after the other (both
   can be skipped with `Esc` or "skip", and both open again from **help**):
   - **touch typing basics**: what touch typing is (a small keyboard map where
@@ -56,57 +56,59 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   are dimmed. Above the keyboard two hands light up the finger that presses
   it (space = both thumbs, AltGr letters = right thumb + the finger).
 - The screen has three fixed places, as in a real app:
-  - **the header**: the logo on the left; the languages and the account on
-    the right ("log in" with a person icon until you are logged in, then
-    your picture and name);
+  - **the header**: the logo on the left, the account on the right ("log in"
+    with a person icon until you are logged in, then your picture and name);
   - **the navigation**: a column at the left edge of a wide window, a bar at
-    the bottom of a narrow window or a phone. Three groups: **typing /
-    stats**, **learning / free**, and **help / settings**. The chosen
-    option has a short yellow bar next to it;
-  - **the languages**: on a wide window a column at the right edge, on a
-    narrow one in the header.
+    the bottom of a narrow window or a phone. Two groups: the three screens
+    **type**, **freetype** and **stats**, then **help** and **settings**.
+    The chosen screen has a short yellow bar next to it.
   From your first keypress until the end of the round everything around the
-  text steps back: the logo turns grey, the controls almost vanish (move the
-  mouse over them to bring them back) and the small phrase over the logo
-  turns into a "typing" one.
-- **learning / free** in the navigation chooses the mode. **Learning** is the
-  trainer: it picks words for your weak letters and opens new ones.
-  **Free practice** gives words from the whole list, keeps its own history
-  (the statistics screen shows it while free practice is chosen) and changes
-  nothing in learning. Free practice opens when every letter is open, or
+  text steps back: the logo turns grey and the controls almost vanish (move
+  the mouse over them to bring them back).
+- Two kinds of text: what changes (the words, letters, numbers, messages) is
+  monospace and bright; what never changes (labels, menus, explanations) is
+  the plain system font, labels in small grey capitals.
+- **type** and **freetype** in the navigation choose the mode. **type** is
+  learning, the trainer: it picks words for your weak letters and opens new
+  ones. **freetype** is free practice: words from the whole list, its own
+  history, and nothing changes in learning. **stats** shows the statistics
+  of the mode you were in; once freetype is open, a small type / freetype
+  switch on the stats screen changes the mode there too. Freetype opens when every letter is open, or
   right away if you pass the **typing test**: while it is locked (a small
   lock on its icon), clicking it starts the test, one round of 30 words at
   30 wpm with 97% accuracy. Only a full round counts (`Esc` stops the test);
   you can take it again any time. The mode is remembered per language.
 - **Settings** (the gear in the navigation) opens one panel with everything
-  that is rarely changed:
+  that is rarely changed, in three sections (round, screen, your progress);
+  every option has a one-line note on what it does:
   - **round length**: 10, 30 or 60 words, or 30 or 60 seconds (default 30
     words). A words round ends with the last letter of its last word, a time
     round when the time is up; the counter in the text card shows the words
     or the seconds left. The typing test is always 30 words.
-  - **wpm and accuracy while typing**: show or hide. A brand-new user does
+  - **live speed** (wpm and accuracy while typing): on or off. A brand-new user does
     not see them until the first finished round (a beginner should not
     chase speed); then they appear and you can hide them again. The word
     counter and the streak always stay.
   - **caret**: a thin line (default) or a block.
-  - **theme**: dark (default) or light, the same look in light colours.
-  - **keyboard and hands**: show or hide them (same as `Alt + K`; remembered
+  - **theme**: dark (default) or light: a warm paper page with white cards,
+    its own colours rather than the dark theme turned inside out.
+  - **keyboard** (the keys and the hands): on or off (same as `Alt + K`; remembered
     in your browser, separately for learning and for free practice / the
     test, where they start hidden; on a phone they start hidden too). There
     is no size setting: the keyboard is always as big as the window allows
     without making the page scroll.
-  - **your statistics**: **save** writes all languages and the full history
+  - **your progress**: **backup · save** writes all languages and the full history
     to one `.json` file, **load** reads such a file back and **replaces** the
     current data (use it to keep progress across server restarts or page
-    reloads on the website). **reset** deletes everything: progress in all
+    reloads on the website). **start over · reset** deletes everything: progress in all
     languages and the settings saved in your browser, as on the very first
     visit. It needs a second click ("sure?"), so it does not happen by
     accident.
   The settings only change how much you type and how it looks; what you
   practise is still up to the trainer. They are kept in this browser.
-- The **EN · PL · UK · RU** switch changes the language you practise **and the
-  language of the interface** (remembered in your browser; the first time it
-  follows your browser's language).
+- For now only English is offered. When Polish, Ukrainian and Russian come
+  back, a language switch changes the language you practise **and the
+  language of the interface**.
 - **Tab does not restart.** Restarting throws away exactly the mistakes the
   trainer learns from, so Tab only answers with a small animation; the result
   screen then says how many times you resisted. `Esc` (stop) ends the round
@@ -124,8 +126,8 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   from 25, glowing red from 50. New records, mastered letters, new letters and
   the streak at 10 and every 25 words get a small confetti.
 - **While you type** the feedback is where your eyes already are: the focus
-  letter of each portion is tinted in the text, the caret turns green while your speed is at
-  the goal, and the numbers line changes once per word (calm, not every key).
+  letter of each portion is tinted in the text, the caret keeps one colour,
+  and the numbers line changes once per word (calm, not every key).
 - **When the round ends** the text window shows the result instead of the
   text: one main line (a new letter with a joke about it, a new record,
   mastered letters, or a short verdict on accuracy), which letters got faster
@@ -135,20 +137,23 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   it). The texts are picked at random from small pools in every language.
 - Small messages under the letters are only used outside typing (a file
   saved or loaded).
-- **Help** (the **?** in the navigation) opens a small menu with the two
-  guides, each with its own icon: **touch typing basics** and **how this
-  site works** (Enter / → next, Esc closes).
-- On a touch screen there is no `Esc`: a small square **stop** button at the
-  end of the numbers line ends the round. The shortcut line is hidden there.
+- **Help** (the **?** in the navigation) opens a panel: the two guides
+  (**touch typing basics** and a **tour of this screen**; Enter / → next, Esc
+  closes; from the stats screen they first go back to typing), how the
+  trainer works in four short steps, the two modes, and the keys.
+- On a touch screen there is no `Esc`: a small **stop** button under the text
+  card ends the round. The shortcut line is hidden there.
 - Shortcuts, also listed small at the bottom of the page: `Esc` stop ·
-  `Shift + Tab` type / stats · `Alt + 1…4` language · `Alt + K` keyboard and
-  hands on / off. On phones (no Esc key) a "stop" button is shown under
-  the text instead.
+  `Shift + Tab` type / stats · `Alt + K` keyboard and hands on / off.
+- **Stats**: nothing on the page can be selected by dragging; instead the
+  stats screen has **copy** (a short text summary: mode, length, rounds,
+  best and last-10 numbers, letters) and **image** (a PNG card with the same
+  numbers, the speed of the last 30 rounds and every letter, in the colours
+  of the current theme). Both take what the screen shows.
 - The top line of the text card shows **wpm**, **raw** (every keypress counts,
   wrong ones too, like on monkeytype; only shown, never stored) and accuracy.
-  It is dim while you read and bright while you type. Over the logo there is a
-  small phrase: the same one the start screen showed, it flies there with the
-  logo.
+  It is dim while you read and bright while you type. The caret keeps one
+  colour.
 - The text window has one fixed size (3 lines): only its content changes. A
   longer text scrolls up line by line, the line you type stays the second one.
 - The **profile** in the top right corner: with the local server (`go run .`)
@@ -194,7 +199,8 @@ open the link again after one.
 
 ## Languages and layouts
 
-English, Polish, Ukrainian and Russian, chosen with the switch at the top. Each
+For now only English is offered. Polish, Ukrainian and Russian are in the data
+and come back later; then a switch at the top chooses the language, and each
 language keeps its own progress. Switch your **system** keyboard layout too
 (Windows: Win + Space); the app shows a hint when the layout does not match.
 Polish uses the standard "Polish (Programmers)" layout: ą, ę, ł... with AltGr.

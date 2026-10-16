@@ -91,7 +91,7 @@ These are already marked in the code with "To add ..." comments:
 - a new **tunable number**: `internal/config/config.go`
 - a new **language or layout**: `data/` (see "Adding a layout or language" in
   `docs/ARCHITECTURE.md`)
-- a new **interface text**: `web/i18n.js` (all four languages, `docs/VOICE.md`)
+- a new **interface text**: `web/i18n.js` (English for now, `docs/VOICE.md`)
 - a new **setting**: `web/settings.js`
 - a new **navigation item**: `web/index.html` (`nav.rail`) and `web/input.js`
 - a new **tour step**: `web/tour.js`

@@ -31,31 +31,62 @@ export async function refreshStats() {
 // for another round length picked on this screen).
 // Free practice shows its own history (S.free, modes.js): the tiles and the
 // chart, no letters (style.css hides their panels, body[data-mode="free"]).
-export function renderStats() {
+// What the stats screen shows right now: {s: the answer, free, length}
+// (share.js copies and draws exactly that).
+export function shownStats() {
   const free = S.mode === "free";
   const own = free ? S.free : S.lastStats;
-  const s = other && other.free === free && other.length !== S.settings.length ? other.data : own;
+  const picked = other && other.free === free && other.length !== S.settings.length;
+  return { s: picked ? other.data : own, free, length: picked ? other.length : S.settings.length };
+}
+export function renderStats() {
+  const { s, free, length } = shownStats();
   if (!s) return;
-  renderLengthFilter(s.lengths ?? [], s === own ? S.settings.length : other.length);
+  renderModeFilter(free);
+  renderLengthFilter(s.lengths ?? [], length);
   const sessions = [...s.sessions].reverse(); // oldest first
-  const last10 = sessions.slice(-10);
-  const avg = (arr, f) => arr.length ? arr.reduce((a, x) => a + f(x), 0) / arr.length : null;
-  const measured = last10.filter((x) => x.consistency != null);   // short rounds and old history have none
-  const fmt = (v, suffix = "") => v === null ? "—" : Math.round(v) + suffix;
-  const best = sessions.length ? Math.max(...sessions.map((x) => x.wpm)) : null;
-  el.tiles.innerHTML = [
-    [s.sessionCount, t("tile.exercises")],
-    [fmt(best), t("tile.best")],
-    [fmt(avg(last10, (x) => x.wpm)), t("tile.avgWpm")],
-    [fmt(avg(last10, (x) => x.accuracy), "%"), t("tile.avgAcc")],
-    [fmt(avg(measured, (x) => x.consistency), "%"), t("tile.avgCons")],
-  ].map(([v, l]) => `<div class="tile"><b>${v}</b><small>${l}</small></div>`).join("");
+  el.tiles.innerHTML = summary(s).map(([v, l]) => `<div class="tile"><b>${v}</b><small>${t(l)}</small></div>`).join("");
 
   drawChart(sessions, free ? s.testWpm : s.targetWpm, s.sessionCount);
   if (free) return;
   drawHeatKeyboard(s.keys);
   drawLetterGrid(s.keys);
 }
+
+// The five numbers of the tiles, [value, label key]: rounds, best wpm and
+// the averages of the last 10 rounds (share.js uses the same numbers).
+export function summary(s) {
+  const sessions = [...s.sessions].reverse(); // oldest first
+  const last10 = sessions.slice(-10);
+  const avg = (arr, f) => arr.length ? arr.reduce((a, x) => a + f(x), 0) / arr.length : null;
+  const measured = last10.filter((x) => x.consistency != null);   // short rounds and old history have none
+  const fmt = (v, suffix = "") => v === null ? "—" : Math.round(v) + suffix;
+  const best = sessions.length ? Math.max(...sessions.map((x) => x.wpm)) : null;
+  return [
+    [s.sessionCount, "tile.exercises"],
+    [fmt(best), "tile.best"],
+    [fmt(avg(last10, (x) => x.wpm)), "tile.avgWpm"],
+    [fmt(avg(last10, (x) => x.accuracy), "%"), "tile.avgAcc"],
+    [fmt(avg(measured, (x) => x.consistency), "%"), "tile.avgCons"],
+  ];
+}
+
+// ---------- type or freetype ----------
+// Once freetype is open, a small switch says whose statistics these are; a
+// click changes the mode itself (input.js, chooseMode), as the navigation does.
+const modeFilter = document.getElementById("mode-filter");
+let modeListener = () => {};
+export function onStatsMode(fn) { modeListener = fn; }
+function renderModeFilter(free) {
+  modeFilter.innerHTML = !S.free?.unlocked ? "" : [["learn", "mode.learn"], ["free", "mode.free"]].map(([m, key]) =>
+    `<button type="button" role="tab" data-mode="${m}" aria-selected="${(m === "free") === free}">${t(key)}</button>`).join("");
+}
+modeFilter.addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-mode]");
+  if (!b) return;
+  b.blur();
+  modeListener(b.dataset.mode);
+});
 
 // ---------- one round length at a time ----------
 // other: the rounds of a length other than the chosen one, picked on this

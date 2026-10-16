@@ -9,9 +9,10 @@
 // a <small> label and data-tip), its texts in i18n.js, and its click here
 // (the "views", "modes" and "help" sections below are the pattern).
 
+import { applyI18n } from "./i18n.js";
 import { $, el, S, introOpen, isTouch, focusText } from "./state.js";
 import { applyKb, requestFit } from "./keyboard.js";
-import { refreshStats, renderStats } from "./stats.js";
+import { refreshStats, renderStats, onStatsMode } from "./stats.js";
 import { fitText, placeCaret, handleChar, backspace, nudge, setTyping, stopRound, loadExercise, roundStarted } from "./typing.js";
 import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
@@ -19,7 +20,8 @@ import { profileOpen, closeProfile } from "./profile.js";
 import { resultOpen, closeResult } from "./result.js";
 import { tourOpen, tourKey } from "./tour.js";
 import { settingsOpen, closeSettings, onLengthChange, onKbToggle } from "./settings.js";
-import { setMode, refreshFreeplay } from "./modes.js";
+import { setMode, refreshFreeplay, renderNav } from "./modes.js";
+import "./share.js";   // the copy / image buttons of the stats screen: it wires them itself
 
 // the keyboard choice in the settings and Alt+K: keyboard and hands off, or back on
 function toggleKb() {
@@ -35,13 +37,11 @@ window.addEventListener("resize", () => {
   if (S.view === "stats") renderStats();
 });
 
-// ---------- views: type / stats ----------
+// ---------- screens: typing / stats ----------
 function setView(name) {
   S.view = name;
   const stats = name === "stats";
-  el.switch.classList.toggle("stats", stats);
-  el.tabType.setAttribute("aria-selected", String(!stats));
-  el.tabStats.setAttribute("aria-selected", String(stats));
+  renderNav();
   el.viewType.hidden = stats;
   el.viewStats.hidden = !stats;
   if (stats) {
@@ -55,29 +55,32 @@ function setView(name) {
     focusText();
   }
 }
-el.tabType.addEventListener("click", (e) => { e.currentTarget.blur(); setView("type"); });
 el.tabStats.addEventListener("click", (e) => { e.currentTarget.blur(); setView("stats"); });
 
-// ---------- modes: learning / free practice ----------
-// While free practice is locked, its tab starts the typing test (modes.js).
+// ---------- modes: type (learning) / freetype (free practice) ----------
+// While freetype is locked, its tab starts the typing test (modes.js).
 // A new mode starts a new round; a round already begun is dropped, as when
 // the language changes (learning keeps every portion sent so far).
-function chooseMode(m) {
+// The stats screen can switch the mode too (its own small switch, stats.js):
+// then it stays on the stats screen.
+function chooseMode(m, stay = false) {
   if (S.busy) return;
   if (m === "free" && !S.free?.unlocked) m = "test";
-  if (m === S.mode) return;
-  setMode(m);
-  el.live.classList.remove("final");
-  if (m === "test" && S.view !== "type") setView("type");
-  if (S.view === "stats") renderStats();
-  loadExercise().catch(console.error);
+  if (m !== S.mode) {
+    setMode(m);
+    el.live.classList.remove("final");
+    loadExercise().catch(console.error);
+  }
+  if (stay && m !== "test") renderStats();
+  else if (S.view !== "type") setView("type");
 }
 el.tabLearn.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("learn"); });
 el.tabFree.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("free"); });
+onStatsMode((m) => chooseMode(m, true));
 
-// ---------- help: a small menu with the two guides ----------
-// The menu items themselves are wired by intro.js (#btn-intro) and tour.js
-// (#btn-tour); here the menu only opens and closes.
+// ---------- help: the two guides, how the trainer works, the keys ----------
+// The guide buttons themselves are wired by intro.js (#btn-intro) and
+// tour.js (#btn-tour); here the panel only opens and closes.
 const help = $("help"), helpBtn = $("btn-help"), helpCard = $("help-card");
 const helpOpen = () => !helpCard.hidden;
 function closeHelp() {
@@ -88,10 +91,17 @@ helpBtn.addEventListener("click", () => {
   helpBtn.blur();
   if (helpOpen()) { closeHelp(); return; }
   closeSettings();
+  applyI18n(helpCard);                        // fills {target} with the current goal
   helpCard.hidden = false;
   helpBtn.setAttribute("aria-expanded", "true");
 });
 helpCard.addEventListener("click", (e) => { if (e.target.closest(".menu-item")) closeHelp(); });
+// Both guides are about the typing screen (the tour points at its parts), so
+// from the stats screen a guide first goes back there. Capture phase: this
+// runs before the guide's own click handler (intro.js, tour.js) starts it.
+helpCard.addEventListener("click", (e) => {
+  if (e.target.closest(".menu-item") && S.view !== "type") setView("type");
+}, true);
 document.addEventListener("pointerdown", (e) => { if (helpOpen() && !help.contains(e.target)) closeHelp(); });
 $("btn-settings").addEventListener("click", closeHelp);   // one panel at a time
 
@@ -153,7 +163,12 @@ document.addEventListener("keydown", (e) => {
   if (S.view !== "type") return;
   if (e.key === "Escape") { e.preventDefault(); stopRound(); return; }
   if (e.key === "Tab") { e.preventDefault(); nudge(); return; }   // no restart, see nudge()
-  if (e.key === "Backspace") { e.preventDefault(); focusText(); backspace(e.ctrlKey || e.altKey); return; } // Alt = Option on a Mac
+  if (e.key === "Backspace") {                                    // Alt = Option on a Mac
+    e.preventDefault(); focusText(); backspace(e.ctrlKey || e.altKey);
+    keyBackspace = true;                     // a phone may delete the sentinel too: not twice
+    requestAnimationFrame(() => { keyBackspace = false; });
+    return;
+  }
   // A held key repeats every ~30 ms. Those are not finger movements: if the
   // next letter is the same ("ll") a repeat would count as a super fast press.
   if (e.repeat) { e.preventDefault(); return; }
@@ -167,16 +182,30 @@ document.addEventListener("keydown", (e) => {
 });
 
 // Phones: virtual keyboards often report "Unidentified" on keydown, so the
-// character only shows up here, in the hidden input. We read it and clear it.
-// Backspace on a phone keyboard: the input is empty, so it arrives only here.
-el.input.addEventListener("beforeinput", (e) => {
-  if (e.inputType === "deleteContentBackward") { e.preventDefault(); backspace(false); }
-  if (e.inputType === "deleteWordBackward") { e.preventDefault(); backspace(true); }
+// character only shows up here, in the hidden input.
+// Backspace: many phone keyboards (Gboard, SwiftKey, Samsung) send nothing
+// at all for Backspace in an EMPTY field: no key, no input event. So the
+// field always holds one "sentinel" character (a space, as on monkeytype):
+// Backspace deletes it, the field gets shorter, and that is our Backspace.
+// After every change the field is set back to just the sentinel.
+const SENTINEL = " ";
+let keyBackspace = false;    // keydown already did this Backspace (some phones send both)
+function resetInput() {
+  el.input.value = SENTINEL;
+  try { el.input.setSelectionRange(SENTINEL.length, SENTINEL.length); } catch { /* not focused */ }
+}
+el.input.addEventListener("input", (e) => {
+  const v = el.input.value;
+  if (v.length < SENTINEL.length) {
+    if (!keyBackspace) backspace(e.inputType === "deleteWordBackward");
+  } else {
+    for (const ch of v.startsWith(SENTINEL) ? v.slice(SENTINEL.length) : v) handleChar(ch);
+  }
+  keyBackspace = false;
+  resetInput();
 });
-el.input.addEventListener("input", () => {
-  for (const ch of el.input.value) handleChar(ch);
-  el.input.value = "";
-});
+el.input.addEventListener("focus", resetInput);
+resetInput();
 
 el.textBox.addEventListener("click", () => { el.input.focus({ preventScroll: true }); focusText(); });
 el.input.addEventListener("blur", () => { if (isTouch()) el.textBox.classList.add("blurred"); });

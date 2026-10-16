@@ -15,7 +15,7 @@
 // input.js (resultOpen, closeResult: any key goes on).
 
 import { t, tPick, hasText } from "./i18n.js";
-import { $, el } from "./state.js";
+import { $, el, isTouch } from "./state.js";
 
 const RESULT_MS = 6000;    // time on screen before the next round comes by itself
 const ADVICE_CHANCE = 0.4; // chance of a tip when no letter changed noticeably
@@ -73,7 +73,7 @@ export function showResult(r) {
 // Puts the lines into the window and waits until the result is closed.
 function open(lines) {
   box.innerHTML = `<div class="r-body">${lines.join("")}</div>` +
-    `<p class="r-next">${t("result.next")}</p><i class="r-bar" style="--ms:${RESULT_MS}ms"></i>`;
+    `<p class="r-next">${t(isTouch() ? "result.nextTouch" : "result.next")}</p><i class="r-bar" style="--ms:${RESULT_MS}ms"></i>`;
   box.querySelector(".r-bar").addEventListener("animationend", closeResult);
   box.hidden = false;
   el.textBox.classList.add("resulting");
