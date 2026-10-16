@@ -404,11 +404,11 @@ body[data-mode="free"] .learn-only { display: none; }
 .chip.focus { background: var(--accent); color: var(--on-accent); }
 .chip.locked { background: transparent; color: color-mix(in srgb, var(--sub) 55%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 30%, transparent); }
 .chip.pop { animation: pop 340ms cubic-bezier(.2, 1.6, .4, 1); }   /* a letter just opened */
-.chip.shine { animation: shine 1.1s ease-out; }
+.chip.shine { animation: shine .9s ease-out; }
+/* a letter just mastered: it glows green once and calms down, no jump, so
+   it reads as "this one got its green dot" (it used to bounce, too loud) */
 @keyframes shine {
-  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 80%, transparent); transform: scale(1); }
-  30% { transform: scale(1.18); background: color-mix(in srgb, var(--ok) 35%, var(--panel)); }
-  100% { box-shadow: 0 0 0 10px transparent; transform: scale(1); }
+  0%, 30% { background: color-mix(in srgb, var(--ok) 30%, var(--panel)); color: var(--ok); }
 }
 .chip:not(.locked):hover { transform: translateY(-2px); }
 /* a small bounce and one soft ring that spreads out and fades (no confetti) */
@@ -437,10 +437,16 @@ body[data-mode="free"] .learn-only { display: none; }
   stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; color: var(--sub);
 }
 .stat b { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; font-size: .9rem; }
-.stat .lt { color: var(--accent-text); }   /* same size and weight as the numbers (600 switched the font on some phones) */
+/* a letter here looks like its key in the row above (a small square): a
+   bare lowercase letter sat lower and looked bigger than the digits */
+.stat .lt {
+  display: inline-grid; place-items: center; width: 1.45em; height: 1.45em; border-radius: 5px;
+  font-size: .8rem; line-height: 1; background: var(--track);
+}
+.stat.focus .lt { background: var(--accent); color: var(--on-accent); }
 .stat.focus svg { color: var(--accent-text); }
 .stat.ok svg { color: var(--ok); }
-.stat.next .lt { color: var(--text); }
+.stat.next .lt { color: var(--text); background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 45%, transparent); }
 .stat .mini { width: 44px; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
 .stat .mini i { display: block; height: 100%; background: var(--ok); border-radius: 2px; transition: width .5s var(--ease); }
 .letters-caption .begin { padding: 0 4px; font-size: .8rem; white-space: normal; text-align: left; }
@@ -831,26 +837,34 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 /* ---------- result screen (result.js) ---------- */
 /* It takes the place of the text and is as tall as what it shows: only the
    numbers = a short card, numbers + letters = a taller one (owner,
-   2026-10-16). Each part is its own block, split by a thin line. */
+   2026-10-16). Each part is its own block with air between (no lines); the
+   button sits at the bottom right, next to the last block, not in a row of
+   its own. */
 .text-box.resulting .text, .text-box.resulting::before { display: none; }
 /* the phone keyboard closes when a round ends; the "tap here" hint must not
    cover the result */
 .text-box.resulting .focus-hint { display: none; }
 .result {
   position: relative; font-size: clamp(1.1rem, 3.6vw, 1.6rem);
-  display: flex; flex-direction: column; gap: 14px;
+  display: flex; flex-direction: column;
   animation: view-in .25s var(--ease);
 }
 .result[hidden] { display: none; }
 .result p { margin: 0; }
 .r-body { display: flex; flex-direction: column; }
-.r-body > * + * { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.r-body > * + * { margin-top: 18px; }
+.r-body > :last-child { padding-right: 9.5em; min-height: 40px; }   /* room for the button, at least its height */
 /* the numbers: value big, its label small under it */
 .r-nums { display: flex; flex-wrap: wrap; gap: 8px 32px; }
 .r-num { display: flex; flex-direction: column; gap: 2px; }
 .r-num b { font-size: 1.9em; font-weight: 400; line-height: 1.1; color: var(--accent-text); font-variant-numeric: tabular-nums; }
 .r-num b small { font-size: .55em; margin-left: 2px; color: var(--sub); }
-.r-main { font-size: .9rem; color: var(--text); line-height: 1.5; }
+.r-main { display: flex; align-items: center; font-size: .9rem; color: var(--text); line-height: 1.5; }
+/* good news (a new letter, a record): in the accent colour, on a soft tint */
+.r-main.k-letter, .r-main.k-best {
+  display: flex; align-items: center; padding: 8px 12px; border-radius: 10px;
+  color: var(--accent-text); background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
 .r-main b { color: var(--accent-text); font-weight: 500; }
 .r-badge {                         /* the new letter itself */
   display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; margin-right: 10px; border-radius: 7px; vertical-align: middle;
@@ -858,18 +872,21 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
   animation: letter-pop .6s cubic-bezier(.2, 1.6, .4, 1) .1s both;
 }
 @keyframes letter-pop { 0% { transform: scale(.3) rotate(-25deg); opacity: 0; } 70% { transform: scale(1.18) rotate(6deg); opacity: 1; } }
-.r-letters { display: flex; flex-direction: column; gap: 8px; font-size: .85rem; }
-/* one row per kind: the label in a fixed column, its letters after it */
-.r-row { display: flex; align-items: baseline; gap: 6px; }
-.r-row .lbl-ui { flex: none; width: 6em; }
-.r-chips { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.r-letters { display: flex; flex-wrap: wrap; gap: 12px 32px; font-size: .85rem; }
+/* one column per kind (faster, slower): the label on top, one letter per line */
+.r-col { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .r-ch { display: inline-flex; gap: 5px; align-items: baseline; padding: 1px 8px; border-radius: 6px; background: var(--panel); font-variant-numeric: tabular-nums; }
 .r-ch b { font-weight: 500; color: var(--text); }
 .r-ch small { font-size: .8em; margin-left: 1px; color: var(--sub); }
 .r-ch.up { color: var(--ok); }
 .r-ch.down { color: var(--error); }
 .r-facts { font-size: .8rem; color: color-mix(in srgb, var(--text) 65%, var(--sub)); }
-.r-foot { display: flex; justify-content: flex-end; }   /* the only way on, with Enter / Esc / Tab */
+.r-foot { position: absolute; right: 0; bottom: 0; }   /* the only way on, with Enter / Esc / Tab */
+.r-next {                          /* the one button here: easy to see and to hit */
+  min-height: 40px; padding: 0 16px; color: var(--accent-text);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+.r-next:hover, .r-next:focus-visible { background: color-mix(in srgb, var(--accent) 14%, transparent); }
 .r-next kbd { margin-left: 6px; background: var(--panel); }
 
 /* ---------- intro ---------- */

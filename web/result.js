@@ -42,18 +42,19 @@ export function showResult(r) {
   // 2. one plain line: what happened, the most important thing first
   const mastered = (r.mastered ?? []).join(" ");
   let main = "", cls = "";
-  if (r.test) { main = t(`result.test.${r.test}`); cls = r.test === "pass" ? " k-best" : ""; }
-  else if (r.newLetter) main = `<span class="r-badge">${r.newLetter}</span>` + t("result.newLetter", { letter: r.newLetter });
+  if (r.test) { main = `<span>${t(`result.test.${r.test}`)}</span>`; cls = r.test === "pass" ? " k-best" : ""; }
+  else if (r.newLetter) { main = `<span class="r-badge">${r.newLetter}</span><span>${t("result.newLetter", { letter: r.newLetter })}</span>`; cls = " k-letter"; }
   else if (r.best) { main = t("result.best"); cls = " k-best"; }
-  else if (mastered) main = t("result.mastered", { letters: mastered });
+  else if (mastered) main = `<span>${t("result.mastered", { letters: mastered })}</span>`;
   if (main) lines.push(`<p class="r-main${cls}">${main}</p>`);
 
-  // 3. letters that changed: time per press before and now, green = faster, red = slower
+  // 3. letters that changed: time per press before and now, green = faster,
+  // red = slower. Two columns, one letter per line.
   const chip = (x, c) => `<span class="r-ch ${c}"><b>${x.c}</b>${x.from}→${x.to}<small>ms</small></span>`;
   const changed = [];
-  if (r.faster?.length) changed.push(`<span class="lbl-ui">${t("result.faster")}</span><span class="r-chips">${r.faster.map((x) => chip(x, "up")).join("")}</span>`);
-  if (r.slower?.length) changed.push(`<span class="lbl-ui">${t("result.slower")}</span><span class="r-chips">${r.slower.map((x) => chip(x, "down")).join("")}</span>`);
-  if (changed.length) lines.push(`<div class="r-letters">${changed.map((x) => `<p class="r-row">${x}</p>`).join("")}</div>`);
+  if (r.faster?.length) changed.push(`<span class="lbl-ui">${t("result.faster")}</span>${r.faster.map((x) => chip(x, "up")).join("")}`);
+  if (r.slower?.length) changed.push(`<span class="lbl-ui">${t("result.slower")}</span>${r.slower.map((x) => chip(x, "down")).join("")}`);
+  if (changed.length) lines.push(`<div class="r-letters">${changed.map((x) => `<p class="r-col">${x}</p>`).join("")}</div>`);
 
   return open(lines);
 }
@@ -62,7 +63,14 @@ export function showResult(r) {
 function open(lines) {
   box.innerHTML = `<div class="r-body">${lines.join("")}</div>` +
     `<p class="r-foot"><button type="button" class="btn r-next">${t("result.nextBtn")}${isTouch() ? "" : " <kbd>enter</kbd>"}</button></p>`;
-  box.querySelector(".r-next").addEventListener("click", (e) => { e.stopPropagation(); closeResult(); });
+  box.querySelector(".r-next").addEventListener("click", (e) => {
+    e.stopPropagation();
+    // the tap itself opens the phone keyboard: the next round can be typed
+    // at once, without a second "tap here to start typing"
+    el.input.focus({ preventScroll: true });
+    el.textBox.classList.remove("blurred");
+    closeResult();
+  });
   box.hidden = false;
   el.textBox.classList.add("resulting");
   return new Promise((resolve) => { done = resolve; });
