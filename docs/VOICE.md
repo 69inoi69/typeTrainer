@@ -49,7 +49,9 @@ do the mode names Learn and Freetype.
 
 What changes (the words, letters, numbers, messages) is bright; what never
 changes (labels, menu items, explanations) is quieter, and a fixed label is
-small grey capitals. One font everywhere: the monospace one (`.lbl-ui` in
+small and grey, in sentence case like everything else (no tracked-out
+capitals). Join parts with words or a comma, not "A · B" (only a tooltip
+uses "·", before its shortcut). One font everywhere: the monospace one (`.lbl-ui` in
 `style.css`). A new label follows the same rule, so the two never mix.
 
 ## Where each kind of text goes
