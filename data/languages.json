@@ -11,6 +11,7 @@
   "id": "pl",
   "name": "Polski",
   "label": "PL",
+  "hidden": true,
   "layout": "qwerty-pl",
   "alphabet": "aąbcćdeęfghijklłmnńoóprsśtuwyzźżqvx",
   "systemLayout": "Polish (Programmers)"
@@ -19,6 +20,7 @@
   "id": "uk",
   "name": "Українська",
   "label": "UK",
+  "hidden": true,
   "layout": "jcuken-uk",
   "alphabet": "абвгґдеєжзиіїйклмнопрстуфхцчшщьюя",
   "systemLayout": "Ukrainian"
@@ -27,6 +29,7 @@
   "id": "ru",
   "name": "Русский",
   "label": "RU",
+  "hidden": true,
   "layout": "jcuken-ru",
   "alphabet": "абвгдежзийклмнопрстуфхцчшщъыьэюя",
   "systemLayout": "Russian"

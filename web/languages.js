@@ -20,7 +20,10 @@ import { refreshFreeplay, restoreMode } from "./modes.js";
 // ---------- languages ----------
 // The switch is built once; changing language only moves the thumb
 // (CSS variable --i), so the slide animation can run.
+// With one language (the others hidden in data/languages.json) there is
+// nothing to switch: the switch and its shortcut hint are not shown.
 export function buildLangSwitch() {
+  document.body.classList.toggle("one-lang", S.languages.length < 2);
   el.langSwitch.style.setProperty("--n", S.languages.length);
   el.langSwitch.innerHTML = `<span class="switch-thumb" aria-hidden="true"></span>` +
     S.languages.map((l) => `<button type="button" role="tab" data-lang="${l.id}" title="${l.name}">${l.label}</button>`).join("");

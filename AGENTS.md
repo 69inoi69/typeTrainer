@@ -35,6 +35,9 @@ exercises from real words around the user's weak letters.
   `internal/storage/migrations/`, never into an old one.
 - Four languages: English, Polish, Ukrainian, Russian. Language data lives in
   `data/` (`languages.json`, `layouts/`, `langs/<id>/words.txt`), not in code.
+  **For now only English is shown (2026-10-16):** Polish, Ukrainian and
+  Russian are `"hidden": true` in `languages.json` until the English version
+  is polished; their data stays and keeps passing the tests.
 - Development machine: Windows, PowerShell.
 
 ## Architecture rules
@@ -64,8 +67,10 @@ exercises from real words around the user's weak letters.
   change what is measured or sent to the server. Tab never restarts an
   exercise: that is a deliberate product decision.
 - Every text the user sees follows `docs/VOICE.md` (short, calm, one quiet
-  joke at most, the same word for the same thing) and lives in `web/i18n.js`, in all four languages
-  (en, pl, uk, ru). Never hard-code interface text in the other `.js` files or
+  joke at most, the same word for the same thing) and lives in `web/i18n.js`.
+  While only English is shown, new and changed texts are written in English
+  only (the other blocks fall back to English); the pl/uk/ru blocks get
+  redone when those languages come back. Never hard-code interface text in the other `.js` files or
   `index.html`; use `t("key")` or `data-i18n="key"`. The one exception is
   `web/file-check.js` (the page opened from disk, where modules cannot load). Finger names there are in the form the
   hint sentence needs (Polish/Ukrainian/Russian instrumental case).

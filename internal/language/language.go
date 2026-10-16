@@ -24,6 +24,10 @@ type Language struct {
 	Layout       string `json:"layout"`       // layout file in data/layouts/, without .json
 	Alphabet     string `json:"alphabet"`     // every letter a word may contain
 	SystemLayout string `json:"systemLayout"` // name of the OS keyboard layout to switch to
+	// Hidden: loaded and working (?lang= still reaches it), but left out of
+	// /api/v1/languages, so the interface does not offer it. Used while a
+	// language waits for its interface texts to be redone.
+	Hidden bool `json:"hidden,omitempty"`
 }
 
 // Parse reads the language list and checks it for obvious mistakes.
@@ -34,6 +38,9 @@ func Parse(data []byte) ([]Language, error) {
 	}
 	if len(langs) == 0 {
 		return nil, fmt.Errorf("languages json: no languages")
+	}
+	if langs[0].Hidden {
+		return nil, fmt.Errorf("language %q: the first language is the default and cannot be hidden", langs[0].ID)
 	}
 	seen := map[string]bool{}
 	for _, l := range langs {

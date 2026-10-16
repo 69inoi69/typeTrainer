@@ -42,8 +42,8 @@ Lublin University of Technology (2027).
   style, a dark and a light theme, keyboard on or off.
 - **Two short first-visit guides:** the basics of touch typing, and how
   this site works.
-- English, Polish, Ukrainian and Russian, each with its own progress; the
-  interface speaks the same four languages.
+- English for now. Polish, Ukrainian and Russian are ready in the data
+  (word lists, layouts) and come back once the English version is polished.
 - Works on a phone too, with the navigation in a bar at the bottom.
 - **Accounts** (with the local server): sign up, log in, and your progress is
   kept under your account, in PostgreSQL if `DATABASE_URL` is set, otherwise

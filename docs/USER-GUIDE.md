@@ -194,7 +194,8 @@ open the link again after one.
 
 ## Languages and layouts
 
-English, Polish, Ukrainian and Russian, chosen with the switch at the top. Each
+For now only English is offered. Polish, Ukrainian and Russian are in the data
+and come back later; then a switch at the top chooses the language, and each
 language keeps its own progress. Switch your **system** keyboard layout too
 (Windows: Win + Space); the app shows a hint when the layout does not match.
 Polish uses the standard "Polish (Programmers)" layout: ą, ę, ł... with AltGr.

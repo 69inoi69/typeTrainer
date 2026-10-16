@@ -186,6 +186,8 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
 .lang-switch { grid-auto-flow: column; grid-auto-columns: minmax(34px, auto); height: var(--ctl); }
 .lang-switch button { padding: 0 8px; font-weight: 500; }
 .lang-switch .switch-thumb { left: 0; bottom: 1px; height: 2px; width: calc(100% / var(--n)); transform: translateX(calc(var(--i) * 100%)); }
+/* one language only (languages.js, buildLangSwitch): nothing to switch */
+body.one-lang .lang-switch, body.one-lang .lang-hint { display: none; }
 .lang-switch .switch-thumb::after { left: calc(50% - 7px); width: 14px; height: 2px; }
 
 /* The navigation (index.html, nav.rail): groups of buttons, each an icon

@@ -123,11 +123,14 @@ func (s *Server) withLang(h langHandler) http.HandlerFunc {
 	}
 }
 
-// GET /api/v1/languages -> the list for the language switch.
+// GET /api/v1/languages -> the list for the language switch. Hidden
+// languages are left out (they still answer ?lang=, see language.Hidden).
 func (s *Server) handleLanguages(w http.ResponseWriter, r *http.Request) {
-	out := make([]language.Language, len(s.order))
-	for i, l := range s.order {
-		out[i] = l.Info
+	out := []language.Language{}
+	for _, l := range s.order {
+		if !l.Info.Hidden {
+			out = append(out, l.Info)
+		}
 	}
 	writeJSON(w, http.StatusOK, out)
 }

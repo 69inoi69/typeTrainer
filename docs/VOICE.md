@@ -1,6 +1,8 @@
 # How the app talks
 
-The rules for every text a user sees (`web/i18n.js`, in all four languages).
+The rules for every text a user sees (`web/i18n.js`). For now only English is
+shown, so new texts are written in English only; the other blocks get redone
+when their languages come back.
 Read them before adding or changing a text. The aim: a calm mentor with a
 sense of humour, not a stand-up comedian and not a robot.
 
@@ -55,7 +57,7 @@ sense of humour, not a stand-up comedian and not a robot.
 
 ## Before you add a text
 
-- It goes into `web/i18n.js` in all four languages, never into the HTML or
+- It goes into `web/i18n.js` (English for now, see the top), never into the HTML or
   another `.js` file (the one exception is `web/file-check.js`).
 - Check the word list. A new term goes into the list first.
 - Read it aloud. If it sounds like an advert or a chatbot, cut it in half.
