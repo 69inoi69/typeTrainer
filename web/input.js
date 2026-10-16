@@ -53,7 +53,9 @@ function setView(name) {
     fitText();
     requestFit();
     placeCaret(true);
-    focusText();
+    // back on a result that is still open: no phone keyboard until "Next
+    // round" (owner, 2026-10-16)
+    if (!resultOpen()) focusText();
   }
 }
 el.tabStats.addEventListener("click", (e) => { e.currentTarget.blur(); setView("stats"); });

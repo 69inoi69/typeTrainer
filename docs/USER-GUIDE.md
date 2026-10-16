@@ -157,7 +157,9 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   jokes or tips there. The result stays until you go on on purpose:
   **Enter**, **Esc**, **Tab** or the yellow-outlined **Next round** button
   (a tap on it also opens the phone keyboard, so you can type at once) (letters do nothing there, and there is no
-  timer). Switching to another mode from there closes it too.
+  timer). Switching to another mode from there closes it too. On a phone
+  the keyboard closes when the round ends, and it stays closed while the
+  result is open, also after a look at the stats and back.
 - Small messages under the letters are only used outside typing (a file
   saved or loaded).
 - **Help** (the **?** in the navigation) opens a panel about the screen you

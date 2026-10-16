@@ -170,6 +170,9 @@ function open(lines) {
   });
   box.hidden = false;
   el.textBox.classList.add("resulting");
+  // phone: the round is over, so its keyboard closes and the whole result
+  // is in view (owner, 2026-10-16); "Next round" opens it again
+  if (isTouch()) el.input.blur();
   return new Promise((resolve) => { done = resolve; });
 }
 
