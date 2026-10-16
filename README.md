@@ -10,10 +10,6 @@
   <a href="https://69inoi69.github.io/typetrainer/"><b>Try it in your browser</b></a>
 </p>
 
-<p align="center">
-  <img src="docs/screenshots/typing.png" width="760" alt="The typing screen: the letters row, the text, the hands and the keyboard">
-</p>
-
 ---
 
 **Work in progress.** The practical part of an engineering thesis at the
@@ -28,18 +24,22 @@ Lublin University of Technology (2027).
   statistics, no machine learning, so every step can be explained.
 - **Letters open gradually**, most frequent first, once the open ones are
   accurate and fast enough.
-- **Learning and free practice.** Learning is the main mode: the algorithm
-  decides what you practise. Free practice (words from the whole list, its own
-  history, nothing shared with learning) opens when every letter is open, or
-  after a one-time typing test. It is kept simple for now.
+- **Two modes: type and freetype.** *type* is the learning mode and the
+  main one: the algorithm decides what you practise. *freetype* (words from
+  the whole list, its own history, nothing shared with learning) opens when
+  every letter is open, or after a one-time typing test. It is kept simple
+  for now.
 - **You see what to practise.** Above the text, a row of letters marks the
   one in focus, the mastered ones and the next to open. The keyboard and the
   hands show the finger for the next key. The statistics screen shows every
   round, a keyboard coloured by difficulty and every letter from weakest to
   strongest, all on one screen.
+- **Take your numbers with you:** the statistics screen copies a short text
+  summary or saves a picture card with your speed and letters.
 - **Settings change how much and how it looks, never what:** round length
   (10, 30 or 60 words, or 30 or 60 seconds), live numbers on or off, caret
-  style, a dark and a light theme, keyboard on or off.
+  style, a dark and a light theme, keyboard on or off. Help and settings
+  open as panels in the same style as everything else.
 - **Two short first-visit guides:** the basics of touch typing, and how
   this site works.
 - English for now. Polish, Ukrainian and Russian are ready in the data
@@ -48,11 +48,6 @@ Lublin University of Technology (2027).
 - **Accounts** (with the local server): sign up, log in, and your progress is
   kept under your account, in PostgreSQL if `DATABASE_URL` is set, otherwise
   in the server's memory.
-
-<p align="center">
-  <img src="docs/screenshots/stats.png" width="380" alt="The statistics screen">
-  <img src="docs/screenshots/light.png" width="380" alt="The light theme">
-</p>
 
 ## Run it locally
 
