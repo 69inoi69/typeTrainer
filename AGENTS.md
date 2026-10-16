@@ -66,9 +66,10 @@ exercises from real words around the user's weak letters.
 - Visual rewards (confetti, bumps, toasts) live in `web/fx.js` and must never
   change what is measured or sent to the server. Tab never restarts an
   exercise: that is a deliberate product decision.
-- Every text the user sees follows `docs/UI-TEXT.md` (say what it does as
-  short as possible, spell out consequences, no filler, no jokes, the same
-  word for the same thing) and lives in `web/i18n.js`.
+- Every text the user sees follows `docs/UI-TEXT.md` (every text earns its
+  place: nothing for the obvious, explain what is not, spell out
+  consequences, the same word for the same thing; decide this yourself for
+  every new feature) and lives in `web/i18n.js`.
   While only English is shown, new and changed texts are written in English
   only (the other blocks fall back to English); the pl/uk/ru blocks get
   redone when those languages come back. Never hard-code interface text in the other `.js` files or
