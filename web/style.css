@@ -550,12 +550,13 @@ body[data-mode="free"] .learn-only { display: none; }
    and height. "scale" stays free for the Tab nudge and scales in place. */
 .caret {
   /* a block caret, one character wide (the font is monospace, so 1ch is
-     exactly one letter), drawn over the letter in a see-through accent */
+     exactly one letter), drawn over the letter in a see-through accent:
+     light enough that the letter under it stays easy to read, and no bar
+     under it (owner, 2026-10-16: the yellow underline looked odd) */
   position: absolute; left: 1px; top: 0; width: calc(1ch + .02em); height: 1.2em;
-  background: color-mix(in srgb, var(--accent) 38%, transparent);
-  border-bottom: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
   border-radius: 3px; pointer-events: none;
-  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 35%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 20%, transparent);
   will-change: translate;
   transition: translate var(--feel-caret-ms, 0ms) cubic-bezier(.15, .85, .35, 1);   /* starts at once, settles softly (web/feel.js) */
   animation: blink 1s steps(1) infinite;
@@ -565,7 +566,7 @@ body[data-mode="free"] .learn-only { display: none; }
    the left edge of the next letter, same glide and blink. The block above is
    the "block" setting (body.caret-block, settings.js). */
 body:not(.caret-block) .caret {
-  width: 2px; background: var(--accent); border-bottom: 0; border-radius: 1px;
+  width: 2px; background: var(--accent); border-radius: 1px;
   box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 .text-box.typing .caret { animation: none; }             /* solid while typing */
@@ -1146,7 +1147,7 @@ body.live-off .live .metric.num { display: none; }
 /* small pictures of the two carets */
 .cs { display: inline-block; height: 12px; border-radius: 1px; background: currentColor; }
 .cs.line { width: 2px; }
-.cs.block { width: 8px; opacity: .55; border-bottom: 2px solid currentColor; }
+.cs.block { width: 8px; opacity: .4; }
 /* the stats screen: whose stats and one round length at a time (.seg look) */
 .mode-filter:empty { display: none; }
 
