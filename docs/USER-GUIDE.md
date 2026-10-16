@@ -131,7 +131,10 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
 - **When the round ends** the text window shows the result instead of the
   text: the numbers first (speed in wpm, accuracy and the **consistency** of
   your speed: how even the pace was, 100 % = every second the same; rounds
-  under 5 seconds get none), then one plain line if something happened (a
+  under 5 seconds get none). Under them, smaller: Characters (right, wrong,
+  extra and missed letters, for example `128/3/0/1`; hover for what each
+  number is) and the Time of the round, from the first to the last press.
+  Then one plain line if something happened (a
   new letter ("New letter opened:" and the letter on a yellow key, the tint only as wide as the text), a new record, mastered letters), then which letters got faster
   or slower, as the time per press before and now (for example
   `s 320→250ms`), Faster on the left and Slower on the right, then the
@@ -142,6 +145,10 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   equal parts between your slowest and fastest word, as on Monkeytype, so
   the colours compare words of one round, not you with anyone. When every
   word had about the same speed, all are yellow and there is no legend.
+  Above the words, a small chart shows the speed of each word in the order
+  you typed them: one dot per word in its speed colour, a red cross above a
+  word that had a mistake (hover or tap a dot for the word and its speed).
+  Thin lines separate the parts of the result.
   Hover a word (or tap it on a phone) to see its own speed: the average
   time per press of its letters and the space after it, in wpm. Each part
   is its own block with some air between (good news, a new letter or a

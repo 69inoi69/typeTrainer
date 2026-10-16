@@ -893,7 +893,11 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 .result[hidden] { display: none; }
 .result p { margin: 0; }
 .r-body { display: flex; flex-direction: column; }
-.result .r-body > * + * { margin-top: 16px; }   /* .result: stronger than ".result p { margin: 0 }" above */
+/* each part is a section with a thin line between (owner, 2026-10-16:
+   neat lines with enough room, so the card reads as blocks); the room is
+   the same above and below each line */
+.result .r-sec + .r-sec { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+.r-sec { min-width: 0; }   /* a long word list or chart never pushes the card wider */
 /* the numbers: three equal columns, the label on top (readable, not tiny),
    the value under it */
 .r-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -901,6 +905,16 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 .r-num .r-lbl { font-size: .8rem; }
 .r-num b { font-size: 2rem; font-weight: 400; line-height: 1.1; color: var(--accent-text); font-variant-numeric: tabular-nums; }
 .r-num b small { font-size: .55em; margin-left: 2px; color: var(--sub); }
+/* the characters and the time: the same columns as the numbers, smaller
+   and in the text colour (the big numbers above stay the main thing) */
+.result .r-facts-row { margin-top: 12px; }
+.r-num.r-sub { outline: none; }
+.r-num.r-sub[data-tip-text] { cursor: default; }
+.r-num.r-sub b { font-size: 1.1rem; color: var(--text); }
+.r-num.r-sub b small, .r-num.r-sub .sl { color: var(--sub); }
+.r-num.r-sub .bad { color: var(--error); }
+.r-num.r-sub .miss { color: var(--sub); }
+.r-num.r-sub .sl { font-style: normal; margin: 0 1px; }
 .r-main { display: flex; align-items: center; font-size: .9rem; color: var(--text); line-height: 1.5; }
 /* good news (a new letter, a record): in the accent colour, on a soft tint */
 .r-main.k-letter, .r-main.k-best {
@@ -941,6 +955,27 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 .r-words .s3 { --sp: var(--accent-text); }
 .r-words .s4 { --sp: color-mix(in srgb, var(--accent-text) 50%, var(--ok)); }
 .r-words .s5 { --sp: var(--ok); }
+/* the chart of word speeds: the wpm scale on the left, the plot on the
+   right; the dots are placed in percent, so it fits any width */
+.r-chart { display: flex; gap: 8px; height: 88px; margin: 4px 0 6px; }
+@media (max-width: 640px) { .r-chart { height: 72px; } }   /* phone: the button stays closer */
+.r-axis {
+  display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end;
+  font-size: .65rem; line-height: 1; color: var(--sub); font-variant-numeric: tabular-nums;
+  margin: -0.3em 0;   /* the middle of each number sits on its grid line */
+}
+.r-plot { position: relative; flex: 1; min-width: 0; margin-right: 4px; }
+.r-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.r-grid { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; fill: none; }
+.r-line { stroke: color-mix(in srgb, var(--text) 45%, transparent); stroke-width: 1.5; vector-effect: non-scaling-stroke; fill: none; stroke-linejoin: round; }
+.r-dot, .r-err { position: absolute; translate: -50% -50%; }
+.r-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sp); cursor: default; }
+.r-dot::after { content: ""; position: absolute; inset: -6px; }   /* a bigger target for the finger */
+.r-err {                            /* a mistake in this word: a small red cross above its dot */
+  width: 7px; height: 7px; margin-top: -10px; pointer-events: none;
+  background: linear-gradient(45deg, transparent 42%, var(--error) 42% 58%, transparent 58%),
+              linear-gradient(-45deg, transparent 42%, var(--error) 42% 58%, transparent 58%);
+}
 .result .r-words-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 /* the legend: one small coloured cell per band with its wpm range */
 .r-legend { display: inline-flex; border-radius: 4px; overflow: hidden; font-size: .7rem; line-height: 1.5; font-variant-numeric: tabular-nums; }
