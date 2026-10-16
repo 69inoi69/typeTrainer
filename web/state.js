@@ -26,7 +26,7 @@ export const $ = (id) => document.getElementById(id);
 export const el = {
   textBox: $("text-box"), text: $("text"), caret: $("caret"), input: $("hidden-input"),
   keyboard: $("keyboard"), hint: $("finger-hint"),
-  live: $("live"), wpm: $("wpm"), raw: $("raw"), acc: $("acc"), progress: $("progress"), progressLabel: $("progress-label"), motto: $("logo-motto"),
+  live: $("live"), wpm: $("wpm"), raw: $("raw"), acc: $("acc"), progress: $("progress"), progressLabel: $("progress-label"),
   letters: $("letters"), lettersCaption: $("letters-caption"),
   tooltip: $("tooltip"),
   btnNew: $("btn-new"), btnIntro: $("btn-intro"), heatKb: $("heat-kb"),
@@ -64,7 +64,6 @@ export const S = {
   free: null,             // last /freeplay/stats answer
   settings: { length: "words-30", live: false, caret: "line", theme: "dark" },   // settings.js
   kbHidden: false,        // keyboard and hands switched off
-  mottoIndex: 0,          // the small phrase over the logo (set by init)
 };
 
 // ---------- small helpers ----------

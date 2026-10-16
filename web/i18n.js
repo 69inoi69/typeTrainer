@@ -91,8 +91,7 @@ const I18N = {
     "fingerName.ri": "Right index", "fingerName.rm": "Right middle", "fingerName.rr": "Right ring", "fingerName.rp": "Right pinky",
     "fingerName.th": "Thumb",
     // pools: one is picked at random (tPick)
-    "splash.0": "qwerty is not a password", "splash.1": "eyes up, the keys won't run away", "splash.2": "backspace is not a lifestyle", "splash.3": "pinky, it's your time", "splash.4": "f and j have bumps. use them", "splash.5": "home row or no row", "splash.6": "accuracy now, speed later", "splash.7": "real words. real pain (◕‿◕)",
-    "motto.typing.0": "shh… typing", "motto.typing.1": "in the zone", "motto.typing.2": "do not disturb", "motto.typing.3": "fingers go brrr", "motto.typing.4": "eyes on the text", "motto.typing.5": "keep going…",
+
     "result.best.0": "new personal best: <b>{wpm} wpm</b> · who are you?", "result.best.1": "<b>{wpm} wpm</b>. new record. the keyboard is scared", "result.best.2": "personal best: <b>{wpm} wpm</b> (ﾉ◕ヮ◕)ﾉ", "result.best.3": "<b>{wpm} wpm</b>. screenshot it before it drops",
     "result.mastered.0": "mastered: <b>{letters}</b> · clean and fast", "result.mastered.1": "<b>{letters}</b>: done. no more drama", "result.mastered.2": "<b>{letters}</b> mastered. your fingers remember now", "result.mastered.3": "<b>{letters}</b> is officially boring now. good",
     "result.resisted.0": "restart urge beaten {n}×", "result.resisted.1": "{n}× wanted a restart, 0 restarts. respect", "result.resisted.2": "{n}× Tab, 0 restarts. character development",
@@ -211,8 +210,7 @@ const I18N = {
     "fingerName.ri": "Prawy wskazujący", "fingerName.rm": "Prawy środkowy", "fingerName.rr": "Prawy serdeczny", "fingerName.rp": "Prawy mały palec",
     "fingerName.th": "Kciuk",
     // pools: one is picked at random (tPick)
-    "splash.0": "qwerty to nie hasło", "splash.1": "patrz w ekran, klawisze nie uciekną", "splash.2": "backspace to nie styl życia", "splash.3": "mały palec, twoja kolej", "splash.4": "f i j mają wypustki. serio", "splash.5": "środkowy rząd albo nic", "splash.6": "najpierw celność, potem tempo", "splash.7": "prawdziwe słowa. prawdziwy ból (◕‿◕)",
-    "motto.typing.0": "ciii… piszę", "motto.typing.1": "w strefie", "motto.typing.2": "nie przeszkadzać", "motto.typing.3": "palce robią brrr", "motto.typing.4": "oczy na tekst", "motto.typing.5": "jeszcze trochę…",
+
     "result.best.0": "nowy rekord: <b>{wpm} wpm</b> · kim ty jesteś?", "result.best.1": "<b>{wpm} wpm</b>. nowy rekord. klawiatura się boi", "result.best.2": "rekord: <b>{wpm} wpm</b> (ﾉ◕ヮ◕)ﾉ", "result.best.3": "<b>{wpm} wpm</b>. zrób screena, zanim spadnie",
     "result.mastered.0": "opanowane: <b>{letters}</b> · czysto i szybko", "result.mastered.1": "<b>{letters}</b>: załatwione. koniec dramy", "result.mastered.2": "<b>{letters}</b> opanowane. palce już pamiętają", "result.mastered.3": "<b>{letters}</b> jest już oficjalnie nudne. i dobrze",
     "result.resisted.0": "pokusa restartu pokonana {n}×", "result.resisted.1": "{n}× chęć restartu, 0 restartów. szacun", "result.resisted.2": "{n}× Tab, 0 restartów. rozwój postaci",
@@ -331,8 +329,7 @@ const I18N = {
     "fingerName.ri": "Правий вказівний", "fingerName.rm": "Правий середній", "fingerName.rr": "Правий безіменний", "fingerName.rp": "Правий мізинець",
     "fingerName.th": "Великий палець",
     // pools: one is picked at random (tPick)
-    "splash.0": "йцукен — не пароль", "splash.1": "очі на екран, клавіші не втечуть", "splash.2": "backspace — не стиль життя", "splash.3": "мізинцю, твій вихід", "splash.4": "на а і о є рисочки. серйозно", "splash.5": "основний ряд або ніякий", "splash.6": "спершу точність, швидкість потім", "splash.7": "справжні слова. справжній біль (◕‿◕)",
-    "motto.typing.0": "тсс… друкую", "motto.typing.1": "в потоці", "motto.typing.2": "не турбувати", "motto.typing.3": "пальці роблять брр", "motto.typing.4": "очі на текст", "motto.typing.5": "ще трохи…",
+
     "result.best.0": "новий рекорд: <b>{wpm} wpm</b> · хто ти взагалі?", "result.best.1": "<b>{wpm} wpm</b>. новий рекорд. клавіатура боїться", "result.best.2": "рекорд: <b>{wpm} wpm</b> (ﾉ◕ヮ◕)ﾉ", "result.best.3": "<b>{wpm} wpm</b>. скрінь, поки не впало",
     "result.mastered.0": "опановано: <b>{letters}</b> · чисто і швидко", "result.mastered.1": "<b>{letters}</b>: готово. без драм", "result.mastered.2": "<b>{letters}</b> опановано. пальці вже пам'ятають", "result.mastered.3": "з <b>{letters}</b> тепер нудно. і це добре",
     "result.resisted.0": "бажання рестарту переможено {n}×", "result.resisted.1": "{n}× хотілося рестарту, 0 рестартів. повага", "result.resisted.2": "{n}× Tab, 0 рестартів. розвиток персонажа",
@@ -451,8 +448,7 @@ const I18N = {
     "fingerName.ri": "Правый указательный", "fingerName.rm": "Правый средний", "fingerName.rr": "Правый безымянный", "fingerName.rp": "Правый мизинец",
     "fingerName.th": "Большой палец",
     // pools: one is picked at random (tPick)
-    "splash.0": "йцукен — не пароль", "splash.1": "глаза на экран, клавиши не убегут", "splash.2": "backspace — не стиль жизни", "splash.3": "мизинец, твой выход", "splash.4": "на а и о есть засечки. серьёзно", "splash.5": "основной ряд или никакой", "splash.6": "сначала точность, скорость потом", "splash.7": "настоящие слова. настоящая боль (◕‿◕)",
-    "motto.typing.0": "тсс… печатаю", "motto.typing.1": "в потоке", "motto.typing.2": "не беспокоить", "motto.typing.3": "пальцы делают брр", "motto.typing.4": "глаза на текст", "motto.typing.5": "ещё чуть-чуть…",
+
     "result.best.0": "новый рекорд: <b>{wpm} wpm</b> · ты кто вообще?", "result.best.1": "<b>{wpm} wpm</b>. новый рекорд. клавиатура в шоке", "result.best.2": "рекорд: <b>{wpm} wpm</b> (ﾉ◕ヮ◕)ﾉ", "result.best.3": "<b>{wpm} wpm</b>. скринь, пока не упало",
     "result.mastered.0": "освоено: <b>{letters}</b> · чисто и быстро", "result.mastered.1": "<b>{letters}</b>: готово. без драмы", "result.mastered.2": "<b>{letters}</b> освоено. пальцы уже помнят", "result.mastered.3": "с <b>{letters}</b> теперь скучно. и это хорошо",
     "result.resisted.0": "желание рестарта побеждено {n}×", "result.resisted.1": "{n}× хотелось рестарта, 0 рестартов. уважение", "result.resisted.2": "{n}× Tab, 0 рестартов. развитие персонажа",
@@ -501,7 +497,6 @@ const I18N = {
 };
 
 let uiLang = "en";        // the interface language, changed with setUiLang()
-export const SPLASH_PHRASES = 8; // splash.0 ... splash.7 in every language
 export const i18nVars = {};      // placeholders used by static texts: {f}, {j}, {l}, {r}, {target}
 
 // The interface follows the typing language; English if it has no texts.

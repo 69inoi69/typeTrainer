@@ -8,8 +8,8 @@
 // Layer: middle. Imports the bottom layer, keyboard.js, stats.js, result.js,
 // letters.js, modes.js and settings.js.
 // Called by: input.js (handleChar, backspace, nudge, stopRound and the rest
-// on keys and clicks) and languages.js (loadExercise, hideWarn, setMotto
-// when the language changes).
+// on keys and clicks) and languages.js (loadExercise, hideWarn when the
+// language changes).
 //
 // Speed rule (AGENTS.md): this code runs on every keypress, so it must stay
 // light. A keypress only flips the classes of the 1-2 <span>s that changed;
@@ -19,7 +19,7 @@
 // browser to recompute the page on every key, which shows as lag.
 
 import { FEEL } from "./feel.js";
-import { t, tPick } from "./i18n.js";
+import { t } from "./i18n.js";
 import { FX } from "./fx.js";
 import { $, el, S, introOpen } from "./state.js";
 import { postJSON } from "./api.js";
@@ -620,19 +620,12 @@ function updateLive() {
 // ---------- "typing now": the header steps back ----------
 // From the first keypress to the end of the round the body has the class
 // "typing-now": the logo turns grey, the languages, the account and the
-// navigation almost vanish (style.css), and the small phrase over the logo changes to a typing one.
+// navigation almost vanish (style.css).
 let typingNow = false;
 export function setTyping(on) {
   if (on === typingNow) return;
   typingNow = on;
   document.body.classList.toggle("typing-now", on);
-  setMotto(on);
-}
-// The small phrase over the logo: a random "typing" one while you type, the
-// start phrase otherwise. Changes with a short fade.
-export function setMotto(typing = typingNow) {
-  el.motto.textContent = typing ? tPick("motto.typing") : t(`splash.${S.mottoIndex}`);
-  FX.anim(el.motto, [{ opacity: 0, transform: "translateY(3px)" }, { opacity: 1, transform: "none" }], { duration: 250, easing: "ease-out" });
 }
 
 // Twice a second: a long pause ends the round, and so does the end of the

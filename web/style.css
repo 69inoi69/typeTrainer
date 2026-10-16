@@ -109,13 +109,8 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
 .logo { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .logo-key { width: 34px; height: 34px; flex: none; }
 .logo-text { display: flex; flex-direction: column; line-height: 1; min-width: 0; }
-.logo-motto {                     /* small random phrase, like "monkey see" on monkeytype */
-  font-size: .62rem; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  margin: 0 0 3px 1px; letter-spacing: .02em;
-}
 .logo-name { font-size: 1.75rem; color: var(--accent); white-space: nowrap; transition: color .4s var(--ease); }
 .logo-name span { color: var(--text); transition: color .4s var(--ease); }
-.logo-motto { transition: opacity .25s var(--ease); }
 
 /* ---------- live numbers: the top line of the text card ---------- */
 /* Small and dim while you read, brighter while you type: you can glance at
@@ -910,33 +905,27 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .splash-type {
   display: inline-block; overflow: hidden; white-space: nowrap; vertical-align: bottom;
   width: 0; border-right: .08em solid var(--accent); padding-right: .04em;
-  animation: splash-typing 620ms steps(11, end) 120ms forwards, splash-caret .8s steps(1) infinite;
+  animation: splash-typing 420ms steps(11, end) 60ms forwards, splash-caret .8s steps(1) infinite;
 }
 @keyframes splash-typing { to { width: 11.1ch; } }
 @keyframes splash-caret { 50% { border-color: transparent; } }
-.splash-phrase {
-  /* the same size as the motto in the header: it only moves there, no resizing */
-  margin: 0; color: var(--sub); font-size: .62rem; letter-spacing: .02em; text-align: center; padding: 0 16px;
-  opacity: 0; animation: splash-phrase .5s var(--ease) 700ms forwards;
-}
-@keyframes splash-phrase { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-body.splashing .top .logo, body.landing .top .logo-name, body.landing .top .logo-motto { visibility: hidden; }  /* the splash logo and phrase land here */
+body.splashing .top .logo, body.landing .top .logo-name { visibility: hidden; }  /* the splash logo lands here */
 
 /* after the splash: the page slides in, piece by piece */
 body.entering .lang-switch, body.entering .profile, body.entering .rail, body.entering .letters, body.entering .text-box,
 body.entering .hands, body.entering .kb-row, body.entering .bottom {
-  animation: rise-in .55s var(--ease) both;
+  animation: rise-in .4s var(--ease) both;
 }
-body.entering .rail, body.entering .lang-switch { animation-delay: .08s; }
-body.entering .profile { animation-delay: .12s; }
-body.entering .letters { animation-delay: .16s; }
-body.entering .text-box { animation-delay: .22s; }
-body.entering .hands { animation-delay: .28s; }
-body.entering .kb-row:nth-child(1) { animation-delay: .30s; }
-body.entering .kb-row:nth-child(2) { animation-delay: .34s; }
-body.entering .kb-row:nth-child(3) { animation-delay: .38s; }
-body.entering .kb-row:nth-child(4) { animation-delay: .42s; }
-body.entering .bottom { animation-delay: .48s; }
+body.entering .rail, body.entering .lang-switch { animation-delay: .04s; }
+body.entering .profile { animation-delay: .06s; }
+body.entering .letters { animation-delay: .08s; }
+body.entering .text-box { animation-delay: .11s; }
+body.entering .hands { animation-delay: .14s; }
+body.entering .kb-row:nth-child(1) { animation-delay: .15s; }
+body.entering .kb-row:nth-child(2) { animation-delay: .17s; }
+body.entering .kb-row:nth-child(3) { animation-delay: .19s; }
+body.entering .kb-row:nth-child(4) { animation-delay: .21s; }
+body.entering .bottom { animation-delay: .24s; }
 @keyframes rise-in { from { opacity: 0; transform: translateY(12px); } }
 .letters-caption .begin + .begin::before { content: "·"; margin-right: 10px; color: var(--sub); }
 

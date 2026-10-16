@@ -12,7 +12,7 @@ import { getJSON } from "./api.js";
 import { labelTips } from "./tools.js";
 import { drawKeyboard, applyKb } from "./keyboard.js";
 import { refreshStats, renderStats } from "./stats.js";
-import { loadExercise, hideWarn, setMotto } from "./typing.js";
+import { loadExercise, hideWarn } from "./typing.js";
 import { drawIntroKeys } from "./intro.js";
 import { renderProfile } from "./profile.js";
 import { refreshFreeplay, restoreMode } from "./modes.js";
@@ -76,7 +76,6 @@ export async function loadLanguage(id) {
     // home-row keys for the intro text ("bumps on F and J" / "on А and О")
     const home = S.layout.rows.flat().filter((k) => k.home).map((k) => k.char.toUpperCase());
     [i18nVars.f, i18nVars.j] = home;
-    setMotto();                             // the phrase over the logo, in the new language
     const row = S.layout.rows[1].map((k) => k.char.toUpperCase());
     i18nVars.l = row.slice(0, 4).join(" ");
     i18nVars.r = row.slice(6, 10).join(" ");

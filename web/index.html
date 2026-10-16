@@ -16,11 +16,9 @@
   <script>try { if (localStorage.getItem("tt.theme") === "light") document.documentElement.dataset.theme = "light"; } catch {}</script>
 </head>
 <body class="splashing">
-  <!-- Start screen: the logo types itself, a random phrase, then the logo
-       flies to its place in the header (fx.js, Splash). -->
+  <!-- Start screen: the logo types itself, then flies to its place in the
+       header (fx.js, Splash). -->
   <div class="splash" id="splash" aria-hidden="true">
-    <!-- the phrase sits over the logo, as it will in the header -->
-    <p class="splash-phrase" id="splash-phrase">&nbsp;</p>
     <div class="splash-logo" id="splash-logo"><span class="splash-type">type<b>trainer</b></span></div>
   </div>
   <!-- The header: who and where. The logo on the left; on the right the
@@ -29,8 +27,7 @@
   <header class="top">
     <div class="logo">
       <svg class="logo-key" viewBox="0 0 64 64" aria-hidden="true"><rect x="9" y="12" width="46" height="44" rx="10" fill="#a8851a"/><rect x="9" y="8" width="46" height="42" rx="10" fill="#e2b714"/><rect x="22" y="38" width="20" height="5" rx="2.5" fill="#15171a"/></svg>
-      <!-- the small phrase over the name changes while you type (typing.js, setMotto) -->
-      <div class="logo-text"><small class="logo-motto" id="logo-motto">&nbsp;</small><span class="logo-name">type<span>trainer</span></span></div>
+      <div class="logo-text"><span class="logo-name">type<span>trainer</span></span></div>
     </div>
 
     <div class="top-side">

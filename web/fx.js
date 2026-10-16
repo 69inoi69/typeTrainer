@@ -6,14 +6,13 @@
 // (element.animate, runs on the compositor) or a short canvas animation that
 // runs only at the END of a round, never per keystroke.
 // With "reduce motion" switched on in the OS, all of it is skipped.
-// Layer: bottom. Imports only i18n.js (the splash phrases). It does not know
+// Layer: bottom. Imports nothing. It does not know
 // the rest of the app: callers pass it the element to animate (typing.js for
 // the streak and records, tools.js for toasts, app.js for the splash).
 // To add a reward effect: a function inside FX and its name in the returned
 // object. It may only change how things look: never S, a sample, or anything
 // sent to the server (AGENTS.md).
 
-import { SPLASH_PHRASES, t } from "./i18n.js";
 
 export const FX = (() => {
   const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -159,7 +158,8 @@ export const FX = (() => {
 // key or click skips the rest. The logo then flies into the header (FLIP:
 // measure both positions, animate the difference) and the page slides in.
 export const Splash = (() => {
-  const MIN_MS = 1300;
+  const MIN_MS = 750;   // the typing animation (style.css, .splash-type) plus a short look
+  const FLY_MS = 380;   // the logo flying into the header
   function start() {
     const root = document.getElementById("splash");
     const t0 = performance.now();
@@ -169,13 +169,6 @@ export const Splash = (() => {
       root.remove(); document.body.classList.remove("splashing", "landing");
       return { done: async () => {} };
     }
-    // a random phrase, never the same as last time
-    let last = -1;
-    try { last = Number(localStorage.getItem("tt.splash") ?? -1); } catch { /* blocked */ }
-    let i = Math.floor(Math.random() * SPLASH_PHRASES);
-    if (i === last) i = (i + 1) % SPLASH_PHRASES;
-    try { localStorage.setItem("tt.splash", String(i)); } catch { /* blocked */ }
-    document.getElementById("splash-phrase").textContent = t(`splash.${i}`);
     addEventListener("keydown", skip, { once: true });
     addEventListener("pointerdown", skip, { once: true });
 
@@ -198,43 +191,27 @@ export const Splash = (() => {
         text.style.borderRightColor = "transparent";      // no caret on the small logo
         from.animate([{ transform: "none" },
           { transform: `translate(${dx}px, ${dy}px) scale(${s})` }],
-          { duration: 520, easing: "cubic-bezier(.6,0,.2,1)", fill: "forwards" });
+          { duration: FLY_MS, easing: "cubic-bezier(.6,0,.2,1)", fill: "forwards" });
       } else {
         // phone: the header has no logo to land on, so the big one simply
         // drifts up a little, shrinks slightly and fades out
         from.style.transformOrigin = "50% 50%";
         from.animate([{ opacity: 1, transform: "none" },
           { opacity: 0, transform: "translateY(-14px) scale(.94)" }],
-          { duration: 420, easing: "cubic-bezier(.4,0,.2,1)", fill: "forwards" });
+          { duration: FLY_MS - 80, easing: "cubic-bezier(.4,0,.2,1)", fill: "forwards" });
       }
       root.animate([{ backgroundColor: getComputedStyle(root).backgroundColor }, { backgroundColor: "transparent" }],
-        { duration: 520, easing: "ease-in", fill: "forwards" });
-      // the phrase flies onto the small motto over the header logo (same text);
-      // on phones (no logo in the header) it just fades out
-      const phrase = document.getElementById("splash-phrase");
-      const motto = document.querySelector(".top .logo-motto");
-      const textBox = (node) => { const r = document.createRange(); r.selectNodeContents(node); return r.getBoundingClientRect(); };
-      const ma = motto ? textBox(motto) : null;
-      if (b.width > 0 && ma && ma.width > 0) {
-        const pa = textBox(phrase), pf = phrase.getBoundingClientRect();
-        const ps = parseFloat(getComputedStyle(motto).fontSize) / parseFloat(getComputedStyle(phrase).fontSize);
-        phrase.style.transformOrigin = `${pa.left - pf.left}px ${pa.top - pf.top}px`;   // the text's top-left corner
-        phrase.animate([{ transform: "none" },
-          { transform: `translate(${ma.left - pa.left}px, ${ma.top - pa.top}px) scale(${ps})` }],
-          { duration: 520, easing: "cubic-bezier(.6,0,.2,1)", fill: "forwards" });
-      } else {
-        phrase.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: "forwards" });
-      }
+        { duration: FLY_MS, easing: "ease-in", fill: "forwards" });
       // typing is allowed again, but the header logo stays hidden ("landing")
       // until the flying logo has arrived, so there are never two of them
       document.body.classList.add("entering", "landing");
       document.body.classList.remove("splashing");
-      await new Promise((r) => setTimeout(r, 520));
+      await new Promise((r) => setTimeout(r, FLY_MS));
       document.body.classList.remove("landing");
       root.remove();
-      setTimeout(() => document.body.classList.remove("entering"), 900);
+      setTimeout(() => document.body.classList.remove("entering"), 700);
     }
-    return { done, phrase: i };   // the app shows the same phrase over the logo
+    return { done };
   }
   return { start };
 })();
