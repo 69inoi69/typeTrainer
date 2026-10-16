@@ -27,8 +27,6 @@ const STAT_ICONS = {
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   // the typing test: a flag at the finish line
   test: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
-  // freetype: the same infinity sign as its tab
-  free: '<path d="M12 12c-2-2.7-3.6-4-5.5-4a4 4 0 0 0 0 8c1.9 0 3.5-1.3 5.5-4zm0 0c2 2.7 3.6 4 5.5 4a4 4 0 0 0 0-8c-1.9 0-3.5 1.3-5.5 4z"/>',
   // next: a key, the one that opens the next letter
   key: '<circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M21 12v2.5"/>',
 };
@@ -91,14 +89,15 @@ const pill = (icon, cls, tip, label, value) =>
   `<span class="stat ${cls}"${tip ? ` data-tip="${tip}"` : ""}><svg viewBox="0 0 24 24" aria-hidden="true">${STAT_ICONS[icon]}</svg>` +
   `<span class="lbl">${label}</span>${value}</span>`;
 
-// Free practice and the test: no letters to learn. Every key is open, and the
-// status line says what this round is: the mode, and for the test the bar
-// to pass.
+// Free practice and the test: no letters to learn. Every key is open. The
+// test's status line says the bar to pass; free practice shows nothing
+// above the text (owner, 2026-10-16: the tab already says where you are),
+// the slot stays for warnings such as Caps Lock.
 function renderFreeLetters() {
   el.letters.replaceChildren();
   for (const key of Object.values(S.keyEls)) key.classList.remove("locked");
   if (S.altgrEl) S.altgrEl.classList.remove("locked");
   el.lettersCaption.innerHTML = S.mode === "test"
     ? pill("test", "focus", "", t("mode.test"), `<b>${t("mode.testGoal")}</b>`) + `<span class="begin mode-note">${t("mode.testCaption")}</span>`
-    : pill("free", "", "", t("mode.free"), "") + `<span class="begin mode-note">${t("mode.freeCaption")}</span>`;
+    : "";
 }

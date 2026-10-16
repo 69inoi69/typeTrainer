@@ -337,6 +337,9 @@ body.one-lang .lang-switch, body.one-lang .lang-hint { display: none; }
 .nav-switch .locked:not([aria-selected="true"]) .ico > svg:first-child { opacity: .55; }
 /* free practice has no letters to learn: their panels on the stats screen go */
 body[data-mode="free"] .learn-only { display: none; }
+/* freetype: no letters to learn, so their row takes no room and the text
+   comes right under the header (the slot under it stays for warnings) */
+body[data-mode="free"] .letter-row { display: none; }
 
 /* the two panels of the navigation (help, settings): a card next to the
    button (wide screens) or above the bottom bar (narrow ones) */

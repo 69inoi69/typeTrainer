@@ -71,7 +71,8 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
 - **Learn** and **Freetype** in the navigation choose the mode. **Learn** is
   learning, the trainer: it picks words for your weak letters and opens new
   ones. **Freetype** is free practice: words from the whole list, its own
-  history, and nothing changes in learning. **stats** shows the statistics
+  history, and nothing changes in learning (nothing is shown above its
+  text). **stats** shows the statistics
   of the mode you were in; once freetype is open, a small learn / freetype
   switch on the stats screen changes the mode there too. Freetype opens when every letter is open, or
   right away if you pass the **typing test**: while it is locked (a small
