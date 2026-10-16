@@ -11,7 +11,7 @@ Everything the trainer does, screen by screen. For a quick overview see the
 3. **Go to the project folder**, for example
    `cd C:\Users\YOUR_NAME\Desktop\typetrainer`.
 4. **Start the server:** `go run .`. After a few seconds it prints
-   `Typing trainer running. Open http://localhost:3000 in your browser`.
+   `typeTrainer running. Open http://localhost:3000 in your browser`.
    If Windows asks about the firewall, "Allow" is fine.
 5. **Open** <http://localhost:3000>. Always use this address: double-clicking
    `web/index.html` opens the page without the server, with no words and no
@@ -22,7 +22,7 @@ Everything the trainer does, screen by screen. For a quick overview see the
    back next time.
 
 After `git pull` restart the server: the web files are built into the program.
-Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
+Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
 
 ## Typing screen
 

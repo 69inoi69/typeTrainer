@@ -19,7 +19,7 @@ const btnCopy = $("btn-copy"), btnImage = $("btn-image");
 const SITE = location.origin + location.pathname;   // the address of this page
 
 // The facts, one per line, in the interface language:
-//   typetrainer · type · 30 words
+//   typeTrainer · learn · 30 words
 //   12 rounds · best 45 wpm
 //   last 10: 38 wpm · 96% accuracy · 82% consistency
 //   letters: 9 of 26 open · 5 mastered · focus r
@@ -27,7 +27,7 @@ function lines() {
   const { s, free, length } = shownStats();
   if (!s) return [];
   const [rounds, best, wpm, acc, cons] = summary(s).map(([v]) => v);
-  const out = [`typetrainer · ${t(free ? "mode.free" : "mode.learn")} · ${lengthLabel(length)}`];
+  const out = [`typeTrainer · ${t(free ? "mode.free" : "mode.learn")} · ${lengthLabel(length)}`];
   if (s.sessionCount) out.push(t("share.rounds", { rounds, best }), t("share.last10", { wpm, acc, cons }));
   else out.push(t("share.none"));
   if (!free && s.keys?.length) {
@@ -99,7 +99,7 @@ function drawCard() {
   c.font = `600 15px ${ui}`;
   c.fillStyle = v("--sub");
   c.textAlign = "right";
-  c.fillText(title.replace(/^typetrainer · /, "").toUpperCase(), W - pad, pad + 26);
+  c.fillText(title.replace(/^typeTrainer · /, "").toUpperCase(), W - pad, pad + 26);
   c.textAlign = "left";
 
   // the five numbers, as tiles
@@ -193,7 +193,7 @@ btnImage.addEventListener("click", () => {
     if (!blob) return;
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `typetrainer-${new Date().toISOString().slice(0, 10)}.png`;
+    link.download = `typeTrainer-${new Date().toISOString().slice(0, 10)}.png`;
     link.click();
     setTimeout(() => URL.revokeObjectURL(link.href), 1000);   // after the download has started
     confirm(btnImage, "share.saved");

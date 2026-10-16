@@ -28,7 +28,7 @@ import (
 func main() {
 	handler, _, err := newApp()
 	if err != nil {
-		js.Global().Get("console").Call("error", "typing trainer: "+err.Error())
+		js.Global().Get("console").Call("error", "typeTrainer: "+err.Error())
 		return
 	}
 

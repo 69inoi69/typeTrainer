@@ -104,7 +104,7 @@ $("btn-export").addEventListener("click", async (e) => {
     }
     const link = document.createElement("a");
     link.href = URL.createObjectURL(new Blob([JSON.stringify(out)], { type: "application/json" }));
-    link.download = `typing-trainer-${out.exportedAt.slice(0, 10)}.json`;
+    link.download = `typeTrainer-${out.exportedAt.slice(0, 10)}.json`;
     document.body.append(link);
     link.click();
     link.remove();
