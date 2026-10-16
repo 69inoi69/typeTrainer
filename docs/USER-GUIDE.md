@@ -47,7 +47,7 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   word at most, so you can finish a word you skipped. Space in the middle of a word jumps to the next one. A fixed
   mistake still counts for the letter's statistics.
 - The row of letters at the top shows your progress: open letters, the letter in
-  **focus** (yellow, your weakest right now), mastered letters (green dot), and
+  **focus** (yellow, your weakest right now), mastered letters (a small green tick), and
   locked letters (outlined). Master every open letter and the next one opens.
   Under it, small status pills: focus letter, mastered open letters (with a
   bar) and the next letter; hover them for details. Caps Lock and wrong layout
@@ -191,7 +191,7 @@ Optional: `go build -o typetrainer.exe .` makes one `.exe` to double-click.
   - side by side (learning only): a **difficulty keyboard** (grey keys, the
     redder the harder the letter is for you, dashed = no data yet) and every
     letter as a small chip from weakest to strongest, with a thin red bar for
-    how hard it is and a green dot when mastered.
+    how hard it is and a green tick when mastered.
   The exact numbers are in tooltips: hover, tap, or move to a key or chip
   with `Tab`.
 

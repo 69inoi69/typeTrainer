@@ -414,10 +414,23 @@ body[data-mode="free"] .learn-only { display: none; }
   transition: background var(--med), color var(--med), transform var(--med);
 }
 .chip.mastered { color: var(--text); }
-.chip.mastered::after {             /* small dot = mastered */
-  content: ""; position: absolute; top: 3px; right: 3px; width: 4px; height: 4px;
-  border-radius: 50%; background: var(--ok);
+/* mastered: a small green tick in a dark round badge at the top right
+   corner, so it stays visible on any chip, the yellow focus one too
+   (owner, 2026-10-16: the plain green dot vanished on yellow).
+   ::before is the badge, ::after the tick (a mask, so it takes var(--ok)). */
+.chip.mastered::before, .lchip.mastered::before {
+  content: ""; position: absolute; top: -4px; right: -4px; width: 11px; height: 11px;
+  border-radius: 50%; background: var(--bg); z-index: 1;
 }
+.chip.mastered::after, .lchip.mastered::after {
+  content: ""; position: absolute; top: -2px; right: -2px; width: 7px; height: 7px; z-index: 2;
+  background: var(--ok);
+  -webkit-mask: var(--tick) center / contain no-repeat; mask: var(--tick) center / contain no-repeat;
+}
+/* the stats chips are big: the badge sits inside the corner */
+.lchip.mastered::before { top: 4px; right: 4px; }
+.lchip.mastered::after { top: 6px; right: 6px; }
+:root { --tick: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 12.5l5 5L20 6.5' fill='none' stroke='black' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 .chip.focus { background: var(--accent); color: var(--on-accent); }
 .chip.locked { background: transparent; color: color-mix(in srgb, var(--sub) 55%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 30%, transparent); }
 .chip.pop { animation: pop 340ms cubic-bezier(.2, 1.6, .4, 1); }   /* a letter just opened */
@@ -750,9 +763,9 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
   outline: 1px dashed color-mix(in srgb, var(--sub) 80%, transparent); outline-offset: -1px;
 }
 .key.hk.locked { opacity: .45; }
-.key.hk.mastered::before {                             /* same green dot as on the letter chips */
-  content: ""; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px;
-  border-radius: 50%; background: var(--ok); z-index: 1;
+.key.hk.mastered::before {                             /* the same green tick as on the letter chips (keys are dark: no badge needed) */
+  content: ""; position: absolute; top: 3px; right: 3px; width: 8px; height: 8px; z-index: 1;
+  background: var(--ok); -webkit-mask: var(--tick) center / contain no-repeat; mask: var(--tick) center / contain no-repeat;
 }
 .heat-legend { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .heat-scale {
@@ -791,9 +804,6 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 .lchip .meter::after {
   content: ""; position: absolute; inset: 0; width: calc(var(--d) * 100%); border-radius: 2px;
   background: color-mix(in srgb, var(--error) calc(40% + var(--d) * 60%), var(--sub));
-}
-.lchip.mastered::after {         /* same green dot as on the letter chips of the typing screen */
-  content: ""; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; border-radius: 50%; background: var(--ok);
 }
 .lchip.nodata .meter { background: none; outline: 1px dashed color-mix(in srgb, var(--sub) 60%, transparent); }
 .lchip.locked { background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 25%, transparent); }
