@@ -690,7 +690,8 @@ button:disabled:active { transform: none; }
   border-radius: 999px; color: var(--sub); background: none; box-shadow: var(--ring); font-size: .78rem;
 }
 .stop-btn:hover, .stop-btn:active { color: var(--text); }
-.text-box.resulting + .stop-btn { visibility: hidden; }   /* the round is over already */
+.text-box.resulting + .stop-btn,
+.text-box:not(.typing) + .stop-btn { visibility: hidden; }   /* nothing to stop yet, or the round is over already (keeps its room: nothing jumps) */
 .stop-btn svg { width: 14px; height: 14px; fill: currentColor; stroke: none; }
 
 /* ---------- stats view ---------- */
