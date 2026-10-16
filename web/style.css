@@ -710,6 +710,7 @@ button:disabled:active { transform: none; }
 .tile b { display: block; font-size: 1.4rem; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1.2; }
 .tile small { display: block; line-height: 1.4; margin-top: 2px; }
 .chart { height: clamp(140px, 30vh, 340px); }
+.chart:has(> .empty) { height: auto; }   /* no rounds yet: one line of text, not an empty half screen */
 /* free practice has no letters: the chart takes their room */
 body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 /* the keyboard a little wider than the letters; one under the other on a narrow screen */

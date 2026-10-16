@@ -45,6 +45,8 @@ export function renderStats() {
   renderModeFilter(free);
   renderLengthFilter(s.lengths ?? [], length);
   const sessions = [...s.sessions].reverse(); // oldest first
+  // nothing to share before the first round of this length
+  document.getElementById("btn-copy").disabled = document.getElementById("btn-image").disabled = !s.sessionCount;
   el.tiles.innerHTML = summary(s).map(([v, l]) => `<div class="tile"><b>${v}</b><small>${t(l)}</small></div>`).join("");
 
   drawChart(sessions, free ? s.testWpm : s.targetWpm, s.sessionCount);
