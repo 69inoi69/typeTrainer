@@ -94,7 +94,7 @@ export function placeCaret(jump) {
     // "scale", and scale must not multiply the position (the caret flew away)
     el.caret.style.translate = `${x - 1}px ${s.offsetTop + h * 0.09}px`;
     // keep the current line in view: from the third line on, scroll so that
-    // it is the second one (smooth, CSS scroll-behavior)
+    // it is the second one (at once or smooth: web/feel.js lineScrollSmooth)
     if (lineH) {
       const line = Math.round(s.offsetTop / lineH);
       const top = Math.max(0, Math.min(line - 1, Math.ceil(el.text.scrollHeight / lineH) - TEXT_LINES)) * lineH;
