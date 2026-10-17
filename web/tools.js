@@ -1,5 +1,5 @@
-// Tooltips of the icon buttons, and the "your statistics" row of the
-// settings panel: reset, export and import.
+// Tooltips of the icon buttons, and the data buttons of the settings panel:
+// export, import and reset (with its confirm window).
 // Layer: middle. Imports only the bottom layer.
 // Called by: app.js and languages.js (labelTips), stats.js (showTip for a
 // tap on a phone). The buttons it wires are static in index.html.
@@ -52,25 +52,22 @@ export function labelTips() {
 // ---------- reset ----------
 // Back to the very first visit: the server forgets every language, the
 // browser forgets its settings (keys starting with "tt."), the page reloads.
-// The first click only "arms" the button (red, new tooltip); the second one
-// resets. Moving the mouse away disarms it.
-const btnReset = $("btn-reset");
-const resetLabel = btnReset.querySelector("span");
-function disarmReset() {
-  btnReset.classList.remove("armed");
-  delete btnReset.dataset.tip;   // unarmed: the description next to it says enough
-  resetLabel.textContent = t("data.reset");
-  if (tipFor === btnReset) hideTip();
-}
-btnReset.addEventListener("click", async () => {
-  if (!btnReset.classList.contains("armed")) {
-    btnReset.classList.add("armed");
-    btnReset.dataset.tip = "tip.resetConfirm";
-    resetLabel.textContent = t("data.resetSure");
-    FX.shake(btnReset);
-    showTip(btnReset);
-    return;
-  }
+// The button only opens a window that asks first (#reset-dialog, a native
+// <dialog>: Esc and Cancel close it, Cancel has the focus so Enter is safe).
+// The data and reset buttons are drawn anew with the settings window
+// (settings.js), so their clicks are caught here, on the document.
+const resetDialog = $("reset-dialog");
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("#btn-reset, #btn-export, #btn-import");
+  if (!b) return;
+  if (b.id === "btn-reset") resetDialog.showModal();
+  else if (b.id === "btn-export") exportAll();
+  else if (!S.busy) importFile.click();
+});
+$("reset-cancel").addEventListener("click", () => resetDialog.close());
+// a click on the dimmed page around the window closes it too
+resetDialog.addEventListener("click", (e) => { if (e.target === resetDialog) resetDialog.close(); });
+$("reset-ok").addEventListener("click", async () => {
   if (S.busy) return;
   S.busy = true;
   try {
@@ -83,8 +80,6 @@ btnReset.addEventListener("click", async () => {
   } catch { /* storage blocked: nothing saved anyway */ }
   location.reload();
 });
-btnReset.addEventListener("pointerleave", (e) => { if (e.pointerType !== "touch") disarmReset(); }); // a tap "leaves" at once
-btnReset.addEventListener("blur", disarmReset);
 
 // ---------- export / import ----------
 // All statistics of all languages as ONE json file. The server does the real
@@ -93,8 +88,7 @@ btnReset.addEventListener("blur", disarmReset);
 const FILE_APP = "typing-trainer", FILE_VERSION = 1;
 const importFile = $("import-file");
 
-$("btn-export").addEventListener("click", async (e) => {
-  e.currentTarget.blur();
+async function exportAll() {
   try {
     const out = { app: FILE_APP, version: FILE_VERSION, exportedAt: new Date().toISOString(), languages: {} };
     for (const l of S.languages) {
@@ -114,12 +108,7 @@ $("btn-export").addEventListener("click", async (e) => {
     console.error(err);
     FX.toast(t("toast.importFail"));
   }
-});
-
-$("btn-import").addEventListener("click", (e) => {
-  e.currentTarget.blur();
-  if (!S.busy) importFile.click();
-});
+}
 importFile.addEventListener("change", async () => {
   const file = importFile.files[0];
   importFile.value = "";                      // the same file can be chosen again

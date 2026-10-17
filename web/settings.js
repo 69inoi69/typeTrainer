@@ -1,7 +1,7 @@
-// The settings panel (the gear in the navigation): how long a round is,
-// the live numbers on or off, the look of the caret, the colour theme, the
-// on-screen keyboard on or off, and (static, in index.html) saving, loading
-// and resetting the statistics (tools.js does those). Settings change
+// The settings window (Esc or the gear in the navigation): how long a round
+// is, the live numbers on or off, the look of the caret, the colour theme,
+// the on-screen keyboard on or off, and exporting, importing and resetting
+// the progress (tools.js does those three). Settings change
 // HOW MUCH and HOW IT LOOKS, never WHAT is practised: the words still come
 // from the algorithm (learning) or evenly from the list (free practice), so
 // they are not difficulty switches. The typing test ignores the round
@@ -10,12 +10,12 @@
 // is blocked, the defaults are used and the app works the same.
 // Layer: middle. Imports only the bottom layer.
 // Called by: app.js (loadSettings at start), input.js (settingsOpen,
-// closeSettings, onLengthChange, onKbToggle), typing.js and stats.js
-// (lengthOf, lengthLabel, firstRoundDone).
+// openSettings, closeSettings, onSettingsClose, onLengthChange, onKbToggle),
+// typing.js and stats.js (lengthOf, lengthLabel, firstRoundDone).
 // To add a setting: a default in S.settings (state.js), reading it in
 // loadSettings(), its look in applySettings() (usually a class on <body>
-// styled in style.css), a row in renderCard(), a branch in the click
-// handler, and its texts in i18n.js. A setting may change how much or how
+// styled in style.css), an entry in ROWS, a branch in apply(), and its
+// texts in i18n.js. A setting may change how much or how
 // it looks, never what is practised (AGENTS.md).
 
 import { t } from "./i18n.js";
@@ -68,7 +68,7 @@ export function firstRoundDone() {
   store.set("tt.live", "1");
   S.settings.live = true;
   applySettings();
-  if (!card.hidden) renderCard();
+  if (win.open) render();
 }
 
 // Someone else wants to know when the round length changes (input.js starts
@@ -80,43 +80,75 @@ export function onLengthChange(fn) { lengthListener = fn; }
 let kbListener = () => {};
 export function onKbToggle(fn) { kbListener = fn; }
 
-// ---------- the panel ----------
-const box = $("settings"), btn = $("btn-settings"), card = $("settings-card"), body = $("settings-body");
+// ---------- the window ----------
+// Esc or the gear opens it (input.js, the button below). Every setting is one
+// entry in ROWS; the window is drawn from that list, so search and the arrow
+// keys work for a new entry by themselves.
+const win = $("settings-win"), btn = $("btn-settings"), body = $("settings-body"), search = $("settings-search");
 
-// One option: a name and a one-line explanation (none when the name says
-// it all) on the left, a segmented
-// control on the right (the same .opt / .seg look as everywhere, style.css).
+// One button of a row. Choices carry data-key/data-value (the click handler
+// below applies them); the data and reset buttons keep their ids, tools.js
+// does their work.
 function choice(key, value, label, chosen) {
   return `<button type="button" data-key="${key}" data-value="${value}" aria-pressed="${chosen}">${label}</button>`;
 }
 const seg = (buttons) => `<span class="seg">${buttons.join("")}</span>`;
-const opt = (name, note, ctl) =>
-  `<div class="opt"><span class="opt-text"><b>${t(name)}</b>${note ? `<small>${t(note)}</small>` : ""}</span><span class="opt-ctl">${ctl}</span></div>`;
-function renderCard() {
-  const s = S.settings;
-  const words = LENGTHS.filter((id) => id.startsWith("words-"));
-  const time = LENGTHS.filter((id) => id.startsWith("time-"));
-  const lengths = (ids, unit) => seg(ids.map((id) => choice("length", id, lengthOf(id).n + unit, id === s.length)));
-  const onOff = (key, on) => seg([choice(key, "", t("settings.off"), !on), choice(key, "1", t("settings.on"), on)]);   // on on the right, as on a switch
-  body.innerHTML =
-    `<div class="win-sec first"><small class="lbl-ui">${t("settings.round")}</small>` +
-    opt("settings.words", null, lengths(words, "")) +
-    opt("settings.time", null, lengths(time, t("settings.sec"))) +
-    `</div><div class="win-sec"><small class="lbl-ui">${t("settings.look")}</small>` +
-    opt("settings.live", "settings.liveNote", onOff("live", s.live)) +
-    (isTouch() ? "" : opt("settings.keyboard", "settings.keyboardNote", onOff("kb", !S.kbHidden))) +   // no keyboard on touch screens
-    opt("settings.caret", null, seg([
-      choice("caret", "line", `<i class="cs line"></i>${t("settings.line")}`, s.caret === "line"),
-      choice("caret", "block", `<i class="cs block"></i>${t("settings.block")}`, s.caret === "block")])) +
-    opt("settings.theme", null, seg([
-      choice("theme", "dark", t("settings.dark"), s.theme === "dark"),
-      choice("theme", "light", t("settings.light"), s.theme === "light")])) +
-    `</div>`;
+const onOff = (key, on) => seg([choice(key, "", t("settings.off"), !on), choice(key, "1", t("settings.on"), on)]);   // on on the right, as on a switch
+const lengths = (kind, unit) => seg(LENGTHS.filter((id) => id.startsWith(kind + "-"))
+  .map((id) => choice("length", id, lengthOf(id).n + unit, id === S.settings.length)));
+const ICON = {
+  export: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19h14"/></svg>',
+  import: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M5 19h14"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg>',
+};
+const action = (id, icon, label, cls = "btn") => `<button type="button" class="${cls}" id="${id}">${ICON[icon]}<span>${t(label)}</span></button>`;
+
+// The rows, top to bottom. group: the small heading above (null: a line
+// instead); name: the i18n key of its name (also what search looks in);
+// ctl: its buttons; show: whether it is there at all.
+// To add a setting: one entry here (and its key in the click handler below,
+// its default in S.settings, its texts in i18n.js).
+const ROWS = [
+  { group: "settings.round", name: "settings.words", ctl: () => lengths("words", "") },
+  { group: "settings.round", name: "settings.time", ctl: () => lengths("time", t("settings.sec")) },
+  { group: "settings.look", name: "settings.live", ctl: () => onOff("live", S.settings.live) },
+  { group: "settings.look", name: "settings.keyboard", ctl: () => onOff("kb", !S.kbHidden), show: () => !isTouch() },   // no keyboard on touch screens
+  { group: "settings.look", name: "settings.caret", ctl: () => seg([
+    choice("caret", "line", `<i class="cs line"></i>${t("settings.line")}`, S.settings.caret === "line"),
+    choice("caret", "block", `<i class="cs block"></i>${t("settings.block")}`, S.settings.caret === "block")]) },
+  { group: "settings.look", name: "settings.theme", ctl: () => seg([
+    choice("theme", "dark", t("settings.dark"), S.settings.theme === "dark"),
+    choice("theme", "light", t("settings.light"), S.settings.theme === "light")]) },
+  { group: null, name: "settings.data", ctl: () => action("btn-export", "export", "data.save") + action("btn-import", "import", "data.load") },
+  { group: null, name: "settings.danger", danger: true, ctl: () => action("btn-reset", "trash", "data.reset", "btn danger") },
+];
+
+let cur = 0;        // the row the arrow keys are on (an index into the shown rows)
+let shown = [];     // the rows that match the search, in order
+// The name with the searched part underlined
+function nameHTML(name, q) {
+  const i = q ? name.toLowerCase().indexOf(q) : -1;
+  return i < 0 ? name : `${name.slice(0, i)}<em>${name.slice(i, i + q.length)}</em>${name.slice(i + q.length)}`;
 }
-card.addEventListener("click", (e) => {
-  const b = e.target.closest("button[data-key]");
-  if (!b) return;
-  const { key, value } = b.dataset;
+function render() {
+  const q = search.value.trim().toLowerCase();
+  shown = ROWS.filter((r) => (r.show?.() ?? true) && t(r.name).toLowerCase().includes(q));
+  cur = Math.min(cur, shown.length - 1);
+  let html = "", group;
+  shown.forEach((r, i) => {
+    if (i === 0 || r.group !== group) {
+      html += r.group ? `<div class="sw-group">${t(r.group)}</div>` : (i ? `<div class="sw-sep"></div>` : "");
+    }
+    group = r.group;
+    const on = i === cur && !isTouch();   // no arrow keys on a phone: no highlight
+    html += `<div class="sw-row${on ? " on" : ""}" data-i="${i}"><span class="sw-name${r.danger ? " danger" : ""}">${nameHTML(t(r.name), q)}</span><span class="sw-ctl">${r.ctl()}</span></div>`;
+  });
+  body.innerHTML = shown.length ? `<div class="sw-rows">${html}</div>` : `<p class="sw-empty">${t("settings.none")}</p>`;
+}
+search.addEventListener("input", () => { cur = 0; render(); });
+
+// A choice was clicked (or picked with the arrows): save it and apply it.
+function apply(key, value) {
   if (key === "length") {
     if (value === S.settings.length) return;
     S.settings.length = value;
@@ -135,22 +167,72 @@ card.addEventListener("click", (e) => {
     if (S.kbHidden === (value === "1")) kbListener();   // only a real change
   }
   applySettings();
-  renderCard();
+  render();
+}
+win.addEventListener("click", (e) => {
+  if (e.target === win) { closeSettings(); return; }   // the dimmed page around it
+  const b = e.target.closest("button[data-key]");
+  if (b) apply(b.dataset.key, b.dataset.value);
 });
 
-export const settingsOpen = () => !card.hidden;
-// Closes the panel (Esc, a key, a click outside, or the help menu opening).
-export function closeSettings() {
-  card.hidden = true;
+// The keys inside the window: up/down pick a row, left/right change its
+// choice (or move between its buttons), Enter presses the button, Esc closes
+// (the dialog does that by itself). Every other key types into the search.
+win.addEventListener("keydown", (e) => {
+  if (e.target !== search) {
+    if (e.key === "Enter" || e.key === " ") return;            // a focused button presses itself
+    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) search.focus();   // the letter goes into the search
+  }
+  const row = body.querySelectorAll(".sw-row")[cur];
+  const btns = row ? [...row.querySelectorAll("button")] : [];
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    if (!shown.length) return;
+    cur = (cur + (e.key === "ArrowDown" ? 1 : -1) + shown.length) % shown.length;
+    render();
+  } else if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && btns.length) {
+    e.preventDefault();
+    const choices = btns.filter((b) => b.dataset.key);
+    if (choices.length) {          // a choice: the next one is chosen at once
+      const at = choices.findIndex((b) => b.getAttribute("aria-pressed") === "true");
+      const next = choices[Math.max(0, Math.min(choices.length - 1, at + (e.key === "ArrowRight" ? 1 : -1)))];
+      apply(next.dataset.key, next.dataset.value);
+    } else {                       // export / import: move the mark between them
+      const at = btns.findIndex((b) => b.classList.contains("kb-on"));
+      btns.forEach((b) => b.classList.remove("kb-on"));
+      btns[Math.max(0, Math.min(btns.length - 1, at + (e.key === "ArrowRight" ? 1 : -1)))].classList.add("kb-on");
+    }
+  } else if (e.key === "Enter" && btns.length) {
+    e.preventDefault();
+    const choices = btns.filter((b) => b.dataset.key);
+    if (!choices.length) (btns.find((b) => b.classList.contains("kb-on")) || btns[0]).click();
+  }
+});
+
+export const settingsOpen = () => win.open;
+// Called when the window closes (input.js puts the focus back on the text).
+let closeListener = () => {};
+export function onSettingsClose(fn) { closeListener = fn; }
+win.addEventListener("close", () => {
   btn.setAttribute("aria-expanded", "false");
-}
-function openSettings() {
-  renderCard();
-  card.hidden = false;
+  closeListener();
+});
+export function closeSettings() { if (win.open) win.close(); }
+export function openSettings() {
+  if (win.open) return;
+  search.value = "";
+  search.placeholder = t("settings.search");
+  win.setAttribute("aria-label", t("settings.title"));
+  cur = 0;
+  render();
+  // on a phone the search field must not take the focus: the on-screen
+  // keyboard would cover the window every time
+  // (showModal focuses the first field it finds, so it is inert meanwhile)
+  search.inert = isTouch();
+  win.tabIndex = -1;
+  win.showModal();
+  search.inert = false;
+  if (isTouch()) win.focus(); else search.focus();
   btn.setAttribute("aria-expanded", "true");
 }
 btn.addEventListener("click", () => { btn.blur(); settingsOpen() ? closeSettings() : openSettings(); });
-// a click anywhere else closes it
-document.addEventListener("pointerdown", (e) => {
-  if (settingsOpen() && !box.contains(e.target)) closeSettings();
-});

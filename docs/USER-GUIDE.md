@@ -18,7 +18,7 @@ Everything the trainer does, screen by screen. For a quick overview see the
    statistics. If the port is taken, change `Addr` in
    `internal/config/config.go`.
 6. **Stop** the server with `Ctrl + C`. Without a database (below) progress
-   is lost then: save it first (**Settings → Your progress → Save**) and load it
+   is lost then: export it first (**Settings → Data → Export**) and import it
    back next time.
 
 After `git pull` restart the server: the web files are built into the program.
@@ -86,9 +86,10 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   if it does not pass, the result's button says **Try again** and starts
   the test once more (the Learn tab goes back to learning). The mode is
   remembered per language.
-- **Settings** (the gear in the navigation) opens one panel with everything
-  that is rarely changed, in three sections (round, screen, your progress);
-  every option has a one-line note on what it does:
+- **Settings** (`Esc`, or the gear in the navigation) opens one window in
+  the middle of the screen. Typing filters it (search), `↑ ↓` pick a row,
+  `← →` change its value, `Enter` presses a button, `Esc` closes it. On a
+  phone the Settings button in the bottom bar opens it. What is in it:
   - **round length**: 10, 30 or 60 words, or 30 or 60 seconds (default 30
     words). A words round ends with the last letter of its last word, a time
     round when the time is up; the counter in the text card shows the words
@@ -106,13 +107,14 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
     on the device's own keyboard, so the option is not shown. There
     is no size setting: the keyboard is always as big as the window allows
     without making the page scroll.
-  - **your progress**: **backup · save** writes all languages and the full history
-    to one `.json` file, **load** reads such a file back and **replaces** the
+  - **data**: **export** writes all languages and the full history
+    to one `.json` file, **import** reads such a file back and **replaces** the
     current data (use it to keep progress across server restarts or page
-    reloads on the website). **start over · reset** deletes everything: progress in all
+    reloads on the website).
+  - **danger zone**: **reset all progress** deletes everything: progress in all
     languages and the settings saved in your browser, as on the very first
-    visit. It needs a second click ("sure?"), so it does not happen by
-    accident.
+    visit. A window asks first ("Reset all progress? This can't be undone.",
+    Cancel has the focus), so it does not happen by accident.
   The settings only change how much you type and how it looks; what you
   practise is still up to the trainer. They are kept in this browser.
 - For now only English is offered. When Polish, Ukrainian and Russian come
@@ -120,7 +122,8 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   language of the interface**.
 - **Tab starts a new round** (as on monkeytype): the round you were typing
   is dropped and not saved; the keypresses already sent on the way stay with
-  your letters. `Esc` (stop) ends the round early and shows its result.
+  your letters. `Esc` ends the round early, shows its result and opens the
+  settings over it.
 - **Rounds of 30 words, picked while you type.** The text is not ready in
   advance: it grows a few words at a time (a portion of 6 words around one
   focus letter), and every new portion is chosen from your newest statistics.
@@ -179,8 +182,10 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   card ends the round (it appears with the first letter). The shortcut line
   is hidden there; on the stats screen it shows only the keys that work
   there.
-- On a narrow screen the page dims behind Help and Settings.
-- Shortcuts, also listed small at the bottom of the page: `Esc` stop ·
+- On a narrow screen the page dims behind Help; behind Settings it always
+  dims.
+- Shortcuts, also listed small at the bottom of the page: `Esc` stop /
+  settings ·
   `Shift + Tab` Learn / stats · `Alt + K` keyboard and hands on / off.
 - **Stats**: nothing on the page can be selected by dragging; instead the
   stats screen has **copy** (a short text summary: mode, length, rounds,
@@ -253,7 +258,7 @@ Polish uses the standard "Polish (Programmers)" layout: ą, ę, ł... with AltGr
   server stops.
 - **Local server without a database** (`go run .` alone): in the server's
   memory. Stopping the server forgets everything (accounts too), so save a
-  file first (settings, **save**) and load it back after the restart.
+  file first (settings, **export**) and import it back after the restart.
 - **Website (GitHub Pages)**: in the open browser tab. Reloading the page
   forgets it; **save** and **load** work the same way.
 
