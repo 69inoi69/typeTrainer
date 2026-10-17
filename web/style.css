@@ -24,6 +24,7 @@
   --accent: #e2b714;    /* caret, highlights, fills */
   --accent-text: var(--accent); /* accent as a text colour (darker in the light theme) */
   --on-accent: #15171a; /* text on the accent color */
+  --on-band: var(--on-accent); /* text on the result's speed bands (.r-legend) */
   --error: #ca4754;
   --ok: #8cc97a;        /* mastered letter */
   --mono: ui-monospace, "Cascadia Mono", "JetBrains Mono", Consolas, "Roboto Mono", monospace;
@@ -68,13 +69,14 @@
   --panel: #ffffff;
   --key: #ffffff;
   --line: #e4e2dc;
-  --sub: #8d9098;
+  --sub: #686b74;       /* darker than the dark theme's: the untyped text must stay readable on paper (4.5:1) */
   --text: #25272c;
   --accent: #e2b714;
-  --accent-text: #9c7400;
+  --accent-text: #8a6600;
   --on-accent: #1c1d20;
   --error: #d0384a;
-  --ok: #3f8f34;
+  --ok: #2f7d27;
+  --on-band: #ffffff;   /* the result's speed bands are dark here: white text */
   --track: #f1efe9;
   --ring: inset 0 0 0 1px rgba(30, 32, 40, .09);
   --shadow: 0 18px 44px rgba(50, 45, 30, .14), 0 2px 6px rgba(50, 45, 30, .06);
@@ -83,9 +85,9 @@
   --palm-shade: rgba(60, 50, 30, .18);
 }
 :root[data-theme="light"] .text, :root[data-theme="light"] .text span { text-shadow: none !important; }
-:root[data-theme="light"] .text-box { background: var(--panel); }
 :root[data-theme="light"] .text-box::before, :root[data-theme="light"] .caret { text-shadow: none; box-shadow: none; }
 :root[data-theme="light"] .switch-thumb::after { box-shadow: none; }
+:root[data-theme="light"] .hand { --skin: color-mix(in srgb, var(--text) 16%, var(--bg)); }   /* 11% vanished on paper */
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; } /* no blue flash on tap (phones) */
 html, body { min-height: 100%; }
 /* a big desktop window: the whole page one step bigger (every size in rem
@@ -151,11 +153,11 @@ button, .tooltip, .menu-item, .hints, .rail small, .tour-text, .intro p, .intro 
 /* help for this screen: short points, a little air between them, the bold
    start of each point says it all at a glance */
 .menu-item[hidden] { display: none; }
-.help-list { list-style: none; padding-left: 0; gap: 8px; font-size: .84rem; color: color-mix(in srgb, var(--text) 60%, var(--sub)); }
+.help-list { list-style: none; padding-left: 0; gap: 5px; font-size: .84rem; color: color-mix(in srgb, var(--text) 60%, var(--sub)); }
 .help-list li { position: relative; padding-left: 16px; }
 .help-list li::before { content: ""; position: absolute; left: 2px; top: .62em; width: 6px; height: 6px; border-radius: 2px; background: var(--accent); }
 .help-list b { color: var(--text); font-weight: 500; }
-.win-keys { margin: 6px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-items: baseline; font-family: var(--ui); font-size: .78rem; }
+.win-keys { margin: 6px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: baseline; font-family: var(--ui); font-size: .78rem; }
 .win-keys dt { white-space: nowrap; }
 .win-keys dd { margin: 0; color: color-mix(in srgb, var(--text) 82%, var(--sub)); }
 .win kbd { background: var(--track); box-shadow: var(--ring); color: var(--text); font-family: var(--mono); }
@@ -239,7 +241,12 @@ dialog.settings-win:focus { outline: none; }
 .sw-empty { margin: 0; padding: 12px 8px; color: var(--sub); font-size: .84rem; }
 .sw-foot { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 14px; border-top: 1px solid var(--line); color: var(--sub); font-size: .72rem; }
 .sw-foot kbd { background: var(--track); box-shadow: var(--ring); color: var(--text); border-radius: 4px; padding: 0 5px; margin-right: 3px; font-family: var(--mono); }
-@media (pointer: coarse) { .sw-foot { display: none; } }   /* no keyboard, no keys line */
+@media (pointer: coarse) {
+  .sw-foot { display: none; }   /* no keyboard, no keys line */
+  /* fingers, not a mouse: every choice about 40px tall (GUIDELINES, section 8) */
+  .sw-row > span { min-height: 46px; }
+  .sw-ctl .seg button, .sw-ctl .btn { min-height: 38px; }
+}
 @media (max-width: 999px) {
   dialog.settings-win { inset: auto auto calc(72px + env(safe-area-inset-bottom)) 50%; }
   .sw-list { max-height: calc(100dvh - 200px); }
@@ -290,7 +297,7 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
 }
 .text-box.typing .live, .live.final { opacity: 1; }
 .metric { display: flex; align-items: baseline; }
-.metric.raw span { color: color-mix(in srgb, var(--accent) 55%, var(--sub)); }   /* secondary number */
+.metric.raw span { color: color-mix(in srgb, var(--accent-text) 55%, var(--sub)); }   /* secondary number */
 .metric.raw { cursor: default; }
 .metric > span { font-size: 1.3rem; color: var(--accent-text); transition: color var(--med); font-variant-numeric: tabular-nums; }
 .metric small { margin-left: 6px; white-space: nowrap; }
@@ -406,7 +413,7 @@ body[data-mode="free"] .letter-row { display: none; }
 .pop-card {
   position: fixed; left: 12px; right: 12px; bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 9;
   max-width: 380px; margin-inline: auto; padding: 16px 18px 14px; text-align: left;
-  max-height: calc(100dvh - 100px); overflow-y: auto; scrollbar-width: thin;   /* a long card scrolls inside */
+  max-height: calc(100dvh - 84px); overflow-y: auto; scrollbar-width: thin;   /* a long card scrolls inside */
   animation: note-in .2s var(--ease);
 }
 .pop-card[hidden] { display: none; }
@@ -422,14 +429,14 @@ body[data-mode="free"] .letter-row { display: none; }
 }
 .menu-item {
   display: flex; align-items: center; gap: 12px; width: 100%;
-  padding: 8px 8px; margin: 6px 0 0; border-radius: 10px; background: none; text-align: left;
+  padding: 5px 8px; margin: 4px 0 0; border-radius: 10px; background: none; text-align: left;
 }
 .menu-item > span { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .menu-item b { color: var(--text); font-weight: 500; font-size: .84rem; }
 .menu-item small { color: var(--sub); font-size: .72rem; }
 /* each guide its own colour, so they differ at a glance */
 .menu-item svg {
-  --mc: var(--accent); width: 34px; height: 34px; padding: 7px; flex: none; border-radius: 10px;
+  --mc: var(--accent); width: 30px; height: 30px; padding: 6px; flex: none; border-radius: 10px;
   fill: none; stroke: var(--mc); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
   background: color-mix(in srgb, var(--mc) 14%, transparent);
 }
@@ -651,7 +658,7 @@ body[data-mode="free"] .letter-row { display: none; }
 .text span.ok { color: var(--text); animation: settle var(--feel-settle-ms, 0ms) ease-out; }
 @keyframes settle { from { text-shadow: 0 0 var(--feel-settle-glow, 10px) color-mix(in srgb, var(--text) 60%, transparent); } }
 /* the focus letter (the one being practised) is tinted until it is typed */
-.text span.fx { color: color-mix(in srgb, var(--accent) 50%, var(--sub)); }
+.text span.fx { color: color-mix(in srgb, var(--accent-text) 50%, var(--sub)); }
 /* a soft glow on the text, just for looks: text-shadow does not move
    anything, so it costs nothing on a keypress */
 .text { text-shadow: 0 0 14px color-mix(in srgb, var(--sub) 22%, transparent); }
@@ -799,6 +806,31 @@ body:not(.caret-block) .caret {
   background: color-mix(in srgb, var(--fc) 4%, var(--bg)); color: color-mix(in srgb, var(--sub) 65%, var(--bg));
   border-bottom-color: color-mix(in srgb, var(--fc) 22%, transparent);
 }
+/* Light theme: the finger colours (data/layouts) are pastels made for the
+   dark page; mixed in at 12% they all faded to white (owner, 2026-10-17:
+   "looks washed out"). Here every key gets more of its colour, a frame and
+   a shadow, and --fcd, a deeper shade of the same colour, draws the edges
+   and the finger to use. The layout data stays the same. */
+:root[data-theme="light"] .keyboard .key, :root[data-theme="light"] .hand .finger {
+  --fcd: color-mix(in oklab, var(--fc) 72%, #1d1428);
+  --key-shadow: 0 1px 1px rgba(50, 45, 30, .12), 0 3px 8px rgba(50, 45, 30, .16);
+}
+:root[data-theme="light"] .keyboard .key:not(.next) {
+  background: color-mix(in srgb, var(--fc) 65%, #fff); color: var(--text);
+  border-bottom: 3px solid var(--fcd);
+  box-shadow: inset 0 0 0 1px rgba(30, 32, 40, .12), var(--key-shadow);
+}
+:root[data-theme="light"] .keyboard .key.locked:not(.next) {
+  background: #fff; color: color-mix(in srgb, var(--sub) 85%, var(--bg));
+  border-bottom: 2px solid color-mix(in srgb, var(--fc) 45%, #fff);
+}
+:root[data-theme="light"] .keyboard .key.next {
+  background: var(--fc); color: var(--text);   /* full colour: the other keys already carry 65% */
+  border-bottom: 3px solid var(--fcd);
+  box-shadow: 0 0 0 2px var(--fcd), var(--key-shadow);
+}
+:root[data-theme="light"] .hand .finger { --tint: color-mix(in srgb, var(--fc) 75%, var(--skin)); }
+:root[data-theme="light"] .hand .finger.on .skin { fill: var(--fcd); stroke: color-mix(in srgb, var(--fc) 40%, transparent); }
 
 /* ---------- buttons and the shortcut line ---------- */
 /* "stop" only where there is no Esc key (phones, tablets) */
@@ -1121,7 +1153,7 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
 /* the legend: one small coloured cell per band with its wpm range */
 /* as wide as the chart under it, equal cells (owner, 2026-10-16) */
 .r-legend { display: flex; flex-basis: 100%; border-radius: 4px; overflow: hidden; font-size: .7rem; line-height: 1.5; font-variant-numeric: tabular-nums; }
-.r-legend > span { flex: 1; text-align: center; padding: 0 6px; background: var(--sp); color: var(--on-accent); }
+.r-legend > span { flex: 1; text-align: center; padding: 0 6px; background: var(--sp); color: var(--on-band); }
 .r-wordlist {
   font-family: var(--mono); font-size: .95rem; line-height: 1.75; color: color-mix(in srgb, var(--text) 80%, var(--sub));
   max-height: calc(1.75em * 5); overflow-y: auto; scrollbar-width: thin;
