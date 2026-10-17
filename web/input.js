@@ -19,7 +19,7 @@ import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
 import { resultOpen, closeResult } from "./result.js";
 import { tourOpen, tourKey } from "./tour.js";
-import { settingsOpen, closeSettings, onLengthChange, onKbToggle } from "./settings.js";
+import { settingsOpen, openSettings, closeSettings, onSettingsClose, onLengthChange, onKbToggle } from "./settings.js";
 import { setMode, refreshFreeplay, renderNav } from "./modes.js";
 import "./share.js";   // the copy / image buttons of the stats screen: it wires them itself
 
@@ -150,6 +150,8 @@ onLengthChange(() => {
 // Desktop: keydown gives us the real key. preventDefault stops the character
 // from ALSO arriving through the hidden input (and space from scrolling).
 document.addEventListener("keydown", (e) => {
+  // the settings window and the reset confirm window handle their own keys
+  if (document.querySelector("dialog[open]")) return;
   if (introOpen()) { introKey(e); return; }
   if (tourOpen()) { tourKey(e); return; }
   // the profile card is open: keys go to its name field, Esc closes it
@@ -158,12 +160,19 @@ document.addEventListener("keydown", (e) => {
     return;
   }
   if (document.body.classList.contains("splashing")) return;
-  // the settings panel or the help menu: Esc closes it, typing closes it and goes on
-  if (settingsOpen() || helpOpen()) {
-    const was = helpOpen() ? helpBtn : null;
-    closeSettings();
+  // the help menu: Esc closes it, typing closes it and goes on
+  if (helpOpen()) {
     closeHelp();
-    if (e.key === "Escape") { e.preventDefault(); was?.focus(); return; }
+    if (e.key === "Escape") { e.preventDefault(); helpBtn.focus(); return; }
+  }
+  // Esc opens the settings, on every screen (as on monkeytype). A round
+  // being typed stops first, the same as before (owner, 2026-10-17): its
+  // result waits behind the window.
+  if (e.key === "Escape") {
+    e.preventDefault();
+    if (S.view === "type" && !resultOpen() && roundStarted()) stopRound();
+    openSettings();
+    return;
   }
   // shortcuts: Shift+Tab = type <-> stats, Alt+1...4 = language, Alt+K = keyboard on / off
   if (e.key === "Tab" && e.shiftKey) {
@@ -183,18 +192,16 @@ document.addEventListener("keydown", (e) => {
     return;
   }
   // the result screen stays until you go on on purpose: Enter or Tab (Tab
-  // starts a new round everywhere, as on monkeytype). Esc means "stop"
-  // while typing, so here it does nothing (owner, 2026-10-16: it doing
-  // "next round" was confusing); letters do nothing either, so a word typed
-  // past the end never skips the result.
+  // starts a new round everywhere, as on monkeytype). Esc opens the settings
+  // (above), never "next round" (owner, 2026-10-16: that was confusing);
+  // letters do nothing either, so a word typed past the end never skips the
+  // result.
   if (resultOpen()) {
     if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); closeResult(); }
-    else if (e.key === "Escape") e.preventDefault();
     else if (e.key.length === 1) e.preventDefault();
     return;
   }
   if (S.view !== "type") return;
-  if (e.key === "Escape") { e.preventDefault(); stopRound(); return; }
   if (e.key === "Tab") { e.preventDefault(); restartRound(); return; }   // a fresh round, see restartRound()
   if (e.key === "Backspace") {                                    // Alt = Option on a Mac
     e.preventDefault(); focusText(); backspace(e.ctrlKey || e.altKey);
@@ -245,6 +252,9 @@ resetInput();
 // tap only closed a panel (help, settings, profile): checked at pointerdown,
 // in the capture phase, before those panels close themselves.
 let tapClosedPanel = false;
+// after the settings window: straight back to typing (not on a phone, where
+// that would open the on-screen keyboard)
+onSettingsClose(() => { if (S.view === "type" && !resultOpen() && !isTouch()) focusText(); });
 document.addEventListener("pointerdown", () => {
   tapClosedPanel = helpOpen() || settingsOpen() || profileOpen();
 }, true);

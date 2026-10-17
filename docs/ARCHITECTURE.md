@@ -75,7 +75,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | bottom | `fx.js` | Visual rewards: confetti, bumps, the message queue in the status line (outside typing), the start screen. They never affect what is measured. |
 | bottom | `feel.js` | `FEEL`: every knob of how a keypress feels (letter settle, key dip, red tint of a wrong key, caret flinch, mistake marks), also given to the CSS as `--feel-*`. Tuning the feel = changing a number here. |
 | bottom | `api.js` | `getJSON` / `postJSON` for `/api/v1/`, with `?lang=` added. |
-| middle | `tools.js` | Tooltips, and the "your statistics" row of the settings panel: reset, export / import. |
+| middle | `tools.js` | Tooltips, and the data buttons of the settings window: export / import, reset (with its confirm window). |
 | middle | `keyboard.js` | On-screen keyboard and hands from the layout data, the next key and finger, the on / off button (remembered separately for learning and free practice), the automatic size that fits the window. |
 | middle | `stats.js` | The stats screen (tiles, WPM chart, heatmap keyboard, letter cards) and `refreshStats()`. |
 | middle | `share.js` | The "copy" (a text summary) and "image" (a PNG card drawn on a canvas) buttons of the stats screen; both take what the screen shows. |
@@ -86,7 +86,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `profile.js` | The account in the top right corner ("log in" for a guest where accounts work): the account (log in / sign up / log out; the page reloads after each), and a picture kept only in the browser. |
 | middle | `result.js` | The result screen in the text window: `showResult(r)` shows what changed and resolves when the user goes on; `compareStats()` works out what a learning round changed. The words of the round with their own speed come from `typedWords()` in `typing.js`, the characters and the time from `roundFacts()`. |
 | middle | `modes.js` | The modes (learning / free practice / typing test), the navigation tabs that show them (`renderNav`: learn · freetype · stats), `refreshFreeplay()` (`S.free`), the mode remembered per language. |
-| middle | `settings.js` | The settings panel (gear in the navigation): round length, live numbers, caret, theme, keyboard on / off (carried out by `input.js`); kept in `localStorage` (`S.settings`). The data row (save / load / reset) is static HTML wired by `tools.js`. |
+| middle | `settings.js` | The settings window (Esc or the gear): round length, live numbers, caret, theme, keyboard on / off (carried out by `input.js`), export / import / reset (wired by `tools.js`); drawn from one list of rows (`ROWS`) with search and arrow keys; kept in `localStorage` (`S.settings`). |
 | middle | `tour.js` | Guide B, "how this site works": the idea of the trainer, then a ring around each part of the page and a short card. |
 | top | `input.js` | Keydown and phone input (with the one-space sentinel that makes Backspace work on phone keyboards), the navigation (learn · freetype · stats, the help panel), keyboard on / off (settings and Alt+K), window resize: sends each action to the module that handles it. |
 | top | `app.js` | Entry point: `init()`. |

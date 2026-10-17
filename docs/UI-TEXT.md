@@ -70,9 +70,9 @@ calling the work done.
 
 | Kind | Form | Example |
 |---|---|---|
-| Label (button, tab, option name) | One to three words, no full stop | "Next round", "Start over" |
+| Label (button, tab, option name) | One to three words, no full stop | "Next round", "Export" |
 | Option description (Settings) | Only when the name and the control are not enough: one line on what it does, a second sentence for a consequence | "Shows your WPM and accuracy as you type" |
-| Tooltip | Only when it adds something: what it is, then the shortcut after "·". One line, no full stop | "Stop the round and see the result · Esc" |
+| Tooltip | Only when it adds something: what it is, then the shortcut after "·". One line, no full stop | "Settings · Esc" |
 | Status line, short messages | One short line, a number in `<b>` | "Type the text to begin" |
 | Result screen | Speed and accuracy big, the chart of word speeds, a row of facts (consistency, time, characters) ending in what happened, then the words. No tips | "New letter opened: r" |
 | Help, first-visit guides | One to three short sentences per item, the key idea first in `<b>` | "<b>Weak letters come back.</b> Letters you miss or type slowly get more words." |
@@ -94,8 +94,8 @@ are full sentences and end with a full stop.
 | the letter the trainer is drilling now | focus |
 | a letter that meets the goal | mastered |
 | the next letter to open | next letter |
-| the file with all progress | Save / Load (the section is "Backup") |
-| deleting all progress | Start over (the button is "Reset") |
+| the file with all progress | Export / Import (the section is "Data") |
+| deleting all progress | Reset all progress (in "Danger zone") |
 | speed | wpm after a number ("30 wpm"), WPM as a label on its own |
 
 `wpm`, `raw` and the mode names Learn and Freetype stay in English in every

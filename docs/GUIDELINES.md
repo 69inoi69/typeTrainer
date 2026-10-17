@@ -47,7 +47,7 @@ there is a reason not to).
   the left, the control on the right.
 - Boxes size to their content rather than to a fixed height (the result
   card, the panels).
-- Rare actions (Save, Load, Reset) live in Settings, not on the main screen.
+- Rare actions (Export, Import, Reset all progress) live in Settings, not on the main screen.
 
 **Recommended**
 - Every element has a reason to be there and a reason to be where it is.
@@ -118,11 +118,11 @@ consequences, the same word for the same thing. All text lives in
   or the Web Animations API, never JS timers (`AGENTS.md`). Feel numbers
   live in `web/feel.js`.
 - Selected states use `aria-pressed` / `aria-selected` and the accent fill.
-- A destructive action needs a second click (Reset turns red and asks
-  "Sure?") and says that it cannot be undone.
+- A destructive action asks first in a confirm window (Reset all progress:
+  "Reset all progress? This can't be undone.", Cancel has the focus).
 - Results stay on screen until the user presses Next round, Enter or Tab
-  (Tab = new round everywhere). Esc means "stop" while typing, so it does
-  nothing on the result.
+  (Tab = new round everywhere). Esc opens the settings on every screen
+  (while typing it stops the round first), never "next round".
 - Short messages go in a toast (`web/fx.js`); live areas use
   `aria-live="polite"`.
 
@@ -155,7 +155,8 @@ consequences, the same word for the same thing. All text lives in
   accent outline.
 - `prefers-reduced-motion` turns animations off (the timer bar excepted).
 - Panels are dialogs (`role="dialog"`, `aria-expanded`, `aria-controls`);
-  Esc closes them.
+  Esc closes them. The settings window and the reset confirm are native
+  `<dialog>`s opened with `showModal()` (focus stays inside).
 - Decorative icons have `aria-hidden="true"`.
 
 **Recommended**

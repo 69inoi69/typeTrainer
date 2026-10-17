@@ -38,7 +38,7 @@ Lublin University of Technology (2027).
   repository and comes back later.
 - **Accounts** work only when you run the server yourself (see below). The
   website has no accounts and forgets your progress when you close the tab;
-  to keep it, use Save in Settings and Load it next time.
+  to keep it, use Export in Settings and Import it next time.
 
 ## Run it locally
 
