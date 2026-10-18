@@ -51,10 +51,13 @@ export function renderStats() {
   document.getElementById("btn-copy").disabled = document.getElementById("btn-image").disabled = !s.sessionCount;
   el.tiles.innerHTML = summary(s).map(([v, l]) => `<div class="tile"><b>${v}</b><small>${t(l)}</small></div>`).join("");
 
+  // the chart last: it is drawn at the size of its box, and on a desktop
+  // that box takes the height the keyboard and the letters leave (style.css)
+  if (!free) {
+    drawHeatKeyboard(s.keys);
+    drawLetterGrid(s.keys);
+  }
   drawChart(sessions, free ? s.testWpm : s.targetWpm, s.sessionCount);
-  if (free) return;
-  drawHeatKeyboard(s.keys);
-  drawLetterGrid(s.keys);
 }
 
 // The five numbers of the tiles, [value, label key]: rounds, best wpm and
@@ -195,7 +198,9 @@ function drawChart(sessions, target, total) {
   el.chartNote.textContent = t("chart.note", { scope, target });
 
   // draw at the real pixel size of the box (style.css sizes it to fit the
-  // screen), so text stays 11px on a phone too
+  // screen), so text stays 11px on a phone too. The "no rounds yet" line
+  // goes first: while it is there the box is only as tall as that line.
+  el.chart.replaceChildren();
   const W = Math.max(280, el.chart.clientWidth || 860), H = Math.max(120, el.chart.clientHeight || 200);
   const padL = 34, padR = 8, padT = 10, padB = 22;
   const plotW = W - padL - padR, plotH = H - padT - padB;
@@ -214,7 +219,7 @@ function drawChart(sessions, target, total) {
     const bx = padL + i * slot + (slot - bw) / 2, top = y(x.wpm), base = y(0);
     const r = Math.min(4, bw / 2, base - top);           // rounded top, flat on the baseline
     const d = `M${bx},${base} V${top + r} Q${bx},${top} ${bx + r},${top} H${bx + bw - r} Q${bx + bw},${top} ${bx + bw},${top + r} V${base} Z`;
-    svg += `<path class="bar${i === sessions.length - 1 ? " last" : ""}" data-i="${i}" d="${d}"/>`;
+    svg += `<path class="bar${i === sessions.length - 1 ? " last" : ""}" data-i="${i}" style="--i:${i}" d="${d}"/>`;   /* --i: its turn to grow (style.css) */
   });
   svg += `<line class="target" x1="${padL}" x2="${W - padR}" y1="${y(target)}" y2="${y(target)}"/>`;
   // x labels: first and last round number

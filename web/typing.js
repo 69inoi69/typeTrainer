@@ -21,7 +21,7 @@
 import { FEEL } from "./feel.js";
 import { t } from "./i18n.js";
 import { FX } from "./fx.js";
-import { $, el, S, introOpen, isTouch } from "./state.js";
+import { $, el, S, introOpen, isTouch, themeColor, reducedMotion } from "./state.js";
 import { postJSON } from "./api.js";
 import { highlightNextKey, pulseKey, glowKey, requestFit } from "./keyboard.js";
 import { refreshStats } from "./stats.js";
@@ -76,6 +76,7 @@ export function fitText() {
 // several calls in one frame (fast typing) cost a single layout read.
 // jump = true: move at once, without the glide (a new text, a resize).
 let caretFrame = 0;
+let curSpan = null;        // the letter under the caret (class "cur", a step brighter)
 export function placeCaret(jump) {
   cancelAnimationFrame(caretFrame);
   caretFrame = requestAnimationFrame(() => {
@@ -84,6 +85,11 @@ export function placeCaret(jump) {
     const extra = extras.get(S.pos)?.at(-1);
     const atEnd = S.pos >= spans.length || !!extra;
     const s = extra || spans[Math.min(S.pos, spans.length - 1)];
+    // the letter to type next: one class moves with the caret (setState
+    // rewrites a typed letter's class, so it never stays on one)
+    const cur = atEnd ? null : s;
+    if (cur !== curSpan) { curSpan?.classList.remove("cur"); cur?.classList.add("cur"); curSpan = cur; }
+    breathe(el.textBox.classList.contains("typing"));
     const x = s.offsetLeft + (atEnd ? s.offsetWidth : 0);
     const h = s.offsetHeight;
     if (jump) el.caret.classList.add("jump");
@@ -429,12 +435,33 @@ function mistake() {
   wordClean = false;
   flinchCaret();
 }
-// The caret flinches for an instant on a mistake (knobs: FEEL.caretFlinch*).
-// It animates "scale" only, so the glide ("translate") is not touched.
+// The caret flinches for an instant on a mistake: it shrinks, turns red and
+// shakes (knobs: FEEL.caretFlinch*, FEEL.caretShakePx). It animates "scale"
+// and "transform" only, so the glide ("translate") is not touched.
 function flinchCaret() {
-  if (!FEEL.caretFlinchMs || !el.caret.animate) return;
-  el.caret.animate([{ scale: `1 ${FEEL.caretFlinchScale}` }, { scale: "1 1" }],
-    { duration: FEEL.caretFlinchMs, easing: "ease-out" });
+  if (!FEEL.caretFlinchMs || !el.caret.animate || reducedMotion()) return;
+  // see-through, so the block caret (a setting) never hides its letter
+  const red = `color-mix(in srgb, ${themeColor("--error")} 75%, transparent)`, px = FEEL.caretShakePx;
+  el.caret.animate([
+    { scale: `1 ${FEEL.caretFlinchScale}`, transform: "none", backgroundColor: red },
+    { transform: `translateX(${-px}px)`, offset: .3 },
+    { transform: `translateX(${px}px)`, offset: .6 },
+    { scale: "1 1", transform: "none", backgroundColor: red },
+  ], { duration: FEEL.caretFlinchMs, easing: "ease-out" });
+}
+// While a round waits for the next key, the caret breathes (fades out and in)
+// after FEEL.caretBreathDelayMs of quiet; every key starts the wait again, so
+// it stays solid while you type. One Web Animation, restarted from
+// placeCaret (once per frame at most). It animates "filter", not "opacity":
+// a hidden caret (opacity 0, text not in focus) stays hidden. Outside a round
+// the CSS animation (style.css, .caret) does the same.
+let breath = null;
+function breathe(on) {
+  breath?.cancel();
+  breath = null;
+  if (!on || !FEEL.caretBreathMs || !el.caret.animate || reducedMotion()) return;
+  breath = el.caret.animate([{ filter: "opacity(1)" }, { filter: "opacity(.3)" }, { filter: "opacity(1)" }],
+    { duration: FEEL.caretBreathMs, delay: FEEL.caretBreathDelayMs, iterations: Infinity, easing: "ease-in-out" });
 }
 
 export function handleChar(ch) {

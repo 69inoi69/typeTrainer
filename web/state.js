@@ -75,6 +75,19 @@ export const store = { // localStorage can be blocked; the app must work without
 export const introOpen = () => !el.intro.classList.contains("hidden") && !el.intro.classList.contains("closing");
 // A touch screen (phone, tablet): no physical keyboard, no hover.
 export const isTouch = () => matchMedia("(pointer: coarse)").matches;
+// "Reduce motion" in the OS: the small JavaScript animations are skipped too
+// (style.css turns off the CSS ones).
+const motionQuery = matchMedia("(prefers-reduced-motion: reduce)");
+export const reducedMotion = () => motionQuery.matches;
+// A colour of the current theme (a CSS variable on :root, "--error"), for
+// the animations made in JavaScript (element.animate cannot read var()).
+// Read once per theme and kept, so a keypress never asks the browser for
+// styles; the theme lives in <html data-theme> (settings.js).
+const themeColors = {};
+export function themeColor(name) {
+  const key = (document.documentElement.dataset.theme || "dark") + name;
+  return themeColors[key] ??= getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
 // Gets the text ready for keys. On a phone the hidden <input> must have the
 // focus, or the phone's keyboard does not open; preventScroll stops the page
 // jumping to that invisible input.

@@ -139,8 +139,19 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   from 25, glowing red from 50. New records, mastered letters, new letters and
   the streak at 10 and every 25 words get a small confetti.
 - **While you type** the feedback is where your eyes already are: the focus
-  letter of each portion is tinted in the text, the caret keeps one colour,
-  and the numbers line changes once per word (calm, not every key).
+  letter of each portion is tinted in the text, the letter under the caret
+  is a step brighter than the rest, and the numbers line changes once per
+  word (calm, not every key). A letter typed right settles from a short warm
+  flash into the text colour; a mistake makes the caret shrink, turn red
+  and shake for a tenth of a second. The key on the drawn keyboard dips and
+  the finger that pressed it taps down with it. While you pause, the caret
+  breathes (fades out and in) instead of blinking.
+- **The result** opens as one short sequence: the speed counts up from 0,
+  the word chart draws itself from left to right, then the facts, the words
+  and the button follow. **The stats screen** opens the same way: the tiles
+  rise one after another and the bars grow from the baseline. On a desktop
+  the whole stats screen fits the window: the chart takes the height the
+  rest leaves.
 - **When the round ends** the text window shows the result instead of the
   text: the numbers first (speed in wpm, accuracy and the **consistency** of
   your speed: how even the pace was, 100 % = every second the same; rounds
