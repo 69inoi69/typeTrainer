@@ -43,7 +43,7 @@ its own.
 | `internal/storage/migrations/` | The database tables, one numbered SQL file per change (`001_init.sql`, `002_session_length.sql`). |
 | `internal/storage/store_test.go` | The tests every `Store` must pass; run on memory always and on PostgreSQL when `TT_TEST_DATABASE_URL` is set (`postgres_test.go`). |
 | `internal/api/handlers.go` | The `Server`, the route list (`Register`), `?lang=`, JSON helpers, locking around read-modify-write. |
-| `internal/api/learning.go` | Learning routes: `/portion`, `/results`, `/stats`, `/progress`. |
+| `internal/api/learning.go` | Learning routes: `/portion`, `/results`, `/stats`, `/activity`, `/progress`. |
 | `internal/api/data.go` | `/reset`, `/export`, `/import` (learning and free practice data together). |
 | `internal/api/validate.go` | Request checks, so nothing impossible or foreign reaches the statistics. |
 | `internal/api/freeplay.go` | The `/api/v1/freeplay/*` routes. |
@@ -77,7 +77,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | bottom | `api.js` | `getJSON` / `postJSON` for `/api/v1/`, with `?lang=` added. |
 | middle | `tools.js` | Tooltips, and the data buttons of the settings window: export / import, reset (with its confirm window). |
 | middle | `keyboard.js` | On-screen keyboard and hands from the layout data, the next key and finger, the on / off button (remembered separately for learning and free practice), the automatic size that fits the window. |
-| middle | `stats.js` | The stats screen (tiles, WPM chart, heatmap keyboard, letter cards) and `refreshStats()`. |
+| middle | `stats.js` | The stats screen (all time with the activity calendar from `/activity`, tiles with trends and the personal goal, WPM chart with the 10-round average, heatmap keyboard, letter cards) and `refreshStats()`. |
 | middle | `share.js` | The "image" button of the stats screen: a PNG card drawn on a canvas from what the screen shows. |
 | middle | `typing.js` | The text stream (portions added while you type), the caret, `handleChar()` / `backspace()`, the streak, live WPM / accuracy, the "typing now" header mode, sending results. |
 | middle | `letters.js` | The letters bar above the text, its status line, locked keys dimmed on the keyboard. |
@@ -194,6 +194,7 @@ All responses are JSON. Every route except `/languages` and `/auth/*` takes `?la
 | GET | `/api/v1/export` | | `{unlocked, keys: {char: {count, mistakes, errEma, timeEma, timedCount}}, sessions: [all, OLDEST first, each with its raw keys], freeplay: {testPassed, sessions}}`; everything stored for the language (`freeplay` is missing in older files) |
 | POST | `/api/v1/import` | the same JSON as `/export` | `{unlocked, sessions}`; REPLACES the language's data, or changes nothing if the data is invalid |
 | GET | `/api/v1/stats?length=` | | `{keys: [{char, count, errorRate, avgMs, difficulty, mastered, unlocked}], sessions: [last 50 of that length, newest first, without raw keys], sessionCount (of that length), lengths: [every length in the history], targetWpm, masteryMin, masteryErr (the mastery rule: at least masteryMin presses, under masteryErr % mistakes, for the texts)}`; no `length` = every length |
+| GET | `/api/v1/activity?tz=` | | `{days: [{date, rounds, seconds, chars}]}`: every day with a finished round, learning and free practice together, oldest first; `tz` = the browser's minutes from UTC (east positive), so days end at the user's midnight. `seconds` = right letters / 5 / WPM (`storage.RoundSeconds`). The stats screen builds the total time typing, the days in a row and the activity calendar from it |
 | POST | `/api/v1/freeplay/portion` | `{recent: [words], start: bool}` | `{portions: [{words}], round}`; words drawn evenly from the whole list; works while free practice is locked (the test uses it) |
 | POST | `/api/v1/freeplay/results` | `{chars, wpm, accuracy, perSecond, keys, length}` | `{consistency}`; one entry in the free practice history; 403 while locked |
 | POST | `/api/v1/freeplay/test` | `{chars, wpm, accuracy}` | `{passed, unlocked}`; a pass opens free practice for good; stored in no history |

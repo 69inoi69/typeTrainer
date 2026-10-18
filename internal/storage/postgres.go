@@ -315,6 +315,30 @@ func (p *PostgresStore) LettersTyped(user, lang string, unlocked int) (int, erro
 		user, lang, modeLearning, unlocked).Scan(&n)
 	return n, err
 }
+
+// PracticeDays groups the rounds of both modes by the user's local date:
+// finished_at in UTC plus the offset, cut to the day. The seconds use the
+// same rule as RoundSeconds.
+func (p *PostgresStore) PracticeDays(user, lang string, tz time.Duration) ([]Day, error) {
+	rows, err := p.db.Query(`SELECT to_char((finished_at AT TIME ZONE 'UTC') + make_interval(secs => $3), 'YYYY-MM-DD') AS d,
+		COUNT(*), COALESCE(SUM(CASE WHEN wpm > 0 THEN chars * accuracy / 100 / 5 / wpm * 60 ELSE 0 END), 0), COALESCE(SUM(chars), 0)
+		FROM sessions WHERE user_id = $1 AND lang = $2 GROUP BY d ORDER BY d`,
+		user, lang, tz.Seconds())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []Day{}
+	for rows.Next() {
+		var d Day
+		if err := rows.Scan(&d.Date, &d.Rounds, &d.Seconds, &d.Chars); err != nil {
+			return nil, err
+		}
+		out = append(out, d)
+	}
+	return out, rows.Err()
+}
+
 func (p *PostgresStore) AddFreeplaySession(user, lang string, s Session) error {
 	return p.addSession(user, lang, modeFreeplay, s)
 }

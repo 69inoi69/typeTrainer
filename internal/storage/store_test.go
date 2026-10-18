@@ -7,6 +7,7 @@ package storage
 import (
 	"errors"
 	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -33,6 +34,7 @@ var storeTests = map[string]func(*testing.T, Store){
 	"LettersTyped":              testLettersTyped,
 	"Group":                     testGroup,
 	"Device":                    testDevice,
+	"PracticeDays":              testPracticeDays,
 }
 
 // runStoreTests runs every test on a fresh, empty store from newStore.
@@ -385,5 +387,41 @@ func testDevice(t *testing.T, m Store) {
 	free, _ := m.RecentFreeplaySessions(u, "en", "", 1)
 	if len(free) != 1 || free[0].Device != DeviceKeyboard {
 		t.Fatalf("free practice device: %+v", free)
+	}
+}
+
+// PracticeDays puts the rounds of both modes on the user's local days,
+// adds up their time and letters, keeps users and languages apart, and
+// Reset clears it.
+func testPracticeDays(t *testing.T, m Store) {
+	if days, err := m.PracticeDays(u, "en", 0); err != nil || len(days) != 0 {
+		t.Fatalf("no history: %v, %v; want none", days, err)
+	}
+	at := func(s string) time.Time { v, _ := time.Parse(time.RFC3339, s); return v }
+	// 60 wpm, 100%: 300 letters = 60 words = 1 minute
+	m.AddSession(u, "en", Session{WPM: 60, Accuracy: 100, Chars: 300, FinishedAt: at("2026-10-17T10:00:00Z")})
+	m.AddFreeplaySession(u, "en", Session{WPM: 30, Accuracy: 100, Chars: 150, FinishedAt: at("2026-10-17T22:30:00Z")})
+	m.AddSession(u, "en", Session{WPM: 0, Accuracy: 0, Chars: 0, FinishedAt: at("2026-10-18T09:00:00Z")})                   // WPM 0: no time
+	m.AddSession(u, "pl", Session{WPM: 60, Accuracy: 100, Chars: 300, FinishedAt: at("2026-10-17T10:00:00Z")})              // another language
+	m.AddSession("someone-else", "en", Session{WPM: 60, Accuracy: 100, Chars: 300, FinishedAt: at("2026-10-17T10:00:00Z")}) // another user
+
+	days, err := m.PracticeDays(u, "en", 0)
+	if err != nil || len(days) != 2 {
+		t.Fatalf("UTC: %v, %v; want 2 days", days, err)
+	}
+	if d := days[0]; d.Date != "2026-10-17" || d.Rounds != 2 || d.Chars != 450 || math.Abs(d.Seconds-120) > 0.01 {
+		t.Fatalf("first day %+v, want 2026-10-17, 2 rounds, 450 letters, 120 s", d)
+	}
+	if d := days[1]; d.Date != "2026-10-18" || d.Rounds != 1 || d.Seconds != 0 {
+		t.Fatalf("second day %+v, want 2026-10-18, 1 round, 0 s", d)
+	}
+	// two hours east of UTC the 22:30 round is already on the 18th
+	days, _ = m.PracticeDays(u, "en", 2*time.Hour)
+	if len(days) != 2 || days[0].Rounds != 1 || days[1].Date != "2026-10-18" || days[1].Rounds != 2 {
+		t.Fatalf("UTC+2: %+v, want 1 round on the 17th and 2 on the 18th", days)
+	}
+	m.Reset(u, "en")
+	if days, _ := m.PracticeDays(u, "en", 0); len(days) != 0 {
+		t.Fatalf("after reset: %v, want none", days)
 	}
 }

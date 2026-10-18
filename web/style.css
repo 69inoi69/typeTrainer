@@ -1092,6 +1092,7 @@ button:disabled:active { transform: none; }
 #view-stats.grow .tile:nth-child(3) { animation-delay: 60ms; }
 #view-stats.grow .tile:nth-child(4) { animation-delay: 90ms; }
 #view-stats.grow .tile:nth-child(5) { animation-delay: 120ms; }
+#view-stats.grow .tile:nth-child(6) { animation-delay: 150ms; }
 #view-stats.grow .panel { animation-delay: 100ms; }
 #view-stats.grow .stats-pair .panel { animation-delay: 160ms; }
 #view-stats.grow .chart .bar {
@@ -1105,16 +1106,52 @@ button:disabled:active { transform: none; }
 .stats-top .tiles { order: 3; flex-basis: 100%; }
 .btn.done { color: var(--ok); animation: done-hold 1.6s; }
 @keyframes done-hold { from { color: var(--ok); } to { color: var(--ok); } }
-.tiles { flex: 1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; min-width: min(100%, 560px); }
-/* a tile: the label on top, the number big under it (the HTML has the
-   number first, for screen readers: value, then what it is) */
+.tiles { flex: 1; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; min-width: min(100%, 560px); }   /* five tiles, six with a goal: one row */
+/* a tile: the label on top, the number big under it, a small line under
+   that ("last 10" and the trend, or how far the goal is). The HTML has the
+   number first, for screen readers: value, then what it is. */
 .tile {
   background: var(--panel); border-radius: var(--r-md); box-shadow: var(--lift); min-width: 0;
-  padding: 12px 14px 11px; display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: 4px;
+  padding: 12px 14px 11px; display: flex; flex-direction: column; gap: 4px;
 }
+.tile small { order: -1; }
+.tile .meta { display: flex; align-items: center; gap: 6px; min-height: 1.2em; font-size: .72rem; color: var(--sub); white-space: nowrap; }
 .tile b { display: block; font-size: 1.75rem; font-weight: 500; letter-spacing: -.02em; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1.05; }
-.tile:nth-child(2) b, .tile:nth-child(3) b { color: var(--accent-text); }   /* the speeds: best and recent */
-.tile small { display: block; line-height: 1.3; }
+.tile.speed b { color: var(--accent-text); }   /* the speeds: best and recent */
+.tile b i { font-style: normal; font-size: .55em; color: var(--sub); }   /* the % after a number */
+.tile small { display: block; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* how a "last 10" number moved against the 10 rounds before */
+.trend { font-weight: 500; padding: 0 6px; border-radius: 999px; cursor: default; }
+.trend.up { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
+.trend.down { color: var(--error); background: color-mix(in srgb, var(--error) 12%, transparent); }
+/* the personal goal (settings): the goal, how much is left, a bar of the way */
+.tile.goal { position: relative; overflow: hidden; }
+.tile.goal.done .meta { color: var(--ok); }
+.goal-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: color-mix(in srgb, var(--text) 6%, transparent); }
+.goal-bar::after { content: ""; position: absolute; inset: 0; width: calc(var(--p) * 100%); background: var(--accent); border-radius: 0 2px 2px 0; }
+.tile.goal.done .goal-bar::after { background: var(--ok); }
+
+/* ---------- stats: all time (stats.js drawActivity) ---------- */
+/* every round length and both modes together: four numbers on the left,
+   the activity calendar on the right (a cell = a day, a column = a week) */
+.activity { display: flex; align-items: center; justify-content: space-between; gap: 14px 28px; flex-wrap: wrap; padding: 12px 18px; }
+.activity:empty { display: none; }
+.act-stats { display: flex; gap: 28px; flex-wrap: wrap; cursor: default; }
+.act-stat { display: flex; flex-direction: column-reverse; gap: 2px; }
+.act-stat b { font-size: 1.25rem; font-weight: 500; letter-spacing: -.01em; color: var(--text); font-variant-numeric: tabular-nums; }
+.act-stat small { font-size: .74rem; color: var(--sub); }
+.act-stat.hot b { color: var(--accent-text); }
+@media (max-width: 640px) { .act-stats { display: grid; grid-template-columns: repeat(2, auto); gap: 12px 28px; } }   /* phone: two by two */
+.act-stat.hot b::before { content: "🔥"; font-size: .85em; margin-right: 4px; }
+.act-cal {
+  display: grid; grid-template-rows: repeat(7, 9px); grid-auto-flow: column; grid-auto-columns: 9px; gap: 3px;
+}
+.act-cal i { border-radius: 2px; background: color-mix(in srgb, var(--text) 6%, transparent); }
+.act-cal i.l1 { background: color-mix(in srgb, var(--accent) 30%, var(--panel)); }
+.act-cal i.l2 { background: color-mix(in srgb, var(--accent) 55%, var(--panel)); }
+.act-cal i.l3 { background: color-mix(in srgb, var(--accent) 78%, var(--panel)); }
+.act-cal i.l4 { background: var(--accent); }
+.act-cal i:hover { outline: 1px solid var(--text); outline-offset: 1px; }
 /* the chart, the keyboard and the letters: one kind of card */
 .panel { background: var(--panel); border-radius: var(--r-lg); box-shadow: var(--lift); padding: 16px 18px; }
 .chart { height: clamp(140px, 30vh, 340px); }
@@ -1189,6 +1226,7 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 .chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .chart .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 4; }
 .chart .target { stroke: var(--sub); stroke-width: 1; stroke-dasharray: 4 4; }
+.chart .avg { fill: none; stroke: var(--text); stroke-width: 1.5; stroke-linejoin: round; opacity: .55; pointer-events: none; }
 .chart .axis { fill: var(--sub); font-size: 11px; font-family: var(--mono); }
 .chart .bar { fill: color-mix(in srgb, var(--accent) 55%, var(--panel)); transition: fill var(--fast); }
 .chart .bar.last { fill: var(--accent); }
@@ -1585,8 +1623,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .metric.raw { display: none; }          /* phone: no room, wpm + acc are enough */
   /* five tiles in two columns, the round count across both: three even
      rows (rows of three left a hole after the fifth tile, owner, 2026-10-18) */
-  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 100%; }
-  .tiles > .tile:first-child { grid-column: 1 / -1; }
+  .tiles { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 100%; }
+  .tiles > .tile:first-child:nth-last-child(odd) { grid-column: 1 / -1; }   /* an odd count: the first across, the rest in pairs */
   .tile { padding: 10px 10px 9px; }
   .tile b { font-size: 1.3rem; }
   /* phone: one row would make the chips tiny, so two rows of 13 (26

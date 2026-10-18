@@ -1,6 +1,6 @@
 // The settings window (Esc or the gear in the navigation): how long a round
 // is, the live numbers on or off, the streak badge on or off, the look of
-// the caret, the colour theme,
+// the caret, the colour theme, a personal speed goal for the stats screen,
 // the on-screen keyboard on or off, and exporting, importing and resetting
 // the progress (tools.js does those three). Settings change
 // HOW MUCH and HOW IT LOOKS, never WHAT is practised: the words still come
@@ -34,6 +34,11 @@ export const DEFAULT_LENGTH = "words-30";   // the same as storage.DefaultLength
 // To add one: its id here, its look in style.css (body[data-caret="id"]
 // .caret and a small picture .cs.id) and its name in i18n.js ("settings.id").
 const CARETS = ["line", "block", "underline", "outline"];
+// A personal speed goal, WPM (0 = none; owner, 2026-10-18). Only the stats
+// screen shows it (a tile, the line on the chart): the algorithm never sees
+// it, letters open at the trainer's own target as before (AGENTS.md: a
+// setting never changes what is practised).
+export const GOALS = [0, 50, 75, 100, 125, 150, 200];
 
 // "time-60" -> {kind: "time", n: 60}
 export function lengthOf(id) {
@@ -57,6 +62,8 @@ export function loadSettings() {
   const caret = store.get("tt.caret");
   S.settings.caret = CARETS.includes(caret) ? caret : "line";
   S.settings.theme = store.get("tt.theme") === "light" ? "light" : "dark";
+  const goal = Number(store.get("tt.goal"));
+  S.settings.goal = GOALS.includes(goal) ? goal : 0;
   applySettings();
 }
 // The look: classes on <body> and data-theme on <html>, style.css does the
@@ -90,6 +97,9 @@ export function onLengthChange(fn) { lengthListener = fn; }
 // this module does not need the keyboard module.
 let kbListener = () => {};
 export function onKbToggle(fn) { kbListener = fn; }
+// A new goal: the stats screen draws itself again (input.js).
+let goalListener = () => {};
+export function onGoalChange(fn) { goalListener = fn; }
 
 // ---------- the window ----------
 // Esc or the gear opens it (input.js, the button below). Every setting is one
@@ -130,6 +140,8 @@ const ROWS = [
   { group: "settings.look", name: "settings.theme", ctl: () => seg([
     choice("theme", "dark", t("settings.dark"), S.settings.theme === "dark"),
     choice("theme", "light", t("settings.light"), S.settings.theme === "light")]) },
+  { group: "settings.statsGroup", name: "settings.goal", ctl: () => seg(GOALS.map((g) =>
+    choice("goal", String(g), g ? String(g) : t("settings.off"), S.settings.goal === g))) },
   { group: null, name: "settings.data", ctl: () => action("btn-export", "export", "data.save") + action("btn-import", "import", "data.load") },
   { group: null, name: "settings.danger", danger: true, ctl: () => action("btn-reset", "trash", "data.reset", "btn danger") },
 ];
@@ -177,6 +189,10 @@ function apply(key, value) {
   } else if (key === "theme") {
     S.settings.theme = value;
     store.set("tt.theme", value);
+  } else if (key === "goal") {
+    S.settings.goal = Number(value);
+    store.set("tt.goal", value);
+    goalListener();
   } else if (key === "kb") {
     if (S.kbHidden === (value === "1")) kbListener();   // only a real change
   }

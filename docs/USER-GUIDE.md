@@ -133,6 +133,9 @@ the normal server, it shows yours.
     on the device's own keyboard, so the option is not shown. There
     is no size setting: the keyboard is always as big as the window allows
     without making the page scroll.
+  - **goal, wpm** (under "Stats"): off (default), 50, 75, 100, 125, 150 or
+    200. The stats screen then shows how far you are from it. Only for you:
+    the trainer does not change, letters still open at its own speed.
   - **data**: **export** writes all languages and the full history
     to one `.json` file, **import** reads such a file back and **replaces** the
     current data (use it to keep progress across server restarts or page
@@ -249,16 +252,30 @@ the normal server, it shows yours.
 - **stats** in the navigation (or `Shift + Tab`) opens the statistics screen.
   It fits on one screen without scrolling on a usual desktop (1280×800 and
   up), so "how am I doing?" takes a glance:
+  - **all time** on top, every round length and both modes together: time
+    typing, rounds, words, **days in a row** (a day not practised yet does
+    not break it; a whole missed day does) and an **activity calendar** of
+    the last 20 weeks, a square a day, brighter the longer you typed (hover
+    a square for the day). Days end at your own midnight;
   - a row of round lengths and the numbers: rounds, best wpm, and the
-    averages of the last 10 rounds (wpm, accuracy, consistency). Rounds of
-    different lengths are never mixed: the row always has all nine lengths
-    (10–50 words, 15–90 s; older 60-word rounds keep their own button), it opens on the one chosen in the
-    settings, and a length with no rounds yet shows empty numbers;
-  - the speed of every round (hover a bar for its numbers);
-  - side by side (learning only): a **difficulty keyboard** (grey keys, the
-    redder the harder the letter is for you, dashed = no data yet) and every
-    letter as a small chip from weakest to strongest, with a thin red bar for
-    how hard it is and a green tick when mastered.
+    averages of the last 10 rounds (wpm, accuracy, consistency), each with a
+    small green or red arrow for how it moved against the 10 rounds before.
+    Rounds of different lengths are never mixed: the row always has all nine
+    lengths (10–50 words, 15–90 s; older 60-word rounds keep their own
+    button), it opens on the one chosen in the settings, and a length with
+    no rounds yet shows empty numbers;
+  - with a **goal** set in the settings (50–200 wpm, learning only): one more
+    tile with the goal, how much the average of the last 10 is still below
+    it, and a bar of the way. The goal is only for you: letters still open
+    at the trainer's own speed;
+  - the speed of every round (hover a bar for its numbers), with a line for
+    the average of the last 10 rounds and a dashed line for the goal (yours,
+    or else the trainer's);
+  - side by side (learning only): a **difficulty keyboard** (grey keys, from
+    gold to red the harder the letter is for you, against your hardest
+    letter; dashed = no data yet) and every letter as a small chip from
+    weakest to strongest, with a bar on the same scale and a green tick
+    when mastered.
   The exact numbers are in tooltips: hover, tap, or move to a key or chip
   with `Tab`.
 

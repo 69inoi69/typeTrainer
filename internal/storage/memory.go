@@ -206,6 +206,30 @@ func (m *MemoryStore) SetTestPassed(user, lang string, passed bool) error {
 	return nil
 }
 
+func (m *MemoryStore) PracticeDays(user, lang string, tz time.Duration) ([]Day, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	d := m.data(user, lang)
+	byDate := map[string]*Day{}
+	for _, s := range append(append([]Session{}, d.sessions...), d.freeplay...) {
+		date := s.FinishedAt.UTC().Add(tz).Format("2006-01-02")
+		day := byDate[date]
+		if day == nil {
+			day = &Day{Date: date}
+			byDate[date] = day
+		}
+		day.Rounds++
+		day.Seconds += RoundSeconds(s.WPM, s.Accuracy, s.Chars)
+		day.Chars += s.Chars
+	}
+	out := make([]Day, 0, len(byDate))
+	for _, day := range byDate {
+		out = append(out, *day)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Date < out[j].Date })
+	return out, nil
+}
+
 func (m *MemoryStore) AddFreeplaySession(user, lang string, s Session) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
