@@ -61,7 +61,9 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   The result screen hides it: the next round picks its own
   focus. Caps Lock and wrong layout warnings appear on top of that whole
   line, so nothing moves.
-- The keyboard shows the next key in its finger color; keys you do not need yet
+- The keyboard shows the next key as the one light key (on the light theme the
+  one dark key), raised a little and framed in its finger color, so the
+  corner of the eye finds it without looking down; keys you do not need yet
   are dimmed. Above the keyboard two hands light up the finger that presses
   it (space = both thumbs, AltGr letters = right thumb + the finger).
 - The screen has three fixed places, as in a real app:
@@ -72,8 +74,8 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
     **Learn**, **Freetype** and **Stats**, then **Help** and **Settings**.
     The chosen screen has a short yellow bar next to it.
   From your first keypress until the end of the round everything around the
-  text steps back: the logo turns grey and the controls almost vanish (move
-  the mouse over them to bring them back).
+  text steps back: the whole header fades, the logo a little less than the
+  controls (move the mouse over them to bring them back).
 - Two kinds of text: what changes (the words, letters, numbers, messages) is
   bright; what never changes (labels, menus, explanations) is quieter,
   labels small and grey. Everything uses one monospace font, Geist Mono,
@@ -95,7 +97,7 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   the middle of the screen. Typing filters it (search), `↑ ↓` pick a row,
   `← →` change its value, `Enter` presses a button, `Esc` closes it. On a
   phone the Settings button in the bottom bar opens it. What is in it:
-  - **round length**: 10, 30 or 60 words, or 30 or 60 seconds (default 30
+  - **round length**: 10, 20, 30, 40 or 50 words, or 15, 30, 60 or 90 seconds (default 30
     words). A words round ends with the last letter of its last word, a time
     round when the time is up; the counter in the text card shows the words
     or the seconds left. The typing test is always 30 words.
@@ -163,7 +165,7 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   extra and missed letters, for example `128/3/0/1`; hover for what each
   number is) and the Time of the round, from the first to the last press.
   Then one plain line if something happened (a
-  new letter ("New letter" over the letter on a gold key, at the end of the row of numbers, like "Mastered"), a new record, mastered letters), then which letters got faster
+  new letter ("New letter" over the letter on a gold key, at the end of the row of numbers, like "Mastered"), mastered letters), then which letters got faster
   or slower, as the time per press before and now (for example
   `s 320→250ms`), Faster on the left and Slower on the right, then the
   words of the round as you typed them, a letter that had a mistake
@@ -179,8 +181,8 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   Thin lines separate the parts of the result.
   Hover a word (or tap it on a phone) to see its own speed: the average
   time per press of its letters and the space after it, in wpm. Each part
-  is its own block with some air between (good news, a new letter or a
-  record, on a soft yellow tint), and the window is only as wide and as tall as what it
+  is its own block with some air between (good news, a new letter, on a
+  soft yellow tint), and the window is only as wide and as tall as what it
   shows (a long list of words scrolls inside). No
   jokes or tips there. The result stays until you go on on purpose:
   **Enter**, **Tab** or the yellow **Next round** button
@@ -232,8 +234,8 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   up), so "how am I doing?" takes a glance:
   - a row of round lengths and the numbers: rounds, best wpm, and the
     averages of the last 10 rounds (wpm, accuracy, consistency). Rounds of
-    different lengths are never mixed: the row always has all five lengths
-    (10, 30, 60 words, 30, 60 s), it opens on the one chosen in the
+    different lengths are never mixed: the row always has all nine lengths
+    (10–50 words, 15–90 s; older 60-word rounds keep their own button), it opens on the one chosen in the
     settings, and a length with no rounds yet shows empty numbers;
   - the speed of every round (hover a bar for its numbers);
   - side by side (learning only): a **difficulty keyboard** (grey keys, the

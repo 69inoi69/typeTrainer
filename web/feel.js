@@ -15,12 +15,13 @@ export const FEEL = {
   // Everything that moves while you type: smooth, but it starts moving at
   // once (owner, 2026-10-16: first "honey", then "smooth, but as responsive
   // as possible"). Lower = snappier.
-  // The caret: the same glide as monkeytype's default ("smooth caret:
-  // medium", 100 ms, a gentle in-out curve; style.css .caret). It used to be
-  // 70 ms on a curve that starts very fast: 73% of the way in the first
-  // frame, then a crawl, which read as a low frame rate (owner, 2026-10-18).
-  // Now the way is spread evenly over about 6 frames.
-  caretGlideMs: 100,        // the caret sliding to the next letter (0 = jumps)
+  // The caret (owner, 2026-10-18): 70 ms on a very steep curve went 73% of
+  // the way in the first frame, then crawled: it read as a low frame rate.
+  // Monkeytype's 100 ms even glide (12% in the first frame) was smooth but
+  // "oily": you did not feel each letter being passed. Now in between: about
+  // half the way in the first frame (each press is a clear step), the rest
+  // settles in 3 frames (54 / 81 / 94 / 100%). The curve is in style.css.
+  caretGlideMs: 80,         // the caret sliding to the next letter (0 = jumps)
   wordInMs: 90,             // a newly shown word fading in (0 = appears at once)
   lineScrollMs: 120,        // the text moving up a line (0 = at once)
 
@@ -57,7 +58,7 @@ export const FEEL = {
   // signal, the key itself is only hinted.
   handScale: 1.4,           // hand width in keys: 2 * handScale (1 = the old size)
   fingerLiftPx: 8,          // how far the finger to use lifts
-  fingerGlowPx: 4,          // its soft glow: a see-through outline, in the hand drawing's units (owner, 2026-10-18: 7 was too strong)
+  fingerGlowPx: 0,          // a see-through outline around it, in the hand drawing's units (0 = none; owner, 2026-10-18: it looked like double vision)
   // The finger that presses a key taps down a little with it.
   fingerTapPx: 3,           // how far it moves down (0 = off)
   fingerTapMs: 110,         // duration
@@ -65,7 +66,9 @@ export const FEEL = {
   // keys: they overlap it by this part of a key (their wrists fade out
   // anyway). It also leaves more height for bigger keys.
   handOverlap: 0.42,        // in keys (0 = the hands stand above the keyboard)
-  nextKeyTint: 38,          // how strongly the next key takes its finger colour, % (100 = solid)
+  // The next key stands out by brightness, not by colour: side vision sees
+  // light and movement, not hues (owner, 2026-10-18: it got lost while typing).
+  nextKeyLiftPx: 3,         // how far the next key rises above the others (0 = stays flat)
 };
 
 // The CSS custom properties: style.css uses var(--feel-...).
@@ -78,5 +81,5 @@ root.setProperty("--feel-mark-line", FEEL.markLine + "px");
 root.setProperty("--feel-hand", String(FEEL.handScale));
 root.setProperty("--feel-finger-lift", -FEEL.fingerLiftPx + "px");
 root.setProperty("--feel-finger-glow", String(FEEL.fingerGlowPx));
-root.setProperty("--feel-next-tint", FEEL.nextKeyTint + "%");
+root.setProperty("--feel-next-lift", -FEEL.nextKeyLiftPx + "px");
 root.setProperty("--feel-hand-overlap", String(FEEL.handOverlap));

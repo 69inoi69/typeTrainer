@@ -238,15 +238,15 @@ button, .tooltip, .menu-item, .hints, .rail small, .tour-text, .intro p, .intro 
 .seg button[aria-pressed="true"], .length-filter button[aria-selected="true"], .mode-filter button[aria-selected="true"] {
   background: var(--accent-fill); color: var(--on-accent); box-shadow: 0 2px 10px -3px rgba(220, 160, 20, .55);
 }
-/* the stats' round lengths (all five, always): two separate switches,
-   word rounds and timed rounds (stats.js); on a phone they share the width */
+/* the stats' round lengths (all nine, always): two separate switches,
+   word rounds and timed rounds (stats.js); on a phone each takes a line of
+   its own (nine buttons do not fit in one) */
 .length-filter { background: none; box-shadow: none; padding: 0; gap: 8px; flex-wrap: nowrap; }
 .lf-group { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--r-md); background: var(--panel); box-shadow: var(--ring); }
 @media (max-width: 640px) {
-  .length-filter { display: flex; width: 100%; }
-  .lf-group { flex: 3; }
-  .lf-group + .lf-group { flex: 2; }
-  .lf-group button { flex: 1 1 auto; padding: 4px 6px; white-space: nowrap; }
+  .length-filter { display: flex; flex-wrap: wrap; width: 100%; }
+  .lf-group { flex: 1 1 100%; }
+  .lf-group button { flex: 1 1 0; min-width: 0; padding: 4px 2px; font-size: .74rem; white-space: nowrap; }
 }
 /* a plain button in a panel */
 .btn {
@@ -347,13 +347,13 @@ dialog.confirm .win-p { margin: 0; }
 }
 .top-side { display: flex; align-items: center; gap: 14px; min-width: 0; }
 /* While you type, everything around the text steps back (as on monkeytype):
-   the logo turns grey, the controls almost vanish. Moving the mouse over them
-   brings them back. */
-.top .logo-name, .top .logo-key, .lang-switch, .profile, .rail { transition: color .4s var(--ease), opacity .4s var(--ease), filter .4s var(--ease); }
-body.typing-now .top .logo-name { color: var(--sub); }
-body.typing-now .top .logo-name span { color: color-mix(in srgb, var(--sub) 70%, var(--text)); }
-body.typing-now .top .logo-key { filter: grayscale(1) brightness(.55); }
-body.typing-now .lang-switch, body.typing-now .profile, body.typing-now .rail { opacity: .15; }
+   the whole header fades the same way, the logo a little less than the
+   controls (owner, 2026-10-18: the controls nearly vanished while the logo
+   only turned grey, so they did not fade together). Moving the mouse over
+   them brings them back. */
+.top .logo, .lang-switch, .profile, .rail { transition: opacity .4s var(--ease); }
+body.typing-now .top .logo { opacity: .55; }
+body.typing-now .lang-switch, body.typing-now .profile, body.typing-now .rail { opacity: .35; }
 body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.typing-now .rail:hover { opacity: 1; }
 .logo { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .logo-key { width: 34px; height: 34px; flex: none; }
@@ -765,10 +765,11 @@ body[data-mode="free"] .letter-row { display: none; }
 /* the letter under the caret (typing.js placeCaret): a step brighter than
    the rest of the untyped text, so the eye finds it at once */
 .text span.cur { color: color-mix(in srgb, var(--text) 62%, var(--sub)); }
-/* the focus letter (the one being practised) is tinted until it is typed;
-   on the light page a vivid amber of its own (3.4:1, enough for text this big) */
-.text span.fx { color: color-mix(in srgb, var(--accent) 62%, var(--sub)); }
-:root[data-theme="light"] .text span.fx { color: #be8000; }
+/* the focus letter (the one being practised) is tinted until it is typed:
+   a muted gold, half way to the grey of the text (owner, 2026-10-18: the
+   brighter tint pulled the eye away from the words) */
+.text span.fx { color: color-mix(in srgb, var(--accent) 46%, var(--sub)); }
+:root[data-theme="light"] .text span.fx { color: color-mix(in srgb, #be8000 72%, var(--sub)); }
 .text span.fx.cur { color: var(--accent-text); }
 :root[data-theme="light"] .text span.fx.cur { color: #a56c00; }
 /* no glow on the text at rest: crisp letters read better; a mistake keeps a
@@ -808,7 +809,7 @@ body[data-mode="free"] .letter-row { display: none; }
   border-radius: 3px; pointer-events: none;
   box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 25%, transparent);
   will-change: translate;
-  transition: translate var(--feel-caret-ms, 0ms) cubic-bezier(.3, .15, .7, .85);   /* gentle in-out, as monkeytype (web/feel.js) */
+  transition: translate var(--feel-caret-ms, 0ms) cubic-bezier(.2, .6, .35, 1);   /* a clear step, a short settle (web/feel.js) */
   animation: breathe 1.1s ease-in-out infinite;   /* at rest it breathes; typing.js does the same while a round waits */
 }
 .caret.jump { transition: none; }   /* new round, resize: no glide */
@@ -884,13 +885,12 @@ body[data-caret="outline"] .caret {
 .hand .palm { fill: var(--skin); }
 .hand .finger { --fc: #888; --tint: color-mix(in srgb, var(--fc) 14%, var(--skin)); transition: translate var(--med) var(--ease); }
 .hand .finger .skin { fill: var(--tint); transition: fill var(--fast); }
-/* the finger to use: fills with its full colour, lifts and glows softly. It
-   is the main "which finger" signal; the key below is only hinted (.key.next).
+/* the finger to use: fills with its full colour and lifts, no glow (owner,
+   2026-10-18: a blurred edge looked like double vision). It is the main
+   "which finger" signal; the key below is only hinted (.key.next).
    Knobs: --feel-finger-* (web/feel.js). */
-.hand .finger.on .skin { filter: drop-shadow(0 0 5px color-mix(in srgb, var(--fc) 40%, transparent)); }   /* softer (owner, 2026-10-18) */
 .hand .finger.on { translate: 0 var(--feel-finger-lift, -6px); animation: finger-on 260ms cubic-bezier(.3, 1.6, .5, 1); }
-/* the glow is a wide see-through outline: a CSS drop-shadow would be cut at
-   the edges of the thin finger's filter area */
+/* an optional see-through outline (--feel-finger-glow, 0 = none) */
 .hand .finger.on .skin {
   fill: var(--fc); paint-order: stroke;
   stroke: color-mix(in srgb, var(--fc) 30%, transparent); stroke-width: var(--feel-finger-glow, 0);
@@ -929,7 +929,7 @@ body[data-caret="outline"] .caret {
   border-bottom: 2px solid color-mix(in srgb, var(--fc) 55%, transparent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 1px 2px rgba(0, 0, 0, .4);
   /* the next key's light moves over softly (120 ms), the press stays instant */
-  transition: transform var(--fast) var(--ease), background 120ms ease-out, box-shadow 120ms ease-out, color 120ms ease-out, opacity var(--med);
+  transition: transform var(--fast) var(--ease), translate 120ms ease-out, background 120ms ease-out, box-shadow 120ms ease-out, color 120ms ease-out, opacity var(--med);
   overflow: hidden;
 }
 .key.home::after {                    /* bump on F and J */
@@ -942,12 +942,6 @@ body[data-caret="outline"] .caret {
 }
 .key.next .alt { opacity: 1; }
 .key.mod .lbl { font-size: .8em; }
-/* the next key is only hinted: a partial tint and a soft ring, no jump (the
-   hands above show which finger; the eyes should not go to the keys) */
-.key.next {
-  background: color-mix(in srgb, var(--fc) var(--feel-next-tint, 100%), var(--key)); color: var(--text);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--fc) 80%, transparent), 0 0 18px -2px color-mix(in srgb, var(--fc) 70%, transparent);
-}
 /* locked: dark, with a faint edge and a dim label (not see-through: that looked washed out) */
 .key.locked:not(.next) {
   background: color-mix(in srgb, var(--fc) 3%, var(--bg)); color: color-mix(in srgb, var(--sub) 65%, var(--bg));
@@ -977,15 +971,18 @@ body[data-caret="outline"] .caret {
 }
 .keyboard .key.wide .lbl, .keyboard .key.mod .lbl { font-size: .8em; text-transform: none; }   /* "Space", "AltGr" as written */
 .keyboard .key.home::after { bottom: 22%; }   /* the bump stays on the top face */
+/* The next key (owner, 2026-10-18, variant C): it must be found by side
+   vision while the eyes stay on the text. Side vision sees brightness and
+   movement, not hues, and a tint of the finger colour got lost among the
+   other coloured keys. So it is the one light key on the dark keyboard (the
+   one dark key on the light one), raised a little (FEEL.nextKeyLiftPx); the
+   finger colour stays on its skirt and frame, matching the finger above. */
 .keyboard .key.next {
-  color: var(--text);
-  background:
-    radial-gradient(120% 90% at 50% 30%, rgba(255, 255, 255, .12), transparent 60%),
-    color-mix(in srgb, var(--fc) var(--feel-next-tint, 100%), var(--key));
+  color: #15161a; translate: 0 var(--feel-next-lift, -3px);
+  background: linear-gradient(to bottom, #ffffff, #e4e6ea);
   box-shadow:
-    inset 0 calc(-1 * var(--skirt)) 0 color-mix(in srgb, var(--fc) 70%, #000), inset 0 1px 0 rgba(255, 255, 255, .15),
-    0 0 0 1px color-mix(in srgb, var(--fc) 80%, transparent), 0 0 18px -2px color-mix(in srgb, var(--fc) 70%, transparent),
-    0 2px 0 rgba(0, 0, 0, .45);
+    inset 0 calc(-1 * var(--skirt)) 0 var(--fc), 0 0 0 2px var(--fc),
+    0 8px 22px -4px rgba(255, 255, 255, .35);
 }
 .keyboard .key.locked:not(.next) {
   color: color-mix(in srgb, var(--sub) 70%, var(--bg));
@@ -1017,9 +1014,9 @@ body[data-caret="outline"] .caret {
     0 2px 0 rgba(40, 35, 20, .12);
 }
 :root[data-theme="light"] .keyboard .key.next {
-  color: var(--text);   /* full colour: the other keys already carry 62% */
-  background: radial-gradient(120% 90% at 50% 30%, rgba(255, 255, 255, .3), transparent 60%), var(--fc);
-  box-shadow: inset 0 calc(-1 * var(--skirt)) 0 var(--fcd), 0 0 0 2px var(--fcd), 0 2px 0 rgba(40, 35, 20, .2);
+  color: #fff;   /* the one dark key among the light ones */
+  background: linear-gradient(to bottom, #2c2f36, #1b1d22);
+  box-shadow: inset 0 calc(-1 * var(--skirt)) 0 var(--fc), 0 0 0 2px var(--fcd), 0 8px 18px -6px rgba(0, 0, 0, .5);
 }
 :root[data-theme="light"] .hand .finger { --tint: color-mix(in srgb, var(--fc) 75%, var(--skin)); }
 :root[data-theme="light"] .hand .finger.on .skin { fill: var(--fcd); stroke: color-mix(in srgb, var(--fc) 40%, transparent); }
@@ -1340,11 +1337,6 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
 /* every label in the result has one size (owner, 2026-10-16: the same
    kind of text, the same size) */
 .r-num .r-lbl, .result .lbl-ui { font-size: .85rem; }
-/* "New best" right above the numbers, small */
-.result .r-best {
-  width: fit-content; margin: 0 0 -8px; padding: 2px 10px; border-radius: 6px; font-size: .8rem;
-  color: var(--accent-text); background: color-mix(in srgb, var(--accent) 12%, transparent);
-}
 .r-num > b { font-weight: 500; color: var(--accent-text); font-variant-numeric: tabular-nums; }
 .r-num > b small { font-size: .45em; margin-left: 2px; color: var(--sub); }
 .r-num[data-tip-text] { outline: none; cursor: default; }   /* consistency: a tooltip explains it */
@@ -1446,18 +1438,14 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
   display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; border-radius: 5px;
   color: var(--text); font-weight: 500; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ok) 55%, transparent);
 }
-/* the one button here (owner, 2026-10-18: "more expressive", variant B): a
-   gold capsule with a clear frame and a soft glow that slowly breathes, so
-   the way on is the first thing the eye finds once the numbers are read */
+/* the one button here (owner, 2026-10-18: "more expressive", variant B,
+   then without its glow): a gold capsule with a clear frame, so the way on
+   is the first thing the eye finds once the numbers are read */
 .r-next {
   --frame: var(--accent);          /* the frame colour; darker on the light page (below) */
   min-height: 50px; padding: 0 30px; border-radius: 999px; font-size: 1.05rem; font-weight: 500; color: var(--accent-text);
   background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 16%, transparent), color-mix(in srgb, var(--accent) 6%, transparent));
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--frame) 70%, transparent), 0 0 24px -4px color-mix(in srgb, var(--accent) 45%, transparent);
-  animation: next-breathe 2.4s ease-in-out infinite;
-}
-@keyframes next-breathe {
-  50% { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--frame) 90%, transparent), 0 0 34px 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--frame) 80%, transparent);
 }
 /* the pale gold frame hardly showed on white (owner, 2026-10-18): the
    gold a step darker than the light theme's text */
@@ -1605,7 +1593,6 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   /* two columns, so "New best" (result.js) takes its own line above the
      numbers, as on a desktop, and never pushes the speed aside */
   .r-hero { display: grid; grid-template-columns: auto auto; justify-content: center; gap: 10px 32px; }
-  .result .r-best { grid-column: 1 / -1; margin: 0; }
   .r-graph .r-chart { flex: none; height: 90px; min-height: 0; }
   .r-row { gap: 12px 28px; }
   .r-num.big > b { font-size: 2.2rem; }

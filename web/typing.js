@@ -471,15 +471,12 @@ export function handleChar(ch) {
   if (ch === " " && expected !== " " && S.pos === wordStart(S.pos)) return;
   const now = performance.now();
   if (timeUp(now)) { finishRound(); return; }   // a key after the time is up does not count
-  if (startTime === null) {
-    startTime = now;
-    el.live.classList.remove("final");
-  }
-  el.textBox.classList.add("typing");
-  setTyping(true);                         // does nothing if it is on already
 
   // Not a typing mistake but a wrong keyboard setting: Caps Lock, or the
   // system layout is set to another language. Not counted, just explained.
+  // Checked before the round starts: such a key must not start it (it did,
+  // with no time of a last key, so the pause check ended the empty round at
+  // once and loaded a new text on every key; owner, 2026-10-18).
   if (ch !== expected && /\p{L}/u.test(ch)) {
     if (ch.toLowerCase() === expected) { showWarn("caps"); return; }
     if (!S.alphabet.has(ch.toLowerCase())) {
@@ -487,6 +484,12 @@ export function handleChar(ch) {
       return;
     }
   }
+  if (startTime === null) {
+    startTime = now;
+    el.live.classList.remove("final");
+  }
+  el.textBox.classList.add("typing");
+  setTyping(true);                         // does nothing if it is on already
   if (ch === expected && (wrongScript || el.warn.classList.contains("show"))) hideWarn();
   presses++;
   const sec = Math.floor((now - startTime) / 1000);
