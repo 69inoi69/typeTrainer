@@ -182,15 +182,20 @@ the normal server, it shows yours.
 - **The result** opens as one short sequence: the speed counts up from 0,
   the word chart draws itself from left to right, then the facts, the words
   and the button follow. **The stats screen** opens the same way: the tiles
-  rise one after another and the bars grow from the baseline.
+  rise one after another and the bars grow from the baseline, but only when
+  there is something new since you last looked; switching back and forth
+  between the screens plays nothing again, and a result you come back to
+  keeps its final look.
 - **When the round ends** the text window shows the result instead of the
   text: the numbers first (speed in wpm, accuracy and the **consistency** of
   your speed: how even the pace was, 100 % = every second the same; rounds
   under 5 seconds get none). Under them, smaller: Characters (right, wrong,
   extra and missed letters, for example `128/3/0/1`; hover for what each
   number is) and the Time of the round, from the first to the last press.
-  Then one plain line if something happened (a
-  new letter ("New letter" over the letter on a gold key, at the end of the row of numbers, like "Mastered"), mastered letters), then which letters got faster
+  A new letter or letters mastered in this round are not written in the
+  result: the row of letters above it shows them (the new letter pops in,
+  mastered ones shine and get their tick, the next letter to open has a
+  gold dashed frame). Then which letters got faster
   or slower, as the time per press before and now (for example
   `s 320→250ms`), Faster on the left and Slower on the right, then the
   words of the round as you typed them, a letter that had a mistake
@@ -206,8 +211,8 @@ the normal server, it shows yours.
   Thin lines separate the parts of the result.
   Hover a word (or tap it on a phone) to see its own speed: the average
   time per press of its letters and the space after it, in wpm. Each part
-  is its own block with some air between (good news, a new letter, on a
-  soft yellow tint), and the window is only as wide and as tall as what it
+  is its own block with some air between (good news on a soft yellow
+  tint), and the window is only as wide and as tall as what it
   shows (a long list of words scrolls inside). No
   jokes or tips there. The result stays until you go on on purpose:
   **Enter**, **Tab** or the yellow **Next round** button

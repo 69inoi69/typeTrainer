@@ -19,15 +19,15 @@ export const FEEL = {
   // Everything that moves while you type: smooth, but it starts moving at
   // once (owner, 2026-10-16: first "honey", then "smooth, but as responsive
   // as possible"). Lower = snappier.
-  // The caret (owner, 2026-10-18): 70 ms on a very steep curve went 73% of
-  // the way in the first frame, then crawled: it read as a low frame rate.
-  // Monkeytype's 100 ms even glide (12% in the first frame) was smooth but
-  // "oily": you did not feel each letter being passed. Now in between: about
-  // half the way in the first frame (each press is a clear step), the rest
-  // settles in 3 frames (54 / 81 / 94 / 100%). The curve is in style.css.
-  // Then 80 -> 55 ms (owner, 2026-10-18: "it lags behind the letters"):
-  // the same curve, done in about 3 frames.
-  caretGlideMs: 55,         // the caret sliding to the next letter (0 = jumps)
+  // The caret, tried in turn (owner, 2026-10-18): 70 ms on a very steep
+  // curve (73% of the way in the first frame, then a crawl: it read as a low
+  // frame rate); monkeytype's "medium", 100 ms even ("oily"); a step-and-
+  // settle curve at 80 and 55 ms ("it lags behind the letters"). Now
+  // monkeytype's "smooth caret: fast" exactly: 85 ms on its almost even
+  // in-out curve (style.css --caret-curve; 16 / 37 / 61 / 83 / 99% at
+  // 60 frames a second). A new key starts a new glide from where the caret
+  // is, so fast typing reads as one steady movement.
+  caretGlideMs: 85,         // the caret sliding to the next letter (0 = jumps)
   lineScrollMs: 120,        // the text moving up a line (0 = at once)
 
   // The key on the virtual keyboard answers a press: a short, soft dip.
