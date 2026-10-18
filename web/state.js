@@ -36,7 +36,7 @@ export const el = {
   viewType: $("view-type"), viewStats: $("view-stats"),
   lengthFilter: $("length-filter"), tiles: $("tiles"), chart: $("chart"), chartNote: $("chart-note"), letterGrid: $("letter-grid"),
   langSwitch: $("lang-switch"), warn: $("layout-warn"),
-  streak: $("streak"), streakN: $("streak-n"), streakPop: $("streak-pop"),
+  streak: $("streak"), streakN: $("streak-n"),
 };
 
 // ---------- state ----------

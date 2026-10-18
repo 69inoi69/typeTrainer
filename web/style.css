@@ -384,11 +384,10 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
 
 /* streak: a bolt and the number riding just above the caret (typing.js
    placeCaret moves it with the caret's numbers and the same glide), only
-   while a round is being typed and from 3 clean words; at a milestone a
-   short note rises from it (popStreak). Over the text: it never catches
-   the mouse. */
+   while a round is being typed and from 3 clean words; at a milestone it
+   gives a small bump (popStreak). Over the text: it never catches the mouse. */
 .streak {
-  --sc: color-mix(in srgb, var(--sub) 80%, var(--text)); --glow: 0;
+  --sc: #f2c230; --glow: .3;
   position: absolute; left: 0; top: 0; z-index: 3; display: none; align-items: center; gap: 3px; pointer-events: none;
   font-size: .95rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; color: var(--sc);
   text-shadow: 0 0 calc(var(--glow) * 14px) color-mix(in srgb, var(--sc) 70%, transparent);
@@ -396,28 +395,21 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
 }
 .streak.jump { transition: none; }
 .streak .bolt { width: 13px; height: 13px; flex: none; fill: color-mix(in srgb, var(--sc) 35%, transparent); stroke: var(--sc); stroke-width: 2; stroke-linejoin: round; }
-/* the longer the streak, the warmer (owner, 2026-10-18): grey, gold, orange,
-   rose, violet at 10 / 25 / 50 / 100 clean words (typing.js STREAK_TIERS);
-   a soft glow that grows with it, no flicker */
-.streak[data-tier="1"] { --sc: #f2c230; --glow: .35; }
-.streak[data-tier="2"] { --sc: #f39a3d; --glow: .5; }
-.streak[data-tier="3"] { --sc: #f2607a; --glow: .65; }
-.streak[data-tier="4"] { --sc: #a98bff; --glow: .8; }
-:root[data-theme="light"] .streak[data-tier="1"] { --sc: #c99000; }
-:root[data-theme="light"] .streak[data-tier="2"] { --sc: #d9741a; }
-:root[data-theme="light"] .streak[data-tier="3"] { --sc: #d63a5a; }
-:root[data-theme="light"] .streak[data-tier="4"] { --sc: #7a5ae0; }
+/* the longer the streak, the warmer (owner, 2026-10-18): gold from the
+   start (grey read as "nothing", and 3 clean words are already something),
+   then orange, rose, violet at 10 / 25 / 50 clean words (typing.js
+   STREAK_TIERS); a soft glow that grows with it, no flicker */
+.streak[data-tier="1"] { --sc: #f39a3d; --glow: .45; }
+.streak[data-tier="2"] { --sc: #f2607a; --glow: .6; }
+.streak[data-tier="3"] { --sc: #a98bff; --glow: .8; }
+:root[data-theme="light"] .streak { --sc: #c99000; }
+:root[data-theme="light"] .streak[data-tier="1"] { --sc: #d9741a; }
+:root[data-theme="light"] .streak[data-tier="2"] { --sc: #d63a5a; }
+:root[data-theme="light"] .streak[data-tier="3"] { --sc: #7a5ae0; }
 .text-box.typing .streak.show { display: flex; animation: streak-in var(--med) var(--ease); }
 /* .show in the selector: weaker than the rule above, the badge stayed on the result screen */
 .text-box:is(.paused, .blurred, .resulting) .streak.show, body.streak-off .text-box .streak.show { display: none; }
 @keyframes streak-in { from { opacity: 0; } }
-/* the note grows to the right of the badge (centred, at the start of a line
-   it went off the left edge) */
-.streak-pop {
-  position: absolute; left: 0; bottom: calc(100% + 5px); opacity: 0; white-space: nowrap;
-  padding: 2px 9px; border-radius: 999px; font-size: .72rem; font-weight: 500; color: var(--accent-text);
-  background: var(--panel-2); box-shadow: var(--ring), 0 4px 12px -4px rgba(0, 0, 0, .45);
-}
 
 /* ---------- switches: the navigation and the languages ---------- */
 /* One look for every switch: no track and no pill, grey labels, the chosen
@@ -1448,18 +1440,19 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
   color: var(--text); font-weight: 500; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ok) 55%, transparent);
 }
 /* the one button here (owner, 2026-10-18: "more expressive", variant B,
-   then without its glow): a gold capsule with a clear frame, so the way on
-   is the first thing the eye finds once the numbers are read */
+   then without its glow, then without its fill): gold text in a clear gold
+   frame, so the way on is the first thing the eye finds once the numbers
+   are read; the fill comes only under the mouse or the keyboard focus */
 .r-next {
   --frame: var(--accent);          /* the frame colour; darker on the light page (below) */
   min-height: 50px; padding: 0 30px; border-radius: 999px; font-size: 1.05rem; font-weight: 500; color: var(--accent-text);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 16%, transparent), color-mix(in srgb, var(--accent) 6%, transparent));
+  background: none;
   box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--frame) 80%, transparent);
 }
 /* the pale gold frame hardly showed on white (owner, 2026-10-18): the
    gold a step darker than the light theme's text */
 :root[data-theme="light"] .r-next { --frame: #a06800; }
-.r-next:hover, .r-next:focus-visible { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.r-next:hover, .r-next:focus-visible { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .r-next svg { width: 20px; height: 20px; stroke-width: 2.4; }   /* the icon leads, the label sits beside it */
 .r-next kbd { margin-left: 4px; background: var(--panel); }
 
@@ -1747,6 +1740,12 @@ body.live-off .live .metric.num { display: none; }
   animation: amb-fall var(--dur) linear var(--delay) infinite;
 }
 @keyframes amb-fall { to { transform: translate3d(var(--drift), 125vh, 0) rotate(var(--rot)); } }
+/* While a round is typed the pieces stop where they are and go on falling
+   when it ends (owner, 2026-10-18: typing felt less smooth with them). A
+   running animation is ticked on every frame the page draws, and while you
+   type the page draws on every frame; a paused one costs nothing. They stay
+   on the screen, so the page does not change, it only holds still. */
+body.typing-now .ambient > i { animation-play-state: paused; }
 /* the screen saver: a minute with no key and no mouse (ambient.js) */
 body.afk .ambient { --boost: 1.7; }
 .top, .views, .bottom { transition: opacity 1.2s var(--ease); }
