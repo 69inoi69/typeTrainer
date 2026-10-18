@@ -109,7 +109,7 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   - **live speed** (wpm and accuracy while typing): on or off. A brand-new user does
     not see them until the first finished round (a beginner should not
     chase speed); then they appear and you can hide them again. The word
-    counter and the streak always stay.
+    counter always stays.
   - **caret**: a thin line (default), a block over the letter, a bar under
     it (underline) or a frame around it (outline).
   - **theme**: dark (default) or light: a warm paper page with white cards,
@@ -147,11 +147,11 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   the window (Alt+Tab, another app, another tab) pauses the round: the
   text blurs under "Paused", the clock stops (a timed round does not run
   out), and any key goes on; the time away does not count.
-- The **bolt + number** at the right end of the numbers line counts clean words
-  in a row (typed without a single mistake; hover for the tooltip). It gets
-  hotter as it grows: green from 3, yellow from 10, orange with a zapping bolt
-  from 25, glowing red from 50. New records, mastered letters, new letters and
-  the streak at 10 and every 25 words get a small confetti.
+- From 3 clean words in a row (typed without a single mistake) a small
+  gold badge **×N** rides just above the caret and counts them. At 10, 25,
+  50 and every 50 after, a short note rises from it ("25 clean words in a
+  row") and fades. A mistake ends the streak and the badge goes away. New
+  records, mastered letters and new letters still get a small confetti.
 - **While you type** the feedback is where your eyes already are: the focus
   letter of each portion is tinted in the text, the letter under the caret
   is a step brighter than the rest, and the numbers line changes once per

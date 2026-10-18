@@ -121,10 +121,6 @@
   --palm-shade: rgba(60, 50, 30, .18);
 }
 :root[data-theme="light"] .text, :root[data-theme="light"] .text span { text-shadow: none !important; }
-/* the streak's hotter colours, deep enough to read on white */
-:root[data-theme="light"] .streak[data-tier="1"] { --sc: var(--accent-text); }
-:root[data-theme="light"] .streak[data-tier="2"] { --sc: #b5571a; }
-:root[data-theme="light"] .streak[data-tier="3"] { --sc: #c4332a; }
 :root[data-theme="light"] .text-box::before { text-shadow: none; }
 :root[data-theme="light"] .switch-thumb::after { box-shadow: none; }
 :root[data-theme="light"] .hand { --skin: color-mix(in srgb, var(--text) 16%, var(--bg)); }   /* 11% vanished on paper */
@@ -347,13 +343,17 @@ dialog.confirm .win-p { margin: 0; }
 }
 .top-side { display: flex; align-items: center; gap: 14px; min-width: 0; }
 /* While you type, everything around the text steps back (as on monkeytype):
-   the whole header fades the same way, the logo a little less than the
-   controls (owner, 2026-10-18: the controls nearly vanished while the logo
-   only turned grey, so they did not fade together). Moving the mouse over
-   them brings them back. */
-.top .logo, .lang-switch, .profile, .rail { transition: opacity .4s var(--ease); }
-body.typing-now .top .logo { opacity: .55; }
+   the logo turns grey (it does not fade, owner, 2026-10-18), the controls
+   fade to a third, the letters bar (it changes only between rounds) and
+   the keys line at the bottom (help before a round) step back too. Moving
+   the mouse over a control brings it back. */
+.top .logo-name, .top .logo-name span, .top .logo-key { transition: color .4s var(--ease), filter .4s var(--ease); }
+.lang-switch, .profile, .rail, #view-type > .letters, .bottom { transition: opacity .4s var(--ease); }
+body.typing-now .top .logo-name, body.typing-now .top .logo-name span { color: var(--sub); }
+body.typing-now .top .logo-key { filter: grayscale(1) brightness(.7); }
 body.typing-now .lang-switch, body.typing-now .profile, body.typing-now .rail { opacity: .35; }
+body.typing-now #view-type > .letters { opacity: .4; }
+body.typing-now .bottom { opacity: .15; }
 body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.typing-now .rail:hover { opacity: 1; }
 .logo { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .logo-key { width: 34px; height: 34px; flex: none; }
@@ -362,7 +362,7 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
 .logo-name span { color: var(--text); transition: color .4s var(--ease); }
 
 /* ---------- the top line of the text card ---------- */
-/* The live numbers, the status line, the streak. The numbers are small and
+/* The live numbers and the status line. The numbers are small and
    dim while you read, brighter while you type: you can glance at them, but
    they do not pull the eye away from the text. Always one line of a fixed
    height (on a phone two, the status line under the numbers): nothing in
@@ -371,14 +371,20 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
   position: relative;              /* the warning and the messages sit on top of it */
   display: flex; gap: 6px 18px; align-items: center; height: 28px; margin: 0 0 10px; min-width: 0;
 }
-.live > .metric, .live > .streak { opacity: .5; transition: opacity .4s var(--ease), transform var(--med) var(--ease); }
-.text-box.typing .live > :is(.metric, .streak), .live.final > .metric { opacity: 1; }
+.live > .metric { opacity: .5; transition: opacity .4s var(--ease), transform var(--med) var(--ease); }
+.text-box.typing .live > .metric, .live.final > .metric { opacity: 1; }
 .metric { display: flex; align-items: baseline; }
 .metric.raw span { color: color-mix(in srgb, var(--accent-text) 55%, var(--sub)); }   /* secondary number */
 .metric.raw { cursor: default; }
 .metric > span { font-size: 1.3rem; font-weight: 500; letter-spacing: -.01em; color: var(--accent-text); transition: color var(--med); font-variant-numeric: tabular-nums; }
 .metric small { margin-left: 6px; white-space: nowrap; }
 .metric > span.pct { font-size: .9rem; margin-left: 1px; }   /* "98%": the sign belongs to the number */
+/* wpm, raw, accuracy: the number is --v (typing.js setLive), drawn as a CSS
+   counter, so a new value counts up or down to it instead of jumping */
+@property --v { syntax: "<integer>"; inherits: false; initial-value: 0; }
+.metric > .live-n { counter-reset: v var(--v); transition: --v 450ms cubic-bezier(.2, .7, .3, 1), color var(--med); }
+.metric > .live-n::after { content: counter(v); }
+.metric > .live-n.snap { transition: none; }
 /* Each number keeps the room of its widest value ("188 wpm", "100% Acc",
    "60/60 Words", measured in the browser), so nothing after it (the status
    line) moves when a number gains or loses a digit while you type. The room
@@ -391,36 +397,30 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
 .live.final .metric > span { color: var(--text); }   /* result of the last exercise */
 
 
-/* streak: looks like the numbers next to it (big number, small label on the
-   same line). The longer the streak, the hotter the colour (data-tier). */
-/* Hidden, it takes no room (display: none). */
+/* streak: a small "×12" badge riding just above the caret (typing.js
+   placeCaret moves it with the caret's numbers and the same glide), only
+   while a round is being typed and from 3 clean words; at a milestone a
+   short note rises from it (popStreak). Over the text: it never catches
+   the mouse. */
 .streak {
-  --sc: var(--ok);
-  margin-left: auto;              /* the right end of the line */
-  display: none; align-items: center; gap: 4px; cursor: default;   /* the words are in the tooltip */
+  position: absolute; left: 0; top: 0; z-index: 3; display: none; pointer-events: none;
+  padding: 3px 7px; border-radius: 999px; font-size: .72rem; font-weight: 600; line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--on-accent); background: var(--accent-fill);
+  box-shadow: 0 3px 10px -3px rgba(0, 0, 0, .5);
+  transition: translate var(--feel-caret-ms, 0ms) cubic-bezier(.2, .6, .35, 1);
 }
-.streak.show { display: flex; animation: streak-in var(--med) var(--ease); }
-/* only while a round is being typed: a streak carried over from the last
-   round, shown before the first key, read as an unexplained number */
-.text-box:not(.typing) .streak.show { display: none; }
-@keyframes streak-in { from { opacity: 0; transform: translateY(-4px); } }
-.streak span {
-  font-size: 1.3rem; line-height: 1; color: var(--sc); font-variant-numeric: tabular-nums; display: inline-block;
-  min-width: 2ch; transition: color .4s var(--ease), text-shadow .4s var(--ease);
+.streak.jump { transition: none; }
+.streak::before { content: "×"; opacity: .75; margin-right: 1px; }
+.text-box.typing .streak.show { display: block; animation: streak-in var(--med) var(--ease); }
+.text-box:is(.paused, .blurred, .resulting) .streak { display: none; }
+@keyframes streak-in { from { opacity: 0; } }
+/* the note grows to the right of the badge (centred, at the start of a line
+   it went off the left edge) */
+.streak-pop {
+  position: absolute; left: 0; bottom: calc(100% + 5px); opacity: 0; white-space: nowrap;
+  padding: 2px 9px; border-radius: 999px; font-size: .72rem; font-weight: 500; color: var(--accent-text);
+  background: var(--panel-2); box-shadow: var(--ring), 0 4px 12px -4px rgba(0, 0, 0, .45);
 }
-.bolt {                          /* a lightning bolt: "combo" */
-  width: 22px; height: 22px; flex: none;
-  fill: color-mix(in srgb, var(--sc) 30%, transparent); stroke: var(--sc);
-  stroke-width: 1.7; stroke-linejoin: round; transform-origin: 50% 50%;
-  transition: fill .4s, stroke .4s;
-}
-.streak[data-tier="1"] { --sc: var(--accent); }                     /* 10+ */
-.streak[data-tier="2"] { --sc: #e59a62; }                           /* 25+: orange, the bolt zaps */
-.streak[data-tier="3"] { --sc: #ef6b5b; }                           /* 50+: red hot, glowing */
-.streak[data-tier="2"] .bolt, .streak[data-tier="3"] .bolt { animation: zap .5s ease-in-out infinite alternate; }
-.streak[data-tier="3"] .bolt { animation-duration: .3s; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--sc) 60%, transparent)); }
-@keyframes zap { from { transform: rotate(-6deg) scale(1); } to { transform: rotate(4deg) scale(1.08); } }
-.streak[data-tier="3"] span { text-shadow: 0 0 14px color-mix(in srgb, var(--sc) 55%, transparent); }
 
 /* ---------- switches: the navigation and the languages ---------- */
 /* One look for every switch: no track and no pill, grey labels, the chosen
@@ -638,7 +638,7 @@ body[data-mode="free"] .letter-row { display: none; }
    fixed room (.metric min-width, below). */
 .letters-caption {
   display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-start; gap: 18px; white-space: nowrap;
-  flex: 0 1 auto; min-width: 0; overflow: hidden;   /* the numbers and the streak keep their room */
+  flex: 0 1 auto; min-width: 0; overflow: hidden;   /* the numbers keep their room */
   color: var(--sub); font-size: .82rem; transition: opacity .4s var(--ease), transform var(--med) var(--ease);
 }
 .letters-caption::before { content: ""; width: 1px; height: 1.2em; margin-left: 4px; background: var(--line); }
@@ -1233,7 +1233,7 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 /* ---------- messages: on top of the top line of the text card ---------- */
 /* the numbers and the status line step aside while a message or the
    warning is shown */
-.live:is(.warning, .noticing) > :is(.metric, .streak, .letters-caption) { opacity: 0; transform: translateY(4px); pointer-events: none; }
+.live:is(.warning, .noticing) > :is(.metric, .letters-caption) { opacity: 0; transform: translateY(4px); pointer-events: none; }
 .live.warning .notice { opacity: 0; }        /* the layout warning wins */
 .notice {
   position: absolute; left: 0; right: 0; top: 0; z-index: 1;
@@ -1575,12 +1575,11 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .rail .switch button, .rail-btn { height: 54px; }
   .lang-switch button { padding: 0 6px; }
   .live { gap: 12px; margin-bottom: 6px; }
-  .metric > span, .streak span { font-size: 1.1rem; }
+  .metric > span { font-size: 1.1rem; }
   .metric small { margin-left: 4px; font-size: .7rem; }
   .metric:has(#wpm) { min-width: 3.5rem; }   /* the same room at the phone sizes */
   .metric:has(#acc) { min-width: 4.1rem; }
   .metric:has(#progress) { min-width: 5.6rem; }
-  .bolt { width: 18px; height: 18px; }
   .metric.raw { display: none; }          /* phone: no room, wpm + acc are enough */
   /* five tiles in rows of three: two rows instead of three (a long label
      wraps to a second line rather than being cut) */
@@ -1734,7 +1733,7 @@ body.entering .bottom { animation-delay: .24s; }
 .profile-soon { margin: 0; padding-top: 10px; border-top: 1px solid var(--line); color: var(--sub); font-size: .72rem; line-height: 1.5; }
 
 /* ---------- settings (settings.js) ---------- */
-/* live numbers off: wpm, raw and accuracy go; the word counter and the streak stay */
+/* live numbers off: wpm, raw and accuracy go; the word counter stays */
 body.live-off .live .metric.num { display: none; }
 /* words after the end of a words round are never typed, so not shown */
 .text span.beyond { display: none; }
@@ -1766,3 +1765,23 @@ body.live-off .live .metric.num { display: none; }
 .tour-text b { color: var(--text); font-weight: 500; }
 .tour-nav { display: flex; justify-content: space-between; align-items: center; }
 .tour-nav .primary { padding: 6px 14px; font-size: .82rem; }
+
+/* ---------- the quiet background (ambient.js) ---------- */
+/* Outlines of keycaps drifting down in the empty fields, behind everything
+   (z-index -1: above the page colour, under the page), on every screen and
+   while typing too (owner, 2026-10-18: so slow it does not distract). */
+.ambient { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; --boost: 1; }
+.ambient > i {
+  position: absolute; left: var(--x); top: -12vh; will-change: transform;
+  width: var(--size); height: var(--size); display: grid; place-items: center; border-radius: 22%;
+  font-family: "Geist Mono Keys", var(--mono); font-style: normal; font-weight: 600; font-size: calc(var(--size) * .38);
+  line-height: 1; color: var(--sub); text-transform: uppercase;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 55%, transparent), inset 0 calc(var(--size) * -.08) 0 color-mix(in srgb, var(--sub) 25%, transparent);
+  opacity: calc(var(--o) * .34 * var(--boost));
+  animation: amb-fall var(--dur) linear var(--delay) infinite;
+}
+@keyframes amb-fall { to { transform: translate3d(var(--drift), 125vh, 0) rotate(var(--rot)); } }
+/* the screen saver: a minute with no key and no mouse (ambient.js) */
+body.afk .ambient { --boost: 1.7; }
+.top, .views, .bottom { transition: opacity 1.2s var(--ease); }
+body.afk :is(.top, .views, .bottom) { opacity: .45; }

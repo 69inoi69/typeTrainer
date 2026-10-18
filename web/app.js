@@ -21,6 +21,7 @@ import { showIntro } from "./intro.js";
 import { renderProfile, loadAccount } from "./profile.js";
 import { buildLangSwitch, initialLanguage, loadLanguage } from "./languages.js";
 import { loadSettings } from "./settings.js";
+import { buildAmbient } from "./ambient.js";
 
 import "./input.js";   // keys and buttons: it only adds event listeners
 
@@ -63,6 +64,7 @@ async function joinStudy() {
     el.text.textContent = t("err.load");
   }
   await splash.done();
+  buildAmbient();   // now the letters bar is drawn: the background uses its open letters
   const flash = store.get("tt.flash");                     // set by a finished import
   if (flash) {
     store.set("tt.flash", "");

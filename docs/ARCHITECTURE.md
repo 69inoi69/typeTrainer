@@ -86,6 +86,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `profile.js` | The account in the top right corner ("log in" for a guest where accounts work): the account (log in / sign up / log out; the page reloads after each), and a picture kept only in the browser. |
 | middle | `result.js` | The result screen in the text window: `showResult(r)` shows what changed and resolves when the user goes on; `compareStats()` works out what a learning round changed. The words of the round with their own speed come from `typedWords()` in `typing.js`, the characters and the time from `roundFacts()`. |
 | middle | `modes.js` | The modes (learning / free practice / typing test), the navigation tabs that show them (`renderNav`: learn · freetype · stats), `refreshFreeplay()` (`S.free`), the mode remembered per language. |
+| middle | `ambient.js` | The quiet background: outlines of keycaps with the open letters drifting down in the empty fields left and right (CSS animations only), and the screen saver after a minute with no key and no mouse. Decoration only. |
 | middle | `settings.js` | The settings window (Esc or the gear): round length, live numbers, caret, theme, keyboard on / off (carried out by `input.js`), export / import / reset (wired by `tools.js`); drawn from one list of rows (`ROWS`) with search and arrow keys; kept in `localStorage` (`S.settings`). |
 | middle | `tour.js` | Guide B, "how this site works": the idea of the trainer, then a ring around each part of the page and a short card. |
 | top | `input.js` | Keydown and phone input (with the one-space sentinel that makes Backspace work on phone keyboards), the navigation (learn · freetype · stats, the help panel), keyboard on / off (settings and Alt+K), window resize: sends each action to the module that handles it. |
@@ -123,7 +124,7 @@ Three fixed places, the same in every view (`index.html`, `style.css`):
   language is offered (`"hidden": true` in `data/languages.json`).
 
 On the typing screen the text block holds, top to bottom, one line with the
-live numbers, the status line (focus, next letter) and the streak, with the
+live numbers and the status line (focus, next letter), with the
 warnings and messages shown on top of it, and then the text; the
 letters bar sits above it, the hands and the keyboard (on a panel as wide as
 the text) below.

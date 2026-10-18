@@ -21,6 +21,7 @@ import { resultOpen, closeResult } from "./result.js";
 import { tourOpen, tourKey } from "./tour.js";
 import { settingsOpen, openSettings, closeSettings, onSettingsClose, onLengthChange, onKbToggle } from "./settings.js";
 import { setMode, refreshFreeplay, renderNav } from "./modes.js";
+import { buildAmbient } from "./ambient.js";
 import "./share.js";   // the copy / image buttons of the stats screen: it wires them itself
 
 // the keyboard choice in the settings and Alt+K: keyboard and hands off, or
@@ -33,6 +34,7 @@ function toggleKb() {
 }
 onKbToggle(toggleKb);
 window.addEventListener("resize", () => {
+  buildAmbient();
   fitText();
   requestFit();
   placeCaret(true);
