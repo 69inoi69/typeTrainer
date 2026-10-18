@@ -113,7 +113,7 @@
   --sub: #6b7186;       /* untyped text: cool slate, 4.3:1 on the page */
   --text: #1a1d24;
   --accent: #f2c230;
-  --accent-text: #b97c00;  /* gold as text: 3.2:1, for the big numbers and short labels (owner, 2026-10-18: "a bit lighter") */
+  --accent-text: #d49a00;  /* gold as text, for the big numbers and short labels: a clean amber (owner, 2026-10-18: #b97c00 looked dark and dull, #e0a800 began to melt into the page) */
   --accent-glow: 0 0 0 1px rgba(200, 150, 20, .35), 0 6px 18px -6px rgba(220, 160, 20, .5);
   --on-accent: #17130a;
   --error: #d93a40;
@@ -154,11 +154,8 @@ body {
   font-family: var(--mono);
   font-feature-settings: "zero";  /* a slashed zero: 0 and O never look alike in the numbers */
 }
-/* dark: one faint warm light behind the text, the rest flat (not on the
-   light page: there it reads as a stain) */
-:root:not([data-theme="light"]) body {
-  background: radial-gradient(1100px 520px at 50% 28%, rgba(242, 194, 48, .035), transparent 70%), var(--bg);
-}
+/* the page is one flat colour: a faint warm light behind the text read as a
+   patch of another colour (owner, 2026-10-18) */
 button, input { font: inherit; }
 /* Nothing is selected by dragging the mouse or a long press, anywhere: it
    looks broken. Text fields stay selectable; the stats screen has its own
@@ -403,7 +400,7 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
 .streak[data-tier="1"] { --sc: #f39a3d; --glow: .45; }
 .streak[data-tier="2"] { --sc: #f2607a; --glow: .6; }
 .streak[data-tier="3"] { --sc: #a98bff; --glow: .8; }
-:root[data-theme="light"] .streak { --sc: #c99000; }
+:root[data-theme="light"] .streak { --sc: var(--accent-text); }
 :root[data-theme="light"] .streak[data-tier="1"] { --sc: #d9741a; }
 :root[data-theme="light"] .streak[data-tier="2"] { --sc: #d63a5a; }
 :root[data-theme="light"] .streak[data-tier="3"] { --sc: #7a5ae0; }
@@ -748,13 +745,13 @@ body[data-mode="free"] .letter-row { display: none; }
 .text-box.paused :is(.caret, .focus-hint) { opacity: 0; }
 
 /* A typed letter turns white when the caret passes it, not before: the
-   caret glides for --feel-caret-ms, so the colour changes half way through
-   that glide (owner, 2026-10-18: the letter went white and only then the
+   caret glides for --feel-caret-ms, so the colour changes a third of the
+   way through that glide (owner, 2026-10-18: the letter went white and only then the
    caret came). One change, delayed: no fade, nothing painted per frame (a
    short warm glow on every typed letter was dropped for that: it painted
    the whole text again on every frame). Only on the way to "typed": a
    mistake (red) and Backspace show at once. */
-.text span.ok { color: var(--text); transition: color 0s linear calc(var(--feel-caret-ms, 0ms) * .5); }
+.text span.ok { color: var(--text); transition: color 0s linear calc(var(--feel-caret-ms, 0ms) * .3); }   /* .5 felt late (owner, 2026-10-18) */
 /* the letter under the caret (typing.js placeCaret): a step brighter than
    the rest of the untyped text, so the eye finds it at once */
 .text span.cur { color: color-mix(in srgb, var(--text) 62%, var(--sub)); }
@@ -762,9 +759,9 @@ body[data-mode="free"] .letter-row { display: none; }
    a muted gold, half way to the grey of the text (owner, 2026-10-18: the
    brighter tint pulled the eye away from the words) */
 .text span.fx { color: color-mix(in srgb, var(--accent) 46%, var(--sub)); }
-:root[data-theme="light"] .text span.fx { color: color-mix(in srgb, #be8000 72%, var(--sub)); }
+:root[data-theme="light"] .text span.fx { color: color-mix(in srgb, var(--accent-text) 80%, var(--sub)); }
 .text span.fx.cur { color: var(--accent-text); }
-:root[data-theme="light"] .text span.fx.cur { color: #a56c00; }
+:root[data-theme="light"] .text span.fx.cur { color: var(--accent-text); }
 /* no glow on the text at rest: crisp letters read better; a mistake keeps a
    short red glow (text-shadow moves nothing, so it costs nothing on a keypress) */
 .text span.bad, .text span.extra { text-shadow: 0 0 10px color-mix(in srgb, var(--error) 45%, transparent); }
