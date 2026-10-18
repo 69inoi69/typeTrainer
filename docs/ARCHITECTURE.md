@@ -122,6 +122,11 @@ Three fixed places, the same in every view (`index.html`, `style.css`):
   of a narrow one (the same element, moved by CSS). Hidden while only one
   language is offered (`"hidden": true` in `data/languages.json`).
 
+On the typing screen the text block holds, top to bottom, the live numbers,
+the text and the status line (focus, next letter, warnings, messages); the
+letters bar sits above it, the hands and the keyboard (on a panel as wide as
+the text) below.
+
 Colours are CSS variables on `:root`; the light theme redefines them under
 `:root[data-theme="light"]` (set by `settings.js`, and by a one-line script
 in `<head>` so a light page never flashes dark).

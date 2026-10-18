@@ -43,10 +43,11 @@ export function showResult(r) {
   const num = (value, unit, label, size, tip) =>
     `<span class="r-num ${size}"${tip ? ` tabindex="0" data-tip-text="${t(tip)}"` : ""}><span class="r-lbl">${t(label)}</span><b>${value}<small>${unit}</small></b></span>`;
 
-  // 1. the top: speed and accuracy big on the left; a new best speed is a
-  // small tag above them (owner, 2026-10-16: a separate block was too much)
+  // 1. the top: speed and accuracy big on the left, the speed the biggest
+  // ("hero": the one number to see first); a new best speed is a small tag
+  // above them (owner, 2026-10-16: a separate block was too much)
   const best = r.best && !r.test ? `<p class="r-best">${t("result.best")}</p>` : "";
-  const hero = `<div class="r-hero">${best}${num(Math.round(r.wpm), "", "result.wpm", "big")}` +
+  const hero = `<div class="r-hero">${best}${num(Math.round(r.wpm), "", "result.wpm", "big hero")}` +
     `${num(Math.round(r.accuracy), "%", "result.acc", "big")}</div>`;
   // ... and on the right the speed of each word (as on monkeytype): the
   // label, the legend of the colours, the chart. The words themselves come
@@ -81,10 +82,14 @@ export function showResult(r) {
   }
   // at the row's right end, what happened, the most important thing
   // first: the test verdict, a new letter, or the letters mastered in
-  // this round (a green tick and the letters as small keys)
+  // this round (a green tick and the letters as small keys). The new letter
+  // has the same shape as "mastered", a label over a key, so it stays in
+  // the row instead of wrapping to a line of its own (owner, 2026-10-18)
   if (r.test) row.push(`<p class="r-main${r.test === "pass" ? " k-best" : ""}"><span>${t(`result.test.${r.test}`)}</span></p>`);
-  else if (r.newLetter) row.push(`<p class="r-main k-letter"><span>${t("result.newLetter")}</span><span class="r-badge">${r.newLetter}</span></p>`);
-  else if (r.mastered?.length) {
+  else if (r.newLetter) {
+    row.push(`<span class="r-num mid r-mastered r-new"><span class="r-lbl"><svg class="r-tick" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M21 12v2.5"/></svg>${t("result.newLetter")}</span>` +
+      `<span class="r-keys"><b class="r-key r-badge">${r.newLetter}</b></span></span>`);
+  } else if (r.mastered?.length) {
     row.push(`<span class="r-num mid r-mastered"><span class="r-lbl"><svg class="r-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>${t("result.masteredLabel")}</span>` +
       `<span class="r-keys">${r.mastered.map((c) => `<b class="r-key">${c}</b>`).join("")}</span></span>`);
   }

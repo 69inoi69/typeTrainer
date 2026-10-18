@@ -105,7 +105,7 @@ const I18N = {
     "result.wpm": "WPM", "result.acc": "Accuracy", "result.cons": "Consistency",
     "result.best": "New best! Keep it up, king",
     "result.mastered": "Mastered: <b>{letters}</b>", "result.masteredLabel": "Mastered",
-    "result.newLetter": "New letter opened:",
+    "result.newLetter": "New letter",
     "result.nextBtn": "Next round", "result.tryAgain": "Try again",
     "result.words": "Speed of each word, wpm", "result.wordWpm": "{wpm} wpm",
     "result.chartTip": "{word}: {wpm} wpm", "result.chartLabel": "Speed of each word",

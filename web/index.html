@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <!-- the colour of the phone's browser bar: --bg of the dark theme
        (settings.js sets it to the chosen theme's --bg) -->
-  <meta name="theme-color" content="#121317">
+  <meta name="theme-color" content="#0e0f12">
   <!-- the light theme, set before the page is drawn so it never flashes dark
        first (settings.js keeps it up to date afterwards) -->
   <script>try { if (localStorage.getItem("tt.theme") === "light") document.documentElement.dataset.theme = "light"; } catch {}</script>
@@ -81,15 +81,6 @@
       <!-- Letters: open ones, the one in focus, and the ones still locked. -->
       <div class="letters" aria-label="Letters">
         <div id="letters" class="letter-row"></div>
-        <!-- One fixed slot: the status line, or (on top of it, in the same
-             place) the warning about Caps Lock / a wrong system layout.
-             Nothing else on the page moves when the warning shows. -->
-        <div class="caption-slot" id="caption-slot">
-          <div id="letters-caption" class="letters-caption">&nbsp;</div>
-          <div class="warn" id="layout-warn" role="status" aria-live="polite"></div>
-          <!-- messages (fx.js, FX.toast) appear here, in place of the status line -->
-          <div class="notice" id="notice" role="status" aria-live="polite"></div>
-        </div>
       </div>
 
       <!-- The text to type. Each character is its own <span>; the caret is one
@@ -112,6 +103,17 @@
           </div>
         </div>
         <div id="text" class="text">loading…</div>
+        <!-- The status line (focus, next letter), part of the text block,
+             under the text. One fixed slot: the status line, or (on top of
+             it, in the same place) the warning about Caps Lock / a wrong
+             system layout. Nothing else on the page moves when the warning
+             shows. -->
+        <div class="caption-slot" id="caption-slot">
+          <div id="letters-caption" class="letters-caption">&nbsp;</div>
+          <div class="warn" id="layout-warn" role="status" aria-live="polite"></div>
+          <!-- messages (fx.js, FX.toast) appear here, in place of the status line -->
+          <div class="notice" id="notice" role="status" aria-live="polite"></div>
+        </div>
         <div id="caret" class="caret" aria-hidden="true"></div>
         <div id="focus-hint" class="focus-hint" data-i18n="focusHint">Tap here to start typing</div>
         <!-- the result screen takes the place of the text when typing stops (result.js) -->

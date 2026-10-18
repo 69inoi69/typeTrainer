@@ -186,8 +186,12 @@ function fitKeyboard() {
   // are half-way: a measure now would give a wrong (too big) size
   if (el.keyboard.getAnimations().length || el.hands.getAnimations().length) return;
   const centred = getComputedStyle(el.viewType).getPropertyValue("--view-centred").trim() === "1";
+  // the keyboard's panel (style.css .keyboard): its padding and border do
+  // not grow with --u, so they count as fixed room like everything else
+  const kb = getComputedStyle(el.keyboard);
+  const kbFrame = ["paddingTop", "paddingBottom", "borderTopWidth", "borderBottomWidth"].reduce((sum, p) => sum + parseFloat(kb[p]), 0);
   const rest = document.querySelector(".top").offsetHeight + el.viewType.offsetHeight
-    - el.hands.offsetHeight - el.keyboard.offsetHeight
+    - el.hands.offsetHeight - el.keyboard.offsetHeight + kbFrame
     // desktop (style.css --view-centred): the view takes all the height and
     // centres the text with two equal auto margins (above the text, at the
     // end): that is free room. Otherwise the room above the view (not in
