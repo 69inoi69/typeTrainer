@@ -745,13 +745,13 @@ body[data-mode="free"] .letter-row { display: none; }
 .text-box.paused :is(.caret, .focus-hint) { opacity: 0; }
 
 /* A typed letter turns white when the caret passes it, not before: the
-   caret glides for --feel-caret-ms, so the colour changes a third of the
-   way through that glide (owner, 2026-10-18: the letter went white and only then the
+   caret glides for --feel-caret-ms, so the colour changes half way through
+   that glide (owner, 2026-10-18: the letter went white and only then the
    caret came). One change, delayed: no fade, nothing painted per frame (a
    short warm glow on every typed letter was dropped for that: it painted
    the whole text again on every frame). Only on the way to "typed": a
    mistake (red) and Backspace show at once. */
-.text span.ok { color: var(--text); transition: color 0s linear calc(var(--feel-caret-ms, 0ms) * .3); }   /* .5 felt late (owner, 2026-10-18) */
+.text span.ok { color: var(--text); transition: color 0s linear calc(var(--feel-caret-ms, 0ms) * .5); }
 /* the letter under the caret (typing.js placeCaret): a step brighter than
    the rest of the untyped text, so the eye finds it at once */
 .text span.cur { color: color-mix(in srgb, var(--text) 62%, var(--sub)); }
@@ -799,8 +799,9 @@ body[data-mode="free"] .letter-row { display: none; }
   border-radius: 3px; pointer-events: none;
   box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 25%, transparent);
   will-change: translate;
-  /* monkeytype's "smooth caret: fast": its in-out curve (anime.js inOut(1.25),
-     matched here within 0.2%), almost even, over --feel-caret-ms (web/feel.js) */
+  /* monkeytype's caret curve (anime.js inOut(1.25), matched here within
+     0.2%), almost even, over --feel-caret-ms (web/feel.js: a little quicker
+     than their "fast") */
   transition: translate var(--feel-caret-ms, 0ms) var(--caret-curve);
   animation: breathe 1.1s ease-in-out infinite;   /* at rest it breathes; typing.js does the same while a round waits */
 }

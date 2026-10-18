@@ -22,12 +22,13 @@ export const FEEL = {
   // The caret, tried in turn (owner, 2026-10-18): 70 ms on a very steep
   // curve (73% of the way in the first frame, then a crawl: it read as a low
   // frame rate); monkeytype's "medium", 100 ms even ("oily"); a step-and-
-  // settle curve at 80 and 55 ms ("it lags behind the letters"). Now
-  // monkeytype's "smooth caret: fast" exactly: 85 ms on its almost even
-  // in-out curve (style.css --caret-curve; 16 / 37 / 61 / 83 / 99% at
-  // 60 frames a second). A new key starts a new glide from where the caret
-  // is, so fast typing reads as one steady movement.
-  caretGlideMs: 85,         // the caret sliding to the next letter (0 = jumps)
+  // settle curve at 80 and 55 ms ("it lags behind the letters"); then
+  // monkeytype's "smooth caret: fast", 85 ms on its almost even in-out
+  // curve (style.css --caret-curve): smooth, but still behind the typed
+  // letters (owner, 2026-10-18). Now that curve in 60 ms: 24 / 57 / 87 /
+  // 100% at 60 frames a second. A new key starts a new glide from where the
+  // caret is, so fast typing reads as one steady movement.
+  caretGlideMs: 60,         // the caret sliding to the next letter (0 = jumps)
   lineScrollMs: 120,        // the text moving up a line (0 = at once)
 
   // The key on the virtual keyboard answers a press: a short, soft dip.
