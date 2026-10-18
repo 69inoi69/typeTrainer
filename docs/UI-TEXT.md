@@ -87,7 +87,7 @@ are full sentences and end with a full stop.
 
 | Thing | Word |
 |---|---|
-| one typing run (10/30/60 words or 30/60 s) | round |
+| one typing run (10–50 words or 15–90 s) | round |
 | the learning mode, the main one | Learn |
 | free practice, words from the whole list | Freetype |
 | the one-time test that opens Freetype | typing test |

@@ -238,15 +238,15 @@ button, .tooltip, .menu-item, .hints, .rail small, .tour-text, .intro p, .intro 
 .seg button[aria-pressed="true"], .length-filter button[aria-selected="true"], .mode-filter button[aria-selected="true"] {
   background: var(--accent-fill); color: var(--on-accent); box-shadow: 0 2px 10px -3px rgba(220, 160, 20, .55);
 }
-/* the stats' round lengths (all five, always): two separate switches,
-   word rounds and timed rounds (stats.js); on a phone they share the width */
+/* the stats' round lengths (all nine, always): two separate switches,
+   word rounds and timed rounds (stats.js); on a phone each takes a line of
+   its own (nine buttons do not fit in one) */
 .length-filter { background: none; box-shadow: none; padding: 0; gap: 8px; flex-wrap: nowrap; }
 .lf-group { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--r-md); background: var(--panel); box-shadow: var(--ring); }
 @media (max-width: 640px) {
-  .length-filter { display: flex; width: 100%; }
-  .lf-group { flex: 3; }
-  .lf-group + .lf-group { flex: 2; }
-  .lf-group button { flex: 1 1 auto; padding: 4px 6px; white-space: nowrap; }
+  .length-filter { display: flex; flex-wrap: wrap; width: 100%; }
+  .lf-group { flex: 1 1 100%; }
+  .lf-group button { flex: 1 1 0; min-width: 0; padding: 4px 2px; font-size: .74rem; white-space: nowrap; }
 }
 /* a plain button in a panel */
 .btn {

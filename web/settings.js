@@ -24,7 +24,10 @@ import { $, S, store, isTouch } from "./state.js";
 // Round lengths: "words-N" ends after N words, "time-N" after N seconds.
 // Each round keeps its length on the server (storage.Session.Length), and
 // the stats screen shows one length at a time.
-export const LENGTHS = ["words-10", "words-30", "words-60", "time-30", "time-60"];
+// (owner, 2026-10-18: 10 to 50 words in steps of 10, and 15 to 90 seconds;
+// 60 words went. Rounds of 60 words already played keep their own button on
+// the stats screen.)
+export const LENGTHS = ["words-10", "words-20", "words-30", "words-40", "words-50", "time-15", "time-30", "time-60", "time-90"];
 export const DEFAULT_LENGTH = "words-30";   // the same as storage.DefaultLength
 // The caret styles, in the order of the buttons ("line" is the default).
 // To add one: its id here, its look in style.css (body[data-caret="id"]

@@ -410,8 +410,8 @@ empty list of recent words. Inside a round the words are still chosen portion
 by portion. The time of a round ends at its last keypress, so the pause that
 ended it early does not lower the WPM.
 
-The settings (`web/settings.js`) can make a round 10 or 60 words, or 30 or
-60 seconds, instead of the default 30 words (`RoundPortions` portions, which
+The settings (`web/settings.js`) can make a round 10, 20, 40 or 50 words
+(60 until 2026-10-18), or 15, 30, 60 or 90 seconds, instead of the default 30 words (`RoundPortions` portions, which
 the typing test always uses). Only the end of the round moves: the stream
 keeps asking for portions until the round has enough words (a time round
 until the time is up), and a words round ends on the last letter of its
