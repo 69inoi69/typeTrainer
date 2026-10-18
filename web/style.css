@@ -26,6 +26,12 @@
 /* the key legends on the drawn keyboard only: a family of its own, so the
    bold text elsewhere keeps Medium */
 @font-face { font-family: "Geist Mono Keys"; src: url("fonts/GeistMono-SemiBold.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+/* the logo only (owner, 2026-10-18: Sora SemiBold, picked from eight).
+   The file holds just the letters of "typeTrainer" (1.5 KB), cut by
+   Google Fonts' "text=" option: fonts.googleapis.com/css2?family=
+   Sora:wght@600&text=typeTrain. Another word in the logo needs a new cut.
+   License: fonts/Sora-OFL.txt. */
+@font-face { font-family: "Sora Logo"; src: url("fonts/Sora-SemiBold-logo.woff2") format("woff2"); font-weight: 600; font-display: block; }
 
 /* ---------- theme (all colors in one place) ---------- */
 :root {
@@ -50,6 +56,7 @@
   --ok: #8fd17c;        /* mastered letter */
   --mono: "Geist Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
   --ui: var(--mono);     /* labels and panels use the same font as everything (owner, 2026-10-16) */
+  --logo: "Sora Logo", var(--mono);   /* the word "typeTrainer" only */
 
   /* one key unit: the keyboard size is not a setting, it is always the largest
      that fits: never wider than the window allows, never taller than the room
@@ -330,13 +337,13 @@ body.typing-now .top .logo-key { filter: grayscale(1) brightness(.7); }
 body.typing-now .lang-switch, body.typing-now .profile, body.typing-now .rail { opacity: .35; }
 /* the letters step back chip by chip, all but the focus letter: the one
    being practised stays bright (owner, 2026-10-18: it went dim with the rest) */
-body.typing-now #letters .chip:not(.focus) { opacity: .4; }
+body.typing-now #letters .chip:not(.focus, .next) { opacity: .4; }   /* the next letter stays bright too (owner, 2026-10-18) */
 body.typing-now .bottom { opacity: .15; }
 body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.typing-now .rail:hover { opacity: 1; }
 .logo { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .logo-key { width: 34px; height: 34px; flex: none; }
 .logo-text { display: flex; flex-direction: column; line-height: 1; min-width: 0; }
-.logo-name { font-size: 1.75rem; font-weight: 500; letter-spacing: -.02em; color: var(--accent-text); white-space: nowrap; transition: color .4s var(--ease); }
+.logo-name { font-family: var(--logo); font-size: 1.75rem; font-weight: 600; letter-spacing: -.03em; color: var(--accent-text); white-space: nowrap; transition: color .4s var(--ease); }
 .logo-name span { color: var(--text); transition: color .4s var(--ease); }
 
 /* ---------- the top line of the text card ---------- */
@@ -734,14 +741,20 @@ body[data-mode="free"] .letter-row { display: none; }
 .text-box :is(.text, .live), .text-box::before, #view-type > :is(.hands, .keyboard) { transition: opacity var(--med), filter var(--med); }
 .text-box.paused :is(.text, .live) { filter: blur(5px); opacity: .2; }
 .text-box.paused::before { opacity: .25; }
+/* put on at once (typing.js pauseRound): a window out of sight draws
+   nothing, so a fade would only start when you come back */
+.text-box.snap, .text-box.snap *, .text-box.snap::before, #view-type:has(> .text-box.snap) > :is(.hands, .keyboard) { transition: none; }
 #view-type:has(> .text-box.paused) > :is(.hands, .keyboard) { opacity: .3; }
 .text-box.paused :is(.caret, .focus-hint) { opacity: 0; }
 
-/* Letters change colour at once, with no animation (as on monkeytype). A
-   short warm glow on every typed letter was dropped (owner, 2026-10-18):
-   a glow is not a moving layer, so it made the browser paint the whole
-   text again on every frame while typing, and typing felt less smooth. */
-.text span.ok { color: var(--text); }
+/* A typed letter turns white when the caret passes it, not before: the
+   caret glides for --feel-caret-ms, so the colour changes half way through
+   that glide (owner, 2026-10-18: the letter went white and only then the
+   caret came). One change, delayed: no fade, nothing painted per frame (a
+   short warm glow on every typed letter was dropped for that: it painted
+   the whole text again on every frame). Only on the way to "typed": a
+   mistake (red) and Backspace show at once. */
+.text span.ok { color: var(--text); transition: color 0s linear calc(var(--feel-caret-ms, 0ms) * .5); }
 /* the letter under the caret (typing.js placeCaret): a step brighter than
    the rest of the untyped text, so the eye finds it at once */
 .text span.cur { color: color-mix(in srgb, var(--text) 62%, var(--sub)); }
@@ -1695,16 +1708,24 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   position: fixed; inset: 0; z-index: 50; background: var(--bg);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
 }
-.splash-logo { font-size: clamp(2rem, 7vw, 3.4rem); color: var(--accent-text); transform-origin: top left; line-height: 1.2; }
-.splash-logo b { color: var(--text); font-weight: 400; }
-/* typewriter: the text is revealed in 11 steps (monospace: 1 step = 1 letter) */
-.splash-type {
-  display: inline-block; overflow: hidden; white-space: nowrap; vertical-align: bottom;
-  width: 0;
-  animation: splash-typing 420ms steps(11, end) 60ms forwards;
+/* the header's logo, bigger: the key icon and the word, in the same
+   proportions as in the header (34px icon and 10px gap to 1.75rem text),
+   so the whole of it flies into the header as one (fx.js Splash) */
+.splash-logo {
+  display: flex; align-items: center; gap: .357em;
+  font-family: var(--logo); font-weight: 600; letter-spacing: -.03em; font-size: clamp(2rem, 7vw, 3.4rem);
+  color: var(--accent-text); transform-origin: top left; line-height: 1.2;
 }
-@keyframes splash-typing { to { width: 11.1ch; } }
-body.splashing .top .logo, body.landing .top .logo-name { visibility: hidden; }  /* the splash logo lands here */
+.splash-logo .logo-key { width: 1.214em; height: 1.214em; animation: splash-key .22s cubic-bezier(.2, 1.4, .4, 1) both; }
+@keyframes splash-key { from { opacity: 0; transform: scale(.6); } }
+.splash-logo b { color: var(--text); font-weight: inherit; }
+/* typewriter: the letters appear one by one (each its own <i>, --i its
+   turn; the logo font is not monospace, so a growing width would cut
+   letters in half) */
+.splash-type { display: inline-block; white-space: nowrap; vertical-align: bottom; }
+.splash-type i { font-style: normal; opacity: 0; animation: splash-letter 0s calc(90ms + var(--i) * 26ms) forwards; }
+@keyframes splash-letter { to { opacity: 1; } }
+body.splashing .top .logo, body.landing .top .logo { visibility: hidden; }  /* the splash logo lands here */
 
 /* after the splash: the page slides in, piece by piece */
 body.entering .lang-switch, body.entering .profile, body.entering .rail, body.entering .letters, body.entering .text-box,

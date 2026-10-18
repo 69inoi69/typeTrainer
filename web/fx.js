@@ -161,8 +161,9 @@ export const FX = (() => {
 // key or click skips the rest. The logo then flies into the header (FLIP:
 // measure both positions, animate the difference) and the page slides in.
 export const Splash = (() => {
-  const MIN_MS = 750;   // the typing animation (style.css, .splash-type) plus a short look
-  const FLY_MS = 380;   // the logo flying into the header
+  // quicker (owner, 2026-10-18: "the animation is long")
+  const MIN_MS = 520;   // the icon, the typing (style.css, .splash-type) plus a short look
+  const FLY_MS = 300;   // the logo flying into the header
   function start() {
     const root = document.getElementById("splash");
     const t0 = performance.now();
@@ -179,17 +180,18 @@ export const Splash = (() => {
       const wait = MIN_MS - (performance.now() - t0);
       // a timer as a wait, not an animation: it runs once, at load
       if (!skipped && wait > 0) await new Promise((r) => setTimeout(r, wait));
-      // FLIP: move the big logo onto the small header logo
-      // (scale by font size, line up the left edges and the vertical centres)
+      // FLIP: move the big logo, icon and word together, onto the header's
+      // (owner, 2026-10-18): scale by the font size (the two are drawn in
+      // the same proportions), line up the left edges and the vertical
+      // centres
       const from = document.getElementById("splash-logo");
-      const text = from.querySelector(".splash-type");
-      const to = document.querySelector(".top .logo-name");
-      const a = text.getBoundingClientRect(), b = to.getBoundingClientRect();
-      if (b.width > 0) {
-        const s = parseFloat(getComputedStyle(to).fontSize) / parseFloat(getComputedStyle(from).fontSize);
-        const f = from.getBoundingClientRect();
-        const dx = b.left - a.left * 1 - (a.left - f.left) * (s - 1);
-        const dy = (b.top + b.height / 2) - (f.top + (a.top - f.top + a.height / 2) * s);
+      const name = document.querySelector(".top .logo-name");
+      const to = document.querySelector(".top .logo");
+      const a = from.getBoundingClientRect(), b = to.getBoundingClientRect();
+      if (name.getBoundingClientRect().width > 0) {
+        const s = parseFloat(getComputedStyle(name).fontSize) / parseFloat(getComputedStyle(from).fontSize);
+        const dx = b.left - a.left;
+        const dy = (b.top + b.height / 2) - (a.top + (a.height / 2) * s);
         from.style.transformOrigin = "0 0";
         from.animate([{ transform: "none" },
           { transform: `translate(${dx}px, ${dy}px) scale(${s})` }],

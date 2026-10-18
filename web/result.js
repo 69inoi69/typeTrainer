@@ -15,7 +15,7 @@
 // (as on monkeytype): Enter, Tab or the "new round" button. There is no
 // timer and typing a letter does not close it, so a round that ends in the
 // middle of a word never skips the result (owner, 2026-10-16). It does not care WHY typing stopped (the end
-// of the round, Esc or a long pause): the caller passes what to show.
+// of the round, or Esc): the caller passes what to show.
 // compareStats() works out what a learning round changed, for that screen.
 // Display only: nothing here changes what is measured or sent.
 // Layer: middle. Imports the bottom layer and tools.js (tooltips).

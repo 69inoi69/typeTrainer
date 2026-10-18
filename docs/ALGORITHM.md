@@ -403,15 +403,15 @@ a mistake on its first word changed the text only 20 to 40 words later.
 **The round.** The stream is cut into rounds of `RoundPortions = 5` portions
 (30 words), so the user always sees how much is left (a counter `12/30`) and
 gets a result at a clear point. The last letter of the last word ends it (no space after it is needed,
-right or wrong); Esc or
-10 seconds without a key end it early. The WPM and accuracy of the round go to
+right or wrong); Esc ends it early. The WPM and accuracy of the round go to
 the history, and the next round starts from scratch: new waiting portions, an
 empty list of recent words. Inside a round the words are still chosen portion
-by portion. The time of a round ends at its last keypress, so the pause that
-ended it early does not lower the WPM. Leaving the window in the middle of a
-round (another window, a hidden tab) pauses it: the time away is taken out
-of the round (its start and its last key move forward by it), and the first
-key after the pause is not measured, like the first key after a Backspace.
+by portion. The time of a round ends at its last keypress. Leaving the
+window in the middle of a round (another window, a hidden tab), or 10
+seconds without a key, pauses it: the time away is taken out of the round
+(its start and its last key move forward by it; for the 10 seconds, from
+the last key on), and the first key after the pause is not measured, like
+the first key after a Backspace.
 
 The settings (`web/settings.js`) can make a round 10, 20, 40 or 50 words
 (60 until 2026-10-18), or 15, 30, 60 or 90 seconds, instead of the default 30 words (`RoundPortions` portions, which
