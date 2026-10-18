@@ -90,6 +90,7 @@ const I18N = {
     "tile.goalTip": "Your own goal, from the settings: the average of your last 10 rounds against it. Letters still open at {target} wpm",
     "act.time": "Time typing", "act.rounds": "Rounds", "act.words": "Words", "act.streak": "Days in a row",
     "act.allTime": "All time, every round length",
+    "act.less": "less", "act.more": "more",
     "act.day": "{date}: {time}, {n} rounds", "act.dayOne": "{date}: {time}, 1 round", "act.dayNone": "{date}: no practice",
     "time.h": "{h} h {m} min", "time.m": "{m} min", "time.s": "{s} s",
     "share.image": "Image", "share.saved": "Saved",

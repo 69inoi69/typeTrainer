@@ -67,7 +67,11 @@ export function renderLetters() {
       frag.appendChild(chip);
     };
     for (const c of S.exercise.unlocked) add(c, info[c]?.mastered ? "mastered" : "");
-    for (const c of S.exercise.locked) add(c, "locked");
+    // the letter that opens next: marked in the row itself (owner,
+    // 2026-10-18: no "next letter" line under it)
+    for (const c of S.exercise.locked) add(c, c === S.exercise.locked[0] ? "locked next" : "locked");
+    const next = chipOf[S.exercise.locked[0]];
+    if (next) next.dataset.tip = "tip.next";
     el.letters.replaceChildren(frag);
 
     // every key you do not need yet is dimmed on the keyboard
@@ -81,21 +85,19 @@ export function renderLetters() {
     chipOf[c]?.classList.toggle("focus", c === focus);
   }
 
-  // status line: an icon, a label and a value each (details in their tooltips)
+  // status line: only before anything is typed, how many letters are open
+  // and how to begin. No "focus" and no "next letter" once you type (owner,
+  // 2026-10-18): the row above shows both, the focus in gold (and in the
+  // text), the next letter marked; and no "mastered": its ticks.
   const openCount = S.exercise.unlocked.length;
   const all = openCount + S.exercise.locked.length;
-  const caption = JSON.stringify([S.lang, t("stat.open"), started, focus, S.exercise.locked[0], openCount, all]);
+  const caption = JSON.stringify([S.lang, t("stat.open"), started, openCount, all]);
   if (caption !== captionFor) {
     captionFor = caption;
     const parts = [];
     if (!started) {
       parts.push(pill("open", "", "tip.open", t("stat.open"), `<b>${openCount}/${all}</b>`));
       parts.push(`<span class="begin">${t("stat.begin")}</span>`);
-    } else {
-      if (focus) parts.push(pill("focus", "focus", "tip.focus", t("stat.focus"), `<b class="lt">${focus}</b>`));
-      // no "mastered" pill: the letters row above already marks every
-      // mastered letter with a tick (owner, 2026-10-16: it said the same twice)
-      if (S.exercise.locked.length) parts.push(pill("key", "next", "tip.next", t("stat.next"), `<b class="lt">${S.exercise.locked[0]}</b>`));
     }
     el.lettersCaption.innerHTML = parts.join("");
   }

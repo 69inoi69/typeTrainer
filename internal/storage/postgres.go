@@ -270,6 +270,31 @@ func (p *PostgresStore) recentSessions(user, lang, mode, length string, limit in
 	return out, rows.Err()
 }
 
+// bestRounds: one row per length, the fastest (DISTINCT ON keeps the first
+// row of each length in this order; of equal WPM the earliest stored).
+func (p *PostgresStore) bestRounds(user, lang, mode string) (map[string]Session, error) {
+	rows, err := p.db.Query(`SELECT DISTINCT ON (length) wpm, accuracy, chars, consistency, unlocked, finished_at, length, study_group, device
+		FROM sessions WHERE user_id = $1 AND lang = $2 AND mode = $3
+		ORDER BY length, wpm DESC, id`, user, lang, mode)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]Session{}
+	for rows.Next() {
+		var s Session
+		var consistency sql.NullFloat64
+		if err := rows.Scan(&s.WPM, &s.Accuracy, &s.Chars, &consistency, &s.Unlocked, &s.FinishedAt, &s.Length, &s.Group, &s.Device); err != nil {
+			return nil, err
+		}
+		if consistency.Valid {
+			s.Consistency = &consistency.Float64
+		}
+		out[s.Length] = s
+	}
+	return out, rows.Err()
+}
+
 func (p *PostgresStore) sessionCount(user, lang, mode, length string) (int, error) {
 	var n int
 	err := p.db.QueryRow(`SELECT count(*) FROM sessions
@@ -308,6 +333,9 @@ func (p *PostgresStore) SessionCount(user, lang, length string) (int, error) {
 func (p *PostgresStore) SessionLengths(user, lang string) ([]string, error) {
 	return p.sessionLengths(user, lang, modeLearning)
 }
+func (p *PostgresStore) BestRounds(user, lang string) (map[string]Session, error) {
+	return p.bestRounds(user, lang, modeLearning)
+}
 func (p *PostgresStore) LettersTyped(user, lang string, unlocked int) (int, error) {
 	var n int
 	err := p.db.QueryRow(`SELECT COALESCE(SUM(chars), 0) FROM sessions
@@ -344,6 +372,9 @@ func (p *PostgresStore) AddFreeplaySession(user, lang string, s Session) error {
 }
 func (p *PostgresStore) RecentFreeplaySessions(user, lang, length string, limit int) ([]Session, error) {
 	return p.recentSessions(user, lang, modeFreeplay, length, limit)
+}
+func (p *PostgresStore) BestFreeplayRounds(user, lang string) (map[string]Session, error) {
+	return p.bestRounds(user, lang, modeFreeplay)
 }
 func (p *PostgresStore) FreeplaySessionCount(user, lang, length string) (int, error) {
 	return p.sessionCount(user, lang, modeFreeplay, length)

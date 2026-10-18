@@ -207,27 +207,17 @@ button, .tooltip, .hints, .rail small, .intro p, .intro h2, .account-msg,
 .opt-text small { font-size: .72rem; color: var(--sub); line-height: 1.35; }
 .opt-ctl { display: flex; gap: 6px; flex: none; }
 /* a segmented choice */
-.seg, .length-filter, .mode-filter {
+.seg, .mode-filter {
   display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 2px; border-radius: var(--r-md);
   background: var(--panel); box-shadow: var(--ring);
 }
-.seg button, .length-filter button, .mode-filter button {
+.seg button, .mode-filter button {
   display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px;
   background: none; color: var(--sub); font-size: .78rem; min-width: 34px; justify-content: center;
 }
-.seg button:hover, .length-filter button:hover, .mode-filter button:hover { background: none; color: var(--text); }
-.seg button[aria-pressed="true"], .length-filter button[aria-selected="true"], .mode-filter button[aria-selected="true"] {
+.seg button:hover, .mode-filter button:hover { background: none; color: var(--text); }
+.seg button[aria-pressed="true"], .mode-filter button[aria-selected="true"] {
   background: var(--accent-fill); color: var(--on-accent); box-shadow: 0 2px 10px -3px rgba(220, 160, 20, .55);
-}
-/* the stats' round lengths (all nine, always): two separate switches,
-   word rounds and timed rounds (stats.js); on a phone each takes a line of
-   its own (nine buttons do not fit in one) */
-.length-filter { background: none; box-shadow: none; padding: 0; gap: 8px; flex-wrap: nowrap; }
-.lf-group { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--r-md); background: var(--panel); box-shadow: var(--ring); }
-@media (max-width: 640px) {
-  .length-filter { display: flex; flex-wrap: wrap; width: 100%; }
-  .lf-group { flex: 1 1 100%; }
-  .lf-group button { flex: 1 1 0; min-width: 0; padding: 4px 2px; font-size: .74rem; white-space: nowrap; }
 }
 /* a plain button in a panel */
 .btn {
@@ -358,8 +348,9 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
   position: relative;              /* the warning and the messages sit on top of it */
   display: flex; gap: 6px 18px; align-items: center; height: 28px; margin: 0 0 10px; min-width: 0;
 }
-.live > .metric { opacity: .5; transition: opacity .4s var(--ease), transform var(--med) var(--ease); }
-.text-box.typing .live > .metric, .live.final > .metric { opacity: 1; }
+/* the numbers are as bright before the first key as while typing: dim at
+   rest they looked switched off (owner, 2026-10-18) */
+.live > .metric { transition: opacity .4s var(--ease), transform var(--med) var(--ease); }
 .metric { display: flex; align-items: baseline; }
 .metric.raw span { color: color-mix(in srgb, var(--accent-text) 55%, var(--sub)); }   /* secondary number */
 .metric.raw { cursor: default; }
@@ -568,6 +559,9 @@ body[data-mode="free"] .letter-row { display: none; }
    locked = only an outline */
 .chip.focus { background: var(--accent-fill); color: var(--on-accent); box-shadow: var(--accent-glow); }
 .chip.locked { background: transparent; color: color-mix(in srgb, var(--sub) 55%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 25%, transparent); }
+/* the letter that opens next: still locked, but a gold dashed frame and a
+   brighter letter say "this one is coming" */
+.chip.locked.next { color: var(--accent-text); box-shadow: none; outline: 1px dashed color-mix(in srgb, var(--accent) 70%, transparent); outline-offset: -1px; }
 :root[data-theme="light"] .chip:not(.locked, .focus) { background: var(--panel); }
 .chip.pop { animation: pop 420ms cubic-bezier(.34, 1.56, .64, 1); }   /* a letter just opened: a springy pop */
 .chip.shine { animation: shine .9s ease-out; }
@@ -1105,9 +1099,6 @@ button:disabled:active { transform: none; }
 }
 @keyframes bar-grow { from { transform: scaleY(0); } }
 #view-stats[hidden] { display: none; }
-.stats-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
-.share { display: flex; gap: 6px; margin-left: auto; order: 2; }
-.stats-top .tiles { order: 3; flex-basis: 100%; }
 .btn.done { color: var(--ok); animation: done-hold 1.6s; }
 @keyframes done-hold { from { color: var(--ok); } to { color: var(--ok); } }
 .tiles { flex: 1; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; min-width: min(100%, 560px); }   /* five tiles, six with a goal: one row */
@@ -1135,43 +1126,73 @@ button:disabled:active { transform: none; }
 .goal-bar::after { content: ""; position: absolute; inset: 0; width: calc(var(--p) * 100%); background: var(--accent); border-radius: 0 2px 2px 0; }
 .tile.goal.done .goal-bar::after { background: var(--ok); }
 
+/* ---------- stats: the personal bests (stats.js renderLengthFilter) ---------- */
+/* as on monkeytype's account page: two cards, rounds of N words and rounds
+   of N seconds, a cell per length: the length small, the best WPM big, the
+   accuracy of that round under it. A cell is also the switch of the length
+   shown below: the picked one gets a gold bar and its number turns gold. */
+.mode-filter { align-self: flex-start; }
+.pbs { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 4fr); gap: 14px; }
+.pb-group { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); padding: 6px; gap: 4px; }
+.pb {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 4px 14px;
+  border-radius: var(--r-md); background: none; color: var(--sub); font-variant-numeric: tabular-nums;
+  transition: background var(--fast);
+}
+.pb small { font-size: .74rem; }
+.pb b { font-size: 2.1rem; font-weight: 500; letter-spacing: -.02em; line-height: 1.1; color: var(--text); }
+.pb span { font-size: .85rem; }
+.pb:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+.pb[aria-selected="true"] { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.pb[aria-selected="true"] b { color: var(--accent-text); }
+.pb[aria-selected="true"]::after {
+  content: ""; position: absolute; left: 30%; right: 30%; bottom: 5px; height: 2px; border-radius: 2px; background: var(--accent);
+}
+@media (max-width: 860px) { .pbs { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 640px) { .pb b { font-size: 1.5rem; } .pb small { font-size: .68rem; } }
+/* the picked length, over its tiles and chart, with the picture button */
+.len-bar { display: flex; align-items: center; justify-content: space-between; margin: 8px 0 -4px; }
+.len-head { margin: 0; font-size: .9rem; font-weight: 500; color: var(--text); }
+
 /* ---------- stats: all time (stats.js drawActivity) ---------- */
-/* every round length and both modes together: four numbers on the left,
-   the activity calendar on the right (a cell = a day, a column = a week) */
-.activity { display: flex; align-items: center; justify-content: space-between; gap: 14px 28px; flex-wrap: wrap; padding: 12px 18px; }
+/* every round length and both modes together: four numbers and the legend
+   on top, the calendar of the last year under them (a cell = a day, a
+   column = a week, the month names above, Mon / Wed / Fri on the left) */
+.activity { display: flex; flex-direction: column; gap: 16px; padding: 16px 18px 18px; }
 .activity:empty { display: none; }
-.act-stats { display: flex; gap: 28px; flex-wrap: wrap; cursor: default; }
+.act-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 28px; flex-wrap: wrap; }
+.act-stats { display: flex; gap: 32px; flex-wrap: wrap; cursor: default; }
 .act-stat { display: flex; flex-direction: column-reverse; gap: 2px; }
-.act-stat b { font-size: 1.25rem; font-weight: 500; letter-spacing: -.01em; color: var(--text); font-variant-numeric: tabular-nums; }
+.act-stat b { font-size: 1.35rem; font-weight: 500; letter-spacing: -.01em; color: var(--text); font-variant-numeric: tabular-nums; }
 .act-stat small { font-size: .74rem; color: var(--sub); }
 .act-stat.hot b { color: var(--accent-text); }
-@media (max-width: 640px) { .act-stats { display: grid; grid-template-columns: repeat(2, auto); gap: 12px 28px; } }   /* phone: two by two */
 .act-stat.hot b::before { content: "🔥"; font-size: .85em; margin-right: 4px; }
+@media (max-width: 640px) { .act-stats { display: grid; grid-template-columns: repeat(2, auto); gap: 12px 28px; } }   /* phone: two by two */
+.act-legend { display: inline-flex; align-items: center; gap: 4px; font-size: .74rem; color: var(--sub); }
+.act-legend i { width: 11px; height: 11px; border-radius: 2px; }
+.act-legend i:first-of-type { margin-left: 4px; }
+.act-legend i:last-of-type { margin-right: 4px; }
 .act-cal {
-  display: grid; grid-template-rows: repeat(7, 9px); grid-auto-flow: column; grid-auto-columns: 9px; gap: 3px;
+  display: grid; grid-template-columns: 34px minmax(0, 1fr); grid-template-rows: auto auto; gap: 6px 0;
+  --gap: 3px;
 }
-.act-cal i { border-radius: 2px; background: color-mix(in srgb, var(--text) 6%, transparent); }
-.act-cal i.l1 { background: color-mix(in srgb, var(--accent) 30%, var(--panel)); }
-.act-cal i.l2 { background: color-mix(in srgb, var(--accent) 55%, var(--panel)); }
-.act-cal i.l3 { background: color-mix(in srgb, var(--accent) 78%, var(--panel)); }
-.act-cal i.l4 { background: var(--accent); }
-.act-cal i:hover { outline: 1px solid var(--text); outline-offset: 1px; }
+.act-months, .act-grid { grid-column: 2; display: grid; grid-template-columns: repeat(var(--weeks), minmax(0, 1fr)); column-gap: var(--gap); }
+.act-months { font-size: .7rem; color: var(--sub); }
+.act-months span { white-space: nowrap; }
+.act-days { grid-column: 1; grid-row: 2; display: grid; grid-template-rows: repeat(7, minmax(0, 1fr)); row-gap: var(--gap); font-size: .68rem; color: var(--sub); align-items: center; }
+.act-grid { grid-row: 2; grid-template-rows: repeat(7, auto); grid-auto-flow: column; row-gap: var(--gap); }
+.act-grid i { aspect-ratio: 1; border-radius: 3px; }
+:is(.act-grid, .act-legend) i { background: color-mix(in srgb, var(--text) 6%, transparent); }
+:is(.act-grid, .act-legend) i.l1 { background: color-mix(in srgb, var(--accent) 30%, var(--panel)); }
+:is(.act-grid, .act-legend) i.l2 { background: color-mix(in srgb, var(--accent) 55%, var(--panel)); }
+:is(.act-grid, .act-legend) i.l3 { background: color-mix(in srgb, var(--accent) 78%, var(--panel)); }
+:is(.act-grid, .act-legend) i.l4 { background: var(--accent); }
+.act-grid i:hover { outline: 1px solid var(--text); outline-offset: 1px; }
 /* the chart, the keyboard and the letters: one kind of card */
 .panel { background: var(--panel); border-radius: var(--r-lg); box-shadow: var(--lift); padding: 16px 18px; }
-.chart { height: clamp(140px, 30vh, 340px); }
-/* desktop: the whole stats screen in one window, no scrolling (owner,
-   2026-10-18). The chart is the part that gives: its panel takes the
-   height the tiles, the keyboard and the letters leave (stats.js draws it
-   last, at that size); the letters are a little smaller so they take four
-   rows. A window too short for even the smallest chart scrolls as before. */
-@media (min-width: 1000px) and (pointer: fine) {
-  #view-stats:not([hidden]) { flex: 1; min-height: 0; }
-  .chart-panel { flex: 1 1 0; min-height: 190px; display: flex; flex-direction: column; }
-  .chart-panel:has(.empty) { flex: none; min-height: 0; }
-  .chart-panel .chart, body[data-mode="free"] .chart-panel .chart { flex: 1; height: auto; min-height: 120px; }
-  #letter-grid { grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); }   /* the id: these come before the general rules below */
-  #letter-grid .lchip { height: 44px; }
-}
+.chart { height: clamp(180px, 32vh, 300px); }
+/* The stats screen scrolls like a page (owner, 2026-10-18: fitting it all
+   in one window was not worth it): the chart has a height of its own. */
 .chart:has(> .empty) { height: auto; }   /* no rounds yet: one line of text, not an empty half screen */
 /* free practice has no letters: the chart takes their room */
 body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
@@ -1428,7 +1449,11 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
   animation: letter-pop .6s cubic-bezier(.2, 1.6, .4, 1) .1s both;
 }
 .r-new .r-tick { stroke: var(--accent-text); stroke-width: 2; }
-.r-num.r-new { align-items: center; }   /* the key centred under its label */
+/* whatever stands at the row's right end (the new letter, the mastered
+   letters, the test verdict) sits centred under its label (owner, 2026-10-18) */
+.r-num.r-mastered { align-items: center; }
+.r-mastered .r-keys { justify-content: center; }
+.r-row > .r-main { text-align: center; }
 @keyframes letter-pop { 0% { transform: scale(.3) rotate(-25deg); opacity: 0; } 70% { transform: scale(1.18) rotate(6deg); opacity: 1; } }
 /* letters mastered in this round: the label with a green tick, the
    letters as small keys in a row */

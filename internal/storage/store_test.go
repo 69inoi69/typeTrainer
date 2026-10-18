@@ -35,6 +35,7 @@ var storeTests = map[string]func(*testing.T, Store){
 	"Group":                     testGroup,
 	"Device":                    testDevice,
 	"PracticeDays":              testPracticeDays,
+	"BestRounds":                testBestRounds,
 }
 
 // runStoreTests runs every test on a fresh, empty store from newStore.
@@ -423,5 +424,36 @@ func testPracticeDays(t *testing.T, m Store) {
 	m.Reset(u, "en")
 	if days, _ := m.PracticeDays(u, "en", 0); len(days) != 0 {
 		t.Fatalf("after reset: %v, want none", days)
+	}
+}
+
+// BestRounds keeps the fastest round of every length (the first of equal
+// ones), learning and free practice apart, without raw keys.
+func testBestRounds(t *testing.T, m Store) {
+	if b, err := m.BestRounds(u, "en"); err != nil || len(b) != 0 {
+		t.Fatalf("no history: %v, %v; want none", b, err)
+	}
+	keys := []engine.Sample{{Char: "e", Ms: 100}}
+	m.AddSession(u, "en", Session{WPM: 40, Accuracy: 90, Length: "words-10"})
+	m.AddSession(u, "en", Session{WPM: 55, Accuracy: 97, Length: "words-10", Keys: keys})
+	m.AddSession(u, "en", Session{WPM: 55, Accuracy: 80, Length: "words-10"}) // as fast, later: not it
+	m.AddSession(u, "en", Session{WPM: 30, Accuracy: 99, Length: "time-30"})
+	m.AddFreeplaySession(u, "en", Session{WPM: 99, Accuracy: 100, Length: "words-10"}) // free practice apart
+	m.AddSession("someone-else", "en", Session{WPM: 99, Length: "words-10"})
+
+	b, _ := m.BestRounds(u, "en")
+	if len(b) != 2 || b["words-10"].WPM != 55 || b["words-10"].Accuracy != 97 || b["time-30"].WPM != 30 {
+		t.Fatalf("bests %+v, want words-10 55 wpm 97%% and time-30 30 wpm", b)
+	}
+	if b["words-10"].Keys != nil {
+		t.Fatalf("a best round keeps its raw keys: %v", b["words-10"].Keys)
+	}
+	f, _ := m.BestFreeplayRounds(u, "en")
+	if len(f) != 1 || f["words-10"].WPM != 99 {
+		t.Fatalf("free practice bests %+v, want words-10 99 wpm", f)
+	}
+	m.Reset(u, "en")
+	if b, _ := m.BestRounds(u, "en"); len(b) != 0 {
+		t.Fatalf("after reset: %v, want none", b)
 	}
 }

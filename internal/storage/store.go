@@ -175,6 +175,10 @@ type Store interface {
 	RecentSessions(user, lang, length string, limit int) ([]Session, error) // newest first
 	SessionCount(user, lang, length string) (int, error)                    // finished rounds
 	SessionLengths(user, lang string) ([]string, error)                     // lengths in the history, sorted
+	// BestRounds: the fastest learning round of every length in the
+	// history (by WPM; of equal ones the earliest), without raw keys:
+	// the personal bests of the stats screen.
+	BestRounds(user, lang string) (map[string]Session, error)
 	// LettersTyped: the letters (Session.Chars) of all learning rounds that
 	// ended with at least `unlocked` letters open. With the whole alphabet,
 	// it is how far the user is into the ramp of engine.MaxRank.
@@ -194,6 +198,7 @@ type Store interface {
 	RecentFreeplaySessions(user, lang, length string, limit int) ([]Session, error) // newest first
 	FreeplaySessionCount(user, lang, length string) (int, error)
 	FreeplaySessionLengths(user, lang string) ([]string, error)
+	BestFreeplayRounds(user, lang string) (map[string]Session, error) // as BestRounds
 
 	// PracticeDays: every day with a finished round in this language,
 	// learning and free practice together, oldest first. tz is the user's
