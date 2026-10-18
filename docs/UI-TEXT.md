@@ -105,7 +105,7 @@ language.
 
 What changes (words, letters, numbers, messages) is bright; what never
 changes (labels, descriptions) is quieter, and a fixed label is small and
-grey. One font everywhere: the monospace one (`.lbl-ui` in `style.css`).
+grey. One font everywhere: the monospace one, Geist Mono (`.lbl-ui` in `style.css`).
 
 ## Before you add a text
 

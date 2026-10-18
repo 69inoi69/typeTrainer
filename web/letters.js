@@ -1,7 +1,7 @@
 // The letters bar above the text: one chip per letter of the language (open,
 // mastered, the focus of the portion being typed, still locked), the status
-// line under it (small pills: focus, next letter), and the keys of
-// locked letters dimmed on the keyboard. In free practice and the test there
+// line (focus, next letter; a quiet row inside the text block, under the
+// text), and the keys of locked letters dimmed on the keyboard. In free practice and the test there
 // is nothing to learn: the bar is empty and every key is open.
 // Layer: middle. Imports the bottom layer and modes.js.
 // Called by: typing.js (renderLetters when a portion or round changes the
@@ -63,7 +63,7 @@ export function renderLetters() {
   for (const [c, key] of Object.entries(S.keyEls)) key.classList.toggle("locked", !open.has(c) && !open.has(altOf[c]));
   if (S.altgrEl) S.altgrEl.classList.toggle("locked", !S.exercise.unlocked.some((c) => S.altBase[c]));
 
-  // status line: small pills with an icon each (details in their tooltips)
+  // status line: an icon, a label and a value each (details in their tooltips)
   const openCount = S.exercise.unlocked.length;
   const all = openCount + S.exercise.locked.length;
   const started = (S.lastStats?.keys ?? []).some((k) => k.count > 0);   // anything typed yet
@@ -82,15 +82,15 @@ export function renderLetters() {
   justMastered = new Set();
 }
 
-// One pill of the status line: an icon, a fixed label (small capitals) and
-// the value that changes (monospace).
+// One item of the status line: an icon, a fixed label and the value that
+// changes.
 const pill = (icon, cls, tip, label, value) =>
   `<span class="stat ${cls}"${tip ? ` data-tip="${tip}"` : ""}><svg viewBox="0 0 24 24" aria-hidden="true">${STAT_ICONS[icon]}</svg>` +
   `<span class="lbl">${label}</span>${value}</span>`;
 
 // Free practice and the test: no letters to learn. Every key is open. The
 // test's status line says the bar to pass; free practice shows nothing
-// above the text (owner, 2026-10-16: the tab already says where you are),
+// under the text (owner, 2026-10-16: the tab already says where you are),
 // the slot stays for warnings such as Caps Lock.
 function renderFreeLetters() {
   el.letters.replaceChildren();

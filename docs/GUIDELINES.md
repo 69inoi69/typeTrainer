@@ -89,11 +89,18 @@ there is a reason not to).
 **Established**
 - What changes (typed text, numbers, results, messages) is bright; fixed
   labels are small and grey (`.lbl-ui`, `--sub`).
-- One accent colour (`--accent`, yellow) for the caret, the focus letter and
-  the selected option; green (`--ok`) for mastered; red (`--error`) for
-  mistakes and destructive actions. Colours are CSS variables; the light
-  theme has its own palette.
-- One font: the monospace one (`--mono`, `--ui`).
+- One accent colour (`--accent`, gold) for the caret, the focus letter and
+  the selected option; a filled gold thing uses `--accent-fill` (a slight
+  gradient) and `--accent-glow`; gold as text is `--accent-text`. Green
+  (`--ok`) for mastered; red (`--error`) for mistakes and destructive
+  actions. Colours are CSS variables; the light theme has its own palette.
+- Surfaces in three steps: the page (`--bg`), cards (`--panel`) and small
+  things on them (`--panel-2`). Depth is `--lift` (a hairline edge and a
+  short soft shadow), never a heavy shadow. Glass (`--glass`, a blurred
+  see-through background) only for what floats over the page: windows,
+  tooltips, the phone's bottom bar. Corners: `--r-sm`, `--r-md`, `--r-lg`.
+- One font: Geist Mono (`--mono`, `--ui`), served from `web/fonts`
+  (SIL Open Font License, `web/fonts/OFL.txt`).
 
 **Recommended**
 - The most important thing on a screen is the first one the eye finds. On

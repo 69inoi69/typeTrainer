@@ -53,10 +53,11 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   least 20 times, recently with under 5% mistakes and at 30 wpm or faster
   (the numbers come from the server's settings). Master every open letter
   and the next one opens.
-  Under it, small status pills: focus letter, mastered open letters (with a
-  bar) and the next letter; hover them for details. The result screen shows
-  no focus: the next round picks its own. Caps Lock and wrong layout
-  warnings appear in the same place, on top of the pills, so nothing moves.
+  Under the text, as part of the same block, a quiet status line: the focus
+  letter (the same gold square as the tinted letters in the text) and the
+  next letter to open; hover them for details. The result screen hides it:
+  the next round picks its own focus. Caps Lock and wrong layout warnings
+  appear in the same place, on top of the line, so nothing moves.
 - The keyboard shows the next key in its finger color; keys you do not need yet
   are dimmed. Above the keyboard two hands light up the finger that presses
   it (space = both thumbs, AltGr letters = right thumb + the finger).
@@ -72,7 +73,8 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   the mouse over them to bring them back).
 - Two kinds of text: what changes (the words, letters, numbers, messages) is
   bright; what never changes (labels, menus, explanations) is quieter,
-  labels in small grey capitals. Everything uses the same monospace font.
+  labels small and grey. Everything uses one monospace font, Geist Mono,
+  which comes with the app (it looks the same on every computer).
 - **Learn** and **Freetype** in the navigation choose the mode. **Learn** is
   learning, the trainer: it picks words for your weak letters and opens new
   ones. **Freetype** is free practice: words from the whole list, its own
@@ -146,7 +148,7 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   extra and missed letters, for example `128/3/0/1`; hover for what each
   number is) and the Time of the round, from the first to the last press.
   Then one plain line if something happened (a
-  new letter ("New letter opened:" and the letter on a yellow key, the tint only as wide as the text), a new record, mastered letters), then which letters got faster
+  new letter ("New letter" over the letter on a gold key, at the end of the row of numbers, like "Mastered"), a new record, mastered letters), then which letters got faster
   or slower, as the time per press before and now (for example
   `s 320→250ms`), Faster on the left and Slower on the right, then the
   words of the round as you typed them, a letter that had a mistake
