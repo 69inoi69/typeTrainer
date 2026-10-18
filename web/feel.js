@@ -5,8 +5,8 @@
 // None of this changes what is measured or sent to the server.
 // Layer: bottom. Imports nothing.
 // Used by: keyboard.js (key dip, red tint, finger tap, hand size), typing.js
-// (caret flinch and breath, line scroll), and style.css (caret glide, word
-// fade, settle) through the --feel-* properties.
+// (caret flinch and breath, line scroll), sound.js (key sounds), and
+// style.css (caret glide, word fade, settle) through the --feel-* properties.
 // To add a knob: a field in FEEL with its unit and what "more" does, then
 // either read FEEL.x in the JavaScript or add a root.setProperty line below
 // and use var(--feel-x) in style.css.
@@ -61,6 +61,14 @@ export const FEEL = {
   // anyway). It also leaves more height for bigger keys.
   handOverlap: 0.42,        // in keys (0 = the hands stand above the keyboard)
   nextKeyTint: 38,          // how strongly the next key takes its finger colour, % (100 = solid)
+
+  // Key sounds (sound.js; off unless chosen in the settings). Every press
+  // plays one of the recordings of its pack, a little higher or lower and
+  // louder or softer each time, so a run of presses does not sound like a
+  // machine gun.
+  soundVolume: 0.55,        // of full scale (the files are evened out to the same loudness)
+  soundPitchJitter: 0.04,   // the playback speed varies by up to this much each way (0 = always the same)
+  soundGainJitter: 0.15,    // each press is up to this much softer
 };
 
 // The CSS custom properties: style.css uses var(--feel-...).

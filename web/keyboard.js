@@ -22,7 +22,10 @@ export function makeKey(k) {
   const key = document.createElement("div");
   key.className = "key" + (k.home ? " home" : "");
   key.style.setProperty("--fc", finger.color);
-  if (k.width) key.style.width = `calc(var(--u) * ${k.width} + var(--u) * .12 * ${k.width - 1})`;
+  if (k.width) {                       // a wide key (the space bar): a smaller legend
+    key.classList.add("wide");
+    key.style.width = `calc(var(--u) * ${k.width} + var(--u) * .12 * ${k.width - 1})`;
+  }
   key.innerHTML = `<span class="lbl"></span>`;
   key.querySelector(".lbl").textContent = k.char === " " ? t("key.space") : (k.label || k.char);
   if (k.alt) {                         // second letter, typed with AltGr

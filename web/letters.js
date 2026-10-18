@@ -89,9 +89,8 @@ const pill = (icon, cls, tip, label, value) =>
   `<span class="lbl">${label}</span>${value}</span>`;
 
 // Free practice and the test: no letters to learn. Every key is open. The
-// test's status line says the bar to pass; free practice shows nothing
-// under the text (owner, 2026-10-16: the tab already says where you are),
-// the slot stays for warnings such as Caps Lock.
+// test's status line says the bar to pass; free practice shows none
+// (owner, 2026-10-16: the tab already says where you are).
 function renderFreeLetters() {
   el.letters.replaceChildren();
   for (const key of Object.values(S.keyEls)) key.classList.remove("locked");

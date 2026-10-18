@@ -53,11 +53,13 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   least 20 times, recently with under 5% mistakes and at 30 wpm or faster
   (the numbers come from the server's settings). Master every open letter
   and the next one opens.
-  Under the text, as part of the same block, a quiet status line: the focus
-  letter (the same gold square as the tinted letters in the text) and the
-  next letter to open; hover them for details. The result screen hides it:
-  the next round picks its own focus. Caps Lock and wrong layout warnings
-  appear in the same place, on top of the line, so nothing moves.
+  Above the text, on the line of the live numbers (after the word counter),
+  a quiet status line: the focus letter (the same gold square as the tinted
+  letters in the text) and the next letter to open; hover them for details.
+  With the live numbers hidden it moves up to the word counter; while you
+  type it dims. The result screen hides it: the next round picks its own
+  focus. Caps Lock and wrong layout warnings appear on top of that whole
+  line, so nothing moves.
 - The keyboard shows the next key in its finger color; keys you do not need yet
   are dimmed. Above the keyboard two hands light up the finger that presses
   it (space = both thumbs, AltGr letters = right thumb + the finger).
@@ -109,6 +111,12 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
     on the device's own keyboard, so the option is not shown. There
     is no size setting: the keyboard is always as big as the window allows
     without making the page scroll.
+  - **key sound**: off (default), **deep**, **tactile** or **office**: a
+    short click for every key you type, from real recordings of keyboards
+    (public domain; who made them is in `web/sounds/CREDITS.md`). Choosing
+    one plays it once. Each press sounds a little different, as on a real
+    keyboard; mistakes sound the same as the right keys. Not on a phone or
+    tablet: the device's own keyboard makes its own sound.
   - **data**: **export** writes all languages and the full history
     to one `.json` file, **import** reads such a file back and **replaces** the
     current data (use it to keep progress across server restarts or page
@@ -117,7 +125,7 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
     languages and the settings saved in your browser, as on the very first
     visit. A window asks first ("Reset all progress? This can't be undone.",
     Cancel has the focus), so it does not happen by accident.
-  The settings only change how much you type and how it looks; what you
+  The settings only change how much you type and how it looks or sounds; what you
   practise is still up to the trainer. They are kept in this browser.
 - For now only English is offered. When Polish, Ukrainian and Russian come
   back, a language switch changes the language you practise **and the

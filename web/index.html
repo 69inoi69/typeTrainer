@@ -86,8 +86,12 @@
       <!-- The text to type. Each character is its own <span>; the caret is one
            separate element that slides to the current character. -->
       <div id="text-box" class="text-box" tabindex="0" aria-label="Exercise text">
-        <!-- Live numbers: the top line of the card, small and dim, brighter
-             while you type. Digits roll like a scoreboard (fx.js, FX.roll). -->
+        <!-- The top line of the card: the live numbers (small and dim, brighter
+             while you type), then the status line (focus, next letter), then
+             the streak at the right end. Hidden numbers take no room, so the
+             status line moves up to the word counter. The Caps Lock / layout
+             warning and the messages appear on top of the whole line, so
+             nothing on the page moves when they show. -->
         <div class="live" id="live">
           <!-- wpm, raw and accuracy ("num") can be hidden in the settings (settings.js) -->
           <div class="metric num"><span id="wpm">0</span><small>wpm</small></div>
@@ -96,24 +100,18 @@
           <div class="metric num"><span id="acc">100</span><span class="pct">%</span><small data-i18n="metric.acc">Acc</small></div>
           <!-- words typed in this round / words in the round, or the seconds left -->
           <div class="metric"><span id="progress">0/30</span><small id="progress-label" data-i18n="metric.words">Words</small></div>
+          <!-- the status line (letters.js); empty in free practice -->
+          <div id="letters-caption" class="letters-caption">&nbsp;</div>
           <!-- clean-word streak: words typed without a single mistake, in a row.
                Same shape as the numbers next to it; data-tier makes it "hotter". -->
           <div class="streak" id="streak" aria-live="polite" data-tier="0" data-tip="tip.streak">
             <svg class="bolt" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2.5 5 13.5h6l-1 8 8.5-11h-6z"/></svg><span id="streak-n">0</span><small class="sr-only" data-i18n="streak.label">Clean words</small>
           </div>
-        </div>
-        <div id="text" class="text">loading…</div>
-        <!-- The status line (focus, next letter), part of the text block,
-             under the text. One fixed slot: the status line, or (on top of
-             it, in the same place) the warning about Caps Lock / a wrong
-             system layout. Nothing else on the page moves when the warning
-             shows. -->
-        <div class="caption-slot" id="caption-slot">
-          <div id="letters-caption" class="letters-caption">&nbsp;</div>
           <div class="warn" id="layout-warn" role="status" aria-live="polite"></div>
-          <!-- messages (fx.js, FX.toast) appear here, in place of the status line -->
+          <!-- messages (fx.js, FX.toast) appear here, on top of the line -->
           <div class="notice" id="notice" role="status" aria-live="polite"></div>
         </div>
+        <div id="text" class="text">loading…</div>
         <div id="caret" class="caret" aria-hidden="true"></div>
         <div id="focus-hint" class="focus-hint" data-i18n="focusHint">Tap here to start typing</div>
         <!-- the result screen takes the place of the text when typing stops (result.js) -->
