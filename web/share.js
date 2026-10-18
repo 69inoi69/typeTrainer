@@ -1,44 +1,22 @@
-// Sharing the stats screen: "copy" puts a short text summary on the
-// clipboard, "image" saves a PNG card with the same numbers, the speed of
-// the last rounds and the letters. Both take exactly what the screen shows
-// (the mode and round length picked there, stats.js shownStats).
-// Nothing on the stats screen can be selected by dragging (style.css): these
-// two buttons are the way to take the numbers with you.
+// Sharing the stats screen: "image" saves a PNG card with the five numbers,
+// the speed of the last rounds and the letters. It takes exactly what the
+// screen shows (the mode and round length picked there, stats.js
+// shownStats). Nothing on the stats screen can be selected by dragging
+// (style.css): this button is the way to take the numbers with you. (A
+// "copy as text" button was removed, owner, 2026-10-18: the picture is
+// enough.)
 // Layer: middle. Imports the bottom layer, stats.js and settings.js.
-// Called by: nobody; it wires its own two buttons (#btn-copy, #btn-image).
-// input.js loads it.
-// To add another way to share: a button next to these in index.html, its
-// texts in i18n.js and its click here, built from lines() or the canvas.
+// Called by: nobody; it wires its own button (#btn-image). input.js loads it.
+// To add another way to share: a button next to it in index.html, its
+// texts in i18n.js and its click here.
 
 import { t } from "./i18n.js";
-import { $, S } from "./state.js";
+import { $ } from "./state.js";
 import { shownStats, summary } from "./stats.js";
 import { lengthLabel } from "./settings.js";
 
-const btnCopy = $("btn-copy"), btnImage = $("btn-image");
+const btnImage = $("btn-image");
 const SITE = location.origin + location.pathname;   // the address of this page
-
-// The facts, one per line, in the interface language:
-//   typeTrainer · learn · 30 words
-//   12 rounds · best 45 wpm
-//   last 10: 38 wpm · 96% accuracy · 82% consistency
-//   letters: 9 of 26 open · 5 mastered · focus r
-function lines() {
-  const { s, free, length } = shownStats();
-  if (!s) return [];
-  const [rounds, best, wpm, acc, cons] = summary(s).map(([v]) => v);
-  const out = [`typeTrainer · ${t(free ? "mode.free" : "mode.learn")} · ${lengthLabel(length)}`];
-  if (s.sessionCount) out.push(t("share.rounds", { rounds, best }), t("share.last10", { wpm, acc, cons }));
-  else out.push(t("share.none"));
-  if (!free && s.keys?.length) {
-    const open = s.keys.filter((k) => k.unlocked);
-    const mastered = open.filter((k) => k.mastered).length;
-    const focus = S.exercise?.focus;
-    out.push(t("share.letters", { open: open.length, all: s.keys.length, mastered }) +
-      (focus ? " · " + t("share.focus", { focus }) : ""));
-  }
-  return out;
-}
 
 // A short "done" on the button itself (toasts live on the typing screen).
 function confirm(btn, key) {
@@ -52,30 +30,12 @@ function confirm(btn, key) {
   }, { once: true });
 }
 
-// ---------- copy as text ----------
-btnCopy.addEventListener("click", async () => {
-  btnCopy.blur();
-  const text = [...lines(), SITE].join("\n");
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch {
-    // no clipboard API (an http:// address, an old browser): the old way
-    const area = Object.assign(document.createElement("textarea"), { value: text });
-    area.style.cssText = "position:fixed;opacity:0";
-    document.body.appendChild(area);
-    area.select();
-    document.execCommand("copy");
-    area.remove();
-  }
-  confirm(btnCopy, "share.copied");
-});
-
 // ---------- save as an image ----------
 // A 1200 x 630 card (the usual size of a link preview), drawn on a canvas in
 // the colours of the current theme. Read once per click, never per key.
 const W = 1200, H = 630;
 function drawCard() {
-  const { s, free } = shownStats();
+  const { s, free, length } = shownStats();
   const css = getComputedStyle(document.documentElement);
   const v = (name) => css.getPropertyValue(name).trim();
   const mono = v("--mono"), ui = v("--ui");
@@ -95,11 +55,11 @@ function drawCard() {
   const tw = c.measureText("type").width;
   c.fillStyle = v("--text");
   c.fillText("trainer", pad + tw, pad + 32);
-  const [title] = lines();
+  const title = `${t(free ? "mode.free" : "mode.learn")} · ${lengthLabel(length)}`;
   c.font = `600 15px ${ui}`;
   c.fillStyle = v("--sub");
   c.textAlign = "right";
-  c.fillText(title.replace(/^typeTrainer · /, "").toUpperCase(), W - pad, pad + 26);
+  c.fillText(title.toUpperCase(), W - pad, pad + 26);
   c.textAlign = "left";
 
   // the five numbers, as tiles

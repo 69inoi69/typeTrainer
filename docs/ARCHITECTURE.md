@@ -56,7 +56,6 @@ its own.
 | `internal/sim` | Simulation for the evaluation chapter: a made-up typist and three word-choice strategies (docs/ALGORITHM.md, section 11.1). Not used by the app. |
 | `tools/sim/` | `go run ./tools/sim`: runs the simulation on the real word lists and prints the table. |
 | `tools/wordlists/` | Python script + block lists that build the word lists (not part of the app). |
-| `tools/sounds/` | Python script that builds the key sounds in `web/sounds/` from public-domain recordings (not part of the app). |
 | `web/` | Static frontend: `index.html`, `style.css` and the JavaScript modules (see "Frontend modules" below). The interface language always follows the practice language. |
 | `webmodules_test.go` | Checks the import rule of the frontend modules. |
 
@@ -79,7 +78,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `tools.js` | Tooltips, and the data buttons of the settings window: export / import, reset (with its confirm window). |
 | middle | `keyboard.js` | On-screen keyboard and hands from the layout data, the next key and finger, the on / off button (remembered separately for learning and free practice), the automatic size that fits the window. |
 | middle | `stats.js` | The stats screen (tiles, WPM chart, heatmap keyboard, letter cards) and `refreshStats()`. |
-| middle | `share.js` | The "copy" (a text summary) and "image" (a PNG card drawn on a canvas) buttons of the stats screen; both take what the screen shows. |
+| middle | `share.js` | The "image" button of the stats screen: a PNG card drawn on a canvas from what the screen shows. |
 | middle | `typing.js` | The text stream (portions added while you type), the caret, `handleChar()` / `backspace()`, the streak, live WPM / accuracy, the "typing now" header mode, sending results. |
 | middle | `letters.js` | The letters bar above the text, its status line, locked keys dimmed on the keyboard. |
 | middle | `intro.js` | Guide A, "touch typing basics" (what it is, home row, space, eyes up); opens by itself on the first visit. |
@@ -87,8 +86,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `profile.js` | The account in the top right corner ("log in" for a guest where accounts work): the account (log in / sign up / log out; the page reloads after each), and a picture kept only in the browser. |
 | middle | `result.js` | The result screen in the text window: `showResult(r)` shows what changed and resolves when the user goes on; `compareStats()` works out what a learning round changed. The words of the round with their own speed come from `typedWords()` in `typing.js`, the characters and the time from `roundFacts()`. |
 | middle | `modes.js` | The modes (learning / free practice / typing test), the navigation tabs that show them (`renderNav`: learn · freetype · stats), `refreshFreeplay()` (`S.free`), the mode remembered per language. |
-| middle | `sound.js` | Key sounds (Web Audio): `setSound(id)` loads a pack from `web/sounds/`, `keySound(kind)` plays one press. Off unless chosen; never affects what is measured. |
-| middle | `settings.js` | The settings window (Esc or the gear): round length, live numbers, caret, theme, keyboard on / off (carried out by `input.js`), key sound (`sound.js`), export / import / reset (wired by `tools.js`); drawn from one list of rows (`ROWS`) with search and arrow keys; kept in `localStorage` (`S.settings`). |
+| middle | `settings.js` | The settings window (Esc or the gear): round length, live numbers, caret, theme, keyboard on / off (carried out by `input.js`), export / import / reset (wired by `tools.js`); drawn from one list of rows (`ROWS`) with search and arrow keys; kept in `localStorage` (`S.settings`). |
 | middle | `tour.js` | Guide B, "how this site works": the idea of the trainer, then a ring around each part of the page and a short card. |
 | top | `input.js` | Keydown and phone input (with the one-space sentinel that makes Backspace work on phone keyboards), the navigation (learn · freetype · stats, the help panel), keyboard on / off (settings and Alt+K), window resize: sends each action to the module that handles it. |
 | top | `app.js` | Entry point: `init()`. |
