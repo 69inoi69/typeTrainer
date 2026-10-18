@@ -58,7 +58,6 @@ const I18N = {
     "intro.skip": "Skip",
     "intro.next": "Next",
     "streak.label": "Clean words",
-    "streak.pop": "{n} clean words in a row",
     "metric.acc": "Acc", "metric.words": "Words", "metric.seconds": "s left",
     "metric.raw": "Raw", "tip.raw": "Raw speed: every keypress counts, mistakes too",
     "hint.new": "Stop", "hint.esc": "Stop / settings", "hint.kb": "Keyboard", "hint.view": "Learn / stats", "hint.lang": "Language",

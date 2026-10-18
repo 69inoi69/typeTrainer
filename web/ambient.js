@@ -1,9 +1,9 @@
 // The quiet background (owner, 2026-10-18): in the empty fields left and
 // right of the page, outlines of keycaps with the open letters drift slowly
-// down and turn. It stays while you type: it falls so slowly that it does
-// not pull the eye. After a minute with no key and no mouse the page dims a
-// little and the background grows a little stronger: a screen saver, any
-// key or mouse move ends it.
+// down and turn. It stays while you type, but holds still until the round
+// ends (style.css, body.typing-now): moving, it cost smoothness. After a
+// minute with no key and no mouse the page dims a little and the background
+// grows a little stronger: a screen saver, any key or mouse move ends it.
 // Decoration only, like fx.js: it never changes what is measured.
 // Layer: middle. Imports only the bottom layer.
 // Called by: app.js (buildAmbient once the letters are known) and input.js

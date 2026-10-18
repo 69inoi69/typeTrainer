@@ -612,10 +612,12 @@ function clearWord() {
 // A bolt and the number riding on the caret, shown from 3 words (owner,
 // 2026-10-18: in the numbers line it covered the status line, and its
 // flicker, zapping bolt, shake and confetti were too loud). Its colour warms
-// at each tier (style.css .streak[data-tier]). At 10, 25, 50 and every 50
-// after, a short note rises from it and fades. Visual only, nothing is sent.
+// at each tier (style.css .streak[data-tier]): gold from the start, since 3
+// clean words already deserve to feel good (owner, 2026-10-18: grey read as
+// "nothing"). At 10, 25, 50 and every 50 after, the badge gives one small
+// bump, no text (owner: the notes were too long). Visual only, nothing is sent.
 const STREAK_SHOW = 3;
-const STREAK_TIERS = [10, 25, 50, 100];   // clean words where the colour changes
+const STREAK_TIERS = [10, 25, 50];   // clean words where the colour changes
 const streakTier = (n) => STREAK_TIERS.filter((x) => n >= x).length;
 const STREAK_RISE = 22;      // px: how far above the caret's top the badge sits
 const isMilestone = (n) => n === 10 || n === 25 || (n > 0 && n % 50 === 0);
@@ -655,19 +657,10 @@ function renderStreak() {
   el.streak.dataset.tier = streakTier(streak);
   el.streak.classList.toggle("show", streak >= STREAK_SHOW);
 }
-// A milestone: "25 clean words in a row" rises from the badge and fades
-// (one Web Animation, ~1.6 s), and the badge gives one small bump.
+// A milestone: the badge gives one small bump.
 function popStreak() {
   if (!S.settings.streak) return;            // turned off in the settings
-  el.streakPop.textContent = t("streak.pop", { n: streak });
-  if (reducedMotion() || !el.streakPop.animate) return;
-  el.streakPop.animate([
-    { opacity: 0, transform: "translateY(6px)" },
-    { opacity: 1, transform: "none", offset: .15 },
-    { opacity: 1, transform: "translateY(-2px)", offset: .7 },
-    { opacity: 0, transform: "translateY(-12px)" },
-  ], { duration: 1600, easing: "ease-out" });
-  FX.bump(el.streak, 1.15);
+  FX.bump(el.streak, 1.2);
 }
 
 // ---------- Tab: start the round again ----------

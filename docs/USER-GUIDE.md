@@ -150,10 +150,9 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   out), and any key goes on; the time away does not count.
 - From 3 clean words in a row (typed without a single mistake) a small
   **bolt and number** ride just above the caret and count them; the colour
-  warms as the streak grows (grey, gold from 10, orange from 25, rose from
-  50, violet from 100). At 10, 25,
-  50 and every 50 after, a short note rises from it ("25 clean words in a
-  row") and fades. A mistake ends the streak and the badge goes away. New
+  warms as the streak grows (gold, orange from 10, rose from 25, violet
+  from 50). At 10, 25, 50 and every 50 after, the badge gives a small bump.
+  A mistake ends the streak and the badge goes away. New
   records, mastered letters and new letters still get a small confetti.
 - **While you type** the feedback is where your eyes already are: the focus
   letter of each portion is tinted in the text, the letter under the caret
