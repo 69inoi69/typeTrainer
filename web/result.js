@@ -50,10 +50,10 @@ export function showResult(r) {
   };
 
   // 1. the top: speed and accuracy big on the left, the speed the biggest
-  // ("hero": the one number to see first); a new best speed is a small tag
-  // above them (owner, 2026-10-16: a separate block was too much)
-  const best = r.best && !r.test ? `<p class="r-best">${t("result.best")}</p>` : "";
-  const hero = `<div class="r-hero">${best}${num(Math.round(r.wpm), "", "result.wpm", "big hero")}` +
+  // ("hero": the one number to see first). No "new best" tag (owner,
+  // 2026-10-18: it widened the column and left a gap; a record still gets
+  // its confetti, typing.js)
+  const hero = `<div class="r-hero">${num(Math.round(r.wpm), "", "result.wpm", "big hero")}` +
     `${num(Math.round(r.accuracy), "%", "result.acc", "big")}</div>`;
   // ... and on the right the speed of each word (as on monkeytype): the
   // label, the legend of the colours, the chart. The words themselves come

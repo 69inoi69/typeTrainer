@@ -163,7 +163,7 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   extra and missed letters, for example `128/3/0/1`; hover for what each
   number is) and the Time of the round, from the first to the last press.
   Then one plain line if something happened (a
-  new letter ("New letter" over the letter on a gold key, at the end of the row of numbers, like "Mastered"), a new record, mastered letters), then which letters got faster
+  new letter ("New letter" over the letter on a gold key, at the end of the row of numbers, like "Mastered"), mastered letters), then which letters got faster
   or slower, as the time per press before and now (for example
   `s 320→250ms`), Faster on the left and Slower on the right, then the
   words of the round as you typed them, a letter that had a mistake
@@ -179,8 +179,8 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   Thin lines separate the parts of the result.
   Hover a word (or tap it on a phone) to see its own speed: the average
   time per press of its letters and the space after it, in wpm. Each part
-  is its own block with some air between (good news, a new letter or a
-  record, on a soft yellow tint), and the window is only as wide and as tall as what it
+  is its own block with some air between (good news, a new letter, on a
+  soft yellow tint), and the window is only as wide and as tall as what it
   shows (a long list of words scrolls inside). No
   jokes or tips there. The result stays until you go on on purpose:
   **Enter**, **Tab** or the yellow **Next round** button

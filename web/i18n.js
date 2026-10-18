@@ -100,7 +100,6 @@ const I18N = {
     "profile.title": "Profile", "profile.name": "Name", "profile.picture": "Picture", "profile.soon": "No accounts on this site. Progress is lost when you close the tab: use Export in Settings to keep it.", "profile.guest": "Guest", "profile.upload": "Upload a picture", "profile.open": "Profile",
     "profile.titleAccount": "Profile", "account.name": "Account name", "account.password": "Password", "account.login": "Log in", "account.signup": "Sign up", "account.logout": "Log out", "account.as": "Logged in as <b>{name}</b>", "account.rules": "Name: 3–20 of a–z, 0–9, _ and -. Password: at least 8 characters", "account.taken": "This name is taken", "account.wrong": "Wrong name or password", "account.slow": "Too many attempts, try again in a few minutes", "account.fail": "The server did not answer, try again", "account.note": "A new account starts from the first letters",
     "result.wpm": "WPM", "result.acc": "Accuracy", "result.cons": "Consistency",
-    "result.best": "New best! Keep it up, king",
     "result.mastered": "Mastered: <b>{letters}</b>", "result.masteredLabel": "Mastered",
     "result.newLetter": "New letter",
     "result.nextBtn": "Next round", "result.tryAgain": "Try again",
@@ -469,7 +468,7 @@ export function t(key, vars = {}) {
   return text.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? i18nVars[name] ?? ""));
 }
 
-// Pools of texts with numbered keys: "result.best.0", "result.best.1", ...
+// Pools of texts with numbered keys: "x.0", "x.1", ...
 // Every language has the same number of texts in a pool (the English pool is
 // counted). tPick() returns a random one, never the same one twice in a row.
 const lastPick = {};
