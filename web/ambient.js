@@ -15,9 +15,15 @@
 
 import { reducedMotion } from "./state.js";
 
-const COUNT = 16;          // keycaps on the screen at once
+const COUNT = 16;          // keycaps on the screen at once, at most
 const AFK_MS = 60000;      // no key and no mouse for this long: the screen saver
-const MIN_SIDE = 110;      // px: narrower empty fields get no background
+const SIZE = [30, 58];     // px: the smallest and the largest keycap
+const DRIFT = 10;          // px: how far a keycap slides sideways on its way down
+const PER_LANE = 2;        // keycaps falling one after another in one lane
+// One lane holds the largest keycap turned 45 degrees (its diagonal) plus its
+// drift and a gap, so neighbouring lanes can never touch.
+const LANE = Math.ceil(SIZE[1] * Math.SQRT2 + 2 * DRIFT + 8);
+const MIN_SIDE = LANE;     // px: narrower empty fields get no background
 
 const layer = document.createElement("div");
 layer.className = "ambient";
@@ -33,6 +39,11 @@ function openLetters() {
 
 // (Re)builds the pieces for the current window: only in the empty fields
 // next to the header's width, none if those fields are too narrow.
+// The keycaps never run into each other (owner, 2026-10-18: overlapping ones
+// looked messy): each field is cut into lanes as wide as the largest turned
+// keycap, every lane has its own speed, and the keycaps of one lane fall at
+// that same speed an equal share of the way apart, so they keep their
+// distance all the way down.
 export function buildAmbient() {
   layer.replaceChildren();
   if (reducedMotion()) return;
@@ -40,17 +51,26 @@ export function buildAmbient() {
   if (!top) return;
   const left = top.left - 24, right = innerWidth - top.right - 24;
   if (Math.min(left, right) < MIN_SIDE) return;
+  // the lanes of both fields, taken in turn from the left and the right
+  const perSide = Math.min(Math.floor(left / LANE), Math.floor(right / LANE), Math.floor(COUNT / PER_LANE / 2));
+  const lanes = [];
+  for (let i = 0; i < perSide; i++) {
+    lanes.push((left - perSide * LANE) / 2 + i * LANE);                      // centred in the left field
+    lanes.push(top.right + 24 + (right - perSide * LANE) / 2 + i * LANE);    // and in the right one
+  }
   const letters = openLetters();
-  for (let i = 0; i < COUNT; i++) {
-    const p = document.createElement("i");
-    const size = rand(30, 58);
-    const onLeft = i % 2 === 0;
-    const x = onLeft ? rand(16, left - size) : rand(top.right + 24, innerWidth - 16 - size);
-    const dur = rand(24, 46);   // seconds for one fall
-    p.style.cssText = `--x:${x.toFixed(0)}px;--size:${size.toFixed(1)}px;--dur:${dur.toFixed(1)}s;` +
-      `--delay:${(-rand(0, dur)).toFixed(1)}s;--drift:${rand(-40, 40).toFixed(0)}px;--rot:${rand(-50, 50).toFixed(0)}deg;--o:${rand(.35, 1).toFixed(2)}`;
-    p.textContent = letters[Math.floor(Math.random() * letters.length)];
-    layer.appendChild(p);
+  for (const x0 of lanes) {
+    const dur = rand(24, 46);            // seconds for one fall, the same for the whole lane
+    const phase = rand(0, dur);
+    for (let k = 0; k < PER_LANE; k++) {
+      const p = document.createElement("i");
+      const size = rand(SIZE[0], SIZE[1]);
+      const x = x0 + (LANE - size) / 2;  // in the middle of its lane
+      p.style.cssText = `--x:${x.toFixed(0)}px;--size:${size.toFixed(1)}px;--dur:${dur.toFixed(1)}s;` +
+        `--delay:${(-(phase + k * dur / PER_LANE)).toFixed(1)}s;--drift:${rand(-DRIFT, DRIFT).toFixed(0)}px;--rot:${rand(-45, 45).toFixed(0)}deg;--o:${rand(.35, 1).toFixed(2)}`;
+      p.textContent = letters[Math.floor(Math.random() * letters.length)];
+      layer.appendChild(p);
+    }
   }
 }
 

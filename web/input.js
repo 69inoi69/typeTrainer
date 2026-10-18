@@ -12,7 +12,7 @@
 import { $, el, S, introOpen, isTouch, focusText } from "./state.js";
 import { applyKb, requestFit } from "./keyboard.js";
 import { refreshStats, renderStats, onStatsMode } from "./stats.js";
-import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, stopRound, loadExercise, roundStarted, pauseRound, checkLayout } from "./typing.js";
+import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, stopRound, loadExercise, roundStarted, pauseRound, checkLayout, checkCaps } from "./typing.js";
 import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
@@ -181,6 +181,8 @@ document.addEventListener("keydown", (e) => {
 addEventListener("blur", pauseRound);
 document.addEventListener("visibilitychange", () => { if (document.hidden) pauseRound(); else checkLayout(); });
 addEventListener("focus", checkLayout);    // the layout may have been switched in another window
+// Caps Lock is known from any key or mouse move, before a letter is typed
+for (const ev of ["keydown", "keyup", "mousemove", "mousedown"]) addEventListener(ev, checkCaps, { passive: true });
 
 // Phones: virtual keyboards often report "Unidentified" on keydown, so the
 // character only shows up here, in the hidden input.

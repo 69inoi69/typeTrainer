@@ -56,20 +56,25 @@ export function labelTips() {
 // <dialog>: Esc and Cancel close it, Cancel has the focus so Enter is safe).
 // The data and reset buttons are drawn anew with the settings window
 // (settings.js), so their clicks are caught here, on the document.
+// Both end in a page reload, so they keep their own "working" flag and do
+// not wait for S.busy: S.busy stays on while a result is on the screen
+// (typing.js finishRound waits for it to close), and Esc opens the settings
+// right over that result, so with S.busy the buttons did nothing there.
+let working = false;
 const resetDialog = $("reset-dialog");
 document.addEventListener("click", (e) => {
   const b = e.target.closest("#btn-reset, #btn-export, #btn-import");
   if (!b) return;
   if (b.id === "btn-reset") resetDialog.showModal();
   else if (b.id === "btn-export") exportAll();
-  else if (!S.busy) importFile.click();
+  else if (!working) importFile.click();
 });
 $("reset-cancel").addEventListener("click", () => resetDialog.close());
 // a click on the dimmed page around the window closes it too
 resetDialog.addEventListener("click", (e) => { if (e.target === resetDialog) resetDialog.close(); });
 $("reset-ok").addEventListener("click", async () => {
-  if (S.busy) return;
-  S.busy = true;
+  if (working) return;
+  working = S.busy = true;                    // S.busy: no typing while it resets
   try {
     for (const l of S.languages) {
       await fetch(`${API}/reset?lang=${encodeURIComponent(l.id)}`, { method: "POST" });
@@ -112,8 +117,9 @@ async function exportAll() {
 importFile.addEventListener("change", async () => {
   const file = importFile.files[0];
   importFile.value = "";                      // the same file can be chosen again
-  if (!file || S.busy) return;
-  S.busy = true;
+  if (!file || working) return;
+  const wasBusy = S.busy;                     // a result on the screen keeps it on
+  working = S.busy = true;
   try {
     const data = JSON.parse(await file.text());
     if (data.app !== FILE_APP || data.version !== FILE_VERSION || !data.languages || typeof data.languages !== "object") {
@@ -135,7 +141,8 @@ importFile.addEventListener("change", async () => {
     location.reload();
   } catch (err) {
     console.error(err);
-    S.busy = false;
+    working = false;
+    S.busy = wasBusy;
     FX.toast(t("toast.importFail"));
   }
 });

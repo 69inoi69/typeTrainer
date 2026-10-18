@@ -62,11 +62,14 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   layout, the usual keys that switch it on your system (Windows Win + Space,
   macOS and ChromeOS Ctrl + Space, Linux Super + Space). In Chrome and Edge
   the wrong layout shows as soon as the page opens, before any key (and goes
-  away once you switch); in other browsers after the first keys. A key typed
+  away once you switch); in other browsers (Firefox, Safari, and Brave, which
+  hides the layout from sites) after the first keys. Caps Lock shows at the
+  first mouse move or any key, in every browser, and goes once it is off. A key typed
   in the wrong layout or with Caps Lock never starts the round.
-- The keyboard shows the next key as the one light key (on the light theme the
-  one dark key), raised a little and framed in its finger color, so the
-  corner of the eye finds it without looking down; keys you do not need yet
+- The keyboard shows the next key as the one key in its full finger color
+  (bright on the dark theme, a deep shade on the light one), raised a little
+  and glowing in that color, so the corner of the eye finds it without
+  looking down; keys you do not need yet
   are dimmed. Above the keyboard two hands light up the finger that presses
   it (space = both thumbs, AltGr letters = right thumb + the finger).
 - The screen has three fixed places, as in a real app:
