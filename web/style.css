@@ -1047,6 +1047,15 @@ body[data-caret="outline"] .caret {
 }
 .hints kbd { background: var(--panel); color: color-mix(in srgb, var(--text) 60%, var(--sub)); padding: 1px 6px; border-radius: 4px; }
 @media (pointer: coarse) { .bottom { display: none; } }
+/* Phones and tablets: only the stats and the account (input.js statsOnly).
+   No navigation (there is nothing to go to), a short line says why. */
+.stats-only-note { display: none; }
+body.stats-only .rail, body.stats-only #view-type { display: none; }
+body.stats-only { padding-bottom: env(safe-area-inset-bottom); }   /* no bar at the bottom to make room for */
+body.stats-only .stats-only-note {
+  display: block; margin: 0 0 14px; padding: 10px 14px; border-radius: var(--r-md);
+  background: var(--panel); box-shadow: var(--ring); color: var(--sub); font-size: .85rem; line-height: 1.45;
+}
 body[data-view="stats"] .hints .type-only { display: none; }   /* nothing to stop, no keyboard on stats */
 button {
   color: var(--sub); background: var(--panel); border: 0;
@@ -1574,9 +1583,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .metric:has(#acc) { min-width: 4.1rem; }
   .metric:has(#progress) { min-width: 5.6rem; }
   .metric.raw { display: none; }          /* phone: no room, wpm + acc are enough */
-  /* five tiles in rows of three: two rows instead of three (a long label
-     wraps to a second line rather than being cut) */
-  .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); min-width: 100%; }
+  /* five tiles in two columns, the round count across both: three even
+     rows (rows of three left a hole after the fifth tile, owner, 2026-10-18) */
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 100%; }
+  .tiles > .tile:first-child { grid-column: 1 / -1; }
   .tile { padding: 10px 10px 9px; }
   .tile b { font-size: 1.3rem; }
   /* phone: one row would make the chips tiny, so two rows of 13 (26

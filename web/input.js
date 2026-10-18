@@ -40,7 +40,20 @@ window.addEventListener("resize", () => {
 });
 
 // ---------- screens: typing / stats ----------
+// Phones and tablets (a touch screen, no mouse) get only the stats and the
+// account (owner, 2026-10-18): the trainer teaches ten-finger typing on a
+// real keyboard, and thumbs on glass would only skew the letter model. The
+// typing screen and the navigation are not shown there (style.css
+// body.stats-only), and every way to the typing screen lands on the stats.
+const statsOnly = isTouch();
+document.body.classList.toggle("stats-only", statsOnly);
+// The first screen, once the language is loaded (app.js): the stats on a
+// touch screen; elsewhere the typing screen is already there.
+export function startView() {
+  if (statsOnly) setView("stats");
+}
 function setView(name) {
+  if (statsOnly) name = "stats";
   S.view = name;
   document.body.dataset.view = name;          // style.css hides the typing shortcuts on stats
   const stats = name === "stats";
