@@ -110,7 +110,7 @@ Details: `docs/ARCHITECTURE.md`.
   self-declared skill level: the test is the only early way in.
 - **Settings change how much and how it looks, never what.** The settings
   panel (`web/settings.js`) offers round length (10/20/30/40/50 words, 15/30/60/90 s),
-  live numbers on/off and the caret style, in both modes. They are not
+  live numbers on/off, the streak badge on/off and the caret style, in both modes. They are not
   difficulty switches. Every round keeps its length, and rounds of different
   lengths are never mixed in one chart or record. The typing test ignores
   the settings: it is always one full 30-word round.

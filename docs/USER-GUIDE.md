@@ -28,19 +28,17 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
 
 - The app opens with a short start screen: the logo types itself and flies
   into the header, then the page slides in. Any key or click skips it.
-- On the very first visit two short guides run, one after the other (both
-  can be skipped with `Esc` or "skip", and both open again from **help**):
-  - **touch typing basics**: what touch typing is (a small keyboard map where
-    every key has the colour of its finger, and one line on posture), then
-    put your fingers on the home row and press those eight keys, press space
-    with a thumb, and "watch the screen". It reacts to the real keys
-    (physical positions, so it works with any system layout). At the end:
-    "Start". Everyone starts with a few letters; if you already type well,
-    the next ones open quickly;
-  - **how this site works**: first the idea in three sentences (the trainer
-    watches every keypress and builds real-word practice around your
-    weakest letter; letters open one by one), then a light ring around the
-    letters, the text, the menu and the languages, with a sentence each.
+- On the very first visit a short guide, **touch typing basics**, runs (skip
+  it with `Esc` or "skip"; it does not come back): what touch typing is (a
+  small keyboard map where every key has the colour of its finger, and one
+  line on posture), then put your fingers on the home row and press those
+  eight keys, press space with a thumb, and "watch the screen". It reacts
+  to the real keys (physical positions, so it works with any system
+  layout). `←` `→` (or `A` `D`, except on the home row step, where they are
+  keys to press) go back and on. At the end: "Start". Everyone starts with a
+  few letters; if you already type well, the next ones open quickly. There
+  is no help menu and no tour of the page (owner, 2026-10-18): the site
+  still changes too often for a guide to it.
 - Type the grey text. Wrong key = the letter turns red and you keep going, as
   on monkeytype. Backspace fixes the current word (Ctrl+Backspace: the whole
   word); at the start of a word it takes you back into the previous word, one
@@ -76,7 +74,7 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
     with a person icon until you are logged in, then your picture and name);
   - **the navigation**: a column at the left edge of a wide window, a bar at
     the bottom of a narrow window or a phone. Two groups: the three screens
-    **Learn**, **Freetype** and **Stats**, then **Help** and **Settings**.
+    **Learn**, **Freetype** and **Stats**, then **Settings**.
     The chosen screen has a short yellow bar next to it.
   From your first keypress until the end of the round everything around the
   text steps back: the whole header fades, the logo a little less than the
@@ -110,6 +108,8 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
     not see them until the first finished round (a beginner should not
     chase speed); then they appear and you can hide them again. The word
     counter always stays.
+  - **streak**: the bolt and number above the caret (clean words in a row) on
+    (default) or off.
   - **caret**: a thin line (default), a block over the letter, a bar under
     it (underline) or a frame around it (outline).
   - **theme**: dark (default) or light: a warm paper page with white cards,
@@ -145,10 +145,13 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   round is left. The round ends as soon as the last letter of its last word is
   typed (no space needed); 10 seconds without a key also end it. Leaving
   the window (Alt+Tab, another app, another tab) pauses the round: the
-  text blurs under "Paused", the clock stops (a timed round does not run
+  text, the numbers, the hands and the keyboard step back under a breathing
+  pause sign and "Paused", the clock stops (a timed round does not run
   out), and any key goes on; the time away does not count.
 - From 3 clean words in a row (typed without a single mistake) a small
-  gold badge **×N** rides just above the caret and counts them. At 10, 25,
+  **bolt and number** ride just above the caret and count them; the colour
+  warms as the streak grows (grey, gold from 10, orange from 25, rose from
+  50, violet from 100). At 10, 25,
   50 and every 50 after, a short note rises from it ("25 clean words in a
   row") and fades. A mistake ends the streak and the badge goes away. New
   records, mastered letters and new letters still get a small confetti.
@@ -200,17 +203,11 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   result is open, also after a look at the stats and back.
 - Small messages under the letters are only used outside typing (a file
   saved or loaded).
-- **Help** (the **?** in the navigation) opens a panel about the screen you
-  are on: a few short points for Learn, Freetype, the typing test or Stats
-  (bold start, read in seconds), then **Walkthroughs** (**Touch typing basics**
-  everywhere, **Tour of this screen** on Learn; Enter / → next, Esc closes;
-  from the stats screen they first go back to typing), then the keys.
 - On a touch screen there is no `Esc`: a small **stop** button under the text
   card ends the round (it appears with the first letter). The shortcut line
   is hidden there; on the stats screen it shows only the keys that work
   there.
-- On a narrow screen the page dims behind Help; behind Settings it always
-  dims.
+- Behind Settings the page dims.
 - Shortcuts, also listed small at the bottom of the page: `Esc` stop /
   settings ·
   `Shift + Tab` Learn / stats · `Alt + K` keyboard and hands on / off.

@@ -1,17 +1,17 @@
-// Guide A, "touch typing basics": what touch typing is, the home row, the
-// space bar, eyes up. It opens by itself on the very first visit and again
-// from Help. Everyone starts from the first letters: there is no "open all
-// letters". Guide B, "how this site works", is tour.js.
-// Layer: middle. Imports the bottom layer, keyboard.js (to draw keys) and
-// tour.js (guide B follows guide A on the first visit).
+// The intro, "touch typing basics": what touch typing is, the home row, the
+// space bar, eyes up. It opens by itself on the very first visit only (the
+// Help menu and the tour of the page went, owner, 2026-10-18: the site
+// still changes too often for a guide to it; this one is about the hands,
+// not the site). Everyone starts from the first letters: there is no "open
+// all letters".
+// Layer: middle. Imports the bottom layer and keyboard.js (to draw keys).
 // Called by: app.js (showIntro on the first visit), languages.js
 // (drawIntroKeys for the new layout), input.js (introKey: every key goes here
-// while the guide is open). Its menu item in Help (#btn-intro) is wired below.
+// while the guide is open).
 
 import { FX } from "./fx.js";
 import { $, el, S, store, introOpen, focusText } from "./state.js";
 import { makeKey } from "./keyboard.js";
-import { maybeStartTour } from "./tour.js";
 
 // ---------- intro ----------
 // A short hands-on start, not a text to read: the home row and space steps
@@ -82,6 +82,11 @@ function nextIntroStep() {
   introStep++;
   renderIntro();
 }
+function prevIntroStep() {
+  if (introStep <= 0) return;         // the first step: nothing moves
+  introStep--;
+  renderIntro();
+}
 // Advance after the key's little "pressed" animation has finished.
 function advanceAfter(node) {
   const a = node.animate?.([{ scale: "1" }, { scale: "1.15" }, { scale: "1" }], { duration: 260, easing: "ease-out" });
@@ -92,6 +97,18 @@ function advanceAfter(node) {
 // Key presses while the intro is open.
 export function introKey(e) {
   if (e.key === "Escape") { e.preventDefault(); closeIntro(); return; }
+  // ← → (and A / D, by the physical key) go back and on (owner, 2026-10-18);
+  // on the home row step A and D are keys to press, so there only the
+  // arrows. At the first and the last step nothing moves (preventDefault:
+  // no scrolling of the page behind either).
+  const home = introStep === STEP_HOME;
+  const back = e.key === "ArrowLeft" || (!home && e.code === "KeyA");
+  const on = e.key === "ArrowRight" || (!home && e.code === "KeyD");
+  if (back || on) {
+    e.preventDefault();
+    if (back) prevIntroStep(); else nextIntroStep();
+    return;
+  }
   if (introStep === INTRO_LAST || e.key === "Tab") return; // Enter/Tab work on the buttons
   if (["Shift", "Control", "Alt", "AltGraph", "Meta", "CapsLock"].includes(e.key)) return;
   e.preventDefault();
@@ -118,9 +135,7 @@ function closeIntro() {
   FX.fadeOut(el.intro).then(() => el.intro.classList.add("hidden"), () => {}).finally(() => el.intro.classList.remove("closing"));
   store.set("tt.introDone", "1");
   focusText();
-  maybeStartTour();                              // first visit: the tour of the page comes next
 }
 $("intro-next").addEventListener("click", (e) => { e.currentTarget.blur(); nextIntroStep(); });
 $("intro-skip").addEventListener("click", () => closeIntro());
 $("intro-new").addEventListener("click", () => closeIntro());
-el.btnIntro.addEventListener("click", (e) => { e.currentTarget.blur(); showIntro(); });

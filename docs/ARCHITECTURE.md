@@ -81,15 +81,14 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `share.js` | The "image" button of the stats screen: a PNG card drawn on a canvas from what the screen shows. |
 | middle | `typing.js` | The text stream (portions added while you type), the caret, `handleChar()` / `backspace()`, the streak, live WPM / accuracy, the "typing now" header mode, sending results. |
 | middle | `letters.js` | The letters bar above the text, its status line, locked keys dimmed on the keyboard. |
-| middle | `intro.js` | Guide A, "touch typing basics" (what it is, home row, space, eyes up); opens by itself on the first visit. |
+| middle | `intro.js` | The intro, "touch typing basics" (what it is, home row, space, eyes up); opens by itself on the first visit only; ← → / A D to go back and on. |
 | middle | `languages.js` | The language switch and `loadLanguage()`. |
 | middle | `profile.js` | The account in the top right corner ("log in" for a guest where accounts work): the account (log in / sign up / log out; the page reloads after each), and a picture kept only in the browser. |
 | middle | `result.js` | The result screen in the text window: `showResult(r)` shows what changed and resolves when the user goes on; `compareStats()` works out what a learning round changed. The words of the round with their own speed come from `typedWords()` in `typing.js`, the characters and the time from `roundFacts()`. |
 | middle | `modes.js` | The modes (learning / free practice / typing test), the navigation tabs that show them (`renderNav`: learn · freetype · stats), `refreshFreeplay()` (`S.free`), the mode remembered per language. |
 | middle | `ambient.js` | The quiet background: outlines of keycaps with the open letters drifting down in the empty fields left and right (CSS animations only), and the screen saver after a minute with no key and no mouse. Decoration only. |
 | middle | `settings.js` | The settings window (Esc or the gear): round length, live numbers, caret, theme, keyboard on / off (carried out by `input.js`), export / import / reset (wired by `tools.js`); drawn from one list of rows (`ROWS`) with search and arrow keys; kept in `localStorage` (`S.settings`). |
-| middle | `tour.js` | Guide B, "how this site works": the idea of the trainer, then a ring around each part of the page and a short card. |
-| top | `input.js` | Keydown and phone input (with the one-space sentinel that makes Backspace work on phone keyboards), the navigation (learn · freetype · stats, the help panel), keyboard on / off (settings and Alt+K), window resize: sends each action to the module that handles it. |
+| top | `input.js` | Keydown and phone input (with the one-space sentinel that makes Backspace work on phone keyboards), the navigation (learn · freetype · stats), keyboard on / off (settings and Alt+K), window resize: sends each action to the module that handles it. |
 | top | `app.js` | Entry point: `init()`. |
 
 **Import rule:** imports only go down. `state.js` and `i18n.js` import
@@ -115,7 +114,7 @@ Three fixed places, the same in every view (`index.html`, `style.css`):
 
 - **header**: the logo, the language switch and the account (`profile.js`);
 - **navigation** (`nav.rail`, wired in `input.js`): the three screens
-  type (learning), freetype (free practice) and stats, then help and
+  type (learning), freetype (free practice) and stats, then the
   settings. A column at the left edge of a wide
   window (`--side` keeps the text and keyboard clear of it), a bar at the
   bottom below 1000 px;

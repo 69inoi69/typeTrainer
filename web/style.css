@@ -1,13 +1,13 @@
 /* The whole look of the page, in one file (no preprocessor, no build step).
    Order: the theme variables first, then one section per part of the page,
    roughly from top to bottom (header, navigation, typing screen, stats,
-   messages, result, guides), then narrow screens, the start screen, the
-   profile, settings and the tour. Almost every colour comes from a
+   messages, result, the intro), then narrow screens, the start screen, the
+   profile and the settings. Almost every colour comes from a
    variable on :root, so a theme only changes the variables.
    For a change of look, JavaScript toggles a class (.ok, .bad,
    body.typing-now, ...) or a data- attribute, and the rules here do the rest.
    Inline styles from JavaScript are only for what it alone knows: positions
-   (caret, tooltip, tour ring), the key unit (--u-fit) and the finger colours
+   (caret, tooltip, streak badge), the key unit (--u-fit) and the finger colours
    of a layout (--fc).
    The feel of a keypress (durations, glow, dip) comes from web/feel.js as
    --feel-* variables.
@@ -168,51 +168,36 @@ input, textarea { user-select: text; -webkit-user-select: text; }
    like every other text (all capitals read as template chrome and are
    harder to read; owner, 2026-10-16: capitals only at the start). */
 .lbl-ui, .metric small, .stat .lbl, .tile small, .r-lbl,
-.panel-note, .heat-legend, .profile-field small, .profile-label, .tour-step, .intro-kicker {
+.panel-note, .heat-legend, .profile-field small, .profile-label, .intro-kicker {
   font-family: var(--ui); font-size: .75rem; font-weight: 500; color: var(--sub);
 }
 /* buttons, menus, tooltips and guides: the plain font, normal case */
-button, .tooltip, .menu-item, .hints, .rail small, .tour-text, .intro p, .intro h2, .account-msg,
+button, .tooltip, .hints, .rail small, .intro p, .intro h2, .account-msg,
 .account-as, .profile-soon, .focus-hint, .letters-caption .begin, .warn, .panel h2 {
   font-family: var(--ui);
 }
 
 /* ---------- shared parts: one look everywhere ---------- */
-/* Every panel that opens over the page (help, settings, profile, tour,
-   guides) is a .win: the same background, corners, edge and shadow, a
+/* Every panel that opens over the page (settings, profile, the reset
+   confirm, the intro) is a .win: the same background, corners, edge and shadow, a
    title, then sections with a small heading. Every choice is a .seg (a row
    of buttons, the chosen one filled with the accent); every other button in
    a panel is a .btn. Sizes of corners: 14px windows and the text card, 10px
    tiles and panels, 8px buttons, 6px inner bits. */
-.win, .pop-card, .profile-card, .tour-card, .intro-card {
+.win, .profile-card, .intro-card {
   background: var(--panel); border-radius: var(--r-lg); box-shadow: var(--ring), var(--shadow);
 }
 /* the windows that open over a page are glass: the page shows through,
-   blurred (the tour and the intro cover a dimmed page: they stay solid) */
-.win, .pop-card, .profile-card {
+   blurred (the intro covers a dimmed page: it stays solid) */
+.win, .profile-card {
   background: var(--glass); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
   box-shadow: var(--shadow);
 }
 .win-title, .profile-title {
   margin: 0 0 4px; font-family: var(--ui); font-size: .95rem; font-weight: 600; color: var(--text);
 }
-.win-sec { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
-.win-sec.first { margin-top: 8px; }
-.win-sec > .lbl-ui { display: block; margin-bottom: 4px; }
-.win-p, .win-list { margin: 6px 0 0; font-family: var(--ui); font-size: .8rem; line-height: 1.5; color: color-mix(in srgb, var(--text) 82%, var(--sub)); }
-.win-p b, .win-list b { color: var(--text); font-weight: 600; }
-.win-list { padding-left: 18px; display: grid; gap: 4px; }
-.win-list li::marker { color: var(--sub); font-size: .75rem; }
-/* help for this screen: short points, a little air between them, the bold
-   start of each point says it all at a glance */
-.menu-item[hidden] { display: none; }
-.help-list { list-style: none; padding-left: 0; gap: 5px; font-size: .84rem; color: color-mix(in srgb, var(--text) 60%, var(--sub)); }
-.help-list li { position: relative; padding-left: 16px; }
-.help-list li::before { content: ""; position: absolute; left: 2px; top: .62em; width: 6px; height: 6px; border-radius: 2px; background: var(--accent); }
-.help-list b { color: var(--text); font-weight: 500; }
-.win-keys { margin: 6px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: baseline; font-family: var(--ui); font-size: .78rem; }
-.win-keys dt { white-space: nowrap; }
-.win-keys dd { margin: 0; color: color-mix(in srgb, var(--text) 82%, var(--sub)); }
+.win-p { margin: 6px 0 0; font-family: var(--ui); font-size: .8rem; line-height: 1.5; color: color-mix(in srgb, var(--text) 82%, var(--sub)); }
+.win-p b { color: var(--text); font-weight: 600; }
 .win kbd { background: var(--track); box-shadow: var(--ring); color: var(--text); font-family: var(--mono); }
 @media (pointer: coarse) { .keys-only { display: none; } }   /* no keyboard, no shortcuts */
 /* one option: name and a short note on the left, the control on the right */
@@ -397,22 +382,34 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
 .live.final .metric > span { color: var(--text); }   /* result of the last exercise */
 
 
-/* streak: a small "×12" badge riding just above the caret (typing.js
+/* streak: a bolt and the number riding just above the caret (typing.js
    placeCaret moves it with the caret's numbers and the same glide), only
    while a round is being typed and from 3 clean words; at a milestone a
    short note rises from it (popStreak). Over the text: it never catches
    the mouse. */
 .streak {
-  position: absolute; left: 0; top: 0; z-index: 3; display: none; pointer-events: none;
-  padding: 3px 7px; border-radius: 999px; font-size: .72rem; font-weight: 600; line-height: 1;
-  font-variant-numeric: tabular-nums; color: var(--on-accent); background: var(--accent-fill);
-  box-shadow: 0 3px 10px -3px rgba(0, 0, 0, .5);
-  transition: translate var(--feel-caret-ms, 0ms) cubic-bezier(.2, .6, .35, 1);
+  --sc: color-mix(in srgb, var(--sub) 80%, var(--text)); --glow: 0;
+  position: absolute; left: 0; top: 0; z-index: 3; display: none; align-items: center; gap: 3px; pointer-events: none;
+  font-size: .95rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; color: var(--sc);
+  text-shadow: 0 0 calc(var(--glow) * 14px) color-mix(in srgb, var(--sc) 70%, transparent);
+  transition: translate var(--feel-caret-ms, 0ms) cubic-bezier(.2, .6, .35, 1), color .4s var(--ease);
 }
 .streak.jump { transition: none; }
-.streak::before { content: "×"; opacity: .75; margin-right: 1px; }
-.text-box.typing .streak.show { display: block; animation: streak-in var(--med) var(--ease); }
-.text-box:is(.paused, .blurred, .resulting) .streak { display: none; }
+.streak .bolt { width: 13px; height: 13px; flex: none; fill: color-mix(in srgb, var(--sc) 35%, transparent); stroke: var(--sc); stroke-width: 2; stroke-linejoin: round; }
+/* the longer the streak, the warmer (owner, 2026-10-18): grey, gold, orange,
+   rose, violet at 10 / 25 / 50 / 100 clean words (typing.js STREAK_TIERS);
+   a soft glow that grows with it, no flicker */
+.streak[data-tier="1"] { --sc: #f2c230; --glow: .35; }
+.streak[data-tier="2"] { --sc: #f39a3d; --glow: .5; }
+.streak[data-tier="3"] { --sc: #f2607a; --glow: .65; }
+.streak[data-tier="4"] { --sc: #a98bff; --glow: .8; }
+:root[data-theme="light"] .streak[data-tier="1"] { --sc: #c99000; }
+:root[data-theme="light"] .streak[data-tier="2"] { --sc: #d9741a; }
+:root[data-theme="light"] .streak[data-tier="3"] { --sc: #d63a5a; }
+:root[data-theme="light"] .streak[data-tier="4"] { --sc: #7a5ae0; }
+.text-box.typing .streak.show { display: flex; animation: streak-in var(--med) var(--ease); }
+/* .show in the selector: weaker than the rule above, the badge stayed on the result screen */
+.text-box:is(.paused, .blurred, .resulting) .streak.show, body.streak-off .text-box .streak.show { display: none; }
 @keyframes streak-in { from { opacity: 0; } }
 /* the note grows to the right of the badge (centred, at the start of a line
    it went off the left edge) */
@@ -493,41 +490,7 @@ body[data-mode="free"] .learn-only { display: none; }
    comes right under the header (the slot under it stays for warnings) */
 body[data-mode="free"] .letter-row { display: none; }
 
-/* the two panels of the navigation (help, settings): a card next to the
-   button (wide screens) or above the bottom bar (narrow ones) */
 .pop { position: relative; }
-.pop-card {
-  position: fixed; left: 12px; right: 12px; bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 9;
-  max-width: 380px; margin-inline: auto; padding: 16px 18px 14px; text-align: left;
-  max-height: calc(100dvh - 84px); overflow-y: auto; scrollbar-width: thin;   /* a long card scrolls inside */
-  animation: note-in .2s var(--ease);
-}
-.pop-card[hidden] { display: none; }
-/* narrow screens: help and settings open over the content, so the page
-   behind them dims and the card's edge does not cut through it. The bottom
-   bar stays bright (it is above this layer) and taps still go through. */
-@media (max-width: 999px) {
-  body:has(.pop-card:not([hidden]))::before {
-    content: ""; position: fixed; inset: 0; z-index: 7; pointer-events: none;
-    background: color-mix(in srgb, var(--bg) 65%, transparent); backdrop-filter: blur(2px);
-    animation: view-in .2s var(--ease);
-  }
-}
-.menu-item {
-  display: flex; align-items: center; gap: 12px; width: 100%;
-  padding: 5px 8px; margin: 4px 0 0; border-radius: 10px; background: none; text-align: left;
-}
-.menu-item > span { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.menu-item b { color: var(--text); font-weight: 500; font-size: .84rem; }
-.menu-item small { color: var(--sub); font-size: .72rem; }
-/* each guide its own colour, so they differ at a glance */
-.menu-item svg {
-  --mc: var(--accent); width: 30px; height: 30px; padding: 6px; flex: none; border-radius: 10px;
-  fill: none; stroke: var(--mc); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
-  background: color-mix(in srgb, var(--mc) 14%, transparent);
-}
-.menu-item.site svg { --mc: #6f9fe0; }
-.menu-item:hover { background: var(--track); }
 
 /* wide screens: the navigation is a column at the left edge, the languages a
    column at the right edge, both in the middle of the height (--side is the
@@ -554,7 +517,6 @@ body[data-mode="free"] .letter-row { display: none; }
   .rail .switch button, .rail-btn { flex-direction: row; width: auto; height: 44px; padding: 0 11px; }
   .rail .switch button svg, .rail-btn svg, .rail .ico { width: 24px; height: 24px; }
   .rail .switch button small, .rail-btn small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .pop-card { left: 0; right: auto; top: 54px; bottom: auto; translate: none; width: 380px; margin: 0; position: absolute; }
   .lang-switch {
     position: fixed; right: 14px; top: 50%; translate: 0 -50%; height: auto;
     grid-auto-flow: row; grid-auto-rows: 40px; grid-auto-columns: auto;
@@ -751,16 +713,39 @@ body[data-mode="free"] .letter-row { display: none; }
   transition: opacity var(--med);
 }
 .text-box.blurred .focus-hint { opacity: 1; }
-/* a round paused because the window lost focus (typing.js pauseRound): the
-   text blurs under a short note; the first key goes on */
+/* the finger hint is for screen readers only and changes on every key:
+   strict containment keeps its update from touching the layout of the page */
+.finger-hint { contain: strict; }
+/* a round paused because the window lost focus (typing.js pauseRound).
+   Everything in the round freezes and steps back (the text, the live line,
+   the prompt sign, the hands and the keyboard) so that only the note is
+   read: a pause sign whose ring breathes slowly (waiting, not broken), the
+   word, the key that goes on (the footer's key style) and what happened to
+   the time. Centred on the whole card, so on a phone it never sits on top
+   of readable numbers. */
 .pause-note {
-  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-  opacity: 0; pointer-events: none; transition: opacity var(--med); text-align: center;
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity var(--med); text-align: center; padding-inline: 16px;
 }
-.pause-note b { font-size: 1.3rem; font-weight: 500; color: var(--accent-text); }
-.pause-note span { color: var(--sub); font-size: .9rem; }
+.pause-ic {
+  display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; margin-bottom: 12px;
+  color: var(--accent-text); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent-text) 60%, transparent);
+}
+.pause-ic svg { width: 22px; height: 22px; fill: currentColor; }
+.text-box.paused .pause-ic { animation: pause-breathe 2.6s ease-in-out infinite; }
+@keyframes pause-breathe { 50% { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent-text) 18%, transparent); } }
+.pause-note b { font-size: 1.6rem; font-weight: 500; letter-spacing: -.01em; color: var(--text); margin-bottom: 10px; }
+.pause-go { color: var(--sub); font-size: .95rem; }
+.pause-go kbd {
+  font-family: var(--mono); font-size: .8rem; color: var(--text); background: var(--track); box-shadow: var(--ring);
+  border-radius: 5px; padding: 1px 7px; margin-right: 2px;
+}
+.pause-note small { color: var(--sub); font-size: .8rem; opacity: .8; margin-top: 4px; }
 .text-box.paused .pause-note { opacity: 1; }
-.text-box.paused .text { filter: blur(4px); opacity: .4; }
+.text-box :is(.text, .live), .text-box::before, #view-type > :is(.hands, .keyboard) { transition: opacity var(--med), filter var(--med); }
+.text-box.paused :is(.text, .live) { filter: blur(5px); opacity: .2; }
+.text-box.paused::before { opacity: .25; }
+#view-type:has(> .text-box.paused) > :is(.hands, .keyboard) { opacity: .3; }
 .text-box.paused :is(.caret, .focus-hint) { opacity: 0; }
 
 /* Letters change colour at once. A letter typed right "settles" from a
@@ -974,9 +959,10 @@ body[data-caret="outline"] .caret {
 /* Keycaps on the drawn keyboard (owner, 2026-10-18: "like custom keycaps
    on a good mechanical board"): a top face with a soft spot of light, the
    front skirt in the finger colour (a thick inset shadow at the bottom), a
-   short drop under the key, and a bigger semibold legend. Only here: the
-   small keys of the intro and the stats map keep the plain look. */
-.keyboard .key {
+   short drop under the key, and a bigger semibold legend. The keys of the
+   intro look the same (owner, 2026-10-18: they still had the old look);
+   the stats map keeps the plain look. */
+.keyboard .key, .intro .key {
   --skirt: calc(var(--u) * .09);
   padding-bottom: var(--skirt);              /* the legend sits on the top face */
   border-bottom: 0; border-radius: calc(var(--u) * .18);
@@ -993,7 +979,7 @@ body[data-caret="outline"] .caret {
     0 2px 0 rgba(0, 0, 0, .45), 0 6px 14px -6px rgba(0, 0, 0, .6);
 }
 .keyboard .key.wide .lbl, .keyboard .key.mod .lbl { font-size: .8em; text-transform: none; }   /* "Space", "AltGr" as written */
-.keyboard .key.home::after { bottom: 22%; }   /* the bump stays on the top face */
+:is(.keyboard, .intro) .key.home::after { bottom: 22%; }   /* the bump stays on the top face */
 /* The next key (owner, 2026-10-18, variant C): it must be found by side
    vision while the eyes stay on the text. Side vision sees brightness and
    movement, not hues, and a tint of the finger colour got lost among the
@@ -1019,10 +1005,10 @@ body[data-caret="outline"] .caret {
    "looks washed out"). Here every key gets more of its colour, a frame and
    a shadow, and --fcd, a deeper shade of the same colour, draws the edges
    and the finger to use. The layout data stays the same. */
-:root[data-theme="light"] .keyboard .key, :root[data-theme="light"] .hand .finger {
+:root[data-theme="light"] :is(.keyboard, .intro) .key, :root[data-theme="light"] .hand .finger {
   --fcd: color-mix(in oklab, var(--fc) 72%, #1d1428);
 }
-:root[data-theme="light"] .keyboard .key:not(.next) {
+:root[data-theme="light"] :is(.keyboard, .intro) .key:not(.next) {
   color: var(--text);
   background: radial-gradient(120% 90% at 50% 30%, rgba(255, 255, 255, .35), transparent 60%), color-mix(in srgb, var(--fc) 62%, #fff);
   box-shadow:
@@ -1745,26 +1731,6 @@ body.live-off .live .metric.num { display: none; }
 .cs.outline { width: 8px; background: none; box-shadow: inset 0 0 0 1.5px currentColor; }
 /* the stats screen: whose stats and one round length at a time (.seg look) */
 .mode-filter:empty { display: none; }
-
-/* ---------- tour (tour.js) ---------- */
-.tour { position: fixed; inset: 0; z-index: 40; }
-.tour[hidden] { display: none; }
-/* the ring: a rounded box with a huge shadow that dims everything around it */
-.tour-spot {
-  position: fixed; border-radius: 14px; pointer-events: none;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 70%, transparent), 0 0 0 9999px color-mix(in srgb, var(--bg) 78%, transparent);
-  transition: left .35s var(--ease), top .35s var(--ease), width .35s var(--ease), height .35s var(--ease);
-}
-.tour-spot.none { box-shadow: 0 0 0 9999px color-mix(in srgb, var(--bg) 78%, transparent); }
-.tour-card {
-  position: fixed; width: min(360px, calc(100vw - 16px)); padding: 16px 18px 12px;
-  transition: left .35s var(--ease), top .35s var(--ease);
-}
-.tour-step { margin: 0 0 6px; color: var(--accent-text); }
-.tour-text { margin: 0 0 10px; color: color-mix(in srgb, var(--text) 85%, var(--sub)); font-size: .86rem; line-height: 1.55; }
-.tour-text b { color: var(--text); font-weight: 500; }
-.tour-nav { display: flex; justify-content: space-between; align-items: center; }
-.tour-nav .primary { padding: 6px 14px; font-size: .82rem; }
 
 /* ---------- the quiet background (ambient.js) ---------- */
 /* Outlines of keycaps drifting down in the empty fields, behind everything

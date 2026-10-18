@@ -41,8 +41,8 @@ there is a reason not to).
 - Three fixed places on every screen: the header (logo, account), the
   navigation (a rail on the left from 1000 px, a bar at the bottom below),
   and the content in the middle (`docs/ARCHITECTURE.md`, "Screen layout").
-- Panels (Help, Settings, Profile, the result) share one window style:
-  `.win`, `.win-title`, `.win-sec` sections with a thin line between them.
+- Panels (Settings, Profile, the reset confirm) share one window style:
+  `.win` and `.win-title`.
   Each option is an `.opt` row: name (and a description only if needed) on
   the left, the control on the right.
 - Boxes size to their content rather than to a fixed height (the result
@@ -153,7 +153,7 @@ consequences, the same word for the same thing. All text lives in
   (Off on the left, On on the right), `.btn` buttons (`.danger` for
   destructive), `data-tip` tooltips, `--ctl` (38 px) as the height of every
   control.
-- Naming: Learn, Freetype, Stats, Help, Settings; round, focus, mastered
+- Naming: Learn, Freetype, Stats, Settings; round, focus, mastered
   (`docs/UI-TEXT.md`, word list).
 
 **Recommended**

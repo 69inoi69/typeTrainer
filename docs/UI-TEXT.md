@@ -1,7 +1,7 @@
 # Interface text rules
 
 How to write every text a user sees: labels, buttons, descriptions,
-tooltips, messages, help. All of them live in `web/i18n.js`. Only English is
+tooltips, messages, the first-visit guide. All of them live in `web/i18n.js`. Only English is
 shown for now, so new texts are written in English only; the Polish,
 Ukrainian and Russian blocks get redone when those languages come back.
 
@@ -53,7 +53,7 @@ calling the work done.
   it, drop it. A tooltip that adds a shortcut or a rule stays.
 - **Description:** would a first-time user get it wrong, or be surprised,
   without it? If not, drop it.
-- **Help item:** does it tell something the screen does not already show?
+- **Guide step:** does it tell something the screen does not already show?
 
 ## Style
 
@@ -75,13 +75,13 @@ calling the work done.
 | Tooltip | Only when it adds something: what it is, then the shortcut after "·". One line, no full stop | "Settings · Esc" |
 | Status line, short messages | One short line, a number in `<b>` | "Type the text to begin" |
 | Result screen | Speed and accuracy big, the chart of word speeds, a row of facts (consistency, time, characters) ending in what happened, then the words. No tips | "New letter opened: r" |
-| Help, first-visit guides | One to three short sentences per item, the key idea first in `<b>` | "<b>Weak letters come back.</b> Letters you miss or type slowly get more words." |
+| The first-visit guide | One to three short sentences per step, the key idea first in `<b>` | "<b>Weak letters come back.</b> Letters you miss or type slowly get more words." |
 | Error | What went wrong and what to do | "Could not load this file. Use one made with Save" |
 
 Join parts with words or a comma, not "A · B"; only a tooltip uses "·",
 before its shortcut. Labels, descriptions, tooltips and messages have no full stop at the end
-(a full stop only between two sentences). Help and the first-visit guides
-are full sentences and end with a full stop.
+(a full stop only between two sentences). The first-visit guide is full
+sentences and ends with a full stop.
 
 ## Word list
 

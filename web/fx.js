@@ -73,16 +73,19 @@ export const FX = (() => {
   // returns the Animation (or null), so callers can wait for .finished
   const anim = (node, frames, opts) => (node?.animate && !reduced() ? node.animate(frames, opts) : null);
 
-  // collapse(node, hide): fold an element away (height, margins, opacity) or
-  // unfold it, then the class "off" (display: none) is set or removed. The
-  // content around it slides instead of jumping. Called on clicks only.
+  // collapse(node, hide): fold an element away (height, margins, padding,
+  // opacity) or unfold it, then the class "off" (display: none) is set or
+  // removed. The content around it slides instead of jumping. The padding
+  // folds too: left out, it stayed until display: none and the page jumped
+  // by it at the end (the keyboard panel, owner, 2026-10-18). Clicks only.
   async function collapse(node, hide, ms = 240) {
     if (reduced() || !node.animate) { node.classList.toggle("off", hide); return; }
     node.getAnimations().forEach((a) => a.cancel());
     if (!hide) node.classList.remove("off");
     const cs = getComputedStyle(node);
-    const open = { height: node.offsetHeight + "px", marginTop: cs.marginTop, marginBottom: cs.marginBottom, opacity: 1 };
-    const shut = { height: "0px", marginTop: "0px", marginBottom: "0px", opacity: 0 };
+    const open = { height: node.offsetHeight + "px", marginTop: cs.marginTop, marginBottom: cs.marginBottom,
+      paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom, opacity: 1 };
+    const shut = { height: "0px", marginTop: "0px", marginBottom: "0px", paddingTop: "0px", paddingBottom: "0px", opacity: 0 };
     node.style.overflow = "hidden";
     const a = node.animate(hide ? [open, shut] : [shut, open], { duration: ms, easing: "cubic-bezier(.2,.8,.2,1)" });
     try { await a.finished; } catch { return; }   // cancelled by a newer call
