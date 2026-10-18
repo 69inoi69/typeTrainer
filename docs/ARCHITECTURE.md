@@ -56,6 +56,7 @@ its own.
 | `internal/sim` | Simulation for the evaluation chapter: a made-up typist and three word-choice strategies (docs/ALGORITHM.md, section 11.1). Not used by the app. |
 | `tools/sim/` | `go run ./tools/sim`: runs the simulation on the real word lists and prints the table. |
 | `tools/wordlists/` | Python script + block lists that build the word lists (not part of the app). |
+| `tools/sounds/` | Python script that builds the key sounds in `web/sounds/` from public-domain recordings (not part of the app). |
 | `web/` | Static frontend: `index.html`, `style.css` and the JavaScript modules (see "Frontend modules" below). The interface language always follows the practice language. |
 | `webmodules_test.go` | Checks the import rule of the frontend modules. |
 
@@ -72,7 +73,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 |---|---|---|
 | bottom | `state.js` | Shared state `S`, page elements `el`, `store` (localStorage that may be blocked), small helpers. |
 | bottom | `i18n.js` | Every interface text in all four languages, `t()`, `tPick()` (a random text from a pool), `applyI18n()`, `setUiLang()`. |
-| bottom | `fx.js` | Visual rewards: confetti, bumps, the message queue in the status line (outside typing), the start screen. They never affect what is measured. |
+| bottom | `fx.js` | Visual rewards: confetti, bumps, the message queue on the top line of the text block (outside typing), the start screen. They never affect what is measured. |
 | bottom | `feel.js` | `FEEL`: every knob of how a keypress feels (letter settle, key dip and finger tap, red tint of a wrong key, caret flinch, shake and breath, hands over the keyboard, mistake marks), also given to the CSS as `--feel-*`. Tuning the feel = changing a number here. |
 | bottom | `api.js` | `getJSON` / `postJSON` for `/api/v1/`, with `?lang=` added. |
 | middle | `tools.js` | Tooltips, and the data buttons of the settings window: export / import, reset (with its confirm window). |
@@ -86,7 +87,8 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `profile.js` | The account in the top right corner ("log in" for a guest where accounts work): the account (log in / sign up / log out; the page reloads after each), and a picture kept only in the browser. |
 | middle | `result.js` | The result screen in the text window: `showResult(r)` shows what changed and resolves when the user goes on; `compareStats()` works out what a learning round changed. The words of the round with their own speed come from `typedWords()` in `typing.js`, the characters and the time from `roundFacts()`. |
 | middle | `modes.js` | The modes (learning / free practice / typing test), the navigation tabs that show them (`renderNav`: learn · freetype · stats), `refreshFreeplay()` (`S.free`), the mode remembered per language. |
-| middle | `settings.js` | The settings window (Esc or the gear): round length, live numbers, caret, theme, keyboard on / off (carried out by `input.js`), export / import / reset (wired by `tools.js`); drawn from one list of rows (`ROWS`) with search and arrow keys; kept in `localStorage` (`S.settings`). |
+| middle | `sound.js` | Key sounds (Web Audio): `setSound(id)` loads a pack from `web/sounds/`, `keySound(kind)` plays one press. Off unless chosen; never affects what is measured. |
+| middle | `settings.js` | The settings window (Esc or the gear): round length, live numbers, caret, theme, keyboard on / off (carried out by `input.js`), key sound (`sound.js`), export / import / reset (wired by `tools.js`); drawn from one list of rows (`ROWS`) with search and arrow keys; kept in `localStorage` (`S.settings`). |
 | middle | `tour.js` | Guide B, "how this site works": the idea of the trainer, then a ring around each part of the page and a short card. |
 | top | `input.js` | Keydown and phone input (with the one-space sentinel that makes Backspace work on phone keyboards), the navigation (learn · freetype · stats, the help panel), keyboard on / off (settings and Alt+K), window resize: sends each action to the module that handles it. |
 | top | `app.js` | Entry point: `init()`. |
@@ -122,8 +124,9 @@ Three fixed places, the same in every view (`index.html`, `style.css`):
   of a narrow one (the same element, moved by CSS). Hidden while only one
   language is offered (`"hidden": true` in `data/languages.json`).
 
-On the typing screen the text block holds, top to bottom, the live numbers,
-the text and the status line (focus, next letter, warnings, messages); the
+On the typing screen the text block holds, top to bottom, one line with the
+live numbers, the status line (focus, next letter) and the streak, with the
+warnings and messages shown on top of it, and then the text; the
 letters bar sits above it, the hands and the keyboard (on a panel as wide as
 the text) below.
 

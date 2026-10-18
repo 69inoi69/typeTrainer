@@ -23,6 +23,9 @@
    GitHub Pages. To change it: new files there and these two rules. */
 @font-face { font-family: "Geist Mono"; src: url("fonts/GeistMono-Regular.woff2") format("woff2"); font-weight: 400; font-display: swap; }
 @font-face { font-family: "Geist Mono"; src: url("fonts/GeistMono-Medium.woff2") format("woff2"); font-weight: 500 700; font-display: swap; }
+/* the key legends on the drawn keyboard only: a family of its own, so the
+   bold text elsewhere keeps Medium */
+@font-face { font-family: "Geist Mono Keys"; src: url("fonts/GeistMono-SemiBold.woff2") format("woff2"); font-weight: 600; font-display: swap; }
 
 /* ---------- theme (all colors in one place) ---------- */
 :root {
@@ -342,14 +345,18 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
 .logo-name { font-size: 1.75rem; font-weight: 500; letter-spacing: -.02em; color: var(--accent-text); white-space: nowrap; transition: color .4s var(--ease); }
 .logo-name span { color: var(--text); transition: color .4s var(--ease); }
 
-/* ---------- live numbers: the top line of the text card ---------- */
-/* Small and dim while you read, brighter while you type: you can glance at
-   them, but they do not pull the eye away from the text. */
+/* ---------- the top line of the text card ---------- */
+/* The live numbers, the status line, the streak. The numbers are small and
+   dim while you read, brighter while you type: you can glance at them, but
+   they do not pull the eye away from the text. Always one line of a fixed
+   height (on a phone two, the status line under the numbers): nothing in
+   it may push the text down while you type. */
 .live {
-  display: flex; gap: 18px; align-items: center; height: 28px; margin: 0 0 10px; min-width: 0;
-  opacity: .5; transition: opacity .4s var(--ease);
+  position: relative;              /* the warning and the messages sit on top of it */
+  display: flex; gap: 6px 18px; align-items: center; height: 28px; margin: 0 0 10px; min-width: 0;
 }
-.text-box.typing .live, .live.final { opacity: 1; }
+.live > .metric, .live > .streak { opacity: .5; transition: opacity .4s var(--ease), transform var(--med) var(--ease); }
+.text-box.typing .live > :is(.metric, .streak), .live.final > .metric { opacity: 1; }
 .metric { display: flex; align-items: baseline; }
 .metric.raw span { color: color-mix(in srgb, var(--accent-text) 55%, var(--sub)); }   /* secondary number */
 .metric.raw { cursor: default; }
@@ -595,23 +602,24 @@ body[data-mode="free"] .letter-row { display: none; }
   55% { transform: scale(1.18); }
   100% { transform: scale(1); box-shadow: 0 0 0 12px transparent; }
 }
-/* The status line (focus, next letter, letters open): part of the text
-   block, a quiet row right under the text, aligned with it (owner,
-   2026-10-18: as pills under the letters it looked like an extra; it is
-   what this mode is about). The focus letter is the same gold square as
-   the tinted letters in the text, so the row also reads as their legend.
-   A fixed slot (it never changes height); the warning and the messages
-   appear in the same place on top of it. Hidden on the result, which has
-   its own news. */
-.caption-slot { position: relative; margin-top: 10px; min-height: 28px; }
-.text-box.resulting > .caption-slot { display: none; }
-.text-box.blurred > .caption-slot { opacity: .5; }
-/* always one row (it used to wrap to two on a phone) */
+/* The status line (focus, next letter, letters open): in the top line of
+   the text card, right after the word counter, behind a thin divider
+   (owner, 2026-10-18: under the text it sat far from it, next to the
+   hands). With the numbers hidden it moves up to the word counter. The
+   focus letter is the same gold square as the tinted letters in the text,
+   so the row also reads as their legend. Hidden on the result (with the
+   whole line), which has its own news. Dimmed while you type, the opposite
+   of the numbers: it is for reading between rounds, and dimmed it does not
+   catch the eye when a number gains a digit and moves it a little. */
 .letters-caption {
   display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-start; gap: 18px; white-space: nowrap;
-  color: var(--sub); font-size: .82rem; transition: opacity var(--med), transform var(--med) var(--ease);
+  flex: 0 1 auto; min-width: 0; overflow: hidden;   /* the numbers and the streak keep their room */
+  color: var(--sub); font-size: .82rem; transition: opacity .4s var(--ease), transform var(--med) var(--ease);
 }
-.caption-slot.warning .letters-caption { opacity: 0; transform: translateY(4px); pointer-events: none; }
+.letters-caption::before { content: ""; width: 1px; height: 1.2em; margin-left: 4px; background: var(--line); }
+.letters-caption:empty { display: none; }       /* free practice: nothing to say */
+.text-box.typing .letters-caption { opacity: .4; }
+.text-box.blurred .letters-caption { opacity: .5; }
 .stat {
   display: inline-flex; align-items: center; gap: 7px; flex: none;
   color: color-mix(in srgb, var(--text) 70%, var(--sub)); cursor: default;
@@ -630,13 +638,13 @@ body[data-mode="free"] .letter-row { display: none; }
 .stat.focus .lt { background: var(--accent-fill); color: var(--on-accent); box-shadow: var(--accent-glow); }
 .stat.focus svg { color: var(--accent-text); }
 .stat.next .lt { color: var(--text); background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 45%, transparent); }
-.letters-caption .begin { padding: 0; font-size: .8rem; white-space: normal; text-align: left; }
+.letters-caption .begin { padding: 0; font-size: .8rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: left; }
+.text-box.typing .letters-caption .begin { display: none; }   /* "type the text to begin": you have begun */
 /* desktop: one bigger scale for the whole page instead of single parts
    made bigger (owner, 2026-10-16: sizes jumped around); here only what is
    not in rem, and some room to breathe */
 @media (min-width: 1000px) and (pointer: fine) {
   .letters { margin-bottom: 18px; }   /* room between the letters and the text block */
-  .caption-slot { margin-top: 10px; min-height: 2.1rem; }
   .letters-caption { font-size: .95rem; gap: 22px; }
   .stat svg { width: 1.1em; height: 1.1em; }
   .stat .lbl, .stat b, .letters-caption .begin { font-size: 1em; }   /* label and value one size */
@@ -907,6 +915,45 @@ body:not(.caret-block) .caret {
   border-bottom-color: color-mix(in srgb, var(--fc) 22%, transparent);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .03);
 }
+/* Keycaps on the drawn keyboard (owner, 2026-10-18: "like custom keycaps
+   on a good mechanical board"): a top face with a soft spot of light, the
+   front skirt in the finger colour (a thick inset shadow at the bottom), a
+   short drop under the key, and a bigger semibold legend. Only here: the
+   small keys of the intro and the stats map keep the plain look. */
+.keyboard .key {
+  --skirt: calc(var(--u) * .09);
+  padding-bottom: var(--skirt);              /* the legend sits on the top face */
+  border-bottom: 0; border-radius: calc(var(--u) * .18);
+  font-family: "Geist Mono Keys", var(--mono); font-weight: 600; font-size: calc(var(--u) * .38);
+  color: color-mix(in srgb, var(--text) 88%, var(--bg));
+  background:
+    radial-gradient(120% 90% at 50% 30%, rgba(255, 255, 255, .06), transparent 60%),
+    linear-gradient(to bottom, rgba(255, 255, 255, .05), rgba(0, 0, 0, .08)),
+    color-mix(in srgb, var(--fc) 12%, var(--key));
+  box-shadow:
+    inset 0 calc(-1 * var(--skirt)) 0 color-mix(in srgb, var(--fc) 50%, #0b0c0f),
+    inset 0 1px 0 rgba(255, 255, 255, .08), inset 0 0 0 1px rgba(255, 255, 255, .03),
+    0 2px 0 rgba(0, 0, 0, .45), 0 6px 14px -6px rgba(0, 0, 0, .6);
+}
+.keyboard .key.wide .lbl, .keyboard .key.mod .lbl { font-size: .74em; }   /* "Space", "AltGr" */
+.keyboard .key.home::after { bottom: 22%; }   /* the bump stays on the top face */
+.keyboard .key.next {
+  color: var(--text);
+  background:
+    radial-gradient(120% 90% at 50% 30%, rgba(255, 255, 255, .12), transparent 60%),
+    color-mix(in srgb, var(--fc) var(--feel-next-tint, 100%), var(--key));
+  box-shadow:
+    inset 0 calc(-1 * var(--skirt)) 0 color-mix(in srgb, var(--fc) 70%, #000), inset 0 1px 0 rgba(255, 255, 255, .15),
+    0 0 0 1px color-mix(in srgb, var(--fc) 80%, transparent), 0 0 18px -2px color-mix(in srgb, var(--fc) 70%, transparent),
+    0 2px 0 rgba(0, 0, 0, .45);
+}
+.keyboard .key.locked:not(.next) {
+  color: color-mix(in srgb, var(--sub) 70%, var(--bg));
+  background: linear-gradient(to bottom, rgba(255, 255, 255, .025), rgba(0, 0, 0, .06)), color-mix(in srgb, var(--fc) 3%, var(--bg));
+  box-shadow:
+    inset 0 calc(-1 * var(--skirt)) 0 color-mix(in srgb, var(--fc) 18%, #0b0c0f), inset 0 1px 0 rgba(255, 255, 255, .04),
+    0 2px 0 rgba(0, 0, 0, .35);
+}
 /* Light theme: the finger colours (data/layouts) are pastels made for the
    dark page; mixed in at 12% they all faded to white (owner, 2026-10-17:
    "looks washed out"). Here every key gets more of its colour, a frame and
@@ -914,21 +961,25 @@ body:not(.caret-block) .caret {
    and the finger to use. The layout data stays the same. */
 :root[data-theme="light"] .keyboard .key, :root[data-theme="light"] .hand .finger {
   --fcd: color-mix(in oklab, var(--fc) 72%, #1d1428);
-  --key-shadow: 0 1px 1px rgba(50, 45, 30, .12), 0 3px 8px rgba(50, 45, 30, .16);
 }
 :root[data-theme="light"] .keyboard .key:not(.next) {
-  background: color-mix(in srgb, var(--fc) 65%, #fff); color: var(--text);
-  border-bottom: 3px solid var(--fcd);
-  box-shadow: inset 0 0 0 1px rgba(30, 32, 40, .12), var(--key-shadow);
+  color: var(--text);
+  background: radial-gradient(120% 90% at 50% 30%, rgba(255, 255, 255, .35), transparent 60%), color-mix(in srgb, var(--fc) 62%, #fff);
+  box-shadow:
+    inset 0 calc(-1 * var(--skirt)) 0 var(--fcd), inset 0 1px 0 rgba(255, 255, 255, .6), inset 0 0 0 1px rgba(30, 32, 40, .10),
+    0 2px 0 rgba(40, 35, 20, .18), 0 6px 12px -6px rgba(40, 35, 20, .35);
 }
 :root[data-theme="light"] .keyboard .key.locked:not(.next) {
-  background: #fff; color: color-mix(in srgb, var(--sub) 85%, var(--bg));
-  border-bottom: 2px solid color-mix(in srgb, var(--fc) 45%, #fff);
+  color: color-mix(in srgb, var(--sub) 85%, var(--bg));
+  background: linear-gradient(to bottom, #fff, #f3f4f6);
+  box-shadow:
+    inset 0 calc(-1 * var(--skirt)) 0 color-mix(in srgb, var(--fc) 45%, #fff), inset 0 0 0 1px rgba(30, 32, 40, .10),
+    0 2px 0 rgba(40, 35, 20, .12);
 }
 :root[data-theme="light"] .keyboard .key.next {
-  background: var(--fc); color: var(--text);   /* full colour: the other keys already carry 65% */
-  border-bottom: 3px solid var(--fcd);
-  box-shadow: 0 0 0 2px var(--fcd), var(--key-shadow);
+  color: var(--text);   /* full colour: the other keys already carry 62% */
+  background: radial-gradient(120% 90% at 50% 30%, rgba(255, 255, 255, .3), transparent 60%), var(--fc);
+  box-shadow: inset 0 calc(-1 * var(--skirt)) 0 var(--fcd), 0 0 0 2px var(--fcd), 0 2px 0 rgba(40, 35, 20, .2);
 }
 :root[data-theme="light"] .hand .finger { --tint: color-mix(in srgb, var(--fc) 75%, var(--skin)); }
 :root[data-theme="light"] .hand .finger.on .skin { fill: var(--fcd); stroke: color-mix(in srgb, var(--fc) 40%, transparent); }
@@ -1115,10 +1166,11 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 .tooltip.show { opacity: 1; }
 .tooltip span { color: var(--sub); }
 
-/* ---------- messages: in the status line under the letters ---------- */
-/* the status pills step aside while a message is shown (like for the warning) */
-.caption-slot.noticing .letters-caption { opacity: 0; transform: translateY(4px); pointer-events: none; }
-.caption-slot.warning .notice { opacity: 0; }        /* the layout warning wins */
+/* ---------- messages: on top of the top line of the text card ---------- */
+/* the numbers and the status line step aside while a message or the
+   warning is shown */
+.live:is(.warning, .noticing) > :is(.metric, .streak, .letters-caption) { opacity: 0; transform: translateY(4px); pointer-events: none; }
+.live.warning .notice { opacity: 0; }        /* the layout warning wins */
 .notice {
   position: absolute; left: 0; right: 0; top: 0; z-index: 1;
   display: flex; justify-content: flex-start; pointer-events: none; transition: opacity var(--med);
@@ -1476,6 +1528,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .letters-caption:has(.mode-note) { flex-wrap: wrap; row-gap: 2px; }
   .letters-caption .mode-note { flex-basis: 100%; text-align: left; white-space: nowrap; }
   .letters-caption { gap: 12px; }
+  /* phone: the status line always has its own line under the numbers */
+  .live { flex-wrap: wrap; height: auto; min-height: 28px; }
+  .letters-caption { order: 1; flex-basis: 100%; }
+  .letters-caption::before { display: none; }
   .stat { gap: 5px; }
   #view-type { margin-block: 4px auto; }   /* phone: right under the header (the phone keyboard covers the bottom) */
   .note { font-size: .78rem; border-radius: 14px; }   /* phone: a long message may take two lines */
@@ -1518,11 +1574,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 /* typewriter: the text is revealed in 11 steps (monospace: 1 step = 1 letter) */
 .splash-type {
   display: inline-block; overflow: hidden; white-space: nowrap; vertical-align: bottom;
-  width: 0; border-right: .08em solid var(--accent); padding-right: .04em;
-  animation: splash-typing 420ms steps(11, end) 60ms forwards, splash-caret .8s steps(1) infinite;
+  width: 0;
+  animation: splash-typing 420ms steps(11, end) 60ms forwards;
 }
 @keyframes splash-typing { to { width: 11.1ch; } }
-@keyframes splash-caret { 50% { border-color: transparent; } }
 body.splashing .top .logo, body.landing .top .logo-name { visibility: hidden; }  /* the splash logo lands here */
 
 /* after the splash: the page slides in, piece by piece */

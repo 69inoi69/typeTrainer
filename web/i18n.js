@@ -29,6 +29,8 @@ const I18N = {
     "settings.keyboard": "Keyboard",
     "settings.caret": "Caret", "settings.line": "Line", "settings.block": "Block",
     "settings.theme": "Theme", "settings.dark": "Dark", "settings.light": "Light",
+    "settings.soundGroup": "Sound", "settings.sound": "Key sound",
+    "sound.off": "Off", "sound.deep": "Deep", "sound.tactile": "Tactile", "sound.classic": "Office",
     "settings.on": "On", "settings.off": "Off",
     "settings.search": "Search settings", "settings.none": "No settings match",
     "settings.keyPick": "pick", "settings.keyChange": "change", "settings.keyPress": "press", "settings.keyClose": "close",

@@ -104,8 +104,8 @@ export const FX = (() => {
     { duration: 320, easing: "ease-out" });
 
   // ---------- messages: part of the interface, not pop-ups ----------
-  // A message takes the place of the status line under the letters (focus /
-  // mastered letters / next) for a few seconds, then the status line comes
+  // A message takes the place of the top line of the text card (the live
+  // numbers and the status line) for a few seconds, then the line comes
   // back. One message at a time; the others wait in a queue. A thin bar under
   // the message fills up while it is shown: when it is full (CSS animation,
   // "animationend") the next one comes. Hover pauses it, a click skips it.
@@ -121,7 +121,7 @@ export const FX = (() => {
     if (!current) showNext();
   }
   function showNext() {
-    const slot = document.getElementById("caption-slot");
+    const slot = document.getElementById("live");
     const box = document.getElementById("notice");
     const item = queue.shift();
     if (!item) {                         // nothing left: the status line comes back
@@ -188,7 +188,6 @@ export const Splash = (() => {
         const dx = b.left - a.left * 1 - (a.left - f.left) * (s - 1);
         const dy = (b.top + b.height / 2) - (f.top + (a.top - f.top + a.height / 2) * s);
         from.style.transformOrigin = "0 0";
-        text.style.borderRightColor = "transparent";      // no caret on the small logo
         from.animate([{ transform: "none" },
           { transform: `translate(${dx}px, ${dy}px) scale(${s})` }],
           { duration: FLY_MS, easing: "cubic-bezier(.6,0,.2,1)", fill: "forwards" });
