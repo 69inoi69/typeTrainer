@@ -159,6 +159,9 @@
     <section id="view-stats" class="view" role="tabpanel" aria-labelledby="tab-stats" hidden>
       <!-- phones and tablets only (input.js statsOnly): why there is no typing here -->
       <p class="stats-only-note" data-i18n="phone.note">Typing practice needs a computer keyboard. Here you can look at your stats.</p>
+      <!-- all time, both modes and every round length: time typing, rounds,
+           words, days in a row and the activity calendar (stats.js drawActivity) -->
+      <div class="activity panel" id="activity" aria-label="All time"></div>
       <div class="stats-top">
         <!-- whose statistics: type or freetype (only once freetype is open, stats.js) -->
         <div class="mode-filter" id="mode-filter" role="tablist" aria-label="Mode"></div>

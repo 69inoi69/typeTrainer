@@ -61,7 +61,7 @@ export const S = {
   view: "type",           // "type" or "stats"
   mode: "learn",          // "learn", "free" or "test" (modes.js)
   free: null,             // last /freeplay/stats answer
-  settings: { length: "words-30", live: false, caret: "line", theme: "dark", streak: true },   // settings.js
+  settings: { length: "words-30", live: false, caret: "line", theme: "dark", streak: true, goal: 0 },   // settings.js
   kbHidden: false,        // keyboard and hands switched off
 };
 

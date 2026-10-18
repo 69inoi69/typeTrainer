@@ -90,6 +90,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/export", s.withLang(s.handleExport))
 	mux.HandleFunc("POST /api/v1/import", s.withLang(s.handleImport))
 	mux.HandleFunc("GET /api/v1/stats", s.withLang(s.handleStats))
+	mux.HandleFunc("GET /api/v1/activity", s.withLang(s.handleActivity))
 	mux.HandleFunc("POST /api/v1/freeplay/portion", s.withLang(s.handleFreeplayPortion))
 	mux.HandleFunc("POST /api/v1/freeplay/results", s.withLang(s.handleFreeplayResults))
 	mux.HandleFunc("POST /api/v1/freeplay/test", s.withLang(s.handleFreeplayTest))

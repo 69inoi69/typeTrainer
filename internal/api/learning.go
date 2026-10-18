@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"sort"
+	"strconv"
 	"time"
 
 	"typingtrainer/internal/engine"
@@ -294,6 +295,32 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, user string
 		"lengths": lengths, "group": group,
 	})
 }
+
+// GET /api/v1/activity?lang=&tz= -> {days: [{date, rounds, seconds, chars}]}:
+// every day with a finished round, learning and free practice together,
+// oldest first (the stats screen's time typing, days in a row and activity
+// calendar). tz: the browser's offset from UTC in minutes, east positive
+// (-Date.getTimezoneOffset()), so the days end at the user's midnight.
+func (s *Server) handleActivity(w http.ResponseWriter, r *http.Request, user string, l *Language) {
+	tz := 0
+	if v := r.URL.Query().Get("tz"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < -maxTZMinutes || n > maxTZMinutes {
+			badRequest(w, "tz: minutes from UTC, -840 to 840")
+			return
+		}
+		tz = n
+	}
+	days, err := s.store.PracticeDays(user, l.Info.ID, time.Duration(tz)*time.Minute)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"days": days})
+}
+
+// maxTZMinutes: the farthest time zones are 14 hours from UTC.
+const maxTZMinutes = 14 * 60
 
 // validLength checks a round length against the limits in the config
 // (MaxRoundWords, MaxRoundSeconds); the rule itself is in validate.go.

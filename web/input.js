@@ -17,7 +17,7 @@ import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
 import { resultOpen, closeResult } from "./result.js";
-import { settingsOpen, openSettings, onSettingsClose, onLengthChange, onKbToggle } from "./settings.js";
+import { settingsOpen, openSettings, onSettingsClose, onLengthChange, onKbToggle, onGoalChange } from "./settings.js";
 import { setMode, refreshFreeplay, renderNav } from "./modes.js";
 import { buildAmbient } from "./ambient.js";
 import "./share.js";   // the copy / image buttons of the stats screen: it wires them itself
@@ -117,6 +117,9 @@ onLengthChange(() => {
   refreshFreeplay().then(() => { if (S.view === "stats") renderStats(); }).catch(console.error);
   if (!roundStarted() && !S.busy && S.mode !== "test") loadExercise().catch(console.error);
 });
+
+// a new personal goal: only the stats screen shows it
+onGoalChange(() => { if (S.view === "stats") { el.viewStats.classList.remove("grow"); renderStats(); } });
 
 // ---------- input ----------
 // The order of the checks matters: an open guide or card gets the key first,

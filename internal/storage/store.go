@@ -57,6 +57,28 @@ type Session struct {
 	Device string `json:"device,omitempty"`
 }
 
+// Day is the practice of one calendar day, learning and free practice
+// together: the stats screen builds its totals (time typing, rounds), the
+// days in a row and the activity calendar from these.
+type Day struct {
+	Date    string  `json:"date"`    // "2026-10-18", in the user's own time zone
+	Rounds  int     `json:"rounds"`  // finished rounds
+	Seconds float64 `json:"seconds"` // time spent typing (RoundSeconds)
+	Chars   int     `json:"chars"`   // letters typed
+}
+
+// RoundSeconds is about how long a round was typed: WPM counts the right
+// letters, 5 to a word, so the time is right letters / 5 / WPM minutes. The
+// right letters are Chars * Accuracy / 100 (Accuracy is the share of right
+// presses). The duration itself is not stored; this works for old history
+// too. A round with WPM 0 counts 0.
+func RoundSeconds(wpm, accuracy float64, chars int) float64 {
+	if wpm <= 0 {
+		return 0
+	}
+	return float64(chars) * accuracy / 100 / 5 / wpm * 60
+}
+
 // The devices a round can be typed on (Session.Device).
 const (
 	DeviceKeyboard = "keyboard" // a physical keyboard
@@ -172,6 +194,11 @@ type Store interface {
 	RecentFreeplaySessions(user, lang, length string, limit int) ([]Session, error) // newest first
 	FreeplaySessionCount(user, lang, length string) (int, error)
 	FreeplaySessionLengths(user, lang string) ([]string, error)
+
+	// PracticeDays: every day with a finished round in this language,
+	// learning and free practice together, oldest first. tz is the user's
+	// offset from UTC (east is positive), so a day ends at their midnight.
+	PracticeDays(user, lang string, tz time.Duration) ([]Day, error)
 
 	// Reset deletes everything the user has stored for the language, free
 	// practice included: it is new again. Other users and languages stay.

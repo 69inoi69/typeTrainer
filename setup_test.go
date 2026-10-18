@@ -781,3 +781,29 @@ func TestApp_RoundDevice(t *testing.T) {
 		t.Fatalf("devices in the history: %v", devices)
 	}
 }
+
+// /activity puts every finished round, learning and free practice, on its
+// day with its time; a wrong time zone is refused.
+func TestApp_Activity(t *testing.T) {
+	h, _, _ := newApp()
+	if code, out := call(t, h, "GET", "/api/v1/activity?lang=en&tz=120", ""); code != 200 || len(out["days"].([]any)) != 0 {
+		t.Fatalf("no rounds: %d %v, want 200 and no days", code, out)
+	}
+	body := `{"samples":[{"char":"e","errors":0,"ms":300},{"char":" ","errors":0,"ms":200}],"wpm":60,"accuracy":100,"chars":300}`
+	if code, out := call(t, h, "POST", "/api/v1/results?lang=en", body); code != 200 {
+		t.Fatalf("results: %d %v", code, out)
+	}
+	_, out := call(t, h, "GET", "/api/v1/activity?lang=en&tz=120", "")
+	days := out["days"].([]any)
+	if len(days) != 1 {
+		t.Fatalf("one round: %v, want one day", days)
+	}
+	if d := days[0].(map[string]any); d["rounds"].(float64) != 1 || d["seconds"].(float64) != 60 || d["chars"].(float64) != 300 {
+		t.Fatalf("day %v, want 1 round, 60 s, 300 letters", d)
+	}
+	for _, tz := range []string{"abc", "900", "-900"} {
+		if code, _ := call(t, h, "GET", "/api/v1/activity?lang=en&tz="+tz, ""); code != 400 {
+			t.Fatalf("tz=%s: %d, want 400", tz, code)
+		}
+	}
+}
