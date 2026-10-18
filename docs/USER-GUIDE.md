@@ -95,7 +95,7 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   the middle of the screen. Typing filters it (search), `↑ ↓` pick a row,
   `← →` change its value, `Enter` presses a button, `Esc` closes it. On a
   phone the Settings button in the bottom bar opens it. What is in it:
-  - **round length**: 10, 30 or 60 words, or 30 or 60 seconds (default 30
+  - **round length**: 10, 20, 30, 40 or 50 words, or 15, 30, 60 or 90 seconds (default 30
     words). A words round ends with the last letter of its last word, a time
     round when the time is up; the counter in the text card shows the words
     or the seconds left. The typing test is always 30 words.
@@ -232,8 +232,8 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   up), so "how am I doing?" takes a glance:
   - a row of round lengths and the numbers: rounds, best wpm, and the
     averages of the last 10 rounds (wpm, accuracy, consistency). Rounds of
-    different lengths are never mixed: the row always has all five lengths
-    (10, 30, 60 words, 30, 60 s), it opens on the one chosen in the
+    different lengths are never mixed: the row always has all nine lengths
+    (10–50 words, 15–90 s; older 60-word rounds keep their own button), it opens on the one chosen in the
     settings, and a length with no rounds yet shows empty numbers;
   - the speed of every round (hover a bar for its numbers);
   - side by side (learning only): a **difficulty keyboard** (grey keys, the
