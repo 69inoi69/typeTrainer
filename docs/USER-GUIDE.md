@@ -160,8 +160,8 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
 - **While you type** the feedback is where your eyes already are: the focus
   letter of each portion is tinted in the text, the letter under the caret
   is a step brighter than the rest, and the numbers line changes once per
-  word (calm, not every key). A letter typed right settles from a short warm
-  flash into the text colour; a mistake makes the caret shrink, turn red
+  word (calm, not every key). A letter typed right turns white at once (as
+  on monkeytype, nothing to slow the page down); a mistake makes the caret shrink, turn red
   and shake for a tenth of a second. The key on the drawn keyboard dips and
   the finger that pressed it taps down with it. While you pause, the caret
   breathes (fades out and in) instead of blinking.

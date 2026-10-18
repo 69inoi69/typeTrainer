@@ -5,8 +5,12 @@
 // None of this changes what is measured or sent to the server.
 // Layer: bottom. Imports nothing.
 // Used by: keyboard.js (key dip, red tint, finger tap, hand size), typing.js
-// (caret flinch and breath, line scroll), and style.css (caret glide, word
-// fade, settle) through the --feel-* properties.
+// (caret flinch and breath, line scroll), and style.css (caret glide, the
+// lift of the next key and the finger) through the --feel-* properties.
+// Speed rule (owner, 2026-10-18, "as smooth as monkeytype"): what moves on
+// every key only moves (translate, transform, opacity of a whole element),
+// which the graphics card does without the page being painted again; no
+// glows or colour fades on every key.
 // To add a knob: a field in FEEL with its unit and what "more" does, then
 // either read FEEL.x in the JavaScript or add a root.setProperty line below
 // and use var(--feel-x) in style.css.
@@ -22,15 +26,7 @@ export const FEEL = {
   // half the way in the first frame (each press is a clear step), the rest
   // settles in 3 frames (54 / 81 / 94 / 100%). The curve is in style.css.
   caretGlideMs: 80,         // the caret sliding to the next letter (0 = jumps)
-  wordInMs: 90,             // a newly shown word fading in (0 = appears at once)
   lineScrollMs: 120,        // the text moving up a line (0 = at once)
-
-  // A letter typed right "settles": it starts a little warmer (a touch of
-  // the gold, and a glow on the dark page) and calms down to the text
-  // colour. Colour only: a letter is an inline <span>, it cannot scale
-  // without breaking the lines. 0 ms = off.
-  charSettleMs: 110,        // how long the settle takes
-  charSettleGlow: 12,       // glow at the start, px (dark theme only)
 
   // The key on the virtual keyboard answers a press: a short, soft dip.
   keyPressMs: 90,           // duration of the dip
@@ -57,10 +53,10 @@ export const FEEL = {
   // The hands above the keyboard (issue #19): the finger to use is the main
   // signal, the key itself is only hinted.
   handScale: 1.4,           // hand width in keys: 2 * handScale (1 = the old size)
-  fingerLiftPx: 8,          // how far the finger to use lifts
+  fingerLiftPx: 8,          // how far the finger to use lifts, in units of the hand drawing (100 = its width)
   fingerGlowPx: 0,          // a see-through outline around it, in the hand drawing's units (0 = none; owner, 2026-10-18: it looked like double vision)
   // The finger that presses a key taps down a little with it.
-  fingerTapPx: 3,           // how far it moves down (0 = off)
+  fingerTapPx: 3,           // how far it moves down, in the same units (0 = off)
   fingerTapMs: 110,         // duration
   // The hands rest on the top edge of the keyboard, as real hands over the
   // keys: they overlap it by this part of a key (their wrists fade out
@@ -74,12 +70,9 @@ export const FEEL = {
 // The CSS custom properties: style.css uses var(--feel-...).
 const root = document.documentElement.style;
 root.setProperty("--feel-caret-ms", FEEL.caretGlideMs + "ms");
-root.setProperty("--feel-word-in-ms", FEEL.wordInMs + "ms");
-root.setProperty("--feel-settle-ms", FEEL.charSettleMs + "ms");
-root.setProperty("--feel-settle-glow", FEEL.charSettleGlow + "px");
 root.setProperty("--feel-mark-line", FEEL.markLine + "px");
 root.setProperty("--feel-hand", String(FEEL.handScale));
-root.setProperty("--feel-finger-lift", -FEEL.fingerLiftPx + "px");
+root.setProperty("--feel-finger-lift", String(-FEEL.fingerLiftPx));   // in units of the hand drawing (style.css --hu)
 root.setProperty("--feel-finger-glow", String(FEEL.fingerGlowPx));
 root.setProperty("--feel-next-lift", -FEEL.nextKeyLiftPx + "px");
 root.setProperty("--feel-hand-overlap", String(FEEL.handOverlap));
