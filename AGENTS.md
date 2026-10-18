@@ -101,6 +101,9 @@ Details: `docs/ARCHITECTURE.md`.
 ## Product decisions (do not change without asking)
 
 - **Real words only.** No generated letter combinations like keybr.
+- **Phones and tablets show only the stats and the account (2026-10-18).**
+  Practice needs a computer keyboard; thumbs on glass would skew the letter
+  model. The phone layout of the typing screen is not maintained.
 - **Two modes and a test.** *Learning* is the adaptive trainer: all the
   algorithm work lives there, with no difficulty switches (the algorithm
   decides what to practise). *Free practice* draws words evenly from the whole
@@ -159,6 +162,6 @@ the site stays on the old version.
 1. `gofmt -w .`, `go vet ./...` and `go test ./...` all pass.
 2. New engine logic has unit tests, including edge cases (no data yet, zero values).
 3. Docs updated if behaviour or the API changed.
-4. An interface change is checked in a browser at phone and desktop width
-   (`docs/GUIDELINES.md`, section 10).
+4. An interface change is checked in a browser at desktop width, and the
+   stats screen also at phone width (`docs/GUIDELINES.md`, section 10).
 5. A short summary for me: what changed, which files, how to check it in the browser.

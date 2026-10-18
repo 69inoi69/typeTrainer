@@ -67,10 +67,11 @@ there is a reason not to).
   columns), 640 px (phone), 380 px (very small phone).
 - Sizes follow the window: the keyboard key size `--u` and the text width
   `--tw` are computed from the viewport, not picked from presets.
-- On touch screens: no keyboard shortcuts shown (`.keys-only`), no hover
-  tooltips, no drawn keyboard and hands (they help only with physical keys;
-  owner, 2026-10-16), and the phone's own keyboard closes at the end of a
-  round and stays closed while the result is open.
+- Phones and tablets (a touch screen, no mouse) show only the stats and the
+  account: no typing screen, no navigation, a short line says that practice
+  needs a computer keyboard (owner, 2026-10-18; thumbs on glass would skew
+  the letter model). On a phone, check that the stats are not broken; the
+  typing screen is checked at desktop widths only.
 - Long names are cut with "…" instead of pushing other things away.
 
 **Recommended**

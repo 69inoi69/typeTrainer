@@ -23,7 +23,7 @@ import { buildLangSwitch, initialLanguage, loadLanguage } from "./languages.js";
 import { loadSettings } from "./settings.js";
 import { buildAmbient } from "./ambient.js";
 
-import "./input.js";   // keys and buttons: it only adds event listeners
+import { startView } from "./input.js";   // keys and buttons: mostly event listeners
 
 // ---------- user study ----------
 // A hidden link for the evaluation chapter (docs/ALGORITHM.md section 11):
@@ -63,6 +63,7 @@ async function joinStudy() {
     console.error(err);
     el.text.textContent = t("err.load");
   }
+  startView();      // a phone or tablet opens on the stats
   await splash.done();
   buildAmbient();   // now the letters bar is drawn: the background uses its open letters
   const flash = store.get("tt.flash");                     // set by a finished import
@@ -70,5 +71,5 @@ async function joinStudy() {
     store.set("tt.flash", "");
     FX.toast(t("toast.imported", { n: flash }));
   }
-  if (!store.get("tt.introDone") && S.layout) showIntro();   // only the very first visit
+  if (!store.get("tt.introDone") && S.layout && !isTouch()) showIntro();   // only the very first visit, and only where you type
 })();

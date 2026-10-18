@@ -62,6 +62,7 @@ const I18N = {
     "metric.raw": "Raw", "tip.raw": "Raw speed: every keypress counts, mistakes too",
     "hint.new": "Stop", "hint.esc": "Stop / settings", "hint.kb": "Keyboard", "hint.view": "Learn / stats", "hint.lang": "Language",
     "focusHint": "Tap here to start typing",
+    "phone.note": "Typing practice needs a computer keyboard. Here you can look at your stats.",
     "pause.title": "Paused", "pause.key": "any key", "pause.go": "to go on", "pause.away": "The time away does not count.",
     "key.space": "Space",
     "stat.focus": "Focus", "stat.next": "Next letter",

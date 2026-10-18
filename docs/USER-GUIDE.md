@@ -24,6 +24,16 @@ Everything the trainer does, screen by screen. For a quick overview see the
 After `git pull` restart the server: the web files are built into the program.
 Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
 
+## Phones and tablets
+
+On a touch screen without a mouse the page shows only your **stats** and the
+**account** in the corner: typing practice needs a computer keyboard (the
+trainer teaches ten fingers on real keys, and typing with thumbs would give
+it wrong numbers about your letters). A short line at the top says so. There
+is no navigation and no intro. On GitHub Pages the stats are the ones kept in
+this browser, so a phone shows its own (usually none); with an account on
+the normal server, it shows yours.
+
 ## Typing screen
 
 - The app opens with a short start screen: the logo types itself and flies
