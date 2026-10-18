@@ -114,6 +114,8 @@
         <div id="text" class="text">loading…</div>
         <div id="caret" class="caret" aria-hidden="true"></div>
         <div id="focus-hint" class="focus-hint" data-i18n="focusHint">Tap here to start typing</div>
+        <!-- a round paused because the window lost focus (typing.js pauseRound) -->
+        <div class="pause-note" aria-live="polite"><b data-i18n="pause.title">Paused</b><span data-i18n="pause.hint">Press any key to go on. The time away does not count.</span></div>
         <!-- the result screen takes the place of the text when typing stops (result.js) -->
         <div id="result" class="result" role="status" aria-live="polite" hidden></div>
       </div>

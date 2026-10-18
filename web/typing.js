@@ -44,6 +44,8 @@ let correctChars = 0;      // positions that are right now (state 1), for WPM
 let startTime = null;      // performance.now() of the first keypress
 let lastTime = null;       // performance.now() of the previous keypress
 let afterBackspace = false; // the next press follows a Backspace: its time is not measured
+let afterPause = false;     // the next press ends a pause (pauseRound): its time is not measured
+let pausedAt = null;        // when the round was paused, or null
 let presses = 0, correctPresses = 0;
 let perSecond = [];        // keypresses in each second since startTime (for consistency)
 
@@ -314,7 +316,8 @@ function resetStream() {
   state = new Uint8Array(0); focusMask = new Uint8Array(0); records = []; spans = [];
   portions = []; sentUpTo = 0; current = 0; roundNewLetter = ""; wordsLoaded = 0; endAt = -1;
   wordOf = new Int32Array(0); revealAt = 0; shownWords = 0;
-  extras = new Map(); correctChars = 0; afterBackspace = false;
+  extras = new Map(); correctChars = 0; afterBackspace = false; afterPause = false;
+  pausedAt = null; el.textBox.classList.remove("paused");
   backWord = -1; backErrors = 0; fixedWords = new Set();
   startTime = null; lastTime = null; presses = 0; correctPresses = 0; perSecond = [];
   el.text.replaceChildren(el.caret);          // the caret lives inside the text
@@ -385,7 +388,7 @@ function record(i, wrong, now) {
   if (!r) {
     // not measured: the first press of the round, and a press right after a
     // Backspace (that time is spent correcting, not moving a finger)
-    const ms = lastTime === null || afterBackspace ? 0 : Math.round(now - lastTime);
+    const ms = lastTime === null || afterBackspace || afterPause ? 0 : Math.round(now - lastTime);
     r = records[i] = { char: S.text[i], errors: 0, ms };
   }
   if (wrong) r.errors++;
@@ -466,6 +469,7 @@ function breathe(on) {
 
 export function handleChar(ch) {
   if (!canType()) return;
+  if (pausedAt !== null) resumeRound(performance.now());
   const expected = S.text[S.pos];
   // space at the start of a word means nothing (as on monkeytype)
   if (ch === " " && expected !== " " && S.pos === wordStart(S.pos)) return;
@@ -534,7 +538,7 @@ export function handleChar(ch) {
       else if (!space && S.pos === endAt) { endWord(); roundOver = true; }  // the last letter of the round
     }
   }
-  lastTime = now; afterBackspace = false;
+  lastTime = now; afterBackspace = false; afterPause = false;
   // after lastTime: the time of the round ends with this keypress
   if (roundOver) { finishRound(); return; }
   highlightNextKey();
@@ -551,6 +555,7 @@ export function handleChar(ch) {
 // new presses are not sent again.
 export function backspace(wholeWord) {
   if (!canType() || startTime === null) return;
+  if (pausedAt !== null) resumeRound(performance.now());
   if (S.pos === wordStart(S.pos)) {
     const space = S.pos - 1;
     if (space < 0 || backWord >= 0) return;
@@ -654,18 +659,62 @@ export function restartRound() {
   loadExercise().catch(console.error);
 }
 
+// The warning card: an icon, what is wrong and how to fix it. For a wrong
+// layout, the usual way to switch it on this system (owner, 2026-10-18: it
+// always said Windows); a phone or an unknown system gets no keys.
+const WARN_ICON = {
+  caps: '<path d="M12 4 5 11h4v5h6v-5h4z"/><path d="M9 20h6"/>',
+  layout: '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/>',
+};
+function switchKeys() {
+  const p = (navigator.userAgentData?.platform || navigator.platform || "").toLowerCase();
+  if (isTouch()) return "";
+  if (p.includes("win")) return t("warn.keys.win");
+  if (p.includes("mac")) return t("warn.keys.mac");
+  if (p.includes("cros") || p.includes("chrome os")) return t("warn.keys.cros");
+  if (p.includes("linux")) return t("warn.keys.linux");
+  return "";
+}
 function showWarn(kind) {
   const info = S.languages.find((l) => l.id === S.lang);
-  el.warn.innerHTML = kind === "caps" ? t("warn.caps") : t("warn.layout", { layout: info?.systemLayout ?? S.lang });
+  const keys = kind === "layout" ? switchKeys() : "";
+  const text = kind === "caps" ? t("warn.caps") : t("warn.layout", { layout: info?.systemLayout ?? S.lang });
+  el.warn.innerHTML = `<span class="warn-icon"><svg viewBox="0 0 24 24" aria-hidden="true">${WARN_ICON[kind]}</svg></span>` +
+    `<span class="warn-text">${text}</span>${keys ? `<span class="warn-keys">${keys}</span>` : ""}`;
+  el.warn.dataset.kind = kind;
   el.warn.classList.add("show");
   el.live.classList.add("warning");   // the top line fades out under it
 }
 // Hides the Caps Lock / wrong system layout warning (also on a language change).
 export function hideWarn() {
   wrongScript = 0;
+  delete el.warn.dataset.kind;
   el.warn.classList.remove("show");
   el.live.classList.remove("warning");
 }
+
+// A wrong system layout before the first key (owner, 2026-10-18: "it should
+// show at once, not after I press keys"). Chromium browsers (Chrome, Edge)
+// can say what the home-row keys type in the current layout (the Keyboard
+// API); Firefox and Safari cannot, and some browsers hide it (Brave, against
+// fingerprinting), so there the first keys still tell (handleChar). Checked
+// once a second while no round is being typed, and when the window comes
+// back (input.js): a layout switched meanwhile shows or hides the warning.
+// Wrong = most home-row keys type letters that are not in this language's
+// alphabet (the same rule as for typed keys, so Colemak or AZERTY in the
+// same script are fine).
+const HOME_CODES = ["KeyA", "KeyS", "KeyD", "KeyF", "KeyJ", "KeyK", "KeyL"];
+export async function checkLayout() {
+  if (!navigator.keyboard?.getLayoutMap || !S.alphabet || startTime !== null) return;
+  let map;
+  try { map = await navigator.keyboard.getLayoutMap(); } catch { return; }   // not allowed here
+  const got = HOME_CODES.map((code) => map.get(code)).filter(Boolean);
+  if (got.length < 4) return;              // the browser does not say: the first key will tell
+  const foreign = got.filter((c) => /\p{L}/u.test(c) && !S.alphabet.has(c.toLowerCase())).length;
+  if (foreign > got.length / 2) { if (el.warn.dataset.kind !== "layout") showWarn("layout"); }
+  else if (el.warn.dataset.kind === "layout") hideWarn();
+}
+setInterval(checkLayout, 1000);   // a clock, not an animation: one small question a second
 
 // WPM uses the standard definition: 5 characters = 1 word.
 // `end`: when the round ended (default: now).
@@ -715,11 +764,34 @@ export function setTyping(on) {
 // fine here: it is a clock, not an animation, and it never runs per keypress.
 // It also catches a time round that ends while no key is pressed.
 setInterval(() => {
-  if (startTime === null || S.busy) return;
+  if (startTime === null || S.busy || pausedAt !== null) return;
   const now = performance.now();
   if (limit.kind === "time") renderProgress();
   if (now - lastTime > IDLE_STOP_MS || timeUp(now)) finishRound();
 }, 500);
+
+// Leaving the window in the middle of a round (Alt+Tab, another app, a
+// hidden tab; input.js) pauses it: its clock stops, so a time round does not
+// run out and the pause is not in the round's speed (owner, 2026-10-18). The
+// text blurs under a "paused" note (style.css .text-box.paused). The letter
+// model is safe either way (the engine ignores gaps over MaxIntervalMs).
+export function pauseRound() {
+  if (startTime === null || pausedAt !== null || S.busy) return;
+  pausedAt = performance.now();
+  el.textBox.classList.add("paused");
+}
+// The first key after a pause goes on with the round: the time away is
+// taken out (the start and the last key move forward by it, as if it never
+// happened), and this key's own time is not measured (it is finding the
+// place again, not moving a finger).
+function resumeRound(now) {
+  const away = now - pausedAt;
+  startTime += away;
+  if (lastTime !== null) lastTime += away;
+  pausedAt = null;
+  afterPause = true;
+  el.textBox.classList.remove("paused");
+}
 
 // Esc: ends the round early (or, before the first key, just gives a new text).
 export function stopRound() {

@@ -408,7 +408,10 @@ right or wrong); Esc or
 the history, and the next round starts from scratch: new waiting portions, an
 empty list of recent words. Inside a round the words are still chosen portion
 by portion. The time of a round ends at its last keypress, so the pause that
-ended it early does not lower the WPM.
+ended it early does not lower the WPM. Leaving the window in the middle of a
+round (another window, a hidden tab) pauses it: the time away is taken out
+of the round (its start and its last key move forward by it), and the first
+key after the pause is not measured, like the first key after a Backspace.
 
 The settings (`web/settings.js`) can make a round 10, 20, 40 or 50 words
 (60 until 2026-10-18), or 15, 30, 60 or 90 seconds, instead of the default 30 words (`RoundPortions` portions, which

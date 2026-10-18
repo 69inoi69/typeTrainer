@@ -751,6 +751,17 @@ body[data-mode="free"] .letter-row { display: none; }
   transition: opacity var(--med);
 }
 .text-box.blurred .focus-hint { opacity: 1; }
+/* a round paused because the window lost focus (typing.js pauseRound): the
+   text blurs under a short note; the first key goes on */
+.pause-note {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  opacity: 0; pointer-events: none; transition: opacity var(--med); text-align: center;
+}
+.pause-note b { font-size: 1.3rem; font-weight: 500; color: var(--accent-text); }
+.pause-note span { color: var(--sub); font-size: .9rem; }
+.text-box.paused .pause-note { opacity: 1; }
+.text-box.paused .text { filter: blur(4px); opacity: .4; }
+.text-box.paused :is(.caret, .focus-hint) { opacity: 0; }
 
 /* Letters change colour at once. A letter typed right "settles" from a
    slightly stronger glow (only text-shadow: nothing moves, nothing is laid
@@ -844,17 +855,29 @@ body[data-caret="outline"] .caret {
 /* ---------- Caps Lock / wrong layout warning ---------- */
 /* Caps Lock / wrong layout: sits on top of the status line, so the page
    never moves. Fades in and slides down a little. */
+/* a card (owner, 2026-10-18: "redo it, make it better"): a gold icon, what
+   is wrong, and the keys that fix it drawn as small keycaps */
 .warn {
-  position: absolute; left: 0; top: 0; max-width: 100%; z-index: 2;
-  display: block; width: max-content; min-height: 26px; padding: 4px 12px;
-  border-radius: 8px; font-size: .82rem; line-height: 1.35;
-  color: var(--text); background: color-mix(in srgb, var(--accent) 16%, var(--panel));
-  box-shadow: inset 3px 0 0 var(--accent), var(--shadow-sm);
+  position: absolute; left: 0; top: -4px; max-width: 100%; z-index: 2;
+  display: flex; align-items: center; gap: 10px; width: max-content; min-height: 34px; padding: 4px 6px 4px 5px;
+  border-radius: 10px; font-size: .85rem; line-height: 1.35;
+  color: var(--text); background: var(--panel-2);
+  box-shadow: var(--ring), 0 10px 28px -12px rgba(0, 0, 0, .6);
   opacity: 0; transform: translateY(-4px); pointer-events: none;
   transition: opacity var(--med), transform var(--med) var(--ease);
 }
 .warn.show { opacity: 1; transform: none; }
 .warn b { color: var(--accent-text); font-weight: 500; }
+.warn-icon { width: 26px; height: 26px; flex: none; display: grid; place-items: center; border-radius: 7px; background: var(--accent-fill); color: var(--on-accent); }
+.warn-icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.warn-keys { display: inline-flex; align-items: center; gap: 4px; padding-left: 10px; margin-right: 4px; border-left: 1px solid var(--line); color: var(--sub); white-space: nowrap; }
+.warn kbd {
+  font-family: "Geist Mono Keys", var(--mono); font-weight: 600; font-size: .78rem; color: var(--text);
+  padding: 2px 7px 4px; border-radius: 6px; background: var(--key);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .45), 0 0 0 1px var(--line);
+}
+:root[data-theme="light"] .warn { box-shadow: var(--ring), 0 10px 24px -12px rgba(20, 24, 32, .35); }
+:root[data-theme="light"] .warn kbd { background: #fff; box-shadow: inset 0 -2px 0 rgba(30, 32, 40, .18), 0 0 0 1px rgba(30, 32, 40, .14); }
 
 /* ---------- hands: which finger presses the next key ---------- */
 /* Each finger is a rounded bar in its finger color; the one to use lights up
