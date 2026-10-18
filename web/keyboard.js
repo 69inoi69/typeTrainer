@@ -190,6 +190,7 @@ export function requestFit() {
   cancelAnimationFrame(fitFrame);
   fitFrame = requestAnimationFrame(fitKeyboard);
 }
+const lettersBar = document.querySelector("#view-type > .letters");   // carries the centring margin
 function fitKeyboard() {
   const root = document.documentElement.style;
   // phones: the on-screen keyboard of the phone changes the window height all
@@ -212,10 +213,10 @@ function fitKeyboard() {
   const rest = document.querySelector(".top").offsetHeight + el.viewType.offsetHeight
     - el.hands.offsetHeight - el.keyboard.offsetHeight + kbFrame + overlap
     // desktop (style.css --view-centred): the view takes all the height and
-    // centres the text with two equal auto margins (above the text, at the
-    // end): that is free room. Otherwise the room above the view (not in
-    // offsetHeight) is taken.
-    + (centred ? -2 * parseFloat(getComputedStyle(el.textBox).marginTop) : parseFloat(getComputedStyle(el.viewType).marginTop))
+    // centres the letters and the text with two equal auto margins (above
+    // the letters, at the end): that is free room. Otherwise the room above
+    // the view (not in offsetHeight) is taken.
+    + (centred ? -2 * parseFloat(getComputedStyle(lettersBar).marginTop) : parseFloat(getComputedStyle(el.viewType).marginTop))
     + document.querySelector(".bottom").offsetHeight + 12    // 12 = bottom padding of .views
     + parseFloat(getComputedStyle(document.body).paddingBottom);   // the bottom navigation bar (narrow windows)
   const fit = Math.max(24, Math.floor((innerHeight - rest - 4) / HANDS_KB_PER_U));

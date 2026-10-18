@@ -46,7 +46,7 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   word); at the start of a word it takes you back into the previous word, one
   word at most, so you can finish a word you skipped. Space in the middle of a word jumps to the next one. A fixed
   mistake still counts for the letter's statistics.
-- The row of letters at the top shows your progress: open letters, the letter in
+- The row of letters right above the text shows your progress: open letters, the letter in
   **focus** (yellow: the next few words are built around it; it is picked
   anew every few words, weaker letters more often), mastered letters (a small green tick), and
   locked letters (outlined). A letter is mastered when you have typed it at
@@ -56,8 +56,9 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   Above the text, on the line of the live numbers (after the word counter),
   a quiet status line: the focus letter (the same gold square as the tinted
   letters in the text) and the next letter to open; hover them for details.
-  With the live numbers hidden it moves up to the word counter; while you
-  type it dims. The result screen hides it: the next round picks its own
+  With the live numbers hidden it moves up to the word counter. It never
+  moves while you type: every number keeps the room of its widest value.
+  The result screen hides it: the next round picks its own
   focus. Caps Lock and wrong layout warnings appear on top of that whole
   line, so nothing moves.
 - The keyboard shows the next key in its finger color; keys you do not need yet
@@ -102,7 +103,8 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
     not see them until the first finished round (a beginner should not
     chase speed); then they appear and you can hide them again. The word
     counter and the streak always stay.
-  - **caret**: a thin line (default) or a block.
+  - **caret**: a thin line (default), a block over the letter, a bar under
+    it (underline) or a frame around it (outline).
   - **theme**: dark (default) or light: a warm paper page with white cards,
     its own colours rather than the dark theme turned inside out.
   - **keyboard** (the keys and the hands): on or off (same as `Alt + K`; remembered
@@ -111,12 +113,6 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
     on the device's own keyboard, so the option is not shown. There
     is no size setting: the keyboard is always as big as the window allows
     without making the page scroll.
-  - **key sound**: off (default), **deep**, **tactile** or **office**: a
-    short click for every key you type, from real recordings of keyboards
-    (public domain; who made them is in `web/sounds/CREDITS.md`). Choosing
-    one plays it once. Each press sounds a little different, as on a real
-    keyboard; mistakes sound the same as the right keys. Not on a phone or
-    tablet: the device's own keyboard makes its own sound.
   - **data**: **export** writes all languages and the full history
     to one `.json` file, **import** reads such a file back and **replaces** the
     current data (use it to keep progress across server restarts or page
@@ -125,7 +121,7 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
     languages and the settings saved in your browser, as on the very first
     visit. A window asks first ("Reset all progress? This can't be undone.",
     Cancel has the focus), so it does not happen by accident.
-  The settings only change how much you type and how it looks or sounds; what you
+  The settings only change how much you type and how it looks; what you
   practise is still up to the trainer. They are kept in this browser.
 - For now only English is offered. When Polish, Ukrainian and Russian come
   back, a language switch changes the language you practise **and the
@@ -209,10 +205,9 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   settings ·
   `Shift + Tab` Learn / stats · `Alt + K` keyboard and hands on / off.
 - **Stats**: nothing on the page can be selected by dragging; instead the
-  stats screen has **copy** (a short text summary: mode, length, rounds,
-  best and last-10 numbers, letters) and **image** (a PNG card with the same
-  numbers, the speed of the last 30 rounds and every letter, in the colours
-  of the current theme). Both take what the screen shows.
+  stats screen has **image** (a PNG card with the five numbers, the speed of
+  the last 30 rounds and every letter, in the colours of the current theme).
+  It takes what the screen shows.
 - The top line of the text card shows **wpm**, **raw** (every keypress counts,
   wrong ones too, like on monkeytype; only shown, never stored) and accuracy.
   It is dim while you read and bright while you type. The caret keeps one

@@ -1,14 +1,14 @@
 // The settings window (Esc or the gear in the navigation): how long a round
 // is, the live numbers on or off, the look of the caret, the colour theme,
-// the on-screen keyboard on or off, the key sound, and exporting, importing
-// and resetting the progress (tools.js does those three). Settings change
-// HOW MUCH and HOW IT LOOKS (or sounds), never WHAT is practised: the words still come
+// the on-screen keyboard on or off, and exporting, importing and resetting
+// the progress (tools.js does those three). Settings change
+// HOW MUCH and HOW IT LOOKS, never WHAT is practised: the words still come
 // from the algorithm (learning) or evenly from the list (free practice), so
 // they are not difficulty switches. The typing test ignores the round
 // length: it is always one full round of 30 words.
 // Everything is kept in this browser (localStorage, "tt." keys); when that
 // is blocked, the defaults are used and the app works the same.
-// Layer: middle. Imports the bottom layer and sound.js.
+// Layer: middle. Imports only the bottom layer.
 // Called by: app.js (loadSettings at start), input.js (settingsOpen,
 // openSettings, closeSettings, onSettingsClose, onLengthChange, onKbToggle),
 // typing.js and stats.js (lengthOf, lengthLabel, firstRoundDone).
@@ -20,13 +20,16 @@
 
 import { t } from "./i18n.js";
 import { $, S, store, isTouch } from "./state.js";
-import { SOUNDS, setSound } from "./sound.js";
 
 // Round lengths: "words-N" ends after N words, "time-N" after N seconds.
 // Each round keeps its length on the server (storage.Session.Length), and
 // the stats screen shows one length at a time.
 export const LENGTHS = ["words-10", "words-30", "words-60", "time-30", "time-60"];
 export const DEFAULT_LENGTH = "words-30";   // the same as storage.DefaultLength
+// The caret styles, in the order of the buttons ("line" is the default).
+// To add one: its id here, its look in style.css (body[data-caret="id"]
+// .caret and a small picture .cs.id) and its name in i18n.js ("settings.id").
+const CARETS = ["line", "block", "underline", "outline"];
 
 // "time-60" -> {kind: "time", n: 60}
 export function lengthOf(id) {
@@ -46,11 +49,9 @@ export function loadSettings() {
   const length = store.get("tt.length");
   S.settings.length = LENGTHS.includes(length) ? length : DEFAULT_LENGTH;
   S.settings.live = store.get("tt.live") === "1";      // never chosen: hidden (see firstRoundDone)
-  S.settings.caret = store.get("tt.caret") === "block" ? "block" : "line";
+  const caret = store.get("tt.caret");
+  S.settings.caret = CARETS.includes(caret) ? caret : "line";
   S.settings.theme = store.get("tt.theme") === "light" ? "light" : "dark";
-  const sound = store.get("tt.sound");
-  S.settings.sound = SOUNDS.includes(sound) ? sound : "off";
-  setSound(S.settings.sound);
   applySettings();
 }
 // The look: classes on <body> and data-theme on <html>, style.css does the
@@ -58,7 +59,7 @@ export function loadSettings() {
 // light page never flashes dark first.)
 function applySettings() {
   document.body.classList.toggle("live-off", !S.settings.live);
-  document.body.classList.toggle("caret-block", S.settings.caret === "block");
+  document.body.dataset.caret = S.settings.caret;      // style.css: body[data-caret=...]
   document.documentElement.dataset.theme = S.settings.theme;
   document.querySelector('meta[name="theme-color"]')
     ?.setAttribute("content", getComputedStyle(document.documentElement).getPropertyValue("--bg").trim());
@@ -117,15 +118,11 @@ const ROWS = [
   { group: "settings.round", name: "settings.time", ctl: () => lengths("time", t("settings.sec")) },
   { group: "settings.look", name: "settings.live", ctl: () => onOff("live", S.settings.live) },
   { group: "settings.look", name: "settings.keyboard", ctl: () => onOff("kb", !S.kbHidden), show: () => !isTouch() },   // no keyboard on touch screens
-  { group: "settings.look", name: "settings.caret", ctl: () => seg([
-    choice("caret", "line", `<i class="cs line"></i>${t("settings.line")}`, S.settings.caret === "line"),
-    choice("caret", "block", `<i class="cs block"></i>${t("settings.block")}`, S.settings.caret === "block")]) },
+  { group: "settings.look", name: "settings.caret", ctl: () => seg(CARETS.map((id) =>
+    choice("caret", id, `<i class="cs ${id}"></i>${t("settings." + id)}`, S.settings.caret === id))) },
   { group: "settings.look", name: "settings.theme", ctl: () => seg([
     choice("theme", "dark", t("settings.dark"), S.settings.theme === "dark"),
     choice("theme", "light", t("settings.light"), S.settings.theme === "light")]) },
-  // not on touch screens: the phone's own keyboard makes its own sound
-  { group: "settings.soundGroup", name: "settings.sound", ctl: () => seg(SOUNDS.map((id) =>
-    choice("sound", id, t("sound." + id), S.settings.sound === id))), show: () => !isTouch() },
   { group: null, name: "settings.data", ctl: () => action("btn-export", "export", "data.save") + action("btn-import", "import", "data.load") },
   { group: null, name: "settings.danger", danger: true, ctl: () => action("btn-reset", "trash", "data.reset", "btn danger") },
 ];
@@ -170,10 +167,6 @@ function apply(key, value) {
   } else if (key === "theme") {
     S.settings.theme = value;
     store.set("tt.theme", value);
-  } else if (key === "sound") {
-    S.settings.sound = value;
-    store.set("tt.sound", value);
-    setSound(value, true);      // a click: the browser lets it play, so you hear the choice
   } else if (key === "kb") {
     if (S.kbHidden === (value === "1")) kbListener();   // only a real change
   }

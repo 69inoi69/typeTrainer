@@ -5,8 +5,8 @@
 // the result screen in result.js. The same screen serves every mode
 // (modes.js): learning talks to /portion and /results, free practice and the
 // typing test to /freeplay/*.
-// Layer: middle. Imports the bottom layer, keyboard.js, sound.js, stats.js,
-// result.js, letters.js, modes.js and settings.js.
+// Layer: middle. Imports the bottom layer, keyboard.js, stats.js, result.js,
+// letters.js, modes.js and settings.js.
 // Called by: input.js (handleChar, backspace, restartRound, stopRound and the rest
 // on keys and clicks) and languages.js (loadExercise, hideWarn when the
 // language changes).
@@ -24,7 +24,6 @@ import { FX } from "./fx.js";
 import { $, el, S, introOpen, isTouch, themeColor, reducedMotion } from "./state.js";
 import { postJSON } from "./api.js";
 import { highlightNextKey, pulseKey, glowKey, requestFit } from "./keyboard.js";
-import { keySound } from "./sound.js";
 import { refreshStats } from "./stats.js";
 import { showResult, compareStats } from "./result.js";
 import { renderLetters, markNewLetter, markMastered } from "./letters.js";
@@ -467,11 +466,10 @@ function breathe(on) {
 
 export function handleChar(ch) {
   if (!canType()) return;
-  const now = performance.now();
-  keySound(ch === " " ? "space" : "key");   // after the time is taken: it never shifts it
   const expected = S.text[S.pos];
   // space at the start of a word means nothing (as on monkeytype)
   if (ch === " " && expected !== " " && S.pos === wordStart(S.pos)) return;
+  const now = performance.now();
   if (timeUp(now)) { finishRound(); return; }   // a key after the time is up does not count
   if (startTime === null) {
     startTime = now;
@@ -550,7 +548,6 @@ export function handleChar(ch) {
 // new presses are not sent again.
 export function backspace(wholeWord) {
   if (!canType() || startTime === null) return;
-  keySound("back");
   if (S.pos === wordStart(S.pos)) {
     const space = S.pos - 1;
     if (space < 0 || backWord >= 0) return;

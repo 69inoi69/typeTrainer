@@ -298,6 +298,22 @@ dialog.settings-win:focus { outline: none; }
 .sw-empty { margin: 0; padding: 12px 8px; color: var(--sub); font-size: .84rem; }
 .sw-foot { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 14px; border-top: 1px solid var(--line); color: var(--sub); font-size: .72rem; }
 .sw-foot kbd { background: var(--track); box-shadow: var(--ring); color: var(--text); border-radius: 4px; padding: 0 5px; margin-right: 3px; font-family: var(--mono); }
+/* desktop (owner, 2026-10-18: "too small"): the same window, about a
+   quarter bigger, with more room around every row */
+@media (min-width: 1000px) and (pointer: fine) {
+  dialog.settings-win { inset-block-start: 11vh; min-width: 34rem; }
+  .sw-search { padding: 15px 20px; }
+  .sw-search input { font-size: 1.05rem; }
+  .sw-list { padding: 8px 10px 10px; max-height: calc(100dvh - 11vh - 170px); }
+  .sw-group { font-size: .8rem; padding: 12px 12px 4px; }
+  .sw-row > span { min-height: 44px; padding: 3px 12px; }
+  .sw-name { font-size: 1rem; }
+  .sw-ctl { padding-left: 32px !important; }
+  .sw-ctl .seg button, .sw-ctl .btn { font-size: .9rem; padding: 6px 14px; }
+  .sw-ctl .btn svg { width: 17px; height: 17px; }
+  .sw-ctl .cs { height: 14px; }
+  .sw-foot { font-size: .8rem; padding: 11px 20px; gap: 4px 18px; }
+}
 @media (pointer: coarse) {
   .sw-foot { display: none; }   /* no keyboard, no keys line */
   /* fingers, not a mouse: every choice about 40px tall (GUIDELINES, section 8) */
@@ -363,6 +379,15 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
 .metric > span { font-size: 1.3rem; font-weight: 500; letter-spacing: -.01em; color: var(--accent-text); transition: color var(--med); font-variant-numeric: tabular-nums; }
 .metric small { margin-left: 6px; white-space: nowrap; }
 .metric > span.pct { font-size: .9rem; margin-left: 1px; }   /* "98%": the sign belongs to the number */
+/* Each number keeps the room of its widest value ("188 wpm", "100% Acc",
+   "60/60 Words", measured in the browser), so nothing after it (the status
+   line) moves when a number gains or loses a digit while you type. The room
+   is on the whole number + label: the spare space falls after the label and
+   reads as part of the gap. Measured with the English labels; a longer label
+   only makes its number take its own width again. */
+.metric:has(#wpm), .metric.raw { min-width: 4rem; }
+.metric:has(#acc) { min-width: 4.6rem; }
+.metric:has(#progress) { min-width: 6.5rem; }
 .live.final .metric > span { color: var(--text); }   /* result of the last exercise */
 
 
@@ -608,9 +633,9 @@ body[data-mode="free"] .letter-row { display: none; }
    hands). With the numbers hidden it moves up to the word counter. The
    focus letter is the same gold square as the tinted letters in the text,
    so the row also reads as their legend. Hidden on the result (with the
-   whole line), which has its own news. Dimmed while you type, the opposite
-   of the numbers: it is for reading between rounds, and dimmed it does not
-   catch the eye when a number gains a digit and moves it a little. */
+   whole line), which has its own news. It keeps its brightness while you
+   type (owner, 2026-10-18), so it must not move: the numbers before it have
+   fixed room (.metric min-width, below). */
 .letters-caption {
   display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-start; gap: 18px; white-space: nowrap;
   flex: 0 1 auto; min-width: 0; overflow: hidden;   /* the numbers and the streak keep their room */
@@ -618,7 +643,6 @@ body[data-mode="free"] .letter-row { display: none; }
 }
 .letters-caption::before { content: ""; width: 1px; height: 1.2em; margin-left: 4px; background: var(--line); }
 .letters-caption:empty { display: none; }       /* free practice: nothing to say */
-.text-box.typing .letters-caption { opacity: .4; }
 .text-box.blurred .letters-caption { opacity: .5; }
 .stat {
   display: inline-flex; align-items: center; gap: 7px; flex: none;
@@ -699,20 +723,22 @@ body[data-mode="free"] .letter-row { display: none; }
 /* Desktop (owner, 2026-10-16, variant "T1", after monkeytype): no card,
    the text stands on the page, bigger; the keyboard on its panel as wide
    as the text (owner, 2026-10-18; it used to be a bit smaller), as big as
-   the height allows; the text, hands and keyboard together in the middle
-   of the free height. The width no longer follows the keyboard, so the
-   header, the letters and the text keep one width. The letters stay at the
-   top, where the result screen has them too, so they never move when a
-   round ends or starts; the text (with the hands and the keyboard) is
-   centred in the room under them: two equal auto margins, above the text
-   and after the last element (::after, so it works with the keyboard off).
+   the height allows; the letters, text, hands and keyboard together in the
+   middle of the free height. The width no longer follows the keyboard, so
+   the header, the letters and the text keep one width. The letters sit
+   right on top of the text block (owner, 2026-10-18: they are its legend;
+   alone at the top of the page they looked unrelated), so they move with
+   it when the result takes the text's place. Centred by two equal auto
+   margins, above the letters and after the last element (::after, so it
+   works with the keyboard off).
    --view-centred tells fitKeyboard (keyboard.js) that those margins are
    only centring, not room taken. */
 @media (min-width: 1000px) and (pointer: fine) {
   /* the keyboard (with its panel) as wide as the text block (owner,
      2026-10-18); fitKeyboard still caps the unit so the page fits */
   :root { --tw: min(100vw - 32px - 2 * var(--side), 48rem); --u-max: calc((var(--tw) - 24px) / 13.4); }
-  .text-box, .text-box:focus-within, .text-box:focus { background: none; box-shadow: none; padding: 0 0 0 40px; margin-top: auto; }
+  .text-box, .text-box:focus-within, .text-box:focus { background: none; box-shadow: none; padding: 0 0 0 40px; }
+  #view-type > .letters { margin-top: auto; }
   .text-box::before { left: 0; top: 38px; }   /* next to the first line: under the live line */
   .text, .text-box::before { font-size: 2.15rem; }
   #view-type:not([hidden]) { flex: 1; display: flex; flex-direction: column; margin-block: 0; --view-centred: 1; }
@@ -782,19 +808,32 @@ body[data-mode="free"] .letter-row { display: none; }
   border-radius: 3px; pointer-events: none;
   box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 25%, transparent);
   will-change: translate;
-  transition: translate var(--feel-caret-ms, 0ms) cubic-bezier(.15, .85, .35, 1);   /* starts at once, settles softly (web/feel.js) */
+  transition: translate var(--feel-caret-ms, 0ms) cubic-bezier(.3, .15, .7, .85);   /* gentle in-out, as monkeytype (web/feel.js) */
   animation: breathe 1.1s ease-in-out infinite;   /* at rest it breathes; typing.js does the same while a round waits */
 }
 .caret.jump { transition: none; }   /* new round, resize: no glide */
-/* The caret is a thin line by default (settings: "line"): 2px of accent at
-   the left edge of the next letter, same glide and blink. The block above is
-   the "block" setting (body.caret-block, settings.js). */
-body:not(.caret-block) .caret {
+/* The caret style is a setting (body[data-caret], settings.js); all four
+   move and blink the same way, only the look differs. The block above is
+   "block". "line" (the default, also before settings.js has run): 2.5px of
+   accent at the left edge of the next letter. "underline": a bar under the
+   letter. "outline": a frame around the letter, nothing over it. */
+body:not([data-caret]) .caret, body[data-caret="line"] .caret {
   width: 2.5px; background: var(--accent); border-radius: 2px;
   box-shadow: 0 0 12px 1px color-mix(in srgb, var(--accent) 55%, transparent);
 }
-:root[data-theme="light"] body.caret-block .caret { background: color-mix(in srgb, var(--accent) 55%, transparent); }   /* the pale gold needs more on white */
-:root[data-theme="light"] body:not(.caret-block) .caret { background: var(--accent-deep); box-shadow: 0 0 10px rgba(224, 162, 26, .45); }
+body[data-caret="underline"] .caret { background: none; box-shadow: none; }
+body[data-caret="underline"] .caret::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -3px; height: 3px; border-radius: 2px;
+  background: var(--accent); box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+body[data-caret="outline"] .caret {
+  background: none;
+  box-shadow: inset 0 0 0 2px var(--accent), 0 0 10px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+:root[data-theme="light"] body[data-caret="block"] .caret { background: color-mix(in srgb, var(--accent) 55%, transparent); }   /* the pale gold needs more on white */
+:root[data-theme="light"] :is(body:not([data-caret]), body[data-caret="line"]) .caret { background: var(--accent-deep); box-shadow: 0 0 10px rgba(224, 162, 26, .45); }
+:root[data-theme="light"] body[data-caret="underline"] .caret::after { background: var(--accent-deep); }
+:root[data-theme="light"] body[data-caret="outline"] .caret { box-shadow: inset 0 0 0 2px var(--accent-deep); }
 .text-box.typing .caret { animation: none; }             /* solid while typing */
 .text-box.blurred .caret { opacity: 0; }
 @keyframes breathe { 50% { opacity: .3; } }
@@ -848,7 +887,7 @@ body:not(.caret-block) .caret {
 /* the finger to use: fills with its full colour, lifts and glows softly. It
    is the main "which finger" signal; the key below is only hinted (.key.next).
    Knobs: --feel-finger-* (web/feel.js). */
-.hand .finger.on .skin { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--fc) 60%, transparent)); }
+.hand .finger.on .skin { filter: drop-shadow(0 0 5px color-mix(in srgb, var(--fc) 40%, transparent)); }   /* softer (owner, 2026-10-18) */
 .hand .finger.on { translate: 0 var(--feel-finger-lift, -6px); animation: finger-on 260ms cubic-bezier(.3, 1.6, .5, 1); }
 /* the glow is a wide see-through outline: a CSS drop-shadow would be cut at
    the edges of the thin finger's filter area */
@@ -924,7 +963,8 @@ body:not(.caret-block) .caret {
   --skirt: calc(var(--u) * .09);
   padding-bottom: var(--skirt);              /* the legend sits on the top face */
   border-bottom: 0; border-radius: calc(var(--u) * .18);
-  font-family: "Geist Mono Keys", var(--mono); font-weight: 600; font-size: calc(var(--u) * .38);
+  /* capitals, as on the keycaps of real keyboards (owner, 2026-10-18) */
+  font-family: "Geist Mono Keys", var(--mono); font-weight: 600; font-size: calc(var(--u) * .34); text-transform: uppercase;
   color: color-mix(in srgb, var(--text) 88%, var(--bg));
   background:
     radial-gradient(120% 90% at 50% 30%, rgba(255, 255, 255, .06), transparent 60%),
@@ -935,7 +975,7 @@ body:not(.caret-block) .caret {
     inset 0 1px 0 rgba(255, 255, 255, .08), inset 0 0 0 1px rgba(255, 255, 255, .03),
     0 2px 0 rgba(0, 0, 0, .45), 0 6px 14px -6px rgba(0, 0, 0, .6);
 }
-.keyboard .key.wide .lbl, .keyboard .key.mod .lbl { font-size: .74em; }   /* "Space", "AltGr" */
+.keyboard .key.wide .lbl, .keyboard .key.mod .lbl { font-size: .8em; text-transform: none; }   /* "Space", "AltGr" as written */
 .keyboard .key.home::after { bottom: 22%; }   /* the bump stays on the top face */
 .keyboard .key.next {
   color: var(--text);
@@ -1087,6 +1127,10 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
   flex: 1; user-select: none; padding-top: 4px;
 }
 :root[data-theme="light"] .heat-kb { --hk: #eef0f3; }
+/* the letters bigger, bolder and in the text colour (owner, 2026-10-18:
+   "hardly anything is visible"), the same face as the drawn keyboard */
+.heat-kb .key.hk { font-family: "Geist Mono Keys", var(--mono); font-weight: 600; font-size: calc(var(--u) * .42); color: var(--text); }
+.heat-kb .key.hk:is(.locked, .none) { color: var(--sub); }
 .key.hk { background: var(--hk); border-bottom-color: color-mix(in srgb, var(--text) 10%, transparent); cursor: default; }
 /* the heat: from a faint gold (easy) through orange to red (hard); one
    colour scale, so the eye reads "how hard" without a legend */
@@ -1234,12 +1278,13 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 #view-type:has(> .text-box.resulting) > :is(.hands, .keyboard) { display: none; }
 /* nothing to stop on the result: "esc Stop" leaves the shortcut line */
 body:has(.text-box.resulting) .hints .stop-hint { display: none; }
-/* desktop: the result stands in the middle of the free room under the
-   letters (owner, 2026-10-16); the view takes all the height, the result
-   gets equal room above and below */
+/* desktop: the result, with the letters on top of it, stands in the middle
+   of the free room (owner, 2026-10-16; the letters joined it 2026-10-18);
+   the view takes all the height, equal room above and below */
 @media (pointer: fine) {
   #view-type:not([hidden]):has(> .text-box.resulting) { flex: 1; display: flex; flex-direction: column; }
-  #view-type > .text-box.resulting { margin-block: auto; }
+  #view-type:has(> .text-box.resulting) > .letters { margin-top: auto; }
+  #view-type > .text-box.resulting { margin-bottom: auto; }
   #view-type:has(> .text-box.resulting)::after { content: none; }   /* the typing screen's centring (above): not a third share */
 }
 .result {
@@ -1401,12 +1446,24 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
   display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; border-radius: 5px;
   color: var(--text); font-weight: 500; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ok) 55%, transparent);
 }
-.r-next {                          /* the one button here: gold text in a thin gold capsule */
-  min-height: 40px; padding: 0 20px; border-radius: 999px; color: var(--accent-text); background: none;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-text) 35%, transparent);
+/* the one button here (owner, 2026-10-18: "more expressive", variant B): a
+   gold capsule with a clear frame and a soft glow that slowly breathes, so
+   the way on is the first thing the eye finds once the numbers are read */
+.r-next {
+  --frame: var(--accent);          /* the frame colour; darker on the light page (below) */
+  min-height: 50px; padding: 0 30px; border-radius: 999px; font-size: 1.05rem; font-weight: 500; color: var(--accent-text);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 16%, transparent), color-mix(in srgb, var(--accent) 6%, transparent));
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--frame) 70%, transparent), 0 0 24px -4px color-mix(in srgb, var(--accent) 45%, transparent);
+  animation: next-breathe 2.4s ease-in-out infinite;
 }
-.r-next:hover, .r-next:focus-visible { background: color-mix(in srgb, var(--accent) 14%, transparent); }
-.r-next svg { width: 18px; height: 18px; stroke-width: 2.4; }   /* the icon leads, the label sits beside it */
+@keyframes next-breathe {
+  50% { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--frame) 90%, transparent), 0 0 34px 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+}
+/* the pale gold frame hardly showed on white (owner, 2026-10-18): the
+   gold a step darker than the light theme's text */
+:root[data-theme="light"] .r-next { --frame: #a06800; }
+.r-next:hover, .r-next:focus-visible { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.r-next svg { width: 20px; height: 20px; stroke-width: 2.4; }   /* the icon leads, the label sits beside it */
 .r-next kbd { margin-left: 4px; background: var(--panel); }
 
 /* ---------- intro ---------- */
@@ -1509,6 +1566,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .live { gap: 12px; margin-bottom: 6px; }
   .metric > span, .streak span { font-size: 1.1rem; }
   .metric small { margin-left: 4px; font-size: .7rem; }
+  .metric:has(#wpm) { min-width: 3.5rem; }   /* the same room at the phone sizes */
+  .metric:has(#acc) { min-width: 4.1rem; }
+  .metric:has(#progress) { min-width: 5.6rem; }
   .bolt { width: 18px; height: 18px; }
   .metric.raw { display: none; }          /* phone: no room, wpm + acc are enough */
   /* five tiles in rows of three: two rows instead of three (a long label
@@ -1672,6 +1732,8 @@ body.live-off .live .metric.num { display: none; }
 .cs { display: inline-block; height: 12px; border-radius: 1px; background: currentColor; }
 .cs.line { width: 2px; }
 .cs.block { width: 8px; opacity: .4; }
+.cs.underline { width: 8px; background: linear-gradient(to top, currentColor 2px, transparent 2px); }
+.cs.outline { width: 8px; background: none; box-shadow: inset 0 0 0 1.5px currentColor; }
 /* the stats screen: whose stats and one round length at a time (.seg look) */
 .mode-filter:empty { display: none; }
 
