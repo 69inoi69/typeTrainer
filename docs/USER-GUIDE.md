@@ -61,7 +61,9 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   The result screen hides it: the next round picks its own
   focus. Caps Lock and wrong layout warnings appear on top of that whole
   line, so nothing moves.
-- The keyboard shows the next key in its finger color; keys you do not need yet
+- The keyboard shows the next key as the one light key (on the light theme the
+  one dark key), raised a little and framed in its finger color, so the
+  corner of the eye finds it without looking down; keys you do not need yet
   are dimmed. Above the keyboard two hands light up the finger that presses
   it (space = both thumbs, AltGr letters = right thumb + the finger).
 - The screen has three fixed places, as in a real app:
@@ -72,8 +74,8 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
     **Learn**, **Freetype** and **Stats**, then **Help** and **Settings**.
     The chosen screen has a short yellow bar next to it.
   From your first keypress until the end of the round everything around the
-  text steps back: the logo turns grey and the controls almost vanish (move
-  the mouse over them to bring them back).
+  text steps back: the whole header fades, the logo a little less than the
+  controls (move the mouse over them to bring them back).
 - Two kinds of text: what changes (the words, letters, numbers, messages) is
   bright; what never changes (labels, menus, explanations) is quieter,
   labels small and grey. Everything uses one monospace font, Geist Mono,

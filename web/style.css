@@ -347,13 +347,13 @@ dialog.confirm .win-p { margin: 0; }
 }
 .top-side { display: flex; align-items: center; gap: 14px; min-width: 0; }
 /* While you type, everything around the text steps back (as on monkeytype):
-   the logo turns grey, the controls almost vanish. Moving the mouse over them
-   brings them back. */
-.top .logo-name, .top .logo-key, .lang-switch, .profile, .rail { transition: color .4s var(--ease), opacity .4s var(--ease), filter .4s var(--ease); }
-body.typing-now .top .logo-name { color: var(--sub); }
-body.typing-now .top .logo-name span { color: color-mix(in srgb, var(--sub) 70%, var(--text)); }
-body.typing-now .top .logo-key { filter: grayscale(1) brightness(.55); }
-body.typing-now .lang-switch, body.typing-now .profile, body.typing-now .rail { opacity: .15; }
+   the whole header fades the same way, the logo a little less than the
+   controls (owner, 2026-10-18: the controls nearly vanished while the logo
+   only turned grey, so they did not fade together). Moving the mouse over
+   them brings them back. */
+.top .logo, .lang-switch, .profile, .rail { transition: opacity .4s var(--ease); }
+body.typing-now .top .logo { opacity: .55; }
+body.typing-now .lang-switch, body.typing-now .profile, body.typing-now .rail { opacity: .35; }
 body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.typing-now .rail:hover { opacity: 1; }
 .logo { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .logo-key { width: 34px; height: 34px; flex: none; }
@@ -929,7 +929,7 @@ body[data-caret="outline"] .caret {
   border-bottom: 2px solid color-mix(in srgb, var(--fc) 55%, transparent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 1px 2px rgba(0, 0, 0, .4);
   /* the next key's light moves over softly (120 ms), the press stays instant */
-  transition: transform var(--fast) var(--ease), background 120ms ease-out, box-shadow 120ms ease-out, color 120ms ease-out, opacity var(--med);
+  transition: transform var(--fast) var(--ease), translate 120ms ease-out, background 120ms ease-out, box-shadow 120ms ease-out, color 120ms ease-out, opacity var(--med);
   overflow: hidden;
 }
 .key.home::after {                    /* bump on F and J */
@@ -942,12 +942,6 @@ body[data-caret="outline"] .caret {
 }
 .key.next .alt { opacity: 1; }
 .key.mod .lbl { font-size: .8em; }
-/* the next key is only hinted: a partial tint and a soft ring, no jump (the
-   hands above show which finger; the eyes should not go to the keys) */
-.key.next {
-  background: color-mix(in srgb, var(--fc) var(--feel-next-tint, 100%), var(--key)); color: var(--text);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--fc) 80%, transparent), 0 0 18px -2px color-mix(in srgb, var(--fc) 70%, transparent);
-}
 /* locked: dark, with a faint edge and a dim label (not see-through: that looked washed out) */
 .key.locked:not(.next) {
   background: color-mix(in srgb, var(--fc) 3%, var(--bg)); color: color-mix(in srgb, var(--sub) 65%, var(--bg));
@@ -977,15 +971,18 @@ body[data-caret="outline"] .caret {
 }
 .keyboard .key.wide .lbl, .keyboard .key.mod .lbl { font-size: .8em; text-transform: none; }   /* "Space", "AltGr" as written */
 .keyboard .key.home::after { bottom: 22%; }   /* the bump stays on the top face */
+/* The next key (owner, 2026-10-18, variant C): it must be found by side
+   vision while the eyes stay on the text. Side vision sees brightness and
+   movement, not hues, and a tint of the finger colour got lost among the
+   other coloured keys. So it is the one light key on the dark keyboard (the
+   one dark key on the light one), raised a little (FEEL.nextKeyLiftPx); the
+   finger colour stays on its skirt and frame, matching the finger above. */
 .keyboard .key.next {
-  color: var(--text);
-  background:
-    radial-gradient(120% 90% at 50% 30%, rgba(255, 255, 255, .12), transparent 60%),
-    color-mix(in srgb, var(--fc) var(--feel-next-tint, 100%), var(--key));
+  color: #15161a; translate: 0 var(--feel-next-lift, -3px);
+  background: linear-gradient(to bottom, #ffffff, #e4e6ea);
   box-shadow:
-    inset 0 calc(-1 * var(--skirt)) 0 color-mix(in srgb, var(--fc) 70%, #000), inset 0 1px 0 rgba(255, 255, 255, .15),
-    0 0 0 1px color-mix(in srgb, var(--fc) 80%, transparent), 0 0 18px -2px color-mix(in srgb, var(--fc) 70%, transparent),
-    0 2px 0 rgba(0, 0, 0, .45);
+    inset 0 calc(-1 * var(--skirt)) 0 var(--fc), 0 0 0 2px var(--fc),
+    0 8px 22px -4px rgba(255, 255, 255, .35);
 }
 .keyboard .key.locked:not(.next) {
   color: color-mix(in srgb, var(--sub) 70%, var(--bg));
@@ -1017,9 +1014,9 @@ body[data-caret="outline"] .caret {
     0 2px 0 rgba(40, 35, 20, .12);
 }
 :root[data-theme="light"] .keyboard .key.next {
-  color: var(--text);   /* full colour: the other keys already carry 62% */
-  background: radial-gradient(120% 90% at 50% 30%, rgba(255, 255, 255, .3), transparent 60%), var(--fc);
-  box-shadow: inset 0 calc(-1 * var(--skirt)) 0 var(--fcd), 0 0 0 2px var(--fcd), 0 2px 0 rgba(40, 35, 20, .2);
+  color: #fff;   /* the one dark key among the light ones */
+  background: linear-gradient(to bottom, #2c2f36, #1b1d22);
+  box-shadow: inset 0 calc(-1 * var(--skirt)) 0 var(--fc), 0 0 0 2px var(--fcd), 0 8px 18px -6px rgba(0, 0, 0, .5);
 }
 :root[data-theme="light"] .hand .finger { --tint: color-mix(in srgb, var(--fc) 75%, var(--skin)); }
 :root[data-theme="light"] .hand .finger.on .skin { fill: var(--fcd); stroke: color-mix(in srgb, var(--fc) 40%, transparent); }

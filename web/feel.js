@@ -66,7 +66,9 @@ export const FEEL = {
   // keys: they overlap it by this part of a key (their wrists fade out
   // anyway). It also leaves more height for bigger keys.
   handOverlap: 0.42,        // in keys (0 = the hands stand above the keyboard)
-  nextKeyTint: 38,          // how strongly the next key takes its finger colour, % (100 = solid)
+  // The next key stands out by brightness, not by colour: side vision sees
+  // light and movement, not hues (owner, 2026-10-18: it got lost while typing).
+  nextKeyLiftPx: 3,         // how far the next key rises above the others (0 = stays flat)
 };
 
 // The CSS custom properties: style.css uses var(--feel-...).
@@ -79,5 +81,5 @@ root.setProperty("--feel-mark-line", FEEL.markLine + "px");
 root.setProperty("--feel-hand", String(FEEL.handScale));
 root.setProperty("--feel-finger-lift", -FEEL.fingerLiftPx + "px");
 root.setProperty("--feel-finger-glow", String(FEEL.fingerGlowPx));
-root.setProperty("--feel-next-tint", FEEL.nextKeyTint + "%");
+root.setProperty("--feel-next-lift", -FEEL.nextKeyLiftPx + "px");
 root.setProperty("--feel-hand-overlap", String(FEEL.handOverlap));
