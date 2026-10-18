@@ -73,7 +73,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | bottom | `state.js` | Shared state `S`, page elements `el`, `store` (localStorage that may be blocked), small helpers. |
 | bottom | `i18n.js` | Every interface text in all four languages, `t()`, `tPick()` (a random text from a pool), `applyI18n()`, `setUiLang()`. |
 | bottom | `fx.js` | Visual rewards: confetti, bumps, the message queue on the top line of the text block (outside typing), the start screen. They never affect what is measured. |
-| bottom | `feel.js` | `FEEL`: every knob of how a keypress feels (letter settle, key dip and finger tap, red tint of a wrong key, caret flinch, shake and breath, hands over the keyboard, mistake marks), also given to the CSS as `--feel-*`. Tuning the feel = changing a number here. |
+| bottom | `feel.js` | `FEEL`: every knob of how a keypress feels (caret glide, key dip and finger tap, red tint of a wrong key, caret flinch, shake and breath, hands over the keyboard, mistake marks), also given to the CSS as `--feel-*`. Tuning the feel = changing a number here. |
 | bottom | `api.js` | `getJSON` / `postJSON` for `/api/v1/`, with `?lang=` added. |
 | middle | `tools.js` | Tooltips, and the data buttons of the settings window: export / import, reset (with its confirm window). |
 | middle | `keyboard.js` | On-screen keyboard and hands from the layout data, the next key and finger, the on / off button (remembered separately for learning and free practice), the automatic size that fits the window. |

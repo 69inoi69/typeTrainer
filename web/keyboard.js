@@ -106,7 +106,8 @@ export function highlightNextKey() {
 
 // Key feedback with the Web Animations API: runs on the compositor and
 // needs no class juggling or layout reads, so it costs almost nothing.
-// The finger that pressed the key taps down with it (FEEL.fingerTap*): it
+// The finger that pressed the key taps down with it (FEEL.fingerTap*), back
+// along the way it points (--dx/--dy, in units of the drawing, --hu): it
 // animates "transform", so the lift of the finger to use ("translate") is
 // not touched.
 export function pulseKey(ch, ok) {
@@ -123,7 +124,8 @@ export function pulseKey(ch, ok) {
   if (!FEEL.fingerTapPx) return;
   const id = fingerOf[S.altBase[ch] ?? ch];
   for (const f of id === "th" ? [handFingers.thl, handFingers.thr] : [handFingers[id]]) {
-    f?.animate([{ transform: "none" }, { transform: `translateY(${FEEL.fingerTapPx}px)` }, { transform: "none" }],
+    const tap = `translate(calc(var(--dx) * var(--hu) * ${FEEL.fingerTapPx}), calc(var(--dy) * var(--hu) * ${FEEL.fingerTapPx}))`;
+    f?.animate([{ transform: "none" }, { transform: tap }, { transform: "none" }],
       { duration: FEEL.fingerTapMs, easing: "cubic-bezier(.2,.8,.2,1)" });
   }
 }

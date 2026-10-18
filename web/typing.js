@@ -202,8 +202,7 @@ function appendPortions(list) {
     wordsLoaded += p.words.length;
     at = end + 1;
   }
-  // the words are hidden until reveal() shows them; the first words of a
-  // round come with the fade of the whole text (.swap)
+  // the words are hidden until reveal() shows them
   const frag = document.createDocumentFragment();   // one DOM update, not one per letter
   for (let i = old; i < S.text.length; i++) {
     const sp = document.createElement("span");
@@ -214,20 +213,17 @@ function appendPortions(list) {
     spans.push(sp);
   }
   el.text.insertBefore(frag, el.caret);
-  reveal(old > 0);
+  reveal();
   const last = list.at(-1);
   if (last.unlocked) S.exercise = { ...(S.exercise ?? {}), unlocked: last.unlocked, locked: last.locked };  // learning only
 }
 
 // Shows the words up to SHOWN_AHEAD after the current one (never hides one
-// again). fade: the newly shown words fade in (not the first words of a
-// round: the whole text fades in then).
-function reveal(fade) {
+// again). They appear at once: a fade-in made the browser paint the text
+// again for a few frames on every word (owner, 2026-10-18: smoothness first).
+function reveal() {
   shownWords = Math.max(shownWords, wordsTyped + SHOWN_AHEAD);
-  for (; revealAt < spans.length && wordOf[revealAt] < shownWords; revealAt++) {
-    spans[revealAt].classList.remove("later");
-    if (fade) spans[revealAt].classList.add("new");
-  }
+  for (; revealAt < spans.length && wordOf[revealAt] < shownWords; revealAt++) spans[revealAt].classList.remove("later");
 }
 
 // The letters bar shows the focus of the portion with the caret.
@@ -623,7 +619,7 @@ const STREAK_RISE = 18;      // px: how far above the caret's top the badge sits
 const isMilestone = (n) => n === 10 || n === 25 || (n > 0 && n % 50 === 0);
 function endWord() {
   wordsTyped++;
-  reveal(true);                              // one word finished: one more appears
+  reveal();                                  // one word finished: one more appears
   renderProgress();
   updateLive();                              // the numbers change once per word: calm, readable
   if (wordClean) {

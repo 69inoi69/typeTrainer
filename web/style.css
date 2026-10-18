@@ -671,9 +671,7 @@ body[data-mode="free"] .letter-row { display: none; }
 @keyframes text-in { from { opacity: 0; transform: translateY(4px); } }
 /* words added while you type (typing.js, reveal): a short fade-in,
    opacity only, so nothing on the screen moves (length: web/feel.js) */
-.text span.new { animation: word-in var(--feel-word-in-ms, 0ms) ease-out; }
 .text span.later { visibility: hidden; }   /* a word not shown yet: keeps its place (typing.js reveal) */
-@keyframes word-in { from { opacity: .2; } }
 /* Desktop (owner, 2026-10-16, variant "T1", after monkeytype): no card,
    the text stands on the page, bigger; the keyboard on its panel as wide
    as the text (owner, 2026-10-18; it used to be a bit smaller), as big as
@@ -740,16 +738,11 @@ body[data-mode="free"] .letter-row { display: none; }
 #view-type:has(> .text-box.paused) > :is(.hands, .keyboard) { opacity: .3; }
 .text-box.paused :is(.caret, .focus-hint) { opacity: 0; }
 
-/* Letters change colour at once. A letter typed right "settles" from a
-   slightly stronger glow (only text-shadow: nothing moves, nothing is laid
-   out again); the knobs are in web/feel.js (--feel-*). */
-.text span.ok { color: var(--text); animation: settle var(--feel-settle-ms, 0ms) ease-out; }
-@keyframes settle {
-  from {
-    color: color-mix(in srgb, var(--text) 55%, var(--accent));
-    text-shadow: 0 0 var(--feel-settle-glow, 10px) color-mix(in srgb, var(--accent) 45%, transparent);
-  }
-}
+/* Letters change colour at once, with no animation (as on monkeytype). A
+   short warm glow on every typed letter was dropped (owner, 2026-10-18):
+   a glow is not a moving layer, so it made the browser paint the whole
+   text again on every frame while typing, and typing felt less smooth. */
+.text span.ok { color: var(--text); }
 /* the letter under the caret (typing.js placeCaret): a step brighter than
    the rest of the untyped text, so the eye finds it at once */
 .text span.cur { color: color-mix(in srgb, var(--text) 62%, var(--sub)); }
@@ -859,8 +852,10 @@ body[data-caret="outline"] .caret {
 /* ---------- hands: which finger presses the next key ---------- */
 /* Each finger is a rounded bar in its finger color; the one to use lights up
    and lifts a little. Sizes follow the keyboard unit --u, so the hands grow
-   and shrink with the keyboard. Lift and tilt use the separate CSS
-   "translate" and "rotate" properties, so they never fight each other. */
+   and shrink with the keyboard. Every finger is its own layer (index.html):
+   the lift is the CSS "translate" and the tap (keyboard.js pulseKey) the
+   "transform", both moved by the graphics card, so they never fight and
+   never make the page paint again. */
 .hands {
   display: flex; justify-content: center; align-items: flex-end; gap: calc(var(--u) * .9 * var(--feel-hand, 1));
   margin: 6px 0 8px; user-select: none; pointer-events: none;
@@ -872,7 +867,9 @@ body[data-caret="outline"] .caret {
    counted by fitKeyboard in keyboard.js) */
 #view-type > .hands { position: relative; z-index: 1; margin-bottom: calc(var(--u) * var(--feel-hand-overlap, 0) * -1); }
 .hand {
-  width: calc(var(--u) * 2 * var(--feel-hand, 1)); height: auto; overflow: visible; display: block;
+  /* --hu: one unit of the 100 x 84 drawing in px, for the finger moves */
+  --hu: calc(var(--u) * 2 * var(--feel-hand, 1) / 100);
+  position: relative; width: calc(var(--hu) * 100); aspect-ratio: 100 / 84; flex: none;
   --skin: color-mix(in srgb, var(--text) 7%, var(--bg));
   /* the wrist fades out at the bottom instead of ending in a hard edge */
   -webkit-mask-image: linear-gradient(to bottom, #000 74%, transparent);
@@ -882,20 +879,30 @@ body[data-caret="outline"] .caret {
    colour, so the one finger to use is the only bright thing in them (the
    light theme tints them more, below: there the colours have to be strong
    to show at all). No outlines, no shadow on the knuckle line. */
+.hand > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.hand.right { scale: -1 1; }   /* the left hand mirrored */
 .hand .palm { fill: var(--skin); }
-.hand .finger { --fc: #888; --tint: color-mix(in srgb, var(--fc) 14%, var(--skin)); transition: translate var(--med) var(--ease); }
+.hand .finger {
+  --fc: #888; --tint: color-mix(in srgb, var(--fc) 14%, var(--skin));
+  will-change: translate;      /* a layer of its own from the start: no repaint when it starts moving */
+  transition: translate var(--med) var(--ease);
+}
 .hand .finger .skin { fill: var(--tint); transition: fill var(--fast); }
 /* the finger to use: fills with its full colour and lifts, no glow (owner,
    2026-10-18: a blurred edge looked like double vision). It is the main
    "which finger" signal; the key below is only hinted (.key.next).
    Knobs: --feel-finger-* (web/feel.js). */
-.hand .finger.on { translate: 0 var(--feel-finger-lift, -6px); animation: finger-on 260ms cubic-bezier(.3, 1.6, .5, 1); }
+.hand .finger.on {
+  /* along the finger: --dx/--dy is the way it points (index.html) */
+  translate: calc(var(--dx) * var(--feel-finger-lift, -6) * var(--hu)) calc(var(--dy) * var(--feel-finger-lift, -6) * var(--hu));
+  animation: finger-on 260ms cubic-bezier(.3, 1.6, .5, 1);
+}
 /* an optional see-through outline (--feel-finger-glow, 0 = none) */
 .hand .finger.on .skin {
   fill: var(--fc); paint-order: stroke;
   stroke: color-mix(in srgb, var(--fc) 30%, transparent); stroke-width: var(--feel-finger-glow, 0);
 }
-@keyframes finger-on { from { translate: 0 1px; } }
+@keyframes finger-on { from { translate: calc(var(--dx) * var(--hu)) calc(var(--dy) * var(--hu)); } }
 
 /* visually hidden, still read by screen readers (the finger sentence) */
 .sr-only {
@@ -928,8 +935,11 @@ body[data-caret="outline"] .caret {
     color-mix(in srgb, var(--fc) 9%, var(--key));
   border-bottom: 2px solid color-mix(in srgb, var(--fc) 55%, transparent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 1px 2px rgba(0, 0, 0, .4);
-  /* the next key's light moves over softly (120 ms), the press stays instant */
-  transition: transform var(--fast) var(--ease), translate 120ms ease-out, background 120ms ease-out, box-shadow 120ms ease-out, color 120ms ease-out, opacity var(--med);
+  /* the next key's colour switches at once (a 120 ms fade of the colour and
+     the glow made the browser paint the keys again for several frames on
+     every key, owner, 2026-10-18); only its lift glides, which the
+     graphics card does on its own */
+  transition: transform var(--fast) var(--ease), translate 120ms ease-out, opacity var(--med);
   overflow: hidden;
 }
 .key.home::after {                    /* bump on F and J */
@@ -1516,7 +1526,7 @@ button.primary kbd { background: rgba(0, 0, 0, .16); color: inherit; }
 .intro-hands .finger .skin { animation: demo-fill 3s calc(var(--d) * .3s) infinite; }
 /* intro: the fingers light up one after another. Both ends spelled out: with
    one end left implicit, Chrome mixes the colours through odd neon shades */
-@keyframes demo-lift { 0%, 9% { translate: 0 -6px; } 12%, 100% { translate: 0 0; } }
+@keyframes demo-lift { 0%, 9% { translate: calc(var(--dx) * -6 * var(--hu)) calc(var(--dy) * -6 * var(--hu)); } 12%, 100% { translate: 0 0; } }
 @keyframes demo-fill { 0%, 9% { fill: var(--fc); } 12%, 100% { fill: var(--tint); } }
 button.inline { padding: 1px 8px; font-size: inherit; color: var(--accent-text); background: color-mix(in srgb, var(--accent) 10%, transparent); border-radius: 6px; }
 button.inline:hover { color: var(--accent-text); background: color-mix(in srgb, var(--accent) 20%, transparent); }
