@@ -13,7 +13,7 @@ import { applyI18n, t, hasText } from "./i18n.js";
 import { $, el, S, introOpen, isTouch, focusText } from "./state.js";
 import { applyKb, requestFit } from "./keyboard.js";
 import { refreshStats, renderStats, onStatsMode } from "./stats.js";
-import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, stopRound, loadExercise, roundStarted } from "./typing.js";
+import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, stopRound, loadExercise, roundStarted, pauseRound, checkLayout } from "./typing.js";
 import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
@@ -221,6 +221,12 @@ document.addEventListener("keydown", (e) => {
   focusText();
   handleChar(e.key);
 });
+
+// Alt+Tab, another app, a hidden tab: a round being typed pauses
+// (typing.js pauseRound); the first key back goes on with it.
+addEventListener("blur", pauseRound);
+document.addEventListener("visibilitychange", () => { if (document.hidden) pauseRound(); else checkLayout(); });
+addEventListener("focus", checkLayout);    // the layout may have been switched in another window
 
 // Phones: virtual keyboards often report "Unidentified" on keydown, so the
 // character only shows up here, in the hidden input.

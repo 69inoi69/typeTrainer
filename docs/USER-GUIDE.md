@@ -60,7 +60,12 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   moves while you type: every number keeps the room of its widest value.
   The result screen hides it: the next round picks its own
   focus. Caps Lock and wrong layout warnings appear on top of that whole
-  line, so nothing moves.
+  line, so nothing moves: a small card with what is wrong and, for the
+  layout, the usual keys that switch it on your system (Windows Win + Space,
+  macOS and ChromeOS Ctrl + Space, Linux Super + Space). In Chrome and Edge
+  the wrong layout shows as soon as the page opens, before any key (and goes
+  away once you switch); in other browsers after the first keys. A key typed
+  in the wrong layout or with Caps Lock never starts the round.
 - The keyboard shows the next key as the one light key (on the light theme the
   one dark key), raised a little and framed in its finger color, so the
   corner of the eye finds it without looking down; keys you do not need yet
@@ -138,7 +143,10 @@ Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
   The two lines ahead never change under your eyes. A word you mistyped comes
   back a line or two later. The counter `12/30 words` shows how much of the
   round is left. The round ends as soon as the last letter of its last word is
-  typed (no space needed); 10 seconds without a key also end it.
+  typed (no space needed); 10 seconds without a key also end it. Leaving
+  the window (Alt+Tab, another app, another tab) pauses the round: the
+  text blurs under "Paused", the clock stops (a timed round does not run
+  out), and any key goes on; the time away does not count.
 - The **bolt + number** at the right end of the numbers line counts clean words
   in a row (typed without a single mistake; hover for the tooltip). It gets
   hotter as it grows: green from 3, yellow from 10, orange with a zapping bolt
