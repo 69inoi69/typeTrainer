@@ -134,7 +134,8 @@ export function speedBands(speeds) {
 // monkeytype, but per word instead of per second: the same numbers as the
 // word tooltips, so the chart and the list below always agree). Each word
 // is a dot in its speed colour; a word with a mistake gets a red cross above
-// its dot. The line is an SVG stretched to the width (its stroke keeps its
+// its dot. Two axes: wpm on the left, the words (1 to the last measured)
+// along the bottom. The line is an SVG stretched to the width (its stroke keeps its
 // thickness); the dots and crosses are HTML placed in percent, so they stay
 // round at any width. Fewer than two measured words: no chart.
 function speedChart(words, bands) {
@@ -153,8 +154,9 @@ function speedChart(words, bands) {
   return `<div class="r-chart" role="img" aria-label="${t("result.chartLabel")}">` +
     `<span class="r-axis" aria-hidden="true"><span>${top}</span><span>${top / 2}</span><span>0</span></span>` +
     `<div class="r-plot"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">` +
-    `<path class="r-grid" d="M0 0H100M0 50H100M0 100H100"/>` +
-    `<polyline class="r-line" points="${line}"/></svg>${dots}</div></div>`;
+    `<path class="r-grid" d="M0 0H100M0 50H100"/><path class="r-axisline" d="M0 0V100H100"/>` +
+    `<polyline class="r-line" points="${line}"/></svg>${dots}` +
+    `<span class="r-xaxis" aria-hidden="true"><span>1</span><span>${pts.length}</span></span></div></div>`;
 }
 
 // The button's icon: an arrow for the next round (new words), a circle
