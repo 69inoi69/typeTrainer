@@ -619,7 +619,7 @@ function clearWord() {
 const STREAK_SHOW = 3;
 const STREAK_TIERS = [10, 25, 50];   // clean words where the colour changes
 const streakTier = (n) => STREAK_TIERS.filter((x) => n >= x).length;
-const STREAK_RISE = 22;      // px: how far above the caret's top the badge sits
+const STREAK_RISE = 18;      // px: how far above the caret's top the badge sits: just clear of it, and away from the line above (owner, 2026-10-18)
 const isMilestone = (n) => n === 10 || n === 25 || (n > 0 && n % 50 === 0);
 function endWord() {
   wordsTyped++;
@@ -704,6 +704,7 @@ function showWarn(kind) {
 // Hides the Caps Lock / wrong system layout warning (also on a language change).
 export function hideWarn() {
   wrongScript = 0;
+  capsOn = false;                     // asked again at the next key or mouse move
   delete el.warn.dataset.kind;
   el.warn.classList.remove("show");
   el.live.classList.remove("warning");
@@ -731,6 +732,20 @@ export async function checkLayout() {
   else if (el.warn.dataset.kind === "layout") hideWarn();
 }
 setInterval(checkLayout, 1000);   // a clock, not an animation: one small question a second
+
+// Caps Lock before the first letter (owner, 2026-10-18: it showed only after
+// letters were typed). Every key and mouse event says whether Caps Lock is on
+// (getModifierState), so the warning comes with the first mouse move or any
+// key (Shift, the Caps Lock key itself) and goes as soon as it is off.
+// Called by input.js on keys and mouse moves; it acts only on a change.
+let capsOn = false;
+export function checkCaps(e) {
+  const on = e.getModifierState?.("CapsLock");
+  if (on === undefined || on === capsOn) return;
+  capsOn = on;
+  if (on) { if (!el.warn.dataset.kind) showWarn("caps"); }   // a wrong layout is said first
+  else if (el.warn.dataset.kind === "caps") hideWarn();
+}
 
 // WPM uses the standard definition: 5 characters = 1 word.
 // `end`: when the round ended (default: now).
