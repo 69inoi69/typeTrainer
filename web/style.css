@@ -66,6 +66,7 @@
   --fast: 70ms;
   --med: 180ms;
   --ease: cubic-bezier(.2, .8, .2, 1);
+  --caret-curve: cubic-bezier(.31, .16, .69, .84);   /* the caret's glide (and the streak badge riding on it) */
 
   /* controls: the language switch and the profile button share one height */
   --ctl: 38px;          /* outer height of every switch and button */
@@ -384,7 +385,7 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
   position: absolute; left: 0; top: 0; z-index: 3; display: none; align-items: center; gap: 3px; pointer-events: none;
   font-size: .95rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; color: var(--sc);
   text-shadow: 0 0 calc(var(--glow) * 14px) color-mix(in srgb, var(--sc) 70%, transparent);
-  transition: translate var(--feel-caret-ms, 0ms) cubic-bezier(.2, .6, .35, 1), color .4s var(--ease);
+  transition: translate var(--feel-caret-ms, 0ms) var(--caret-curve), color .4s var(--ease);
 }
 .streak.jump { transition: none; }
 .streak .bolt { width: 13px; height: 13px; flex: none; fill: color-mix(in srgb, var(--sc) 35%, transparent); stroke: var(--sc); stroke-width: 2; stroke-linejoin: round; }
@@ -788,7 +789,9 @@ body[data-mode="free"] .letter-row { display: none; }
   border-radius: 3px; pointer-events: none;
   box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 25%, transparent);
   will-change: translate;
-  transition: translate var(--feel-caret-ms, 0ms) cubic-bezier(.2, .6, .35, 1);   /* a clear step, a short settle (web/feel.js) */
+  /* monkeytype's "smooth caret: fast": its in-out curve (anime.js inOut(1.25),
+     matched here within 0.2%), almost even, over --feel-caret-ms (web/feel.js) */
+  transition: translate var(--feel-caret-ms, 0ms) var(--caret-curve);
   animation: breathe 1.1s ease-in-out infinite;   /* at rest it breathes; typing.js does the same while a round waits */
 }
 .caret.jump { transition: none; }   /* new round, resize: no glide */
@@ -1386,6 +1389,9 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
 .r-wordlist { animation-delay: 120ms; }
 .r-foot { animation-delay: 180ms; }
 .r-plot { animation: draw 600ms cubic-bezier(.4, 0, .2, 1) 80ms both; }
+/* back from the stats to a result already seen: no entrance again
+   (result.js settleResult), the letters row neither */
+#view-type.settled .result *, #view-type.settled .result, #view-type.settled .chip { animation: none; }
 @keyframes draw { from { clip-path: inset(-10px 100% -30px -12px); } to { clip-path: inset(-10px -12px -30px -12px); } }
 /* the count: a registered integer property animates from 0 to --to, and the
    counter shows it (a browser without @property shows the final number) */
@@ -1412,8 +1418,8 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
 @media (min-width: 1000px) { .r-row { flex-wrap: nowrap; gap: 16px 32px; } .r-row > .r-num { flex: none; } .r-row > .r-num:has(.r-chars) { flex: 0 1 auto; min-width: 0; } }
 /* what happened: at the right end of the one row; on a phone, where the
    row wraps, it starts its own line on the left like everything else */
-.r-row > .r-main, .r-row > .r-mastered { align-self: center; }
-@media (min-width: 1000px) { .r-row > .r-main, .r-row > .r-mastered { margin-left: auto; } }
+.r-row > .r-main { align-self: center; }
+@media (min-width: 1000px) { .r-row > .r-main { margin-left: auto; } }
 /* every number: the label on top, the value under it, on the left */
 .r-num { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .r-num.big > b { font-size: 2.6rem; line-height: 1; letter-spacing: -.03em; color: var(--text); }
@@ -1442,24 +1448,8 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
   color: var(--accent-text); background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 .r-main b { color: var(--accent-text); font-weight: 500; }
-/* the new letter: a lit gold key that pops in (the label above it is the
-   mastered one's, with a key icon in gold instead of the green tick) */
-.r-key.r-badge {
-  background: var(--accent-fill); color: var(--on-accent); box-shadow: var(--accent-glow);
-  animation: letter-pop .6s cubic-bezier(.2, 1.6, .4, 1) .1s both;
-}
-.r-new .r-tick { stroke: var(--accent-text); stroke-width: 2; }
-/* whatever stands at the row's right end (the new letter, the mastered
-   letters, the test verdict) sits centred under its label (owner, 2026-10-18) */
-.r-num.r-mastered { align-items: center; }
-.r-mastered .r-keys { justify-content: center; }
+/* the test verdict at the row's right end, centred (owner, 2026-10-18) */
 .r-row > .r-main { text-align: center; }
-@keyframes letter-pop { 0% { transform: scale(.3) rotate(-25deg); opacity: 0; } 70% { transform: scale(1.18) rotate(6deg); opacity: 1; } }
-/* letters mastered in this round: the label with a green tick, the
-   letters as small keys in a row */
-.r-mastered .r-lbl { display: inline-flex; align-items: center; gap: 4px; }
-.r-keys { display: flex; gap: 6px; margin-top: .45em; }
-.r-keys .r-key { font-size: 1.1rem; font-weight: 600; }
 /* the words of the round in the text font, each coloured by its speed in
    this round (result.js speedBands): s1 slowest = red, through yellow, to
    s5 fastest = green; a mistyped letter is underlined in red. A long round
@@ -1525,11 +1515,6 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
 .r-w i { font-style: normal; text-decoration: underline 2px var(--error); text-underline-offset: 4px; }
 .r-facts { font-size: .8rem; color: color-mix(in srgb, var(--text) 65%, var(--sub)); }
 .result .r-foot { display: flex; justify-content: center; margin-top: 26px; }   /* the only way on, with Enter / Esc / Tab */
-.r-tick { width: 16px; height: 16px; fill: none; stroke: var(--ok); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-.r-key {
-  display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; border-radius: 5px;
-  color: var(--text); font-weight: 500; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ok) 55%, transparent);
-}
 /* the one button here (owner, 2026-10-18: "more expressive", then without
    its glow, its fill, and then calmer: the gold frame pulled the eye away
    from the numbers): gold text in a quiet frame of the line colour; the
@@ -1833,12 +1818,6 @@ body.live-off .live .metric.num { display: none; }
   animation: amb-fall var(--dur) linear var(--delay) infinite;
 }
 @keyframes amb-fall { to { transform: translate3d(var(--drift), 125vh, 0) rotate(var(--rot)); } }
-/* While a round is typed the pieces stop where they are and go on falling
-   when it ends (owner, 2026-10-18: typing felt less smooth with them). A
-   running animation is ticked on every frame the page draws, and while you
-   type the page draws on every frame; a paused one costs nothing. They stay
-   on the screen, so the page does not change, it only holds still. */
-body.typing-now .ambient > i { animation-play-state: paused; }
 /* the screen saver: a minute with no key and no mouse (ambient.js) */
 body.afk .ambient { --boost: 1.7; }
 .top, .views, .bottom { transition: opacity 1.2s var(--ease); }

@@ -1,7 +1,7 @@
 // The quiet background (owner, 2026-10-18): in the empty fields left and
 // right of the page, outlines of keycaps with the open letters drift slowly
-// down and turn. It stays while you type, but holds still until the round
-// ends (style.css, body.typing-now): moving, it cost smoothness. After a
+// down and turn, while you type too (owner, 2026-10-18: holding it still
+// during a round made no difference to smoothness, the hands did). After a
 // minute with no key and no mouse the page dims a little and the background
 // grows a little stronger: a screen saver, any key or mouse move ends it.
 // Decoration only, like fx.js: it never changes what is measured.

@@ -16,7 +16,7 @@ import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, st
 import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
-import { resultOpen, closeResult } from "./result.js";
+import { resultOpen, closeResult, settleResult } from "./result.js";
 import { settingsOpen, openSettings, onSettingsClose, onLengthChange, onKbToggle, onGoalChange } from "./settings.js";
 import { setMode, refreshFreeplay, renderNav } from "./modes.js";
 import { buildAmbient } from "./ambient.js";
@@ -52,15 +52,23 @@ document.body.classList.toggle("stats-only", statsOnly);
 export function startView() {
   if (statsOnly) setView("stats");
 }
+// The stats open with their animation (style.css #view-stats.grow) only
+// when they have something new since they were last shown (a round, another
+// mode or length); switching back and forth plays nothing again (owner,
+// 2026-10-18).
+let statsSeen = "";
 function setView(name) {
   if (statsOnly) name = "stats";
   S.view = name;
   document.body.dataset.view = name;          // style.css hides the typing shortcuts on stats
   const stats = name === "stats";
   renderNav();
+  if (stats) settleResult();                   // a result left open keeps its final look
   el.viewType.hidden = stats;
   el.viewStats.hidden = !stats;
-  el.viewStats.classList.toggle("grow", stats);   // the stats open with their animation (style.css #view-stats.grow)
+  const seen = JSON.stringify([S.mode, S.settings.length, S.lastStats?.sessionCount, S.free?.sessionCount]);
+  el.viewStats.classList.toggle("grow", stats && seen !== statsSeen);
+  if (stats) statsSeen = seen;
   if (stats) {
     setTyping(false);                          // the header comes back
     refreshStats().catch(console.error);

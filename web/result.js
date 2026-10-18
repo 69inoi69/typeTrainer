@@ -86,19 +86,11 @@ export function showResult(r) {
       `${part(c.correct, "result.correct", "")}${part(c.wrong, "result.wrong", c.wrong ? " bad" : "")}` +
       `${part(c.extra, "result.extra", c.extra ? " bad" : "", "result.extraTip")}${part(c.missed, "result.missed", "", "result.missedTip")}</span></span>`);
   }
-  // at the row's right end, what happened, the most important thing
-  // first: the test verdict, a new letter, or the letters mastered in
-  // this round (a green tick and the letters as small keys). The new letter
-  // has the same shape as "mastered", a label over a key, so it stays in
-  // the row instead of wrapping to a line of its own (owner, 2026-10-18)
+  // at the row's right end: the test verdict. A new letter and the letters
+  // mastered in this round are not repeated here (owner, 2026-10-18): the
+  // letters row above the result shows them, the new one pops, the
+  // mastered ones shine and get their tick, the next one has its frame.
   if (r.test) row.push(`<p class="r-main${r.test === "pass" ? " k-best" : ""}"><span>${t(`result.test.${r.test}`)}</span></p>`);
-  else if (r.newLetter) {
-    row.push(`<span class="r-num mid r-mastered r-new"><span class="r-lbl"><svg class="r-tick" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M21 12v2.5"/></svg>${t("result.newLetter")}</span>` +
-      `<span class="r-keys"><b class="r-key r-badge">${r.newLetter}</b></span></span>`);
-  } else if (r.mastered?.length) {
-    row.push(`<span class="r-num mid r-mastered"><span class="r-lbl"><svg class="r-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>${t("result.masteredLabel")}</span>` +
-      `<span class="r-keys">${r.mastered.map((c) => `<b class="r-key">${c}</b>`).join("")}</span></span>`);
-  }
 
   const body = `<div class="r-top${graph ? "" : " solo"}">${hero}${graph}</div>` +
     (row.length ? `<div class="r-row">${row.join("")}</div>` : "") + list;
@@ -184,11 +176,21 @@ function open(body, btn) {
     closeResult();
   });
   box.hidden = false;
+  el.viewType.classList.remove("settled");   // a new result plays its entrance
   el.textBox.classList.add("resulting");
   // phone: the round is over, so its keyboard closes and the whole result
   // is in view (owner, 2026-10-16); "Next round" opens it again
   if (isTouch()) el.input.blur();
   return new Promise((resolve) => { done = resolve; });
+}
+
+// The typing screen goes out of sight (the stats): the result and the
+// letters row keep their final look, so coming back does not play their
+// entrance again (owner, 2026-10-18: the WPM counted up and the chart drew
+// itself again). A browser restarts a CSS animation on an element that is
+// shown again; .settled turns them off (style.css) until the next result.
+export function settleResult() {
+  if (done) el.viewType.classList.add("settled");
 }
 
 // Closes the result screen; the waiting showResult() resolves and the
@@ -198,6 +200,7 @@ export function closeResult() {
   const resolve = done;
   done = null;
   box.hidden = true;
+  el.viewType.classList.remove("settled");
   el.textBox.classList.remove("resulting");
   resolve();
 }

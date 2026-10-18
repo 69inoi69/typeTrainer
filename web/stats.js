@@ -13,7 +13,7 @@
 // and a new round length).
 
 import { i18nVars, t, applyI18n } from "./i18n.js";
-import { el, S } from "./state.js";
+import { el, S, reducedMotion } from "./state.js";
 import { getJSON } from "./api.js";
 import { showTip } from "./tools.js";
 import { LENGTHS, lengthLabel, firstRoundDone } from "./settings.js";
@@ -266,7 +266,15 @@ el.lengthFilter.addEventListener("click", async (e) => {
   const id = b.dataset.length, free = S.mode === "free";
   if (id === S.settings.length) other = null;
   else other = { free, length: id, data: await getJSON(`${free ? "/freeplay/stats" : "/stats"}?length=${id}`) };
+  // only the detail of the length changes: no opening animation of the
+  // whole screen again (owner, 2026-10-18: everything vanished and came
+  // back), just a short fade of the parts that show the new length
+  el.viewStats.classList.remove("grow");
   renderStats();
+  if (reducedMotion()) return;
+  for (const part of [el.tiles, el.chart.closest(".panel"), ...document.querySelectorAll("#view-stats .stats-pair .panel")]) {
+    part?.animate?.([{ opacity: 0.35 }, { opacity: 1 }], { duration: 220, easing: "ease-out" });
+  }
 });
 
 const HEAT_FLOOR = 0.35;   // difficulty that is red at the least (see drawHeatKeyboard)
