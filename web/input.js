@@ -36,7 +36,7 @@ window.addEventListener("resize", () => {
   fitText();
   requestFit();
   placeCaret(true);
-  if (S.view === "stats") renderStats();
+  if (S.view === "stats") { el.viewStats.classList.remove("grow"); renderStats(); }   // a resize redraws without the opening animation
 });
 
 // ---------- screens: typing / stats ----------
@@ -47,6 +47,7 @@ function setView(name) {
   renderNav();
   el.viewType.hidden = stats;
   el.viewStats.hidden = !stats;
+  el.viewStats.classList.toggle("grow", stats);   // the stats open with their animation (style.css #view-stats.grow)
   if (stats) {
     setTyping(false);                          // the header comes back
     refreshStats().catch(console.error);

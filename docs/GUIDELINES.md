@@ -123,7 +123,13 @@ consequences, the same word for the same thing. All text lives in
 - Typing feels instant: a keypress only flips classes on one or two letters;
   the caret moves once per animation frame; animations use CSS transitions
   or the Web Animations API, never JS timers (`AGENTS.md`). Feel numbers
-  live in `web/feel.js`.
+  live in `web/feel.js`. Responses to a key are 80-180 ms, start in the same
+  frame and ease out; they animate colour, opacity, filter or transform only
+  (nothing that moves the layout). Colours for JavaScript animations come
+  from the theme (`themeColor` in `state.js`), never hard-coded.
+- A screen that opens (the result, the stats) does it as one short
+  sequence of small rises (`rise` in `style.css`), not as scattered effects;
+  a redraw on resize does not replay it.
 - Selected states use `aria-pressed` / `aria-selected` and the accent fill.
 - A destructive action asks first in a confirm window (Reset all progress:
   "Reset all progress? This can't be undone.", Cancel has the focus).

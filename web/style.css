@@ -576,7 +576,7 @@ body[data-mode="free"] .letter-row { display: none; }
 .chip.focus { background: var(--accent-fill); color: var(--on-accent); box-shadow: var(--accent-glow); }
 .chip.locked { background: transparent; color: color-mix(in srgb, var(--sub) 55%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 25%, transparent); }
 :root[data-theme="light"] .chip:not(.locked, .focus) { background: var(--panel); }
-.chip.pop { animation: pop 340ms cubic-bezier(.2, 1.6, .4, 1); }   /* a letter just opened */
+.chip.pop { animation: pop 420ms cubic-bezier(.34, 1.56, .64, 1); }   /* a letter just opened: a springy pop */
 .chip.shine { animation: shine .9s ease-out; }
 /* a letter just mastered: it glows green once and calms down, no jump, so
    it reads as "this one got its green dot" (it used to bounce, too loud) */
@@ -586,9 +586,9 @@ body[data-mode="free"] .letter-row { display: none; }
 .chip:not(.locked):hover { transform: translateY(-2px); }
 /* a small bounce and one soft ring that spreads out and fades (no confetti) */
 @keyframes pop {
-  0% { transform: scale(.7); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 70%, transparent); }
-  55% { transform: scale(1.15); }
-  100% { transform: scale(1); box-shadow: 0 0 0 9px transparent; }
+  0% { transform: scale(.6); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 80%, transparent); }
+  55% { transform: scale(1.18); }
+  100% { transform: scale(1); box-shadow: 0 0 0 12px transparent; }
 }
 /* The status line (focus, next letter, letters open): part of the text
    block, a quiet row right under the text, aligned with it (owner,
@@ -717,11 +717,21 @@ body[data-mode="free"] .letter-row { display: none; }
    slightly stronger glow (only text-shadow: nothing moves, nothing is laid
    out again); the knobs are in web/feel.js (--feel-*). */
 .text span.ok { color: var(--text); animation: settle var(--feel-settle-ms, 0ms) ease-out; }
-@keyframes settle { from { text-shadow: 0 0 var(--feel-settle-glow, 10px) color-mix(in srgb, var(--text) 60%, transparent); } }
+@keyframes settle {
+  from {
+    color: color-mix(in srgb, var(--text) 55%, var(--accent));
+    text-shadow: 0 0 var(--feel-settle-glow, 10px) color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+}
+/* the letter under the caret (typing.js placeCaret): a step brighter than
+   the rest of the untyped text, so the eye finds it at once */
+.text span.cur { color: color-mix(in srgb, var(--text) 62%, var(--sub)); }
 /* the focus letter (the one being practised) is tinted until it is typed;
    on the light page a vivid amber of its own (3.4:1, enough for text this big) */
 .text span.fx { color: color-mix(in srgb, var(--accent) 62%, var(--sub)); }
 :root[data-theme="light"] .text span.fx { color: #b87400; }
+.text span.fx.cur { color: var(--accent-text); }
+:root[data-theme="light"] .text span.fx.cur { color: #9a6000; }
 /* no glow on the text at rest: crisp letters read better; a mistake keeps a
    short red glow (text-shadow moves nothing, so it costs nothing on a keypress) */
 .text span.bad, .text span.extra { text-shadow: 0 0 10px color-mix(in srgb, var(--error) 45%, transparent); }
@@ -760,7 +770,7 @@ body[data-mode="free"] .letter-row { display: none; }
   box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 20%, transparent);
   will-change: translate;
   transition: translate var(--feel-caret-ms, 0ms) cubic-bezier(.15, .85, .35, 1);   /* starts at once, settles softly (web/feel.js) */
-  animation: blink 1s steps(1) infinite;
+  animation: breathe 1.1s ease-in-out infinite;   /* at rest it breathes; typing.js does the same while a round waits */
 }
 .caret.jump { transition: none; }   /* new round, resize: no glide */
 /* The caret is a thin line by default (settings: "line"): 2px of accent at
@@ -773,7 +783,7 @@ body:not(.caret-block) .caret {
 :root[data-theme="light"] body:not(.caret-block) .caret { background: var(--accent-deep); box-shadow: 0 0 10px rgba(224, 162, 26, .45); }
 .text-box.typing .caret { animation: none; }             /* solid while typing */
 .text-box.blurred .caret { opacity: 0; }
-@keyframes blink { 50% { opacity: 0; } }
+@keyframes breathe { 50% { opacity: .3; } }
 
 .hidden-input { position: absolute; opacity: 0; width: 1px; height: 1px; left: -9999px; }
 
@@ -802,6 +812,11 @@ body:not(.caret-block) .caret {
   margin: 6px 0 8px; user-select: none; pointer-events: none;
 }
 .hands.off { display: none; }
+/* on the typing screen the hands rest on the keyboard's top edge, as real
+   hands over the keys (their wrists fade out anyway): drawn above it, and
+   that much less height used, so the keys can be bigger (FEEL.handOverlap,
+   counted by fitKeyboard in keyboard.js) */
+#view-type > .hands { position: relative; z-index: 1; margin-bottom: calc(var(--u) * var(--feel-hand-overlap, 0) * -1); }
 .hand {
   width: calc(var(--u) * 2 * var(--feel-hand, 1)); height: auto; overflow: visible; display: block;
   --skin: color-mix(in srgb, var(--text) 7%, var(--bg));
@@ -860,7 +875,8 @@ body:not(.caret-block) .caret {
     color-mix(in srgb, var(--fc) 9%, var(--key));
   border-bottom: 2px solid color-mix(in srgb, var(--fc) 55%, transparent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 1px 2px rgba(0, 0, 0, .4);
-  transition: transform var(--fast) var(--ease), background var(--fast), box-shadow var(--fast), color var(--fast), opacity var(--med);
+  /* the next key's light moves over softly (120 ms), the press stays instant */
+  transition: transform var(--fast) var(--ease), background 120ms ease-out, box-shadow 120ms ease-out, color 120ms ease-out, opacity var(--med);
   overflow: hidden;
 }
 .key.home::after {                    /* bump on F and J */
@@ -950,6 +966,21 @@ button:disabled:active { transform: none; }
    then the keyboard and the letters side by side. Heights come from the
    window (vh), so a taller screen gets a taller chart, not a scrollbar. */
 #view-stats { display: flex; flex-direction: column; gap: 14px; padding-top: 4px; }
+/* The stats open as one short sequence (input.js adds .grow when the screen
+   opens; a resize redraws without it): the tiles rise one after another,
+   the panels follow, the bars grow from the baseline left to right. */
+#view-stats.grow .tile, #view-stats.grow .panel { animation: rise 280ms var(--ease) both; }
+#view-stats.grow .tile:nth-child(2) { animation-delay: 30ms; }
+#view-stats.grow .tile:nth-child(3) { animation-delay: 60ms; }
+#view-stats.grow .tile:nth-child(4) { animation-delay: 90ms; }
+#view-stats.grow .tile:nth-child(5) { animation-delay: 120ms; }
+#view-stats.grow .panel { animation-delay: 100ms; }
+#view-stats.grow .stats-pair .panel { animation-delay: 160ms; }
+#view-stats.grow .chart .bar {
+  transform-box: fill-box; transform-origin: 50% 100%;
+  animation: bar-grow 480ms cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(140ms + var(--i, 0) * 6ms);
+}
+@keyframes bar-grow { from { transform: scaleY(0); } }
 #view-stats[hidden] { display: none; }
 .stats-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
 .share { display: flex; gap: 6px; margin-left: auto; order: 2; }
@@ -969,6 +1000,19 @@ button:disabled:active { transform: none; }
 /* the chart, the keyboard and the letters: one kind of card */
 .panel { background: var(--panel); border-radius: var(--r-lg); box-shadow: var(--lift); padding: 16px 18px; }
 .chart { height: clamp(140px, 30vh, 340px); }
+/* desktop: the whole stats screen in one window, no scrolling (owner,
+   2026-10-18). The chart is the part that gives: its panel takes the
+   height the tiles, the keyboard and the letters leave (stats.js draws it
+   last, at that size); the letters are a little smaller so they take four
+   rows. A window too short for even the smallest chart scrolls as before. */
+@media (min-width: 1000px) and (pointer: fine) {
+  #view-stats:not([hidden]) { flex: 1; min-height: 0; }
+  .chart-panel { flex: 1 1 0; min-height: 190px; display: flex; flex-direction: column; }
+  .chart-panel:has(.empty) { flex: none; min-height: 0; }
+  .chart-panel .chart, body[data-mode="free"] .chart-panel .chart { flex: 1; height: auto; min-height: 120px; }
+  #letter-grid { grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); }   /* the id: these come before the general rules below */
+  #letter-grid .lchip { height: 44px; }
+}
 .chart:has(> .empty) { height: auto; }   /* no rounds yet: one line of text, not an empty half screen */
 /* free practice has no letters: the chart takes their room */
 body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
@@ -1144,8 +1188,24 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
   position: relative; font-size: 1rem;
   width: 100%;
   display: flex; flex-direction: column;
-  animation: view-in .25s var(--ease);
 }
+/* The result opens as one short sequence, not all at once: the numbers and
+   the chart first, then the row of facts, the words and the button (60 ms
+   apart, each a small rise); the speed counts up from 0 and the chart is
+   revealed from left to right, as if drawn. Under 0.7 s in all. */
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+.r-top, .r-row, .r-wordlist, .r-foot { animation: rise 260ms var(--ease) both; }
+.r-row { animation-delay: 60ms; }
+.r-wordlist { animation-delay: 120ms; }
+.r-foot { animation-delay: 180ms; }
+.r-plot { animation: draw 600ms cubic-bezier(.4, 0, .2, 1) 80ms both; }
+@keyframes draw { from { clip-path: inset(-10px 100% -10px 0); } to { clip-path: inset(-10px -10px -10px 0); } }
+/* the count: a registered integer property animates from 0 to --to, and the
+   counter shows it (a browser without @property shows the final number) */
+@property --n { syntax: "<integer>"; inherits: false; initial-value: 0; }
+.r-count { --n: var(--to); counter-reset: n var(--n); animation: count-up 600ms cubic-bezier(.2, .8, .2, 1); font-variant-numeric: tabular-nums; }
+.r-count::after { content: counter(n); }
+@keyframes count-up { from { --n: 0; } }
 .result[hidden] { display: none; }
 .result p { margin: 0; }
 .r-body { display: flex; flex-direction: column; }

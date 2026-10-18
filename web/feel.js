@@ -4,8 +4,9 @@
 // The CSS reads the same values as custom properties (--feel-*), set below.
 // None of this changes what is measured or sent to the server.
 // Layer: bottom. Imports nothing.
-// Used by: keyboard.js (key dip, red tint, hand size), typing.js (caret
-// flinch, line scroll), and style.css (caret glide, word fade, settle) through the --feel-* properties.
+// Used by: keyboard.js (key dip, red tint, finger tap, hand size), typing.js
+// (caret flinch and breath, line scroll), and style.css (caret glide, word
+// fade, settle) through the --feel-* properties.
 // To add a knob: a field in FEEL with its unit and what "more" does, then
 // either read FEEL.x in the JavaScript or add a root.setProperty line below
 // and use var(--feel-x) in style.css.
@@ -18,10 +19,12 @@ export const FEEL = {
   wordInMs: 90,             // a newly shown word fading in (0 = appears at once)
   lineScrollMs: 120,        // the text moving up a line (0 = at once)
 
-  // A letter typed right "settles": it starts slightly brighter (a stronger
-  // glow) and calms down to the normal text colour. 0 ms = off.
-  charSettleMs: 80,        // how long the settle takes
-  charSettleGlow: 16,       // glow at the start, px (the normal glow is 10)
+  // A letter typed right "settles": it starts a little warmer (a touch of
+  // the gold, and a glow on the dark page) and calms down to the text
+  // colour. Colour only: a letter is an inline <span>, it cannot scale
+  // without breaking the lines. 0 ms = off.
+  charSettleMs: 110,        // how long the settle takes
+  charSettleGlow: 12,       // glow at the start, px (dark theme only)
 
   // The key on the virtual keyboard answers a press: a short, soft dip.
   keyPressMs: 90,           // duration of the dip
@@ -30,10 +33,15 @@ export const FEEL = {
   keyMissMs: 200,           // duration of the tint
   keyMissAlpha: 0.4,        // strength of the red at the start (0..1)
 
-  // The caret flinches on a mistake: it shrinks for an instant and comes
-  // back; its glide to the next letter is not touched.
-  caretFlinchMs: 70,        // duration (about 4 frames)
+  // The caret flinches on a mistake: it shrinks, turns red and shakes for
+  // an instant, then comes back; its glide to the next letter is not touched.
+  caretFlinchMs: 120,       // duration (about 7 frames)
   caretFlinchScale: 0.7,    // height at the start of the flinch (1 = none)
+  caretShakePx: 2,          // how far it shakes to each side (0 = no shake)
+  // At rest the caret breathes (fades out and in, softly) instead of a hard
+  // blink; it starts this long after the last key, so it is solid while you type.
+  caretBreathMs: 1100,      // one breath, out and in
+  caretBreathDelayMs: 650,  // quiet time before it starts
 
   // How the three kinds of mistake look (style.css .bad / .miss / .extra):
   // wrong = red letter; skipped = dim with a dotted underline;
@@ -45,6 +53,13 @@ export const FEEL = {
   handScale: 1.4,           // hand width in keys: 2 * handScale (1 = the old size)
   fingerLiftPx: 8,          // how far the finger to use lifts
   fingerGlowPx: 7,          // its soft glow: a see-through outline, in the hand drawing's units
+  // The finger that presses a key taps down a little with it.
+  fingerTapPx: 3,           // how far it moves down (0 = off)
+  fingerTapMs: 110,         // duration
+  // The hands rest on the top edge of the keyboard, as real hands over the
+  // keys: they overlap it by this part of a key (their wrists fade out
+  // anyway). It also leaves more height for bigger keys.
+  handOverlap: 0.42,        // in keys (0 = the hands stand above the keyboard)
   nextKeyTint: 38,          // how strongly the next key takes its finger colour, % (100 = solid)
 };
 
@@ -59,3 +74,4 @@ root.setProperty("--feel-hand", String(FEEL.handScale));
 root.setProperty("--feel-finger-lift", -FEEL.fingerLiftPx + "px");
 root.setProperty("--feel-finger-glow", String(FEEL.fingerGlowPx));
 root.setProperty("--feel-next-tint", FEEL.nextKeyTint + "%");
+root.setProperty("--feel-hand-overlap", String(FEEL.handOverlap));

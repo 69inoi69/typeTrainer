@@ -10,7 +10,7 @@
 import { FEEL } from "./feel.js";
 import { t } from "./i18n.js";
 import { FX } from "./fx.js";
-import { el, S, store, isTouch } from "./state.js";
+import { el, S, store, isTouch, themeColor, reducedMotion } from "./state.js";
 
 // ---------- keyboard ----------
 let fingerOf = {};         // char -> finger id
@@ -103,24 +103,35 @@ export function highlightNextKey() {
 
 // Key feedback with the Web Animations API: runs on the compositor and
 // needs no class juggling or layout reads, so it costs almost nothing.
+// The finger that pressed the key taps down with it (FEEL.fingerTap*): it
+// animates "transform", so the lift of the finger to use ("translate") is
+// not touched.
 export function pulseKey(ch, ok) {
   const k = keyFor(ch);
-  if (!k || !k.animate) return;
+  if (!k || !k.animate || reducedMotion()) return;
   if (ok) {   // a short, soft press (knobs: FEEL.keyPress*)
     k.animate([{ transform: `translateY(1px) scale(${FEEL.keyPressScale})` }, { transform: "none" }],
       { duration: FEEL.keyPressMs, easing: "cubic-bezier(.2,.8,.2,1)" });
-  } else {    // the wrong key gets a quick red tint (the dark theme's --error; FEEL.keyMiss*)
-    k.animate([{ boxShadow: `inset 0 0 0 999px rgba(202, 71, 84, ${FEEL.keyMissAlpha})` }, { boxShadow: "inset 0 0 0 999px rgba(202, 71, 84, 0)" }],
+  } else {    // the wrong key gets a quick red tint in the theme's --error (FEEL.keyMiss*)
+    const red = `color-mix(in srgb, ${themeColor("--error")} ${Math.round(FEEL.keyMissAlpha * 100)}%, transparent)`;
+    k.animate([{ boxShadow: `inset 0 0 0 999px ${red}` }, { boxShadow: "inset 0 0 0 999px transparent" }],
       { duration: FEEL.keyMissMs, easing: "ease-out" });
+  }
+  if (!FEEL.fingerTapPx) return;
+  const id = fingerOf[S.altBase[ch] ?? ch];
+  for (const f of id === "th" ? [handFingers.thl, handFingers.thr] : [handFingers[id]]) {
+    f?.animate([{ transform: "none" }, { transform: `translateY(${FEEL.fingerTapPx}px)` }, { transform: "none" }],
+      { duration: FEEL.fingerTapMs, easing: "cubic-bezier(.2,.8,.2,1)" });
   }
 }
 
-// A letter just opened: its key glows once with a soft ring in the accent
-// colour (the dark theme's --accent), ~380 ms. One animation, no confetti.
+// A letter just opened: its key glows once with a soft ring in the theme's
+// --accent, ~380 ms. One animation, no confetti.
 export function glowKey(ch) {
   const k = keyFor(ch);
-  if (!k || !k.animate) return;
-  k.animate([{ boxShadow: "0 0 0 0 rgba(226, 183, 20, .75)" }, { boxShadow: "0 0 0 10px rgba(226, 183, 20, 0)" }],
+  if (!k || !k.animate || reducedMotion()) return;
+  const gold = themeColor("--accent");
+  k.animate([{ boxShadow: `0 0 0 0 color-mix(in srgb, ${gold} 75%, transparent)` }, { boxShadow: `0 0 0 10px color-mix(in srgb, ${gold} 0%, transparent)` }],
     { duration: 380, easing: "ease-out" });
 }
 
@@ -166,7 +177,9 @@ export function applyKb(animate = false) {
 // caps the unit so the rest fits. Runs on load, resize, a new text and when
 // the keyboard is switched on: never on a keypress.
 // hands 1.68 u * handScale (2 u wide, 100:84) + keyboard 4.36 u (4 rows, 3 gaps of .12 u)
-const HANDS_KB_PER_U = 1.68 * FEEL.handScale + 4.36;
+// The hands overlap the keyboard's top edge by FEEL.handOverlap keys
+// (style.css .hands, a negative margin), so that much less height is used.
+const HANDS_KB_PER_U = 1.68 * FEEL.handScale + 4.36 - FEEL.handOverlap;
 let fitFrame = 0;
 // Asks for fitKeyboard in the next animation frame; several asks in one
 // frame give one measure.
@@ -190,8 +203,11 @@ function fitKeyboard() {
   // not grow with --u, so they count as fixed room like everything else
   const kb = getComputedStyle(el.keyboard);
   const kbFrame = ["paddingTop", "paddingBottom", "borderTopWidth", "borderBottomWidth"].reduce((sum, p) => sum + parseFloat(kb[p]), 0);
+  // the overlap of the hands grows with --u too (it is in HANDS_KB_PER_U):
+  // add back what the view lost to it now
+  const overlap = -parseFloat(getComputedStyle(el.hands).marginBottom) || 0;
   const rest = document.querySelector(".top").offsetHeight + el.viewType.offsetHeight
-    - el.hands.offsetHeight - el.keyboard.offsetHeight + kbFrame
+    - el.hands.offsetHeight - el.keyboard.offsetHeight + kbFrame + overlap
     // desktop (style.css --view-centred): the view takes all the height and
     // centres the text with two equal auto margins (above the text, at the
     // end): that is free room. Otherwise the room above the view (not in
