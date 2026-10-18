@@ -36,7 +36,8 @@ the normal server, it shows yours.
 
 ## Typing screen
 
-- The app opens with a short start screen: the logo types itself and flies
+- The app opens with a short start screen (about a second): the key icon
+  pops in, the word types itself, and the two fly together
   into the header, then the page slides in. Any key or click skips it.
 - On the very first visit a short guide, **touch typing basics**, runs (skip
   it with `Esc` or "skip"; it does not come back): what touch typing is (a
@@ -160,8 +161,9 @@ the normal server, it shows yours.
   The two lines ahead never change under your eyes. A word you mistyped comes
   back a line or two later. The counter `12/30 words` shows how much of the
   round is left. The round ends as soon as the last letter of its last word is
-  typed (no space needed); 10 seconds without a key also end it. Leaving
-  the window (Alt+Tab, another app, another tab) pauses the round: the
+  typed (no space needed). Leaving the window (Alt+Tab, another app,
+  another tab) or 10 seconds without a key pause the round, before the
+  first key too: the
   text, the numbers, the hands and the keyboard step back under a breathing
   pause sign and "Paused", the clock stops (a timed round does not run
   out), and any key goes on; the time away does not count.

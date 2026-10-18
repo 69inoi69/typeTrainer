@@ -145,10 +145,11 @@ function scrollText(top, jump) {
 // already see never change. A round has the length chosen in the settings
 // (settings.js): N words, or N seconds. A words round ends with the last
 // letter of its last word (no space needed after it); a time round when the
-// time is up. Either ends earlier with Esc or a long pause, see finishRound().
+// time is up. Either ends earlier with Esc, see finishRound(). A long pause
+// pauses it (IDLE_PAUSE_MS), the same as leaving the window.
 // The typing test is always one full server round (RoundPortions portions,
 // 30 words), whatever the settings say.
-const IDLE_STOP_MS = 10000;  // no key for this long during a round = the user stopped
+const IDLE_PAUSE_MS = 10000; // no key for this long during a round = the user stepped away: paused
 const RECENT_SENT = 40;      // words of the round sent as "recent" (the server uses the last RecentWords)
 let portions = [];           // {start, end, focus}: positions of each portion; end = its last space
 let sentUpTo = 0;            // positions before this were sent to the server (Backspace cannot go there)
@@ -320,7 +321,7 @@ function resetStream() {
   portions = []; sentUpTo = 0; current = 0; roundNewLetter = ""; wordsLoaded = 0; endAt = -1;
   wordOf = new Int32Array(0); revealAt = 0; shownWords = 0;
   extras = new Map(); correctChars = 0; afterBackspace = false; afterPause = false;
-  pausedAt = null; el.textBox.classList.remove("paused");
+  pausedAt = null; el.textBox.classList.remove("snap", "paused");
   backWord = -1; backErrors = 0; fixedWords = new Set();
   startTime = null; lastTime = null; presses = 0; correctPresses = 0; perSecond = [];
   el.text.replaceChildren(el.caret);          // the caret lives inside the text
@@ -615,7 +616,7 @@ function clearWord() {
 const STREAK_SHOW = 3;
 const STREAK_TIERS = [10, 25, 50];   // clean words where the colour changes
 const streakTier = (n) => STREAK_TIERS.filter((x) => n >= x).length;
-const STREAK_RISE = 18;      // px: how far above the caret's top the badge sits: just clear of it, and away from the line above (owner, 2026-10-18)
+const STREAK_RISE = 14;      // px: how far above the caret's top the badge sits: close over it, away from the line above (owner, 2026-10-18: twice "a little lower")
 const isMilestone = (n) => n === 10 || n === 25 || (n > 0 && n % 50 === 0);
 function endWord() {
   wordsTyped++;
@@ -801,26 +802,36 @@ export function setTyping(on) {
   document.body.classList.toggle("typing-now", on);
 }
 
-// Twice a second: a long pause ends the round, and so does the end of the
-// time in a time round (whose counter shows the seconds left). A timer is
-// fine here: it is a clock, not an animation, and it never runs per keypress.
-// It also catches a time round that ends while no key is pressed.
+// Twice a second: the end of the time in a time round (whose counter shows
+// the seconds left) ends it, and a long pause pauses it. A long pause used
+// to END the round (owner, 2026-10-18: "it ends by itself, at random"): it
+// is now the pause screen, from the last key on, so none of the time away
+// counts. A timer is fine here: it is a clock, not an animation, and it
+// never runs per keypress. It also catches a time round that ends while no
+// key is pressed.
 setInterval(() => {
   if (startTime === null || S.busy || pausedAt !== null) return;
   const now = performance.now();
   if (limit.kind === "time") renderProgress();
-  if (now - lastTime > IDLE_STOP_MS || timeUp(now)) finishRound();
+  if (timeUp(now)) finishRound();
+  else if (now - lastTime > IDLE_PAUSE_MS) pauseRound(lastTime);
 }, 500);
 
-// Leaving the window in the middle of a round (Alt+Tab, another app, a
-// hidden tab; input.js) pauses it: its clock stops, so a time round does not
-// run out and the pause is not in the round's speed (owner, 2026-10-18). The
-// text blurs under a "paused" note (style.css .text-box.paused). The letter
-// model is safe either way (the engine ignores gaps over MaxIntervalMs).
-export function pauseRound() {
-  if (startTime === null || pausedAt !== null || S.busy) return;
-  pausedAt = performance.now();
-  el.textBox.classList.add("paused");
+// Leaving the window (Alt+Tab, another app, a hidden tab; input.js) or a
+// long pause pauses the round: its clock stops, so a time round does not
+// run out and the pause is not in the round's speed (owner, 2026-10-18).
+// Before the first key too (owner: "at the start it does not pause"):
+// then there is no clock yet, only the pause screen. The text blurs under a
+// "paused" note (style.css .text-box.paused). It is put on at once, with no
+// fade: a window out of sight draws nothing, so a fade would only start
+// when you come back (owner: "the text shows for a second, then blurs").
+// The letter model is safe either way (the engine ignores gaps over
+// MaxIntervalMs). since: when the pause began (default: now).
+export function pauseRound(since) {
+  if (pausedAt !== null || S.busy || !S.text) return;
+  if (S.view !== "type" || el.textBox.classList.contains("resulting")) return;   // nothing being typed
+  pausedAt = typeof since === "number" ? since : performance.now();
+  el.textBox.classList.add("snap", "paused");
 }
 // The first key after a pause goes on with the round: the time away is
 // taken out (the start and the last key move forward by it, as if it never
@@ -828,11 +839,13 @@ export function pauseRound() {
 // place again, not moving a finger).
 function resumeRound(now) {
   const away = now - pausedAt;
-  startTime += away;
-  if (lastTime !== null) lastTime += away;
+  if (startTime !== null) {                 // a round already begun: take the time away out
+    startTime += away;
+    if (lastTime !== null) lastTime += away;
+    afterPause = true;
+  }
   pausedAt = null;
-  afterPause = true;
-  el.textBox.classList.remove("paused");
+  el.textBox.classList.remove("snap", "paused");   // coming back fades in as usual
 }
 
 // Esc: ends the round early (or, before the first key, just gives a new text).
@@ -844,10 +857,10 @@ export function stopRound() {
   } else finishRound();
 }
 
-// The round is over (the last letter of its last word, Esc or a long
-// pause): the numbers of the round go to the history, the result screen shows what changed, then the
-// next round starts. The time of the round ends at its last keypress, so the
-// pause that ended it early does not lower the WPM.
+// The round is over (the last letter of its last word, the end of the time,
+// or Esc): the numbers of the round go to the history, the result screen
+// shows what changed, then the next round starts. The time of the round
+// ends at its last keypress, so a stop with Esc does not lower the WPM.
 async function finishRound() {
   S.busy = true;
   const end = lastTime;
@@ -915,7 +928,7 @@ async function finishFree(wpm, accuracy, keys, perSecond) {
   await loadExercise();
 }
 
-// The end of the typing test. Only a full round counts (Esc or a long pause
+// The end of the typing test. Only a full round counts (Esc
 // stops the test). The server checks the numbers (freeplay.Passed) and
 // remembers a pass; the test is in no history. A pass goes on to free
 // practice; otherwise the next round is the test again ("Try again" on the

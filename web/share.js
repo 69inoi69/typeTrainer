@@ -38,7 +38,7 @@ function drawCard() {
   const { s, free, length } = shownStats();
   const css = getComputedStyle(document.documentElement);
   const v = (name) => css.getPropertyValue(name).trim();
-  const mono = v("--mono"), ui = v("--ui");
+  const mono = v("--mono"), ui = v("--ui"), logo = v("--logo");
   const canvas = document.createElement("canvas");
   canvas.width = W * 2; canvas.height = H * 2;      // sharp on any screen
   const c = canvas.getContext("2d");
@@ -49,12 +49,12 @@ function drawCard() {
 
   // the logo and what this is
   c.textBaseline = "alphabetic";
-  c.font = `500 40px ${mono}`;
+  c.font = `600 40px ${logo}`;           // the header's logo font (loaded with the page)
   c.fillStyle = v("--accent-text");
   c.fillText("type", pad, pad + 32);
   const tw = c.measureText("type").width;
   c.fillStyle = v("--text");
-  c.fillText("trainer", pad + tw, pad + 32);
+  c.fillText("Trainer", pad + tw, pad + 32);
   const title = `${t(free ? "mode.free" : "mode.learn")} · ${lengthLabel(length)}`;
   c.font = `600 15px ${ui}`;
   c.fillStyle = v("--sub");

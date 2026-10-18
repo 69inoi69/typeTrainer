@@ -101,7 +101,11 @@ there is a reason not to).
   see-through background) only for what floats over the page: windows,
   tooltips, the phone's bottom bar. Corners: `--r-sm`, `--r-md`, `--r-lg`.
 - One font: Geist Mono (`--mono`, `--ui`), served from `web/fonts`
-  (SIL Open Font License, `web/fonts/OFL.txt`).
+  (SIL Open Font License, `web/fonts/OFL.txt`). The one exception is the
+  logo, "typeTrainer" in the header, the start screen and the stats picture:
+  Sora SemiBold (`--logo`; owner, 2026-10-18), a file with only the
+  letters of the logo (`web/fonts/Sora-SemiBold-logo.woff2`, license
+  `web/fonts/Sora-OFL.txt`).
 
 **Recommended**
 - The most important thing on a screen is the first one the eye finds. On
