@@ -43,7 +43,11 @@ export function renderLetters() {
   if (!S.exercise) return;
   const info = {};
   for (const k of S.lastStats?.keys ?? []) info[k.char] = k;
-  const focusHasData = (info[S.exercise.focus]?.count ?? 0) > 0;
+  // The focus is shown as soon as the portion has one, data or not: it
+  // used to wait for data about the letter, so a letter just opened (the
+  // next focus, with no presses yet) lit up, went out and came back only
+  // after the next portion was sent (owner, 2026-10-18: "it shows late").
+  const focus = S.exercise.focus;
   const started = (S.lastStats?.keys ?? []).some((k) => k.count > 0);   // anything typed yet
 
   const set = JSON.stringify([S.lang, S.exercise.unlocked, S.exercise.locked,
@@ -74,13 +78,13 @@ export function renderLetters() {
   }
   // the focus letter (gold): one class, moved
   for (const c of S.exercise.unlocked) {
-    chipOf[c]?.classList.toggle("focus", c === S.exercise.focus && (focusHasData || c === popLetter));
+    chipOf[c]?.classList.toggle("focus", c === focus);
   }
 
   // status line: an icon, a label and a value each (details in their tooltips)
   const openCount = S.exercise.unlocked.length;
   const all = openCount + S.exercise.locked.length;
-  const caption = JSON.stringify([S.lang, t("stat.open"), started, focusHasData && S.exercise.focus, S.exercise.locked[0], openCount, all]);
+  const caption = JSON.stringify([S.lang, t("stat.open"), started, focus, S.exercise.locked[0], openCount, all]);
   if (caption !== captionFor) {
     captionFor = caption;
     const parts = [];
@@ -88,7 +92,7 @@ export function renderLetters() {
       parts.push(pill("open", "", "tip.open", t("stat.open"), `<b>${openCount}/${all}</b>`));
       parts.push(`<span class="begin">${t("stat.begin")}</span>`);
     } else {
-      if (focusHasData) parts.push(pill("focus", "focus", "tip.focus", t("stat.focus"), `<b class="lt">${S.exercise.focus}</b>`));
+      if (focus) parts.push(pill("focus", "focus", "tip.focus", t("stat.focus"), `<b class="lt">${focus}</b>`));
       // no "mastered" pill: the letters row above already marks every
       // mastered letter with a tick (owner, 2026-10-16: it said the same twice)
       if (S.exercise.locked.length) parts.push(pill("key", "next", "tip.next", t("stat.next"), `<b class="lt">${S.exercise.locked[0]}</b>`));

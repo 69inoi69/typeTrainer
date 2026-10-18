@@ -333,11 +333,13 @@ dialog.confirm .win-p { margin: 0; }
    the keys line at the bottom (help before a round) step back too. Moving
    the mouse over a control brings it back. */
 .top .logo-name, .top .logo-name span, .top .logo-key { transition: color .4s var(--ease), filter .4s var(--ease); }
-.lang-switch, .profile, .rail, #view-type > .letters, .bottom { transition: opacity .4s var(--ease); }
+.lang-switch, .profile, .rail, #letters .chip, .bottom { transition: opacity .4s var(--ease); }
 body.typing-now .top .logo-name, body.typing-now .top .logo-name span { color: var(--sub); }
 body.typing-now .top .logo-key { filter: grayscale(1) brightness(.7); }
 body.typing-now .lang-switch, body.typing-now .profile, body.typing-now .rail { opacity: .35; }
-body.typing-now #view-type > .letters { opacity: .4; }
+/* the letters step back chip by chip, all but the focus letter: the one
+   being practised stays bright (owner, 2026-10-18: it went dim with the rest) */
+body.typing-now #letters .chip:not(.focus) { opacity: .4; }
 body.typing-now .bottom { opacity: .15; }
 body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.typing-now .rail:hover { opacity: 1; }
 .logo { display: flex; align-items: center; gap: 10px; min-width: 0; }
@@ -688,7 +690,9 @@ body[data-mode="free"] .letter-row { display: none; }
 @media (min-width: 1000px) and (pointer: fine) {
   /* the keyboard (with its panel) as wide as the text block (owner,
      2026-10-18); fitKeyboard still caps the unit so the page fits */
-  :root { --tw: min(100vw - 32px - 2 * var(--side), 48rem); --u-max: calc((var(--tw) - 24px) / 13.4); }
+  /* 56rem: a little wider than the 48rem it was (owner, 2026-10-18: the
+     middle asked for more room), on every screen: header, text, result, stats */
+  :root { --tw: min(100vw - 32px - 2 * var(--side), 56rem); --u-max: calc((var(--tw) - 24px) / 13.4); }
   .text-box, .text-box:focus-within, .text-box:focus { background: none; box-shadow: none; padding: 0 0 0 40px; }
   #view-type > .letters { margin-top: auto; }
   .text-box::before { left: 0; top: 38px; }   /* next to the first line: under the live line */
@@ -1424,6 +1428,7 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
   animation: letter-pop .6s cubic-bezier(.2, 1.6, .4, 1) .1s both;
 }
 .r-new .r-tick { stroke: var(--accent-text); stroke-width: 2; }
+.r-num.r-new { align-items: center; }   /* the key centred under its label */
 @keyframes letter-pop { 0% { transform: scale(.3) rotate(-25deg); opacity: 0; } 70% { transform: scale(1.18) rotate(6deg); opacity: 1; } }
 /* letters mastered in this round: the label with a green tick, the
    letters as small keys in a row */
@@ -1500,20 +1505,21 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
   display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; border-radius: 5px;
   color: var(--text); font-weight: 500; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ok) 55%, transparent);
 }
-/* the one button here (owner, 2026-10-18: "more expressive", variant B,
-   then without its glow, then without its fill): gold text in a clear gold
-   frame, so the way on is the first thing the eye finds once the numbers
-   are read; the fill comes only under the mouse or the keyboard focus */
+/* the one button here (owner, 2026-10-18: "more expressive", then without
+   its glow, its fill, and then calmer: the gold frame pulled the eye away
+   from the numbers): gold text in a quiet frame of the line colour; the
+   frame turns gold and a light fill comes under the mouse or the keyboard
+   focus */
 .r-next {
-  --frame: var(--accent);          /* the frame colour; darker on the light page (below) */
   min-height: 50px; padding: 0 30px; border-radius: 999px; font-size: 1.05rem; font-weight: 500; color: var(--accent-text);
   background: none;
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--frame) 80%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 16%, transparent);
+  transition: box-shadow var(--med), background var(--med);
 }
-/* the pale gold frame hardly showed on white (owner, 2026-10-18): the
-   gold a step darker than the light theme's text */
-:root[data-theme="light"] .r-next { --frame: #a06800; }
-.r-next:hover, .r-next:focus-visible { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.r-next:hover, .r-next:focus-visible {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 70%, transparent);
+}
 .r-next svg { width: 20px; height: 20px; stroke-width: 2.4; }   /* the icon leads, the label sits beside it */
 .r-next kbd { margin-left: 4px; background: var(--panel); }
 
