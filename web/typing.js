@@ -101,11 +101,18 @@ export function placeCaret(jump) {
     el.caret.style.translate = `${x - 1}px ${s.offsetTop + h * 0.09}px`;
     // keep the current line in view: from the third line on, scroll so that
     // it is the second one
+    let top = el.text.scrollTop;
     if (lineH) {
       const line = Math.round(s.offsetTop / lineH);
-      const top = Math.max(0, Math.min(line - 1, Math.ceil(el.text.scrollHeight / lineH) - TEXT_LINES)) * lineH;
+      top = Math.max(0, Math.min(line - 1, Math.ceil(el.text.scrollHeight / lineH) - TEXT_LINES)) * lineH;
       if (Math.abs(el.text.scrollTop - top) > 1) scrollText(top, jump);
     }
+    // the streak badge sits just above the caret, outside the text window
+    // (that window cuts off whatever is above its first line), so it is
+    // placed in the text box with the same numbers (no extra layout read)
+    if (jump) el.streak.classList.add("jump");
+    el.streak.style.translate = `${el.text.offsetLeft + x + 4}px ${el.text.offsetTop + s.offsetTop - top + h * 0.09 - STREAK_RISE}px`;
+    if (jump) requestAnimationFrame(() => el.streak.classList.remove("jump"));
     if (jump) requestAnimationFrame(() => el.caret.classList.remove("jump"));
   });
 }
@@ -347,7 +354,7 @@ export async function loadExercise() {
   el.text.classList.add("swap");
   el.textBox.classList.remove("typing");
   setTyping(false);
-  if (!el.live.classList.contains("final")) { el.wpm.textContent = "0"; el.raw.textContent = "0"; el.acc.textContent = "100"; }
+  if (!el.live.classList.contains("final")) { setLive(el.wpm, 0, true); setLive(el.raw, 0, true); setLive(el.acc, 100, true); }
   highlightNextKey();
   showPortion(0);
   placeCaret(true);
@@ -602,22 +609,23 @@ function clearWord() {
 }
 
 // ---------- streak: clean words in a row ----------
-// Shown from 3 words; at 10, 25 and 50 it gets "hotter" (colour, flicker,
-// glow: see .streak[data-tier] in style.css). Visual only, nothing is sent.
-const STREAK_TIERS = [10, 25, 50];
-const streakTier = (n) => STREAK_TIERS.filter((x) => n >= x).length;
+// A small "×12" badge riding on the caret, shown from 3 words (owner,
+// 2026-10-18: in the numbers line it covered the status line, and its
+// flicker, zapping bolt, shake and confetti were too loud). At 10, 25, 50
+// and every 50 after, a short note rises from it and fades. Visual only,
+// nothing is sent.
+const STREAK_SHOW = 3;
+const STREAK_RISE = 22;      // px: how far above the caret's top the badge sits
+const isMilestone = (n) => n === 10 || n === 25 || (n > 0 && n % 50 === 0);
 function endWord() {
   wordsTyped++;
   reveal(true);                              // one word finished: one more appears
   renderProgress();
   updateLive();                              // the numbers change once per word: calm, readable
   if (wordClean) {
-    const before = streakTier(streak);
     streak++;
     renderStreak();
-    if (streakTier(streak) > before) FX.bump(el.streak, 1.25);   // next tier: a bigger jump
-    else if (streak >= 3) FX.bump(el.streakN);
-    if (streak === 10 || streak % 25 === 0) FX.burstFrom(el.streak, 40);   // at 10, then every 25: a small party
+    if (isMilestone(streak)) popStreak();
   }
   wordClean = true;
 }
@@ -637,14 +645,25 @@ function renderProgress() {
   }
 }
 function breakStreak() {
-  if (streak >= 3) FX.shake(el.streak);
   streak = 0;
   renderStreak();
 }
 function renderStreak() {
   el.streakN.textContent = streak;
-  el.streak.dataset.tier = streakTier(streak);
-  el.streak.classList.toggle("show", streak >= 3);
+  el.streak.classList.toggle("show", streak >= STREAK_SHOW);
+}
+// A milestone: "25 clean words in a row" rises from the badge and fades
+// (one Web Animation, ~1.6 s), and the badge gives one small bump.
+function popStreak() {
+  el.streakPop.textContent = t("streak.pop", { n: streak });
+  if (reducedMotion() || !el.streakPop.animate) return;
+  el.streakPop.animate([
+    { opacity: 0, transform: "translateY(6px)" },
+    { opacity: 1, transform: "none", offset: .15 },
+    { opacity: 1, transform: "translateY(-2px)", offset: .7 },
+    { opacity: 0, transform: "translateY(-12px)" },
+  ], { duration: 1600, easing: "ease-out" });
+  FX.bump(el.streak, 1.15);
 }
 
 // ---------- Tab: start the round again ----------
@@ -743,9 +762,24 @@ function currentAccuracy() {
 // Called once per word, not per keypress. The caret keeps one colour all
 // the time: a caret that changed colour with the speed looked random.
 function updateLive() {
-  el.wpm.textContent = Math.round(currentWpm());
-  el.raw.textContent = Math.round(currentRaw());
-  el.acc.textContent = Math.round(currentAccuracy());
+  setLive(el.wpm, Math.round(currentWpm()));
+  setLive(el.raw, Math.round(currentRaw()));
+  setLive(el.acc, Math.round(currentAccuracy()));
+}
+// A live number counts smoothly to its new value (owner, 2026-10-18: the
+// jump once per word looked choppy): the value is the CSS property --v,
+// registered as an integer, and a transition counts through the numbers in
+// between (style.css .metric > span::after). instant: no counting (a new
+// round starting from 0). A browser without @property shows the new number
+// at once.
+function setLive(node, n, instant = false) {
+  if (instant) {
+    node.classList.add("snap");
+    requestAnimationFrame(() => node.classList.remove("snap"));
+  }
+  node.style.setProperty("--v", n);
+  node.dataset.v = n;          // the number as text, for tests and screen readers (aria-label below)
+  node.setAttribute("aria-label", n);
 }
 
 // ---------- "typing now": the header steps back ----------
@@ -815,9 +849,9 @@ async function finishRound() {
   // round starts
   el.live.classList.add("final");
   setTyping(false);
-  el.wpm.textContent = Math.round(wpm);
-  el.raw.textContent = Math.round(currentRaw(end));
-  el.acc.textContent = Math.round(accuracy);
+  setLive(el.wpm, Math.round(wpm));
+  setLive(el.raw, Math.round(currentRaw(end)));
+  setLive(el.acc, Math.round(accuracy));
   if (limit.kind === "time") renderProgress();          // the seconds left when it stopped (0: time is up)
   const typed = records.filter(Boolean);              // every sample of the round
   const samples = records.slice(sentUpTo).filter(Boolean); // the ones not sent with a portion yet
