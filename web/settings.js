@@ -1,5 +1,6 @@
 // The settings window (Esc or the gear in the navigation): how long a round
-// is, the live numbers on or off, the look of the caret, the colour theme,
+// is, the live numbers on or off, the streak badge on or off, the look of
+// the caret, the colour theme,
 // the on-screen keyboard on or off, and exporting, importing and resetting
 // the progress (tools.js does those three). Settings change
 // HOW MUCH and HOW IT LOOKS, never WHAT is practised: the words still come
@@ -52,6 +53,7 @@ export function loadSettings() {
   const length = store.get("tt.length");
   S.settings.length = LENGTHS.includes(length) ? length : DEFAULT_LENGTH;
   S.settings.live = store.get("tt.live") === "1";      // never chosen: hidden (see firstRoundDone)
+  S.settings.streak = store.get("tt.streak") !== "0";  // the streak badge: on unless turned off
   const caret = store.get("tt.caret");
   S.settings.caret = CARETS.includes(caret) ? caret : "line";
   S.settings.theme = store.get("tt.theme") === "light" ? "light" : "dark";
@@ -62,6 +64,7 @@ export function loadSettings() {
 // light page never flashes dark first.)
 function applySettings() {
   document.body.classList.toggle("live-off", !S.settings.live);
+  document.body.classList.toggle("streak-off", !S.settings.streak);   // style.css hides the badge
   document.body.dataset.caret = S.settings.caret;      // style.css: body[data-caret=...]
   document.documentElement.dataset.theme = S.settings.theme;
   document.querySelector('meta[name="theme-color"]')
@@ -120,6 +123,7 @@ const ROWS = [
   { group: "settings.round", name: "settings.words", ctl: () => lengths("words", "") },
   { group: "settings.round", name: "settings.time", ctl: () => lengths("time", t("settings.sec")) },
   { group: "settings.look", name: "settings.live", ctl: () => onOff("live", S.settings.live) },
+  { group: "settings.look", name: "settings.streak", ctl: () => onOff("streak", S.settings.streak) },
   { group: "settings.look", name: "settings.keyboard", ctl: () => onOff("kb", !S.kbHidden), show: () => !isTouch() },   // no keyboard on touch screens
   { group: "settings.look", name: "settings.caret", ctl: () => seg(CARETS.map((id) =>
     choice("caret", id, `<i class="cs ${id}"></i>${t("settings." + id)}`, S.settings.caret === id))) },
@@ -164,6 +168,9 @@ function apply(key, value) {
   } else if (key === "live") {
     S.settings.live = value === "1";
     store.set("tt.live", value === "1" ? "1" : "0");
+  } else if (key === "streak") {
+    S.settings.streak = value === "1";
+    store.set("tt.streak", value === "1" ? "1" : "0");
   } else if (key === "caret") {
     S.settings.caret = value;
     store.set("tt.caret", value);

@@ -18,14 +18,19 @@ import { LENGTHS, lengthLabel, firstRoundDone } from "./settings.js";
 
 // S.lastStats: the letters and the rounds of the length chosen in the
 // settings (the typing screen compares a round with those).
+let introVars = "";
 export async function refreshStats() {
   S.lastStats = await getJSON(`/stats?length=${S.settings.length}`);
   other = null;                                     // back to the chosen length
   if (S.lastStats.lengths.length) firstRoundDone(); // finished rounds before: the live numbers are earned
-  i18nVars.target = S.lastStats.targetWpm;
-  i18nVars.min = S.lastStats.masteryMin;       // the mastery rule, for its explanations
-  i18nVars.err = Math.round(S.lastStats.masteryErr);
-  applyI18n(el.intro);
+  const vars = [S.lastStats.targetWpm, S.lastStats.masteryMin, Math.round(S.lastStats.masteryErr)];
+  // the intro's texts carry these numbers: fill them again only when they
+  // change (this runs after every portion, while you type)
+  if (vars.join() !== introVars) {
+    introVars = vars.join();
+    [i18nVars.target, i18nVars.min, i18nVars.err] = vars;   // the mastery rule, for its explanations
+    applyI18n(el.intro);
+  }
   if (S.view === "stats") renderStats();
 }
 

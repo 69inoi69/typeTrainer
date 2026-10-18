@@ -1,15 +1,14 @@
 // Everything the user does with keys and buttons, sent to the module that
 // handles it: keydown and the phone input, the navigation (Type / Stats,
-// learning / free practice, the help menu), the keyboard on / off choice of
+// learning / free practice), the keyboard on / off choice of
 // the settings, window resize, the "stop" button of touch screens.
 // Layer: top. Imports anything; nothing imports it (app.js only loads it).
 // It holds almost no logic of its own: it decides WHO gets an action (an
 // open guide, a card, the result screen, or typing) and calls that module.
 // To add a navigation item: a button in nav.rail (index.html, with an icon,
 // a <small> label and data-tip), its texts in i18n.js, and its click here
-// (the "views", "modes" and "help" sections below are the pattern).
+// (the "views" and "modes" sections below are the pattern).
 
-import { applyI18n, t, hasText } from "./i18n.js";
 import { $, el, S, introOpen, isTouch, focusText } from "./state.js";
 import { applyKb, requestFit } from "./keyboard.js";
 import { refreshStats, renderStats, onStatsMode } from "./stats.js";
@@ -18,8 +17,7 @@ import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
 import { resultOpen, closeResult } from "./result.js";
-import { tourOpen, tourKey } from "./tour.js";
-import { settingsOpen, openSettings, closeSettings, onSettingsClose, onLengthChange, onKbToggle } from "./settings.js";
+import { settingsOpen, openSettings, onSettingsClose, onLengthChange, onKbToggle } from "./settings.js";
 import { setMode, refreshFreeplay, renderNav } from "./modes.js";
 import { buildAmbient } from "./ambient.js";
 import "./share.js";   // the copy / image buttons of the stats screen: it wires them itself
@@ -97,46 +95,6 @@ el.tabLearn.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMod
 el.tabFree.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("free"); });
 onStatsMode((m) => chooseMode(m, true));
 
-// ---------- help: the two guides, how the trainer works, the keys ----------
-// The guide buttons themselves are wired by intro.js (#btn-intro) and
-// tour.js (#btn-tour); here the panel only opens and closes.
-const help = $("help"), helpBtn = $("btn-help"), helpCard = $("help-card");
-const helpOpen = () => !helpCard.hidden;
-function closeHelp() {
-  helpCard.hidden = true;
-  helpBtn.setAttribute("aria-expanded", "false");
-}
-helpBtn.addEventListener("click", () => {
-  helpBtn.blur();
-  if (helpOpen()) { closeHelp(); return; }
-  closeSettings();
-  fillHelp();
-  applyI18n(helpCard);                        // fills {target} with the current goal
-  helpCard.hidden = false;
-  helpBtn.setAttribute("aria-expanded", "true");
-});
-// The first section is about the screen you are on: help.<screen>.title and
-// its points help.<screen>.1, .2, ... (i18n.js). The tour shows the parts of
-// the Learn screen, so it is offered only there.
-// To add help for a new screen: its keys in i18n.js and its name here.
-function fillHelp() {
-  const screen = S.view === "stats" ? "stats" : S.mode;   // learn | free | test
-  $("help-ctx-title").textContent = t(`help.${screen}.title`);
-  const items = [];
-  for (let i = 1; hasText(`help.${screen}.${i}`); i++) items.push(`<li>${t(`help.${screen}.${i}`)}</li>`);
-  $("help-ctx").innerHTML = items.join("");
-  $("btn-tour").hidden = screen !== "learn";
-}
-helpCard.addEventListener("click", (e) => { if (e.target.closest(".menu-item")) closeHelp(); });
-// Both guides are about the typing screen (the tour points at its parts), so
-// from the stats screen a guide first goes back there. Capture phase: this
-// runs before the guide's own click handler (intro.js, tour.js) starts it.
-helpCard.addEventListener("click", (e) => {
-  if (e.target.closest(".menu-item") && S.view !== "type") setView("type");
-}, true);
-document.addEventListener("pointerdown", (e) => { if (helpOpen() && !help.contains(e.target)) closeHelp(); });
-$("btn-settings").addEventListener("click", closeHelp);   // one panel at a time
-
 // ---------- settings: a new round length ----------
 // The stats follow the new length; a round not started yet is rebuilt with
 // it (a round already begun keeps its length to the end). The test always
@@ -156,18 +114,12 @@ document.addEventListener("keydown", (e) => {
   // the settings window and the reset confirm window handle their own keys
   if (document.querySelector("dialog[open]")) return;
   if (introOpen()) { introKey(e); return; }
-  if (tourOpen()) { tourKey(e); return; }
   // the profile card is open: keys go to its name field, Esc closes it
   if (profileOpen()) {
     if (e.key === "Escape") { e.preventDefault(); closeProfile(); }
     return;
   }
   if (document.body.classList.contains("splashing")) return;
-  // the help menu: Esc closes it, typing closes it and goes on
-  if (helpOpen()) {
-    closeHelp();
-    if (e.key === "Escape") { e.preventDefault(); helpBtn.focus(); return; }
-  }
   // Esc opens the settings, on every screen (as on monkeytype). A round
   // being typed stops first, the same as before (owner, 2026-10-17): its
   // result waits behind the window.
@@ -258,14 +210,14 @@ resetInput();
 
 // A tap on the text window opens the phone keyboard, but not while the
 // result is shown (its sides are part of the window too), and not when the
-// tap only closed a panel (help, settings, profile): checked at pointerdown,
+// tap only closed a panel (settings, profile): checked at pointerdown,
 // in the capture phase, before those panels close themselves.
 let tapClosedPanel = false;
 // after the settings window: straight back to typing (not on a phone, where
 // that would open the on-screen keyboard)
 onSettingsClose(() => { if (S.view === "type" && !resultOpen() && !isTouch()) focusText(); });
 document.addEventListener("pointerdown", () => {
-  tapClosedPanel = helpOpen() || settingsOpen() || profileOpen();
+  tapClosedPanel = settingsOpen() || profileOpen();
 }, true);
 el.textBox.addEventListener("click", () => {
   if (resultOpen() || tapClosedPanel) return;

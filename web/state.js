@@ -4,7 +4,7 @@
 //   bottom: state.js, i18n.js and feel.js import nothing, fx.js only
 //           i18n.js, api.js only state.js
 //   middle: keyboard, typing, letters, stats, intro, languages, tools,
-//           profile, result, tour, modes, settings, share import the bottom
+//           profile, result, modes, settings, share, ambient import the bottom
 //           and each other in one direction only (no cycles)
 //   top:    input.js and app.js may import anything; nothing imports them
 //           (app.js loads input.js)
@@ -29,7 +29,7 @@ export const el = {
   live: $("live"), wpm: $("wpm"), raw: $("raw"), acc: $("acc"), progress: $("progress"), progressLabel: $("progress-label"),
   letters: $("letters"), lettersCaption: $("letters-caption"),
   tooltip: $("tooltip"),
-  btnNew: $("btn-new"), btnIntro: $("btn-intro"), heatKb: $("heat-kb"),
+  btnNew: $("btn-new"), heatKb: $("heat-kb"),
   hands: $("hands"),
   intro: $("intro"),
   nav: $("nav-switch"), tabLearn: $("tab-learn"), tabFree: $("tab-free"), tabStats: $("tab-stats"),
@@ -61,7 +61,7 @@ export const S = {
   view: "type",           // "type" or "stats"
   mode: "learn",          // "learn", "free" or "test" (modes.js)
   free: null,             // last /freeplay/stats answer
-  settings: { length: "words-30", live: false, caret: "line", theme: "dark" },   // settings.js
+  settings: { length: "words-30", live: false, caret: "line", theme: "dark", streak: true },   // settings.js
   kbHidden: false,        // keyboard and hands switched off
 };
 

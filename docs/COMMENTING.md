@@ -95,7 +95,6 @@ These are already marked in the code with "To add ..." comments:
 - a new **interface text**: `web/i18n.js` (English for now, `docs/UI-TEXT.md`)
 - a new **setting**: `web/settings.js`
 - a new **navigation item**: `web/index.html` (`nav.rail`) and `web/input.js`
-- a new **tour step**: `web/tour.js`
 - a new **theme**: `web/style.css` (one `:root[data-theme]` block)
 - a new **frontend module**: `web/state.js` (the layer rule) and
   `webmodules_test.go`

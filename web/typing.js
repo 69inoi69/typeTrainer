@@ -609,12 +609,14 @@ function clearWord() {
 }
 
 // ---------- streak: clean words in a row ----------
-// A small "×12" badge riding on the caret, shown from 3 words (owner,
+// A bolt and the number riding on the caret, shown from 3 words (owner,
 // 2026-10-18: in the numbers line it covered the status line, and its
-// flicker, zapping bolt, shake and confetti were too loud). At 10, 25, 50
-// and every 50 after, a short note rises from it and fades. Visual only,
-// nothing is sent.
+// flicker, zapping bolt, shake and confetti were too loud). Its colour warms
+// at each tier (style.css .streak[data-tier]). At 10, 25, 50 and every 50
+// after, a short note rises from it and fades. Visual only, nothing is sent.
 const STREAK_SHOW = 3;
+const STREAK_TIERS = [10, 25, 50, 100];   // clean words where the colour changes
+const streakTier = (n) => STREAK_TIERS.filter((x) => n >= x).length;
 const STREAK_RISE = 22;      // px: how far above the caret's top the badge sits
 const isMilestone = (n) => n === 10 || n === 25 || (n > 0 && n % 50 === 0);
 function endWord() {
@@ -650,11 +652,13 @@ function breakStreak() {
 }
 function renderStreak() {
   el.streakN.textContent = streak;
+  el.streak.dataset.tier = streakTier(streak);
   el.streak.classList.toggle("show", streak >= STREAK_SHOW);
 }
 // A milestone: "25 clean words in a row" rises from the badge and fades
 // (one Web Animation, ~1.6 s), and the badge gives one small bump.
 function popStreak() {
+  if (!S.settings.streak) return;            // turned off in the settings
   el.streakPop.textContent = t("streak.pop", { n: streak });
   if (reducedMotion() || !el.streakPop.animate) return;
   el.streakPop.animate([
