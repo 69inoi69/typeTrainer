@@ -25,7 +25,9 @@ export const FEEL = {
   // "oily": you did not feel each letter being passed. Now in between: about
   // half the way in the first frame (each press is a clear step), the rest
   // settles in 3 frames (54 / 81 / 94 / 100%). The curve is in style.css.
-  caretGlideMs: 80,         // the caret sliding to the next letter (0 = jumps)
+  // Then 80 -> 55 ms (owner, 2026-10-18: "it lags behind the letters"):
+  // the same curve, done in about 3 frames.
+  caretGlideMs: 55,         // the caret sliding to the next letter (0 = jumps)
   lineScrollMs: 120,        // the text moving up a line (0 = at once)
 
   // The key on the virtual keyboard answers a press: a short, soft dip.

@@ -168,6 +168,24 @@ func (m *MemoryStore) SessionLengths(user, lang string) ([]string, error) {
 	return lengths(m.data(user, lang).sessions), nil
 }
 
+func (m *MemoryStore) BestRounds(user, lang string) (map[string]Session, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return bestOf(m.data(user, lang).sessions), nil
+}
+
+// bestOf keeps the fastest session of every length (the first of equal
+// ones), without its raw keys.
+func bestOf(all []Session) map[string]Session {
+	out := map[string]Session{}
+	for _, s := range all {
+		if b, ok := out[s.Length]; !ok || s.WPM > b.WPM {
+			out[s.Length] = s.Summary()
+		}
+	}
+	return out
+}
+
 func (m *MemoryStore) LettersTyped(user, lang string, unlocked int) (int, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -242,6 +260,12 @@ func (m *MemoryStore) RecentFreeplaySessions(user, lang, length string, limit in
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return newestFirst(m.data(user, lang).freeplay, length, limit), nil
+}
+
+func (m *MemoryStore) BestFreeplayRounds(user, lang string) (map[string]Session, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return bestOf(m.data(user, lang).freeplay), nil
 }
 
 func (m *MemoryStore) FreeplaySessionCount(user, lang, length string) (int, error) {

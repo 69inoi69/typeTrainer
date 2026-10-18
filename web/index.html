@@ -153,26 +153,29 @@
     </section>
 
     <!-- ================= STATS VIEW ================= -->
-    <!-- One screen, no scrolling on a usual desktop: the numbers, the chart,
-         then the keyboard and the letters side by side. Exact values are in
-         tooltips (hover, or keyboard focus), not printed everywhere. -->
+    <!-- Top to bottom (it scrolls, as on monkeytype; owner, 2026-10-18): the
+         personal best of every round length (a click picks the length shown
+         below), the activity of the last year, then the picked length in
+         detail (tiles and chart), the keyboard and the letters. Exact
+         values are in tooltips (hover, or keyboard focus). -->
     <section id="view-stats" class="view" role="tabpanel" aria-labelledby="tab-stats" hidden>
       <!-- phones and tablets only (input.js statsOnly): why there is no typing here -->
       <p class="stats-only-note" data-i18n="phone.note">Typing practice needs a computer keyboard. Here you can look at your stats.</p>
+      <!-- whose statistics: type or freetype (only once freetype is open, stats.js) -->
+      <div class="mode-filter" id="mode-filter" role="tablist" aria-label="Mode"></div>
+      <!-- the personal bests: one cell per round length, words and seconds
+           apart; rounds of different lengths are never mixed, so a click on
+           a cell picks the length everything below shows (stats.js) -->
+      <div class="pbs" id="length-filter" role="tablist" aria-label="Round length"></div>
       <!-- all time, both modes and every round length: time typing, rounds,
            words, days in a row and the activity calendar (stats.js drawActivity) -->
       <div class="activity panel" id="activity" aria-label="All time"></div>
-      <div class="stats-top">
-        <!-- whose statistics: type or freetype (only once freetype is open, stats.js) -->
-        <div class="mode-filter" id="mode-filter" role="tablist" aria-label="Mode"></div>
-        <!-- rounds of different lengths are never mixed: one length at a time (stats.js) -->
-        <div class="length-filter" id="length-filter" role="tablist" aria-label="Round length"></div>
-        <!-- take the numbers with you: text or a picture (share.js) -->
-        <div class="share">
-          <button type="button" class="btn" id="btn-image" data-tip="tip.image"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-8 8"/></svg><span data-i18n="share.image">Image</span></button>
-        </div>
-        <div class="tiles" id="tiles"></div>
+      <!-- the picked length in detail; the picture is of it (share.js) -->
+      <div class="len-bar">
+        <h2 class="len-head" id="len-head"></h2>
+        <button type="button" class="btn" id="btn-image" data-tip="tip.image"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-8 8"/></svg><span data-i18n="share.image">Image</span></button>
       </div>
+      <div class="tiles" id="tiles"></div>
 
       <div class="panel chart-panel">
         <div class="panel-head">

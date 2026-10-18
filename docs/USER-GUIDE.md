@@ -57,15 +57,16 @@ the normal server, it shows yours.
 - The row of letters right above the text shows your progress: open letters, the letter in
   **focus** (yellow: the next few words are built around it; it is picked
   anew every few words, weaker letters more often), mastered letters (a small green tick), and
-  locked letters (outlined). A letter is mastered when you have typed it at
+  locked letters (outlined; the one that opens next has a gold dashed frame,
+  hover it for the rule). A letter is mastered when you have typed it at
   least 20 times, recently with under 5% mistakes and at 30 wpm or faster
   (the numbers come from the server's settings). Master every open letter
   and the next one opens.
-  Above the text, on the line of the live numbers (after the word counter),
-  a quiet status line: the focus letter (the same gold square as the tinted
-  letters in the text) and the next letter to open; hover them for details.
-  With the live numbers hidden it moves up to the word counter. It never
-  moves while you type: every number keeps the room of its widest value.
+  Before the first key, the line of the live numbers also says how many
+  letters are open and to type the text to begin; once you type it holds
+  only the numbers (the focus and the next letter are in the row above).
+  It never moves while you type: every number keeps the room of its widest
+  value.
   The result screen hides it: the next round picks its own
   focus. Caps Lock and wrong layout warnings appear on top of that whole
   line, so nothing moves: a small card with what is wrong and, for the
@@ -181,9 +182,7 @@ the normal server, it shows yours.
 - **The result** opens as one short sequence: the speed counts up from 0,
   the word chart draws itself from left to right, then the facts, the words
   and the button follow. **The stats screen** opens the same way: the tiles
-  rise one after another and the bars grow from the baseline. On a desktop
-  the whole stats screen fits the window: the chart takes the height the
-  rest leaves.
+  rise one after another and the bars grow from the baseline.
 - **When the round ends** the text window shows the result instead of the
   text: the numbers first (speed in wpm, accuracy and the **consistency** of
   your speed: how even the pace was, 100 % = every second the same; rounds
@@ -232,8 +231,7 @@ the normal server, it shows yours.
   It takes what the screen shows.
 - The top line of the text card shows **wpm**, **raw** (every keypress counts,
   wrong ones too, like on monkeytype; only shown, never stored) and accuracy.
-  It is dim while you read and bright while you type. The caret keeps one
-  colour.
+  The caret keeps one colour.
 - The text window has one fixed size (3 lines): only its content changes. A
   longer text scrolls up line by line, the line you type stays the second one.
 - The **profile** in the top right corner shows your name on the left of
@@ -249,25 +247,27 @@ the normal server, it shows yours.
   "Keeping progress in PostgreSQL"). The picture (a colour, or your own image) is kept only in
   this browser. On the website (GitHub Pages) there are no accounts: you can
   set a name and a picture, kept only in this browser; "reset" forgets them.
-- **stats** in the navigation (or `Shift + Tab`) opens the statistics screen.
-  It fits on one screen without scrolling on a usual desktop (1280×800 and
-  up), so "how am I doing?" takes a glance:
-  - **all time** on top, every round length and both modes together: time
-    typing, rounds, words, **days in a row** (a day not practised yet does
-    not break it; a whole missed day does) and an **activity calendar** of
-    the last 20 weeks, a square a day, brighter the longer you typed (hover
-    a square for the day). Days end at your own midnight;
-  - a row of round lengths and the numbers: rounds, best wpm, and the
-    averages of the last 10 rounds (wpm, accuracy, consistency), each with a
-    small green or red arrow for how it moved against the 10 rounds before.
-    Rounds of different lengths are never mixed: the row always has all nine
-    lengths (10–50 words, 15–90 s; older 60-word rounds keep their own
-    button), it opens on the one chosen in the settings, and a length with
-    no rounds yet shows empty numbers;
-  - with a **goal** set in the settings (50–200 wpm, learning only): one more
-    tile with the goal, how much the average of the last 10 is still below
-    it, and a bar of the way. The goal is only for you: letters still open
-    at the trainer's own speed;
+- **stats** in the navigation (or `Shift + Tab`) opens the statistics screen,
+  a page that scrolls, built after monkeytype's account page:
+  - the **personal bests** on top: two cards, rounds of 10–50 words and of
+    15–90 seconds (older 60-word rounds keep their own cell), the best wpm of
+    every length big with the accuracy of that round under it ("—" before the
+    first round). A click on a cell picks the length everything below shows
+    (it opens on the one chosen in the settings): rounds of different lengths
+    are never mixed;
+  - **all time**, every round length and both modes together: time typing,
+    rounds, words, **days in a row** (a day not practised yet does not break
+    it; a whole missed day does) and an **activity calendar** of the last
+    year (fewer weeks on a narrow screen), a square a day, brighter the
+    longer you typed, with the months above and Mon / Wed / Fri on the left
+    (hover a square for the day). Days end at your own midnight;
+  - the picked length in detail: rounds, and the averages of the last 10
+    rounds (wpm, accuracy, consistency), each with a small green or red
+    arrow for how it moved against the 10 rounds before; with a **goal** set
+    in the settings (50–200 wpm, learning only) one more tile with the goal,
+    how much the average of the last 10 is still below it, and a bar of the
+    way (the goal is only for you: letters still open at the trainer's own
+    speed); **image** saves these numbers as a picture;
   - the speed of every round (hover a bar for its numbers), with a line for
     the average of the last 10 rounds and a dashed line for the goal (yours,
     or else the trainer's);

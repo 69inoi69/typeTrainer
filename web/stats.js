@@ -1,11 +1,12 @@
-// The stats screen, built to fit on one screen: the all-time line (time
-// typing, rounds, words, days in a row, the activity calendar), number
-// tiles, the WPM chart, the difficulty heatmap keyboard and the letter chips. The exact
-// numbers live in tooltips (hover, or keyboard focus), so the screen stays
-// calm and answers "how am I doing?" at a glance. refreshStats() also keeps
-// S.lastStats fresh for the typing screen. Rounds of different lengths are never mixed: the
-// screen shows one length at a time (the one chosen in the settings, or
-// another one picked in the row of lengths above the tiles).
+// The stats screen, a page that scrolls (as monkeytype's account page): the
+// personal best of every round length (the cells also pick the length shown
+// below), all time (time typing, rounds, words, days in a row and the
+// activity calendar of the last year), then the picked length in detail
+// (tiles and the WPM chart), the difficulty heatmap keyboard and the letter
+// chips. The exact numbers live in tooltips (hover, or keyboard focus).
+// refreshStats() also keeps S.lastStats fresh for the typing screen. Rounds
+// of different lengths are never mixed: the detail shows one length at a
+// time (the one chosen in the settings, or another one picked above).
 // Layer: middle. Imports the bottom layer, tools.js (tooltips) and settings.js.
 // Called by: typing.js (refreshStats after every portion and round),
 // languages.js (on a language change), input.js (on the Stats tab, a resize
@@ -52,7 +53,9 @@ export function renderStats() {
   const { s, free, length } = shownStats();
   if (!s) return;
   renderModeFilter(free);
-  renderLengthFilter(s.lengths ?? [], length);
+  // the bests are of every length, in whichever answer is shown
+  renderLengthFilter(s.lengths ?? [], length, s.bests ?? {});
+  document.getElementById("len-head").textContent = lengthLabel(length);
   const sessions = [...s.sessions].reverse(); // oldest first
   // nothing to share before the first round of this length
   document.getElementById("btn-image").disabled = !s.sessionCount;
@@ -72,14 +75,14 @@ export function renderStats() {
 }
 
 // ---------- the tiles ----------
-// Rounds, best WPM and the averages of the last 10 rounds, each with how it
+// Rounds and the averages of the last 10 rounds (the best is in the cell of
+// the length above, not here twice), each with how it
 // moved against the 10 rounds before (from 5 of them on), and the personal
 // goal when there is one. The value comes first in the HTML (screen readers:
 // value, then what it is); style.css puts the label on top.
 function tiles(sessions, count, goal, target) {
   const avg = (arr, f) => arr.length ? arr.reduce((a, x) => a + f(x), 0) / arr.length : null;
   const last = sessions.slice(-10), before = sessions.slice(-20, -10);
-  const best = sessions.length ? Math.max(...sessions.map((x) => x.wpm)) : null;
   const num = (v, unit = "") => v === null ? "—" : Math.round(v) + (unit && `<i>${unit}</i>`);
   // how a "last 10" number moved: up is better for all three
   const trend = (f) => {
@@ -96,7 +99,6 @@ function tiles(sessions, count, goal, target) {
   const wpm = avg(last, (x) => x.wpm);
   const out = [
     tile(count, t("tile.exercises")),
-    tile(num(best), t("tile.best"), "", " speed"),
     tile(num(wpm), t("tile.wpm"), last10((x) => x.wpm), " speed"),
     tile(num(avg(last, (x) => x.accuracy), "%"), t("tile.acc"), last10((x) => x.accuracy)),
     tile(num(avg(last.filter((x) => x.consistency != null), (x) => x.consistency), "%"), t("tile.cons"), last10((x) => x.consistency)),
@@ -125,7 +127,9 @@ async function loadActivity() {
   } catch (err) { console.error(err); return; }
   if (S.view === "stats") drawActivity();
 }
-const WEEKS = 20;   // weeks in the calendar (about 4.5 months)
+// The calendar shows up to a year, as many weeks as fit the width with
+// cells of at least CELL_MIN px (a phone shows fewer weeks).
+const WEEKS_MAX = 53, CELL_MIN = 10, CELL_GAP = 3, DAY_LABELS = 34;
 // A date as the browser's "2026-10-18" in local time
 const dayKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 // 3725 s -> "1 h 2 min"; 125 s -> "2 min"; 40 s -> "40 s"
@@ -154,13 +158,16 @@ function drawActivity() {
   // the calendar: columns are weeks (Monday on top), the last one is this
   // week; a cell is as bright as that day's time typing, against the
   // busiest day shown (four steps)
+  const width = box.clientWidth - 36 - DAY_LABELS;   // the panel's padding and the day names
+  const weeks = Math.max(8, Math.min(WEEKS_MAX, Math.floor((width + CELL_GAP) / (CELL_MIN + CELL_GAP))));
   const today = new Date();
   const start = new Date(today);
-  start.setDate(today.getDate() - ((today.getDay() + 6) % 7) - (WEEKS - 1) * 7);   // a Monday
+  start.setDate(today.getDate() - ((today.getDay() + 6) % 7) - (weeks - 1) * 7);   // a Monday
   const shown = [];
   for (const d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) shown.push(dayKey(d));
   const most = Math.max(1, ...shown.map((k) => byDate.get(k)?.seconds ?? 0));
-  const fmt = new Intl.DateTimeFormat(document.documentElement.lang || undefined, { weekday: "short", month: "short", day: "numeric" });
+  const lang = document.documentElement.lang || undefined;
+  const fmt = new Intl.DateTimeFormat(lang, { weekday: "short", month: "short", day: "numeric" });
   const cells = shown.map((k) => {
     const x = byDate.get(k), date = fmt.format(new Date(k + "T12:00"));
     const level = x ? Math.max(1, Math.ceil((x.seconds / most) * 4)) : 0;
@@ -168,12 +175,27 @@ function drawActivity() {
       : t(x.rounds === 1 ? "act.dayOne" : "act.day", { date, time: duration(x.seconds), n: x.rounds });
     return `<i class="l${level}" data-tip-text="${tip}"></i>`;
   }).join("");
-  box.innerHTML = `<div class="act-stats" data-tip="act.allTime">` +
+  // the month names over the week where a month starts
+  const monthName = new Intl.DateTimeFormat(lang, { month: "short" });
+  let months = "";
+  for (let w = 0, last = -1; w < weeks; w++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + w * 7);
+    if (d.getMonth() !== last && (w > 0 || d.getDate() <= 7)) months += `<span style="grid-column:${w + 1} / span 4">${monthName.format(d)}</span>`;
+    last = d.getMonth();
+  }
+  // Monday, Wednesday, Friday on the left (2026-10-19 was a Monday)
+  const dayName = new Intl.DateTimeFormat(lang, { weekday: "short" });
+  const dayNames = [0, 2, 4].map((i) => `<span style="grid-row:${i + 1}">${dayName.format(new Date(2026, 9, 19 + i))}</span>`).join("");
+  const legend = `<span class="act-legend">${t("act.less")}<i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i>${t("act.more")}</span>`;
+  box.innerHTML = `<div class="act-head"><div class="act-stats" data-tip="act.allTime">` +
     stat(duration(sum((x) => x.seconds)), "act.time") +
     stat(sum((x) => x.rounds), "act.rounds") +
     stat(Math.round(sum((x) => x.chars) / 5), "act.words") +
     stat(`${streak}`, "act.streak", streak ? " hot" : "") +
-    `</div><div class="act-cal" style="--weeks:${WEEKS}">${cells}</div>`;
+    `</div>${legend}</div>` +
+    `<div class="act-cal" style="--weeks:${weeks}"><div class="act-months">${months}</div>` +
+    `<div class="act-days">${dayNames}</div><div class="act-grid">${cells}</div></div>`;
 }
 
 // The five numbers of the tiles, [value, label key]: rounds, best wpm and
@@ -215,19 +237,27 @@ modeFilter.addEventListener("click", (e) => {
 // other: the rounds of a length other than the chosen one, picked on this
 // screen ({free, length, data: the /stats or /freeplay/stats answer}).
 let other = null;
-// A button for every round length, always, in the settings' order (owner,
-// 2026-10-16: the row must not change with the history or the settings),
-// plus any older length found in the history that the settings no longer
-// offer. A length with no rounds yet shows the empty stats.
-function renderLengthFilter(have, shown) {
+// The personal bests, as on monkeytype's account page: a cell for every
+// round length, always, in the settings' order (owner, 2026-10-16: the row
+// must not change with the history or the settings), plus any older length
+// found in the history that the settings no longer offer. A cell: the
+// length, its best WPM big, the accuracy of that round under it ("—" before
+// the first round). The cells are also the switch of the length shown
+// below: the picked one is marked.
+function renderLengthFilter(have, shown, bests = {}) {
   const ids = [...LENGTHS, ...new Set(have.filter((id) => !LENGTHS.includes(id)))];
-  // two switches side by side: rounds of N words, rounds of N seconds
-  // (owner, 2026-10-16: they are different kinds of round, not one row)
-  const btn = (id) => `<button type="button" role="tab" data-length="${id}" aria-selected="${id === shown}">${lengthLabel(id)}</button>`;
+  const cell = (id) => {
+    const b = bests[id];
+    return `<button type="button" role="tab" class="pb" data-length="${id}" aria-selected="${id === shown}">` +
+      `<small>${lengthLabel(id)}</small><b>${b ? Math.round(b.wpm) : "—"}</b>` +
+      `<span>${b ? Math.round(b.accuracy) + "%" : "&nbsp;"}</span></button>`;
+  };
+  // two groups: rounds of N words, rounds of N seconds (owner, 2026-10-16:
+  // they are different kinds of round, not one row)
   const isTime = (id) => id.startsWith("time");
   const words = ids.filter((id) => !isTime(id)), time = ids.filter(isTime);
   el.lengthFilter.innerHTML = [words, time].filter((g) => g.length)
-    .map((g) => `<span class="lf-group">${g.map(btn).join("")}</span>`).join("");
+    .map((g) => `<div class="pb-group panel">${g.map(cell).join("")}</div>`).join("");
 }
 el.lengthFilter.addEventListener("click", async (e) => {
   const b = e.target.closest("button[data-length]");

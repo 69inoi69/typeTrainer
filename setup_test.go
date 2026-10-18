@@ -807,3 +807,23 @@ func TestApp_Activity(t *testing.T) {
 		}
 	}
 }
+
+// /stats carries the fastest round of every length ("bests").
+func TestApp_StatsBests(t *testing.T) {
+	h, _, _ := newApp()
+	for _, r := range []string{
+		`{"samples":[{"char":"e","errors":0,"ms":300}],"wpm":40,"accuracy":95,"length":"words-10"}`,
+		`{"samples":[{"char":"e","errors":0,"ms":300}],"wpm":60,"accuracy":98,"length":"words-10"}`,
+		`{"samples":[{"char":"e","errors":0,"ms":300}],"wpm":50,"accuracy":90,"length":"time-30"}`,
+	} {
+		if code, out := call(t, h, "POST", "/api/v1/results?lang=en", r); code != 200 {
+			t.Fatalf("results: %d %v", code, out)
+		}
+	}
+	_, st := call(t, h, "GET", "/api/v1/stats?lang=en&length=words-10", "")
+	bests := st["bests"].(map[string]any)
+	w10 := bests["words-10"].(map[string]any)
+	if len(bests) != 2 || w10["wpm"].(float64) != 60 || w10["accuracy"].(float64) != 98 {
+		t.Fatalf("bests %v, want words-10 at 60 wpm 98%% and time-30", bests)
+	}
+}

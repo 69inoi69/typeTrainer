@@ -238,8 +238,9 @@ type keyInfo struct {
 
 // GET /api/v1/stats?lang=&length= -> every letter (hardest first), the last 50
 // rounds of that length (newest first, without their raw keys), how many
-// rounds of that length there are, and every length found in the history
-// ("lengths"). No length = rounds of every length.
+// rounds of that length there are, every length found in the history
+// ("lengths") and the fastest round of every length ("bests", the personal
+// bests on top of the stats screen). No length = rounds of every length.
 func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	id := l.Info.ID
 	length, ok := s.lengthParam(w, r)
@@ -288,11 +289,16 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, user string
 		serverError(w, err)
 		return
 	}
+	bests, err := s.store.BestRounds(user, id)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"lang": id, "keys": keys, "sessions": summaries(sessions), "sessionCount": count, "targetWpm": p.TargetWPM,
 		// the mastery rule, for the texts that explain it (engine.Mastered)
 		"masteryMin": p.MasteryMinSamples, "masteryErr": p.MasteryErrorRate * 100,
-		"lengths": lengths, "group": group,
+		"lengths": lengths, "group": group, "bests": bests,
 	})
 }
 

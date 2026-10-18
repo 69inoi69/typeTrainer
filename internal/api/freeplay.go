@@ -150,8 +150,9 @@ func (s *Server) handleFreeplayTest(w http.ResponseWriter, r *http.Request, user
 
 // GET /api/v1/freeplay/stats?lang=&length= -> {"unlocked", "testPassed",
 // "sessions" (the last 50 of that length, newest first), "sessionCount" (of
-// that length), "lengths" (every length in the history), "testWpm",
-// "testAccuracy"}. No length = rounds of every length.
+// that length), "lengths" (every length in the history), "bests" (the
+// fastest round of every length), "testWpm", "testAccuracy"}. No length =
+// rounds of every length.
 func (s *Server) handleFreeplayStats(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	id := l.Info.ID
 	length, ok := s.lengthParam(w, r)
@@ -183,8 +184,13 @@ func (s *Server) handleFreeplayStats(w http.ResponseWriter, r *http.Request, use
 		serverError(w, err)
 		return
 	}
+	bests, err := s.store.BestFreeplayRounds(user, id)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"unlocked": open, "testPassed": passed, "sessions": summaries(sessions), "sessionCount": count, "lengths": lengths,
+		"unlocked": open, "testPassed": passed, "sessions": summaries(sessions), "sessionCount": count, "lengths": lengths, "bests": bests,
 		"testWpm": s.cfg.Freeplay.TestWPM, "testAccuracy": s.cfg.Freeplay.TestAccuracy,
 	})
 }
