@@ -297,6 +297,18 @@ func TestApp_Climb(t *testing.T) {
 	if code, _ := call(t, h, "POST", "/api/v1/freeplay/portion?lang=en", `{"level":2}`); code != 400 {
 		t.Fatal("a level over 1 must be rejected")
 	}
+	// the round has all its words (a 10-word round is built at once): the
+	// portion typed still moves the level, and no words come back
+	_, last := call(t, h, "POST", "/api/v1/freeplay/portion?lang=en", `{"level":0.5,"accuracy":99,"wpm":70,"pace":70,"last":true}`)
+	if last["level"].(float64) <= 0.5 || len(last["portions"].([]any)) != 0 {
+		t.Fatalf("last portion: %v", last)
+	}
+	// the end of a round: 2 words are too few to move the level, 3 are enough
+	_, two := call(t, h, "POST", "/api/v1/freeplay/portion?lang=en", `{"level":0.5,"accuracy":99,"wpm":70,"pace":70,"last":true,"words":2}`)
+	_, three := call(t, h, "POST", "/api/v1/freeplay/portion?lang=en", `{"level":0.5,"accuracy":99,"wpm":70,"pace":70,"last":true,"words":3}`)
+	if two["level"] != 0.5 || three["level"].(float64) <= 0.5 {
+		t.Fatalf("partial portions: 2 words -> %v, 3 words -> %v", two["level"], three["level"])
+	}
 	// capitals and punctuation are fine in Climb's raw record
 	round := `{"wpm":55,"accuracy":99,"chars":150,"perSecond":[5,5,5,5,5,5,5,5],"level":0.64,
 		"keys":[{"char":"T","errors":0,"ms":200},{"char":",","errors":0,"ms":180},{"char":".","errors":1,"ms":300}]}`

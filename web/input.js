@@ -1,6 +1,6 @@
 // Everything the user does with keys and buttons, sent to the module that
 // handles it: keydown and the phone input, the navigation (Type / Stats,
-// learn / climb / freetype, Freetype's word list), the keyboard on / off choice of
+// learn / climb / freetype, the round bar), the keyboard on / off choice of
 // the settings, window resize, the "stop" button of touch screens.
 // Layer: top. Imports anything; nothing imports it (app.js only loads it).
 // It holds almost no logic of its own: it decides WHO gets an action (an
@@ -17,9 +17,9 @@ import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
 import { resultOpen, closeResult, settleResult } from "./result.js";
-import { settingsOpen, openSettings, onSettingsClose, onLengthChange, onKbToggle, onGoalChange } from "./settings.js";
+import { settingsOpen, openSettings, onSettingsClose, onKbToggle, onGoalChange, setLength } from "./settings.js";
 import { setMode, refreshFreeplay, renderNav, setFreetypeList } from "./modes.js";
-import { onListPick } from "./letters.js";
+import { onBarPick, renderModeBar } from "./modebar.js";
 import { buildAmbient } from "./ambient.js";
 import "./share.js";   // the copy / image buttons of the stats screen: it wires them itself
 
@@ -112,22 +112,20 @@ function chooseMode(m) {
 el.tabLearn.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("learn"); });
 el.tabClimb.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("climb"); });
 el.tabFreetype.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("freetype"); });
-// Freetype's word list (letters.js draws the buttons): a new list starts a
-// new round, as a new mode does
-onListPick(async (n) => {
-  if (n === S.freetypeList || S.busy) return;
-  await setFreetypeList(n);
-  if (resultOpen()) { el.live.classList.remove("final"); closeResult(); }
-  else { el.live.classList.remove("final"); loadExercise().catch(console.error); }
-});
-
-// ---------- settings: a new round length ----------
-// The stats follow the new length; a round not started yet is rebuilt with
-// it (a round already begun keeps its length to the end).
-onLengthChange(() => {
-  refreshStats().catch(console.error);
-  refreshFreeplay().then(() => { if (S.view === "stats") renderStats(); }).catch(console.error);
-  if (!roundStarted() && !S.busy) loadExercise().catch(console.error);
+// The round bar above the text (modebar.js): Freetype's word list or the
+// mode's round length. Either starts a new round, as a new mode does (a
+// round already begun is dropped), and the stats follow.
+onBarPick(async (pick) => {
+  if (S.busy && !resultOpen()) return;          // a round is being saved right now: a moment
+  if (pick.list) await setFreetypeList(pick.list);
+  if (pick.length) {
+    setLength(S.mode, pick.length);
+    await Promise.all([refreshStats(), refreshFreeplay()]);
+  }
+  renderModeBar();
+  el.live.classList.remove("final");
+  if (resultOpen()) closeResult();              // the ending round loads the next text itself
+  else loadExercise().catch(console.error);
 });
 
 // a new personal goal: only the stats screen shows it

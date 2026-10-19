@@ -3,9 +3,8 @@
 // own (owner, 2026-10-16, variant "A"): on top, the two main numbers big on
 // the left (speed, accuracy) and a wide chart of each word's speed on the
 // right; under them one row of smaller facts (consistency, time, the
-// characters, Climb's level); in learning, a line of where the letters
-// stand (mastered, to practise and why, the next one); then the words
-// themselves, coloured by speed,
+// characters, Climb's level, Freetype's list); then the words themselves,
+// coloured by speed,
 // each with its own speed on hover or tap. No jokes or tips: the owner wants
 // plain results here (2026-10-16); fun lines may come back later on their word.
 // It sits in the same fixed window as the text, so the page never moves.
@@ -17,11 +16,13 @@
 // timer and typing a letter does not close it, so a round that ends in the
 // middle of a word never skips the result (owner, 2026-10-16). It does not care WHY typing stopped (the end
 // of the round, or Esc): the caller passes what to show.
-// compareStats() works out what a learning round changed, for that screen.
+// Learning has a short result of its own (showLearnResult): what the round
+// achieved and what comes next. compareStats() works out what a learning
+// round changed, for it.
 // Display only: nothing here changes what is measured or sent.
 // Layer: middle. Imports the bottom layer (feel.js for the timings),
 // tools.js (tooltips) and letters.js (what a letter still needs).
-// Called by: typing.js (showResult, compareStats at the end of a round),
+// Called by: typing.js (showResult, showLearnResult, compareStats at the end of a round),
 // input.js (resultOpen, closeResult: Enter / Esc / Tab go on).
 // To add a fact: another cell in the row in showResult, its text in i18n.js.
 
@@ -29,25 +30,28 @@ import { t } from "./i18n.js";
 import { $, el, S, isTouch, reducedMotion, levelNumber, listLabel } from "./state.js";
 import { FEEL } from "./feel.js";
 import { showTip } from "./tools.js";
-import { letterNeeds } from "./letters.js";
+import { letterNeeds, letterProgress } from "./letters.js";
 
 
 const box = $("result");
+
+// A number: a fixed label on top, the value under it; size "big" (the two
+// main numbers) or "mid" (the row of facts). Shown as it is: no count up
+// from 0 (owner, 2026-10-19: "just show the result at once").
+const num = (value, unit, label, size, tip) =>
+  `<span class="r-num ${size}"${tip ? ` tabindex="0" data-tip-text="${t(tip)}"` : ""}><span class="r-lbl">${t(label)}</span><b>${value}<small>${unit}</small></b></span>`;
 let done = null;           // resolves the promise of the open result
 
 export const resultOpen = () => done !== null;
 
-// r: { wpm, accuracy, consistency (null = too short), newLetter, best, mastered: [chars],
-//      learn: true in learning (the letters block), climb: {from, to} in Climb (its level),
+// The full result, of Climb and Freetype (learning has its own short one,
+// showLearnResult).
+// r: { wpm, accuracy, consistency (null = too short), best,
+//      climb: {from, to} in Climb (its level),
 //      list: the word list in Freetype,
 //      words: [{letters: [{c, bad}], wpm}] (typing.js typedWords),
 //      chars: {correct, wrong, extra, missed}, seconds (typing.js roundFacts) }
 export function showResult(r) {
-  // a number: a fixed label on top, the value under it; size "big" (the
-  // two main numbers) or "mid" (the row of facts). Shown as it is: no count
-  // up from 0 (owner, 2026-10-19: "just show the result at once").
-  const num = (value, unit, label, size, tip) =>
-    `<span class="r-num ${size}"${tip ? ` tabindex="0" data-tip-text="${t(tip)}"` : ""}><span class="r-lbl">${t(label)}</span><b>${value}<small>${unit}</small></b></span>`;
 
   // 1. the top: speed and accuracy big on the left, the speed the biggest
   // ("hero": the one number to see first). No "new best" tag (owner,
@@ -96,31 +100,52 @@ export function showResult(r) {
   if (r.list) row.push(num(listLabel(r.list), "", "freetype.list", "mid", "freetype.listTip"));
 
   const body = `<div class="r-top${graph ? "" : " solo"}">${hero}${graph}</div>` +
-    (row.length ? `<div class="r-row">${row.join("")}</div>` : "") + (r.learn ? learnLetters() : "") + list;
+    (row.length ? `<div class="r-row">${row.join("")}</div>` : "") + list;
   return open(body, "result.nextBtn");
 }
 
-// Learning: where the letters stand after the round, in words a beginner
-// reads at a glance (owner, 2026-10-19: progress must be plain): the ones
-// mastered, the ones still to practise with what each needs, and the next
-// letter with what opens it. The letters row above shows the same as
-// chips; here there is time to read.
-function learnLetters() {
+// Learning's result is short on purpose (owner, 2026-10-19: the full
+// result was "heaped up"; a beginner needs only what the round achieved
+// and what comes next). No chart, no characters, no word list: those are
+// for Climb and Freetype. Two rows under the speed and the accuracy:
+//   This round: a letter opened, letters mastered, and the letters whose
+//               progress (letterProgress, the bar on their chip) grew most;
+//   Next:       the letter that opens next, the letters it waits for, and
+//               the one with most to do, with what it needs.
+// r: { wpm, accuracy, newLetter, mastered: [chars], gained: [{c, from, to}] }
+export function showLearnResult(r) {
   const info = Object.fromEntries((S.lastStats?.keys ?? []).map((k) => [k.char, k]));
-  const open = S.exercise?.unlocked ?? [];
-  const mastered = open.filter((c) => info[c]?.mastered);
-  const practise = open.filter((c) => !info[c]?.mastered);
-  const next = S.exercise?.locked?.[0];
-  const part = (label, value) => `<span class="r-lp"><span class="r-lbl">${label}</span>${value}</span>`;
-  const parts = [];
-  if (mastered.length) parts.push(part(`<span tabindex="0" data-tip-text="${t("tip.mastered")}">${t("result.mastered")}</span>`, `<b class="ok">${mastered.join(" ")}</b>`));
-  if (practise.length) {
-    parts.push(part(t("result.practise"), `<span class="r-lv">${practise.map((c) =>
-      `<span class="r-li"><b>${c}</b><small>${letterNeeds(info[c]).map((n) => t(n)).join(", ")}</small></span>`).join("")}</span>`));
+  const unlocked = S.exercise?.unlocked ?? [];
+  const pct = (v) => Math.round(v * 100);
+
+  const done = [];
+  if (r.newLetter) done.push(`<span class="r-li"><b class="next">${r.newLetter}</b>${t("result.opened")}</span>`);
+  if (r.mastered?.length) {
+    done.push(`<span class="r-li" tabindex="0" data-tip-text="${t("tip.mastered")}"><b class="ok">${r.mastered.join(" ")}</b>${t("result.masteredNow")}</span>`);
   }
-  if (next) parts.push(part(t("result.next"), `<span class="r-li"><b class="next">${next}</b><small>${t(practise.length ? "result.nextWhen" : "result.nextSoon")}</small></span>`));
-  else parts.push(part(t("result.next"), `<span class="r-li"><small>${t("result.allOpen")}</small></span>`));
-  return `<div class="r-letters">${parts.join("")}</div>`;
+  for (const g of r.gained ?? []) {
+    done.push(`<span class="r-li" tabindex="0" data-tip-text="${t("result.gainTip")}"><b>${g.c}</b>${pct(g.from)}% → ${pct(g.to)}%</span>`);
+  }
+  if (!done.length) done.push(`<span class="r-li quiet">${t("result.noChange")}</span>`);
+
+  const waiting = unlocked.filter((c) => !info[c]?.mastered);
+  const next = S.exercise?.locked?.[0];
+  let ahead;
+  if (!next) ahead = `<span class="r-li quiet">${t("result.allOpen")}</span>`;
+  else if (!waiting.length) ahead = `<span class="r-li"><b class="next">${next}</b>${t("result.nextSoon")}</span>`;
+  else {
+    // the letter furthest from mastered is the one to work on
+    const worst = [...waiting].sort((a, b) => letterProgress(info[a]) - letterProgress(info[b]))[0];
+    const needs = letterNeeds(info[worst]).map((n) => t(n)).join(", ");
+    ahead = `<span class="r-li"><b class="next">${next}</b>${t("result.nextAfter", { list: waiting.join(" ") })}</span>` +
+      `<span class="r-li">${t("result.workOn")} <b>${worst}</b>${needs}</span>`;
+  }
+
+  const row = (label, items) => `<div class="r-lrow"><span class="r-lbl">${label}</span><span class="r-lv">${items}</span></div>`;
+  const body = `<div class="r-learn">` +
+    `<div class="r-lnums">${num(Math.round(r.wpm), "", "result.wpm", "mid")}${num(Math.round(r.accuracy), "%", "result.acc", "mid")}</div>` +
+    row(t("result.thisRound"), done.join("")) + row(t("result.next"), ahead) + `</div>`;
+  return open(body, "result.nextBtn");
 }
 
 // Splits the speeds of this round's words into SPEED_BANDS equal steps
@@ -249,12 +274,18 @@ function glideLetters(from) {
     { duration: FEEL.resultInMs, easing: "cubic-bezier(.2, .8, .2, 1)" });
 }
 
-// What one round changed: a new record and letters mastered in it.
-// Display only.
+// What one learning round changed: a new record, the letters mastered in
+// it, and up to GAINED_MAX letters whose progress grew by GAINED_MIN or
+// more (most first). Display only.
+const GAINED_MIN = 0.05, GAINED_MAX = 3;
 export function compareStats(before, after) {
   const prev = Object.fromEntries((before?.keys ?? []).map((k) => [k.char, k]));
   const best = (before?.sessionCount ?? 0) > 0 &&
     (after.sessions[0]?.wpm ?? 0) > Math.max(0, ...before.sessions.map((x) => x.wpm));   // /stats: newest first
   const mastered = after.keys.filter((k) => k.mastered && !prev[k.char]?.mastered).map((k) => k.char);
-  return { best, mastered };
+  const gained = after.keys.filter((k) => !k.mastered && k.count > 0)
+    .map((k) => ({ c: k.char, from: letterProgress(prev[k.char]), to: letterProgress(k) }))
+    .filter((g) => g.to - g.from >= GAINED_MIN)
+    .sort((a, b) => (b.to - b.from) - (a.to - a.from)).slice(0, GAINED_MAX);
+  return { best, mastered, gained };
 }

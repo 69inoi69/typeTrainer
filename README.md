@@ -32,7 +32,9 @@ Lublin University of Technology (2027).
   25 000 most common ones, as you pick. Neither changes your Learn progress.
 - **Statistics** (Climb and Freetype): every round, your level, your best per round
   length (and word list) and an activity calendar. You can save them as a picture.
-- **Settings:** round length (10, 30 or 60 words, or 30 or 60 seconds), live
+- **Round bar** above the text: Learn short or normal rounds, Climb and
+  Freetype words or time (and Freetype's word list).
+- **Settings:** live
   speed, keyboard (on a computer), caret style, dark or light theme.
 - **Works on a phone.**
 - **English only for now.** Polish, Ukrainian and Russian data is in the

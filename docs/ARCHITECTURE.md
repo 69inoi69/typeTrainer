@@ -86,10 +86,11 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `intro.js` | The intro, "touch typing basics" (what it is, home row, space, eyes up); opens by itself on the first visit only; ← → / A D to go back and on. |
 | middle | `languages.js` | The language switch and `loadLanguage()`. |
 | middle | `profile.js` | The account in the top right corner ("log in" for a guest where accounts work): the account (log in / sign up / log out; the page reloads after each), and a picture kept only in the browser. |
-| middle | `result.js` | The result screen in the text window: `showResult(r)` shows what changed (learning: the letters mastered, to practise and why, and the next one; Climb: the level and its move; Freetype: its word list) and resolves when the user goes on; `compareStats()` works out what a learning round changed. The words of the round with their own speed come from `typedWords()` in `typing.js`, the characters and the time from `roundFacts()`. |
+| middle | `result.js` | The result screen in the text window: `showResult(r)` shows the full result of Climb (with the level and its move) and Freetype (with its word list); `showLearnResult(r)` learning's short one (what the round achieved: letters opened, mastered, bars grown; what comes next) and resolves when the user goes on; `compareStats()` works out what a learning round changed. The words of the round with their own speed come from `typedWords()` in `typing.js`, the characters and the time from `roundFacts()`. |
 | middle | `modes.js` | The three modes (learn / climb / freetype), the navigation tabs that show them (`renderNav`: learn · climb · freetype · stats), `refreshFreeplay()` (`S.climb`: Climb's history and level; `S.freetype`: the chosen list's history and the lists offered), `setFreetypeList()`, the mode and the list remembered per language. |
 | middle | `ambient.js` | The quiet background: outlines of keycaps with the open letters drifting down in the empty fields left and right (CSS animations only), and the screen saver after a minute with no key and no mouse. Decoration only. |
-| middle | `settings.js` | The settings window (Esc or the gear): round length, live numbers, caret, theme, keyboard on / off (carried out by `input.js`), export / import / reset (wired by `tools.js`); drawn from one list of rows (`ROWS`) with search and arrow keys; kept in `localStorage` (`S.settings`). |
+| middle | `settings.js` | The settings window (Esc or the gear), what holds for the whole app: live numbers, streak, caret, theme, keyboard on / off (carried out by `input.js`), the speed goal, export / import / reset (wired by `tools.js`); drawn from one list of rows (`ROWS`) with search and arrow keys; kept in `localStorage` (`S.settings`). Also the round lengths and each mode's own (`lengthFor`, `setLength`, `tt.length.<mode>`). |
+| middle | `modebar.js` | The round bar above the text: the current mode's round length (Learn short / normal; Climb and Freetype words or time) and Freetype's word list; a click starts a new round (`onBarPick`, handled in `input.js`). |
 | middle | `tune.js` | The hidden tuning panel: `?tune` in the address shows the `FEEL` knobs (caret glide and curve, when the letters change colour, flinch, breath, line scroll, key dip and tint, finger tap) as sliders that change the feel live; the changed values stay in `localStorage` (`tt.tune`) and apply only with `?tune`; "Copy values" gives them to be written into `feel.js`. Never linked from the interface. |
 | top | `input.js` | Keydown and phone input (with the one-space sentinel that makes Backspace work on phone keyboards), the navigation (learn · climb · stats), keyboard on / off (settings and Alt+K), window resize: sends each action to the module that handles it. |
 | top | `app.js` | Entry point: `init()`. |
@@ -198,7 +199,7 @@ All responses are JSON. Every route except `/languages` and `/auth/*` takes `?la
 | POST | `/api/v1/import` | the same JSON as `/export` | `{unlocked, sessions}`; REPLACES the language's data, or changes nothing if the data is invalid |
 | GET | `/api/v1/stats?length=` | | `{keys: [{char, count, errorRate, avgMs, difficulty, mastered, unlocked}], sessions: [last 50 of that length, newest first, without raw keys], sessionCount (of that length), lengths: [every length in the history], bests: {length: the fastest round of it}, targetWpm, masteryMin, masteryErr (the mastery rule: at least masteryMin presses, under masteryErr % mistakes, for the texts)}`; no `length` = every length |
 | GET | `/api/v1/activity?tz=` | | `{days: [{date, rounds, seconds, chars}]}`: every day with a finished round, every mode together, oldest first; `tz` = the browser's minutes from UTC (east positive), so days end at the user's midnight. `seconds` = right letters / 5 / WPM (`storage.RoundSeconds`). The stats screen builds the total time typing, the days in a row and the activity calendar from it |
-| POST | `/api/v1/freeplay/portion` | `{recent: [words as typed], start: bool, level, accuracy, wpm, pace}` | `{portions: [{words}], round, level}`; Climb: a new round starts at the user's level (the last round's, else `LevelStart`); later calls move the level by how the portion just typed went (`freeplay.NextLevel`: its accuracy and speed, the pace of the round) and build the next words at it |
+| POST | `/api/v1/freeplay/portion` | `{recent: [words as typed], start: bool, level, accuracy, wpm, pace, last, words}` | `{portions: [{words}], round, level}`; Climb: a new round starts at the user's level (the last round's, else `LevelStart`); later calls move the level by how the portion just typed went (`freeplay.NextLevel`: its accuracy and speed, the pace of the round) and build the next words at it. Every portion is sent: `last` = the round has all its words (only the level moves, no words come back); `words` = the size of a shorter, final portion (under `PartialMin` it does not move the level) |
 | POST | `/api/v1/freeplay/results` | `{chars, wpm, accuracy, perSecond, keys, length, level}` | `{consistency}`; one entry in Climb's history with the level it ended at; its keys may be capitals and `,` `.` |
 | GET | `/api/v1/freeplay/stats?length=` | | `{level, sessions: [last 50 of that length, newest first, without raw keys, each with its level], sessionCount, lengths, bests (as in `/stats`), capsFrom, punctFrom}` |
 | POST | `/api/v1/freetype/portion` | `{recent: [words], start: bool, list}` | `{portions: [{words}], round}`; Freetype: words drawn evenly from the `list` most common ones (`freeplay.Picker.Freetype`); a list not offered is a 400 |
@@ -215,7 +216,7 @@ is not in the list or has a locked letter is simply ignored. Body limit 1 MB.
 **Round length** (`length` on `/results`, `/freeplay/results` and
 `/freetype/results`, and
 `?length=` on the stats routes): `words-N` or `time-N`, the length chosen in
-the settings (`web/settings.js`). Missing = `words-30`, the only length
+the round bar of its mode (`web/modebar.js`, `web/settings.js`). Missing = `words-30`, the only length
 before the settings existed (`storage.DefaultLength`); every stored round
 has one. N is at most `MaxRoundWords` words or `MaxRoundSeconds` seconds
 (`config.go`); anything else is a 400. The stats routes show one length at
@@ -322,8 +323,8 @@ share no data: Climb and Freetype have their own routes and histories
   docs/ALGORITHM.md: the `/portion` and `/results` routes, the letter model,
   unlocking from the home row. It has no stats screen: its progress is the
   letters row (a bar per letter, tooltips with what each still needs, the
-  mastered letters fading from the keyboard) and the result screen (the
-  letters mastered, to practise and why, the next one).
+  mastered letters fading from the keyboard) and a short result (what the
+  round achieved, what comes next).
 - **Climb**, for people who can already type (`internal/freeplay`,
   docs/ALGORITHM.md section 13): one level, 1 to 100, follows the typist
   like a thermostat; each portion request carries how the last portion went,

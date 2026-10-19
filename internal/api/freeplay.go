@@ -22,6 +22,12 @@ import (
 type freeplayPortionRequest struct {
 	Recent []string `json:"recent"` // words already in the round, oldest first, as typed
 	Start  bool     `json:"start"`  // a new round: AheadPortions + 1 portions, else 1
+	// Last: the round has all its words: only move the level, build none.
+	// Words: how many words the portion just typed had (0 = a whole
+	// portion); a shorter one, the end of a round, moves the level only
+	// with at least PartialMin words (freeplay.Params).
+	Last  bool `json:"last"`
+	Words int  `json:"words"`
 	// Level: the level of the round so far (the last answer's "level").
 	// Accuracy (percent) and WPM: the portion just typed; Pace: the WPM of
 	// the round so far (0 = not known yet). Not used at the start of a round.
@@ -44,15 +50,18 @@ func (s *Server) currentLevel(user string, l *Language) (float64, error) {
 // POST /api/v1/freeplay/portion?lang= -> {"portions": [{"words": [...]}],
 // "round": 5, "level": 0.43}. A new round starts at the user's current
 // level; later calls move the level by how the portion just typed went and
-// build the next words at the new level.
+// build the next words at the new level. Every portion typed is sent, also
+// when the round needs no more words ("last": the answer has no portions),
+// so the level moves in a round of 10 words too (it used to move only when
+// words were asked for: a 10-word round, built at once, never moved it).
 func (s *Server) handleFreeplayPortion(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	var req freeplayPortionRequest
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&req); err != nil {
 		badRequest(w, "invalid JSON")
 		return
 	}
-	if len(req.Recent) > s.cfg.MaxEvents {
-		badRequest(w, "recent: too long")
+	if len(req.Recent) > s.cfg.MaxEvents || req.Words < 0 || req.Words > s.cfg.MaxEvents {
+		badRequest(w, "recent or words: out of range")
 		return
 	}
 	if !inRange(req.Level, 0, 1) || !inRange(req.Accuracy, 0, 100) || !inRange(req.WPM, 0, 400) || !inRange(req.Pace, 0, 400) {
@@ -68,8 +77,11 @@ func (s *Server) handleFreeplayPortion(w http.ResponseWriter, r *http.Request, u
 			serverError(w, err)
 			return
 		}
-	} else {
+	} else if req.Words == 0 || req.Words >= p.PartialMin {
 		level = freeplay.NextLevel(req.Level, req.Accuracy, req.WPM, req.Pace, p)
+	}
+	if req.Last {
+		count = 0
 	}
 	type portion struct {
 		Words []string `json:"words"`

@@ -126,14 +126,19 @@ the normal server, it shows yours.
     lower case, without punctuation. The result names the list.
   **Stats** are Climb's and Freetype's: on top you pick which (and, for
   Freetype, the word list); every list has its own rounds and bests.
+- **The round bar** above the text says what a round of this mode is; a
+  click starts a new round with it, and each mode remembers its own:
+  - Learn: **short** (15 words) or **normal** (30 words);
+  - Climb: **Words** or **Time**, then 10, 20, 30, 40 or 50 words or 15, 30,
+    60 or 90 seconds (default 30 words);
+  - Freetype: the word list (200 to 25k), then the same as Climb.
+  A words round ends with the last letter of its last word, a time round
+  when the time is up; the counter in the text card shows the words or the
+  seconds left. While you type the bar steps out of sight.
 - **Settings** (`Esc`, or the gear in the navigation) opens one window in
   the middle of the screen. Typing filters it (search), `↑ ↓` pick a row,
   `← →` change its value, `Enter` presses a button, `Esc` closes it. On a
   phone the Settings button in the bottom bar opens it. What is in it:
-  - **round length**: 10, 20, 30, 40 or 50 words, or 15, 30, 60 or 90 seconds (default 30
-    words). A words round ends with the last letter of its last word, a time
-    round when the time is up; the counter in the text card shows the words
-    or the seconds left.
   - **live speed** (wpm and accuracy while typing): on or off. A brand-new user does
     not see them until the first finished round (a beginner should not
     chase speed); then they appear and you can hide them again. The word
@@ -209,11 +214,14 @@ the normal server, it shows yours.
   under 5 seconds get none). Under them, smaller: Characters (right, wrong,
   extra and missed letters, for example `128/3/0/1`; hover for what each
   number is) and the Time of the round, from the first to the last press.
-  In Learn a line under them says where the letters stand: **Mastered**
-  (hover it for the rule), **To practise** with what each letter needs, and
-  the **Next letter**; the row of letters above shows the same (the new
-  letter pops in, mastered ones shine and get their tick, the next letter to
-  open has a gold dashed frame). In Climb the row of facts ends with the
+  **Learn's result is short:** speed and accuracy, then **This round** (a
+  letter that opened, the letters mastered, and up to three letters whose
+  bar grew most, as `d 40% → 65%`) and **Next** (the letter that opens next,
+  the letters it waits for, and the one with most to do with what it
+  needs). No chart or word list there: the row of letters above shows the
+  rest (the new letter pops in, mastered ones shine and get their tick, the
+  next letter to open has a gold dashed frame). Everything below is the
+  result of Climb and Freetype. In Climb the row of facts ends with the
   **Level** and how far it moved in this round. Then which letters got faster
   or slower, as the time per press before and now (for example
   `s 320→250ms`), Faster on the left and Slower on the right, then the
@@ -277,7 +285,7 @@ the normal server, it shows yours.
     15–90 seconds (older 60-word rounds keep their own cell), the best wpm of
     every length big with the accuracy of that round under it ("—" before the
     first round). A click on a cell picks the length everything below shows
-    (it opens on the one chosen in the settings): rounds of different lengths
+    (it opens on the mode's own length): rounds of different lengths
     are never mixed;
   - **all time**, every round length and both modes together: time typing,
     rounds, words, **days in a row** (a day not practised yet does not break

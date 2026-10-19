@@ -44,6 +44,7 @@ type Params struct {
 	UpAccuracy   float64 // percent: at or above this, and not slowing down, the level goes up
 	DownAccuracy float64 // percent: below this it goes down
 	SlowShare    float64 // a portion slower than this share of the round's pace so far is "slowing down"
+	PartialMin   int     // the last, shorter portion of a round moves the level only with at least this many words
 
 	// What the level does to the text (Portion).
 	RankMin   int     // level 0: only the RankMin most common words; level 1: the whole list

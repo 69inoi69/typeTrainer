@@ -26,7 +26,7 @@ import { $, el, S, introOpen, isTouch, themeColor, reducedMotion } from "./state
 import { postJSON } from "./api.js";
 import { highlightNextKey, pulseKey, glowKey, requestFit } from "./keyboard.js";
 import { refreshStats } from "./stats.js";
-import { showResult, compareStats } from "./result.js";
+import { showResult, showLearnResult, compareStats } from "./result.js";
 import { renderLetters, markNewLetter, markMastered } from "./letters.js";
 import { learning, refreshFreeplay } from "./modes.js";
 import { lengthOf, firstRoundDone } from "./settings.js";
@@ -283,16 +283,18 @@ function portionDone(k) {
 // the words of the round (not to repeat them) and, in Climb, how portion k
 // went: its accuracy and speed, and the pace of the round so far; the
 // server moves the level by it and builds the next words at the new level.
-// Freetype sends its word list instead. Once the round has all its
-// portions, nothing more is asked for (Climb's level of the last portions
-// still counts: it is sent with the result).
+// Climb sends every portion, also once the round has all its words
+// ("last": only the level moves), so a short round moves the level too;
+// the end of the round goes with climbTail. Freetype sends its word list
+// instead, and only while the round needs more words.
 function freePortionDone(k) {
   const por = portions[k];
   sentUpTo = por.end + 1;
   showPortion(k + 1);
-  if (!needMore()) return;
+  const more = needMore();
+  if (!more && S.mode !== "climb") return;
   const how = S.mode === "climb"
-    ? { level: S.climbLevel, ...portionFacts(por), pace: Math.round(currentWpm(lastTime)) }
+    ? { level: S.climbLevel, ...portionFacts(por), pace: Math.round(currentWpm(lastTime)), last: !more }
     : { list: S.freetypeList };
   const id = streamId;
   queue = queue.then(async () => {
@@ -322,6 +324,24 @@ function portionFacts(por) {
     accuracy: typed ? Math.round((clean / typed) * 1000) / 10 : 100,
     wpm: timed ? Math.min(400, Math.round(12000 / (ms / timed))) : 0,
   };
+}
+
+// Climb: the end of the round, after the last portion that ended with a
+// space (the last word has none, and Esc or the clock can stop a round in
+// the middle of a portion). It moves the level like a portion; the server
+// ignores fewer than PartialMin words. A failure here only costs this one
+// step: the round is saved anyway.
+async function climbTail() {
+  const por = { start: sentUpTo, end: S.pos - 1 };
+  if (por.end < por.start || !records.slice(por.start, por.end + 1).some(Boolean)) return;
+  const words = S.text.slice(por.start, S.pos).split(" ").filter(Boolean).length;
+  sentUpTo = S.pos;
+  try {
+    const res = await postJSON("/freeplay/portion", {
+      recent: [], level: S.climbLevel, ...portionFacts(por), pace: Math.round(currentWpm(lastTime)), last: true, words,
+    });
+    setClimbLevel(res.level);
+  } catch (err) { console.error(err); }
 }
 
 // Climb's level changed (a new round or a portion): the status line shows it.
@@ -922,7 +942,7 @@ async function finishRound(byLastKey = false) {
     await queue;                                       // portions still on their way
     streamId++;                                        // nothing more for this round
     if (!typed.length) { await loadExercise(); return; } // nothing typed: nothing to keep
-    if (S.mode === "climb") { await finishFree(wpm, accuracy, typed, fullSeconds(end)); return; }
+    if (S.mode === "climb") { await climbTail(); await finishFree(wpm, accuracy, typed, fullSeconds(end)); return; }
     if (S.mode === "freetype") { await finishFreetype(wpm, accuracy, typed, fullSeconds(end)); return; }
     // keys: the whole round, kept by the server as its raw record (it learns only from samples)
     const res = await postJSON("/results", {
@@ -940,7 +960,7 @@ async function finishRound(byLastKey = false) {
     if (S.exercise) S.exercise.focus = "";
     renderLetters();        // the letters bar agrees with the result at once, not only after it closes
     if (r.best) FX.burstFrom(el.wpm, 80);
-    await showResult({ wpm, accuracy, consistency: res.consistency, newLetter: roundNewLetter, ...r, learn: true, words: typedWords(), ...roundFacts(end) });
+    await showLearnResult({ wpm, accuracy, newLetter: roundNewLetter, ...r });
     await loadExercise();   // built from the UPDATED model
   } catch (err) {
     // said where the eyes are (it used to go only to the screen-reader

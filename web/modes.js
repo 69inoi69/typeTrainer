@@ -10,8 +10,11 @@
 //              25 000 most common ones), nothing adapts.
 // All are always open; the stats screen is Climb's and Freetype's. The
 // chosen mode and Freetype's list are remembered per language in this
-// browser (tt.mode.<lang>, tt.list.<lang>).
-// Layer: middle. Imports the bottom layer and keyboard.js.
+// browser (tt.mode.<lang>, tt.list.<lang>), each mode's round length for
+// all languages (settings.js lengthFor); the round bar above the text
+// shows the mode's choices (modebar.js).
+// Layer: middle. Imports the bottom layer, keyboard.js, settings.js and
+// modebar.js.
 // Called by: languages.js (refreshFreeplay, restoreMode on a language
 // change), input.js (setMode, setFreetypeList and renderNav on a click),
 // typing.js (learning() and the mode to choose the routes), letters.js
@@ -20,20 +23,22 @@
 import { el, S, store } from "./state.js";
 import { getJSON } from "./api.js";
 import { restoreKb } from "./keyboard.js";
+import { lengthFor } from "./settings.js";
+import { renderModeBar } from "./modebar.js";
 
 export const MODES = ["learn", "climb", "freetype"];
 
 // Is the current mode learning (the adaptive trainer)?
 export const learning = () => S.mode === "learn";
 
-// The history of the two modes outside learning in this language, of the
-// round length chosen in the settings: Climb's (with its level) and the
-// chosen Freetype list's (with the lists offered).
+// The history of the two modes outside learning in this language, each
+// of its own round length: Climb's (with its level) and the chosen
+// Freetype list's (with the lists offered).
 export async function refreshFreeplay() {
-  const length = S.settings.length;
+  const climbLength = lengthFor("climb"), length = lengthFor("freetype");
   const list = Number(store.get(`tt.list.${S.lang}`)) || 0;   // the one chosen last time in this language
   const [climb, freetype] = await Promise.all([
-    getJSON(`/freeplay/stats?length=${length}`),
+    getJSON(`/freeplay/stats?length=${climbLength}`),
     // a list remembered from before that is not offered any more: the first one
     getJSON(`/freetype/stats?length=${length}${list ? `&list=${list}` : ""}`)
       .catch(() => getJSON(`/freetype/stats?length=${length}`)),
@@ -42,6 +47,7 @@ export async function refreshFreeplay() {
   S.freetype = freetype;
   S.freetypeList = freetype.list;
   renderNav();
+  renderModeBar();
 }
 
 // Chooses Freetype's word list (its n most common words) and remembers it
@@ -49,7 +55,7 @@ export async function refreshFreeplay() {
 export async function setFreetypeList(n) {
   S.freetypeList = n;
   store.set(`tt.list.${S.lang}`, String(n));
-  S.freetype = await getJSON(`/freetype/stats?length=${S.settings.length}&list=${n}`);
+  S.freetype = await getJSON(`/freetype/stats?length=${lengthFor("freetype")}&list=${n}`);
 }
 
 // The mode saved for this language ("free" is Climb's first name, kept by
@@ -57,6 +63,8 @@ export async function setFreetypeList(n) {
 export function restoreMode() {
   const saved = store.get(`tt.mode.${S.lang}`);
   S.mode = saved === "free" ? "climb" : MODES.includes(saved) ? saved : "learn";
+  S.settings.length = lengthFor(S.mode);
+  renderModeBar();
   restoreKb();                                  // learning and the other modes each have their keyboard on / off
   renderNav();
 }
@@ -65,6 +73,8 @@ export function restoreMode() {
 // The caller starts the new round.
 export function setMode(m) {
   S.mode = m;
+  S.settings.length = lengthFor(m);
+  renderModeBar();
   store.set(`tt.mode.${S.lang}`, m);
   restoreKb(true);
   renderNav();

@@ -19,13 +19,13 @@
 import { i18nVars, t, applyI18n } from "./i18n.js";
 import { $, el, S, reducedMotion, levelNumber, listLabel } from "./state.js";
 import { getJSON } from "./api.js";
-import { LENGTHS, lengthLabel, firstRoundDone } from "./settings.js";
+import { LENGTHS, lengthLabel, lengthFor, firstRoundDone } from "./settings.js";
 
 // S.lastStats: the letters and the rounds of the length chosen in the
 // settings (the typing screen compares a round with those).
 let introVars = "";
 export async function refreshStats() {
-  S.lastStats = await getJSON(`/stats?length=${S.settings.length}`);
+  S.lastStats = await getJSON(`/stats?length=${lengthFor("learn")}`);   // learning's own length
   activityStale = true;                             // a round may have been added: asked again when shown
   if (S.lastStats.lengths.length) firstRoundDone(); // finished rounds before: the live numbers are earned
   const vars = [S.lastStats.targetWpm, S.lastStats.masteryMin, Math.round(S.lastStats.masteryErr)];
@@ -47,14 +47,15 @@ export async function refreshStats() {
 // screen change it.
 const pick = { mode: "climb", list: 0, length: "" };
 export function resetStatsPick() {
-  Object.assign(pick, { mode: S.mode === "freetype" ? "freetype" : "climb", list: S.freetypeList, length: S.settings.length });
+  const mode = S.mode === "freetype" ? "freetype" : "climb";
+  Object.assign(pick, { mode, list: S.freetypeList, length: lengthFor(mode) });
 }
 // The answer for the pick: the typing screen's own (S.climb, S.freetype,
 // modes.js) when it is the same, else one fetched for this screen (other).
 let other = null;   // {key, data}
 const keyOf = (p) => `${p.mode} ${p.list} ${p.length}`;
 function own(p) {
-  if (p.length !== S.settings.length) return null;
+  if (p.length !== lengthFor(p.mode)) return null;
   if (p.mode === "climb") return S.climb;
   return p.list === S.freetypeList ? S.freetype : null;
 }
@@ -265,7 +266,7 @@ pickEl.addEventListener("click", (e) => {
   const b = e.target.closest("button");
   if (!b) return;
   b.blur();
-  if (b.dataset.mode && b.dataset.mode !== pick.mode) choose({ mode: b.dataset.mode, list: pick.list || S.freetypeList }).catch(console.error);
+  if (b.dataset.mode && b.dataset.mode !== pick.mode) choose({ mode: b.dataset.mode, list: pick.list || S.freetypeList, length: lengthFor(b.dataset.mode) }).catch(console.error);
   if (b.dataset.list && Number(b.dataset.list) !== pick.list) choose({ list: Number(b.dataset.list) }).catch(console.error);
 });
 

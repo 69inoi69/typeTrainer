@@ -161,6 +161,7 @@ func Default() Config {
 			UpAccuracy:   96,   // up: at most ~1 mistake in 25 letters...
 			DownAccuracy: 92,   // down: more than ~1 in 12
 			SlowShare:    0.85, // clean but 15% slower than the round so far: hold
+			PartialMin:   3,    // the end of a round: 3 words or more say something, 1-2 are noise
 
 			RankMin:   200,  // level 0: the 200 most common words (monkeytype "200"); level 1: all ~2000
 			CapsFrom:  0.35, // capitals from level 35 of 100...
