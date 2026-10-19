@@ -12,8 +12,12 @@
 // which the graphics card does without the page being painted again; no
 // glows or colour fades on every key.
 // To add a knob: a field in FEEL with its unit and what "more" does, then
-// either read FEEL.x in the JavaScript or add a root.setProperty line below
-// and use var(--feel-x) in style.css.
+// either read FEEL.x in the JavaScript (at the moment it is used, not once at
+// load, so the tuning panel changes it live) or add a root.setProperty line
+// to applyFeel below and use var(--feel-x) in style.css. To make it tunable
+// on the page, add a row to KNOBS in tune.js.
+// The hidden tuning panel (tune.js, "?tune" in the address) changes these
+// values while you type, to pick them by eye.
 
 export const FEEL = {
   // Everything that moves while you type: smooth, but it starts moving at
@@ -29,6 +33,13 @@ export const FEEL = {
   // 100% at 60 frames a second. A new key starts a new glide from where the
   // caret is, so fast typing reads as one steady movement.
   caretGlideMs: 60,         // the caret sliding to the next letter (0 = jumps)
+  // the shape of that glide (CSS timing function): monkeytype's inOut(1.25),
+  // matched within 0.2%, almost even; also carries the streak badge
+  caretCurve: "cubic-bezier(.31, .16, .69, .84)",
+  // When the typed letter turns white and the next one lights up, as a part
+  // of the glide: 0 = at the key press, 1 = when the caret arrives. Half way
+  // reads as "the caret passes the letter" (owner, 2026-10-18 and -19).
+  letterColourAt: 0.5,
   lineScrollMs: 120,        // the text moving up a line (0 = at once)
 
   // The key on the virtual keyboard answers a press: a short, soft dip.
@@ -70,12 +81,18 @@ export const FEEL = {
   nextKeyLiftPx: 3,         // how far the next key rises above the others (0 = stays flat)
 };
 
-// The CSS custom properties: style.css uses var(--feel-...).
-const root = document.documentElement.style;
-root.setProperty("--feel-caret-ms", FEEL.caretGlideMs + "ms");
-root.setProperty("--feel-mark-line", FEEL.markLine + "px");
-root.setProperty("--feel-hand", String(FEEL.handScale));
-root.setProperty("--feel-finger-lift", String(-FEEL.fingerLiftPx));   // in units of the hand drawing (style.css --hu)
-root.setProperty("--feel-finger-glow", String(FEEL.fingerGlowPx));
-root.setProperty("--feel-next-lift", -FEEL.nextKeyLiftPx + "px");
-root.setProperty("--feel-hand-overlap", String(FEEL.handOverlap));
+// The CSS custom properties: style.css uses var(--feel-...). Set at load and
+// again by the tuning panel after it changes FEEL.
+export function applyFeel() {
+  const root = document.documentElement.style;
+  root.setProperty("--feel-caret-ms", FEEL.caretGlideMs + "ms");
+  root.setProperty("--caret-curve", FEEL.caretCurve);
+  root.setProperty("--feel-colour-at", String(FEEL.letterColourAt));
+  root.setProperty("--feel-mark-line", FEEL.markLine + "px");
+  root.setProperty("--feel-hand", String(FEEL.handScale));
+  root.setProperty("--feel-finger-lift", String(-FEEL.fingerLiftPx));   // in units of the hand drawing (style.css --hu)
+  root.setProperty("--feel-finger-glow", String(FEEL.fingerGlowPx));
+  root.setProperty("--feel-next-lift", -FEEL.nextKeyLiftPx + "px");
+  root.setProperty("--feel-hand-overlap", String(FEEL.handOverlap));
+}
+applyFeel();

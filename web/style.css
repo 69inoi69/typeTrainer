@@ -73,7 +73,8 @@
   --fast: 70ms;
   --med: 180ms;
   --ease: cubic-bezier(.2, .8, .2, 1);
-  --caret-curve: cubic-bezier(.31, .16, .69, .84);   /* the caret's glide (and the streak badge riding on it) */
+  /* --caret-curve, the caret's glide (and the streak badge riding on it), is
+     set by feel.js (FEEL.caretCurve), so the tuning panel can change it */
 
   /* controls: the language switch and the profile button share one height */
   --ctl: 38px;          /* outer height of every switch and button */
@@ -745,20 +746,20 @@ body[data-mode="free"] .letter-row { display: none; }
 .text-box.paused :is(.caret, .focus-hint) { opacity: 0; }
 
 /* A typed letter turns white when the caret passes it, not before: the
-   caret glides for --feel-caret-ms, so the colour changes half way through
-   that glide (owner, 2026-10-18: the letter went white and only then the
-   caret came). One change, delayed: no fade, nothing painted per frame (a
+   caret glides for --feel-caret-ms, so the colour changes part way through
+   that glide, half way by default (--feel-colour-at, FEEL.letterColourAt;
+   owner, 2026-10-18: the letter went white and only then the caret came). One change, delayed: no fade, nothing painted per frame (a
    short warm glow on every typed letter was dropped for that: it painted
    the whole text again on every frame). Only on the way to "typed": a
    mistake (red) and Backspace show at once. */
-.text span.ok { color: var(--text); transition: color 0s linear calc(var(--feel-caret-ms, 0ms) * .5); }
+.text span.ok { color: var(--text); transition: color 0s linear calc(var(--feel-caret-ms, 0ms) * var(--feel-colour-at, .5)); }
 /* the letter under the caret (typing.js placeCaret): a step brighter than
    the rest of the untyped text, so the eye finds it at once. It lights up
    half way through the glide too, with the typed letter: lit at once, it
    jumped ahead and the caret, still on the old letter, read as lagging
    behind it (owner, 2026-10-19: "it lags, and on monkeytype it does not";
    monkeytype has no such highlight). */
-.text span.cur { color: color-mix(in srgb, var(--text) 62%, var(--sub)); transition: color 0s linear calc(var(--feel-caret-ms, 0ms) * .5); }
+.text span.cur { color: color-mix(in srgb, var(--text) 62%, var(--sub)); transition: color 0s linear calc(var(--feel-caret-ms, 0ms) * var(--feel-colour-at, .5)); }
 /* the focus letter (the one being practised) is tinted until it is typed:
    a muted gold, half way to the grey of the text (owner, 2026-10-18: the
    brighter tint pulled the eye away from the words) */
@@ -803,9 +804,7 @@ body[data-mode="free"] .letter-row { display: none; }
   border-radius: 3px; pointer-events: none;
   box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 25%, transparent);
   will-change: translate;
-  /* monkeytype's caret curve (anime.js inOut(1.25), matched here within
-     0.2%), almost even, over --feel-caret-ms (web/feel.js: a little quicker
-     than their "fast") */
+  /* the glide: --caret-curve over --feel-caret-ms (both from web/feel.js) */
   transition: translate var(--feel-caret-ms, 0ms) var(--caret-curve);
   animation: breathe 1.1s ease-in-out infinite;   /* at rest it breathes; typing.js does the same while a round waits */
 }
@@ -1845,3 +1844,38 @@ body.live-off .live .metric.num { display: none; }
 body.afk .ambient { --boost: 1.7; }
 .top, .views, .bottom { transition: opacity 1.2s var(--ease); }
 body.afk :is(.top, .views, .bottom) { opacity: .45; }
+
+/* ---------- the hidden tuning panel (tune.js, "?tune" in the address) ----------
+   For the owner only: a small card in the top right corner over the page,
+   so the text and the keyboard stay in view while the values change. */
+.tune {
+  position: fixed; top: 12px; right: 12px; z-index: 50;
+  width: 340px; max-height: calc(100vh - 24px); overflow: auto;
+  padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px;
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
+  box-shadow: 0 12px 32px -12px rgba(0, 0, 0, .5);
+  color: var(--sub); font: 12px/1.4 var(--ui);
+}
+.tune-title { margin: 0 0 4px; padding: 0; border: 0; background: none; color: var(--text); font: 600 13px var(--ui); cursor: pointer; }
+.tune-title::after { content: " ▾"; color: var(--sub); }
+.tune.min { width: auto; }
+.tune.min .tune-title { margin: 0; }
+.tune.min .tune-title::after { content: " ▸"; }
+.tune.min > :not(.tune-title) { display: none; }
+.tune-note { margin: 0 0 8px; }
+.tune-group { margin: 10px 0 4px; color: var(--text); font-size: 12px; }
+.tune-row { display: grid; grid-template-columns: 1fr 100px 58px; gap: 6px; align-items: center; margin: 3px 0; }
+.tune-row span { overflow: hidden; text-overflow: ellipsis; }
+.tune-row input[type="range"] { width: 100%; accent-color: var(--accent); }
+.tune input[type="number"], .tune input[type="text"], .tune select, .tune-out {
+  min-width: 0; padding: 2px 4px; border: 1px solid var(--line); border-radius: 4px;
+  background: var(--panel-2); color: var(--text); font: inherit;
+}
+.tune-curve { grid-column: 2 / 4; display: grid; gap: 4px; }
+.tune-out { display: block; width: 100%; box-sizing: border-box; margin-top: 10px; resize: vertical; }
+.tune-bar { display: flex; gap: 8px; margin-top: 8px; }
+.tune-btn {
+  padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--panel-2); color: var(--text); font: inherit; cursor: pointer;
+}
+.tune-btn:hover { border-color: var(--accent); }

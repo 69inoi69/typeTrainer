@@ -134,6 +134,11 @@ const I18N = {
     "nav.stats": "Stats", "nav.settings": "Settings",
     "settings.data": "Data", "data.save": "Export", "data.load": "Import",
     "settings.danger": "Danger zone", "data.reset": "Reset all progress",
+    // the hidden tuning panel (tune.js, "?tune" in the address): for the owner only
+    "tune.title": "Tuning",
+    "tune.note": "Changes apply at once. They stay in this browser and work only while the address has ?tune: to make them the default, copy them and send them.",
+    "tune.copy": "Copy values", "tune.copied": "Copied", "tune.reset": "Defaults",
+    "tune.caret": "Caret", "tune.text": "Text", "tune.keys": "Keyboard",
     "data.confirmTitle": "Reset all progress?", "data.confirmText": "This can't be undone.", "data.cancel": "Cancel", "data.confirmReset": "Reset",
     "intro.kickerWhat": "Touch typing",
     "intro.titleWhat": "All ten fingers, eyes on the text",
