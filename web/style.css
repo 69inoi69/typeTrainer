@@ -1389,14 +1389,22 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
 }
 /* The way to the result (owner, 2026-10-19: "keep something", but no
    sequence, no count-up, no chart drawing itself): after the last letter
-   the finished text fades out in the second half of the wait
-   (FEEL.resultHoldMs, typing.js adds .ending), then the whole result comes
-   in at once, fading in while it rises a little (FEEL.resultIn*). */
-.text-box.ending .text {
+   the whole typing screen goes during the wait (FEEL.resultHoldMs,
+   typing.js adds .ending): the keyboard and the hands at once (owner: they
+   stood frozen on the last key, then vanished), the text with its ❯, the
+   caret, the streak and the live numbers in its second half, once the last
+   letter has shown. Then the whole result comes in at once, fading in while it rises
+   a little (FEEL.resultIn*); the letters row glides to its new place
+   (result.js glideLetters). */
+#view-type:has(> .text-box.ending) > :is(.hands, .keyboard) {
+  opacity: 0;
+  transition: opacity var(--feel-result-hold, 250ms) var(--ease);
+}
+.text-box.ending :is(.text, .live), .text-box.ending::before {
   opacity: 0;
   transition: opacity calc(var(--feel-result-hold, 250ms) * .5) var(--ease) calc(var(--feel-result-hold, 250ms) * .5);
 }
-.text-box.ending .caret {   /* the same fade, and its glide to the end goes on */
+.text-box.ending :is(.caret, .streak) {   /* the same fade; their glide to the end goes on */
   opacity: 0;
   transition: translate var(--feel-caret-ms, 0ms) var(--caret-curve),
     opacity calc(var(--feel-result-hold, 250ms) * .5) var(--ease) calc(var(--feel-result-hold, 250ms) * .5);

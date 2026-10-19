@@ -18,13 +18,15 @@
 // of the round, or Esc): the caller passes what to show.
 // compareStats() works out what a learning round changed, for that screen.
 // Display only: nothing here changes what is measured or sent.
-// Layer: middle. Imports the bottom layer and tools.js (tooltips).
+// Layer: middle. Imports the bottom layer (feel.js for the timings) and
+// tools.js (tooltips).
 // Called by: typing.js (showResult, compareStats at the end of a round),
 // input.js (resultOpen, closeResult: Enter / Esc / Tab go on).
 // To add a fact: another cell in the row in showResult, its text in i18n.js.
 
 import { t } from "./i18n.js";
-import { $, el, isTouch } from "./state.js";
+import { $, el, isTouch, reducedMotion } from "./state.js";
+import { FEEL } from "./feel.js";
 import { showTip } from "./tools.js";
 
 
@@ -170,10 +172,12 @@ function open(body, btn) {
     el.textBox.classList.remove("blurred");
     closeResult();
   });
+  const from = lettersTop();
   box.hidden = false;
   el.viewType.classList.remove("settled");   // a new result plays its entrance
   el.textBox.classList.add("resulting");
   el.textBox.classList.remove("ending");   // the faded text (typing.js finishRound) is hidden now anyway
+  glideLetters(from);
   // phone: the round is over, so its keyboard closes and the whole result
   // is in view (owner, 2026-10-16); "Next round" opens it again
   if (isTouch()) el.input.blur();
@@ -195,10 +199,28 @@ export function closeResult() {
   if (!done) return;
   const resolve = done;
   done = null;
+  const from = lettersTop();
   box.hidden = true;
   el.viewType.classList.remove("settled");
   el.textBox.classList.remove("resulting");
+  glideLetters(from);
   resolve();
+}
+
+// The letters row sits above the text while typing and above the result,
+// which stands in the middle of the screen: when one screen changes into
+// the other, the row moves. It glides there instead of jumping (owner,
+// 2026-10-19): read where it was, change the screen, then animate from the
+// old place to the new one ("FLIP"). Two layout reads per screen change,
+// never per keypress.
+const lettersRow = document.querySelector("#view-type > .letters");
+const lettersTop = () => lettersRow?.getBoundingClientRect().top ?? 0;
+function glideLetters(from) {
+  if (!lettersRow || !lettersRow.animate || reducedMotion() || el.viewType.hidden) return;
+  const dy = from - lettersTop();
+  if (Math.abs(dy) < 1) return;
+  lettersRow.animate([{ translate: `0 ${dy}px` }, { translate: "0 0" }],
+    { duration: FEEL.resultInMs, easing: "cubic-bezier(.2, .8, .2, 1)" });
 }
 
 // What one round changed: a new record and letters mastered in it.
