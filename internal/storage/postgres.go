@@ -199,12 +199,10 @@ func (p *PostgresStore) SetGroup(user, lang, group string) error {
 
 // ---------- history (learning and free practice) ----------
 
-// Learning and free practice share the sessions table; the mode column
-// keeps the two histories apart (every query below filters on it).
-const (
-	modeLearning = "learning"
-	modeFreeplay = "freeplay"
-)
+// Every mode shares the sessions table; the mode column keeps the
+// histories apart (every query below filters on it): modeLearning,
+// ModeClimb or FreetypeMode(n) (migration 007 allows them).
+const modeLearning = "learning"
 
 // addSession stores one round in the history of one mode.
 func (p *PostgresStore) addSession(user, lang, mode string, s Session) error {
@@ -352,20 +350,20 @@ func (p *PostgresStore) PracticeDays(user, lang string, tz time.Duration) ([]Day
 	return out, rows.Err()
 }
 
-func (p *PostgresStore) AddFreeplaySession(user, lang string, s Session) error {
-	return p.addSession(user, lang, modeFreeplay, s)
+func (p *PostgresStore) AddFreeplaySession(user, lang, mode string, s Session) error {
+	return p.addSession(user, lang, mode, s)
 }
-func (p *PostgresStore) RecentFreeplaySessions(user, lang, length string, limit int) ([]Session, error) {
-	return p.recentSessions(user, lang, modeFreeplay, length, limit)
+func (p *PostgresStore) RecentFreeplaySessions(user, lang, mode, length string, limit int) ([]Session, error) {
+	return p.recentSessions(user, lang, mode, length, limit)
 }
-func (p *PostgresStore) BestFreeplayRounds(user, lang string) (map[string]Session, error) {
-	return p.bestRounds(user, lang, modeFreeplay)
+func (p *PostgresStore) BestFreeplayRounds(user, lang, mode string) (map[string]Session, error) {
+	return p.bestRounds(user, lang, mode)
 }
-func (p *PostgresStore) FreeplaySessionCount(user, lang, length string) (int, error) {
-	return p.sessionCount(user, lang, modeFreeplay, length)
+func (p *PostgresStore) FreeplaySessionCount(user, lang, mode, length string) (int, error) {
+	return p.sessionCount(user, lang, mode, length)
 }
-func (p *PostgresStore) FreeplaySessionLengths(user, lang string) ([]string, error) {
-	return p.sessionLengths(user, lang, modeFreeplay)
+func (p *PostgresStore) FreeplaySessionLengths(user, lang, mode string) ([]string, error) {
+	return p.sessionLengths(user, lang, mode)
 }
 
 // Reset deletes the user's language from all three tables in one transaction.

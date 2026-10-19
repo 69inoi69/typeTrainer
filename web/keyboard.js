@@ -149,15 +149,15 @@ export function glowKey(ch) {
 // through input.js): keyboard and hands together. Its size is not a
 // setting: it is always the largest that fits the window (fitKeyboard
 // below). Remembered in localStorage, separately
-// for learning (tt.kbHidden) and for Climb (tt.kbHidden.free): someone who
-// comes to Climb can already type without looking, so there the keyboard
-// starts hidden.
+// for learning (tt.kbHidden) and for Climb and Freetype together
+// (tt.kbHidden.free): someone who comes to them can already type without
+// looking, so there the keyboard starts hidden.
 const kbKey = () => (S.mode === "learn" ? "tt.kbHidden" : "tt.kbHidden.free");
 
 // Read the saved choice of the current mode and show / hide the keyboard.
 // Touch screens never show it: you type with your thumbs on the phone's own
 // keyboard, which also covers this part of the screen (owner, 2026-10-16).
-// Never chosen yet: learning shows it, Climb hides it.
+// Never chosen yet: learning shows it, Climb and Freetype hide it.
 // animate = true when the user switches the mode: it folds away smoothly.
 export function restoreKb(animate = false) {
   const saved = store.get(kbKey());

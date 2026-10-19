@@ -85,7 +85,7 @@ export async function loadLanguage(id) {
     applyKb();                              // re-translates "off"
     await refreshStats();
     await refreshFreeplay();
-    restoreMode();                          // learning or Climb, as last time in this language
+    restoreMode();                          // the mode of last time in this language
     await loadExercise();
     if (S.view === "stats") renderStats();
   } finally {

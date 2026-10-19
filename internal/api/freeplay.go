@@ -34,7 +34,7 @@ type freeplayPortionRequest struct {
 // currentLevel is where the user's next round of Climb starts: the level at
 // the end of their last round, LevelStart before the first one.
 func (s *Server) currentLevel(user string, l *Language) (float64, error) {
-	last, err := s.store.RecentFreeplaySessions(user, l.Info.ID, "", 1)
+	last, err := s.store.RecentFreeplaySessions(user, l.Info.ID, storage.ModeClimb, "", 1)
 	if err != nil || len(last) == 0 {
 		return s.cfg.Freeplay.LevelStart, err
 	}
@@ -120,7 +120,7 @@ func (s *Server) handleFreeplayResults(w http.ResponseWriter, r *http.Request, u
 	}
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	err := s.store.AddFreeplaySession(user, l.Info.ID, storage.Session{
+	err := s.store.AddFreeplaySession(user, l.Info.ID, storage.ModeClimb, storage.Session{
 		WPM: req.WPM, Accuracy: req.Accuracy, Chars: req.Chars, Consistency: consistency, FinishedAt: time.Now(),
 		Keys:   req.Keys, // kept as the raw record only, never learned from
 		Length: req.Length,
@@ -135,13 +135,9 @@ func (s *Server) handleFreeplayResults(w http.ResponseWriter, r *http.Request, u
 }
 
 // GET /api/v1/freeplay/stats?lang=&length= -> {"level" (where the next
-// round starts), "sessions" (the last 50 of that length, newest first, each
-// with its level), "sessionCount" (of that length), "lengths" (every length
-// in the history), "bests" (the fastest round of every length), "capsFrom",
-// "punctFrom" (the levels where those layers start)}. No length = rounds of
-// every length.
+// round starts), the history of that length (history), "capsFrom",
+// "punctFrom" (the levels where those layers start)}.
 func (s *Server) handleFreeplayStats(w http.ResponseWriter, r *http.Request, user string, l *Language) {
-	id := l.Info.ID
 	length, ok := s.lengthParam(w, r)
 	if !ok {
 		return
@@ -151,29 +147,38 @@ func (s *Server) handleFreeplayStats(w http.ResponseWriter, r *http.Request, use
 		serverError(w, err)
 		return
 	}
-	sessions, err := s.store.RecentFreeplaySessions(user, id, length, 50)
+	out, err := s.history(user, l.Info.ID, storage.ModeClimb, length)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	count, err := s.store.FreeplaySessionCount(user, id, length)
+	out["level"] = level
+	// the levels where capitals and punctuation start, for the texts that name them
+	out["capsFrom"], out["punctFrom"] = s.cfg.Freeplay.CapsFrom, s.cfg.Freeplay.PunctFrom
+	writeJSON(w, http.StatusOK, out)
+}
+
+// history is what the stats screen shows of one mode outside learning:
+// "sessions" (the last 50 of the length, newest first, each with its
+// level in Climb), "sessionCount" (of the length), "lengths" (every length
+// in the history), "bests" (the fastest round of every length). length ""
+// = rounds of every length.
+func (s *Server) history(user, lang, mode, length string) (map[string]any, error) {
+	sessions, err := s.store.RecentFreeplaySessions(user, lang, mode, length, 50)
 	if err != nil {
-		serverError(w, err)
-		return
+		return nil, err
 	}
-	lengths, err := s.store.FreeplaySessionLengths(user, id)
+	count, err := s.store.FreeplaySessionCount(user, lang, mode, length)
 	if err != nil {
-		serverError(w, err)
-		return
+		return nil, err
 	}
-	bests, err := s.store.BestFreeplayRounds(user, id)
+	lengths, err := s.store.FreeplaySessionLengths(user, lang, mode)
 	if err != nil {
-		serverError(w, err)
-		return
+		return nil, err
 	}
-	writeJSON(w, http.StatusOK, map[string]any{
-		"level": level, "sessions": summaries(sessions), "sessionCount": count, "lengths": lengths, "bests": bests,
-		// the levels where capitals and punctuation start, for the texts that name them
-		"capsFrom": s.cfg.Freeplay.CapsFrom, "punctFrom": s.cfg.Freeplay.PunctFrom,
-	})
+	bests, err := s.store.BestFreeplayRounds(user, lang, mode)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]any{"sessions": summaries(sessions), "sessionCount": count, "lengths": lengths, "bests": bests}, nil
 }

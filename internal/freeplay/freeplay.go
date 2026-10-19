@@ -1,5 +1,5 @@
-// Package freeplay is Climb, the second mode: for people who can already
-// type. There are no letters to unlock; one number, the level (0..1),
+// Package freeplay is the two modes outside learning. Mostly Climb, the
+// second mode: for people who can already type. There are no letters to unlock; one number, the level (0..1),
 // says how hard the text is, and it follows the typist like a thermostat:
 // after every portion typed well it goes up a little, after one typed
 // badly it goes down (NextLevel). So the text stays just outside the
@@ -12,9 +12,12 @@
 //   - punctuation: from PunctFrom on, commas and full stops, and the word
 //     after a full stop starts with a capital.
 //
-// Nothing here feeds the letter model of learning (internal/engine): Climb
-// is a separate package on purpose, so the two modes never mix. (The code
-// keeps its first name, "freeplay", from when this mode was free practice.)
+// Freetype, the third mode, is the plain draw underneath (Picker.Freetype):
+// words from the N most common ones of a long list (free.txt), N chosen by
+// the typist, as on monkeytype; nothing adapts.
+//
+// Nothing here feeds the letter model of learning (internal/engine): these
+// modes are a separate package on purpose, so they never mix with it.
 package freeplay
 
 import (
@@ -25,7 +28,8 @@ import (
 	"unicode/utf8"
 )
 
-// Params are the tunable numbers of Climb. Values live in internal/config.
+// Params are the tunable numbers of Climb and Freetype. Values live in
+// internal/config.
 type Params struct {
 	PortionWords  int     // words per portion (the text grows while you type, as in learning)
 	AheadPortions int     // portions waiting after the one being typed
@@ -48,6 +52,11 @@ type Params struct {
 	PunctFrom float64 // punctuation starts at this level...
 	PunctMax  float64 // ...and follows this share of the words at level 1
 	StopShare float64 // of the punctuation marks, this share are full stops, the rest commas
+
+	// Freetype, the third mode (Picker.Freetype): the word lists it offers,
+	// as "the n most common words". A language offers the ones its list
+	// (free.txt) is long enough for.
+	FreetypeLists []int
 }
 
 // NextLevel is the thermostat: the level after one portion was typed with
@@ -80,7 +89,8 @@ func layer(level, from, most float64) float64 {
 	return most * (level - from) / (1 - from)
 }
 
-// Picker draws the words of Climb. Not safe for parallel use (its random
+// Picker draws the words of Climb or Freetype (one Picker per word list:
+// words.txt for Climb, free.txt for Freetype). Not safe for parallel use (its random
 // source is not), so the api package calls it under Server.genMu.
 type Picker struct {
 	words []string
@@ -103,20 +113,47 @@ func Base(w string) string {
 
 // Portion returns n words for the level:
 //
-//	the word:   from the MaxRank(level) most common words, with
-//	            P(word) ~ RepeatPenalty^(uses in the last RecentWords words)
+//	the word:   from the MaxRank(level) most common words (draw)
 //	a capital:  with the share layer(level, CapsFrom, CapsMax), and always
 //	            after a full stop
 //	after it:   a comma or a full stop with the share layer(level, PunctFrom, PunctMax)
 //
-// The same word never comes twice in a row (unless the list has only one
-// word). recent: the words already typed in this round, oldest first, as
-// typed (with their capitals and marks).
+// recent: the words already typed in this round, oldest first, as typed
+// (with their capitals and marks).
 func (pk *Picker) Portion(recent []string, n int, level float64, p Params) []string {
+	punct := 0.0
+	if len(pk.punct) > 0 {
+		punct = layer(level, p.PunctFrom, p.PunctMax)
+	}
+	return pk.draw(recent, n, pk.MaxRank(level, p), layer(level, p.CapsFrom, p.CapsMax), punct, p)
+}
+
+// Freetype returns n words for Freetype, the third mode: from the size most
+// common words, in lower case, without punctuation (draw). The typist
+// chose size; nothing adapts.
+func (pk *Picker) Freetype(recent []string, n, size int, p Params) []string {
+	return pk.draw(recent, n, min(max(size, 1), len(pk.words)), 0, 0, p)
+}
+
+// Size is how many words the list has.
+func (pk *Picker) Size() int { return len(pk.words) }
+
+// tries: how many random words drawWord tries before it weighs the whole
+// list. Not a tuning value: either way the result has the same odds; it
+// only saves time on long lists (Freetype: 25 000 words).
+const tries = 32
+
+// draw returns n words from the size most common ones, with
+//
+//	P(word) ~ RepeatPenalty^(uses in the last RecentWords words)
+//
+// a capital on the share caps of the words (and always after a full stop)
+// and a mark after the share punct of them. The same word never comes
+// twice in a row (unless the list has only one word).
+func (pk *Picker) draw(recent []string, n, size int, caps, punct float64, p Params) []string {
 	if len(pk.words) == 0 || n <= 0 {
 		return nil
 	}
-	size := pk.MaxRank(level, p)
 	keep := max(p.RecentWords, 0)
 	window := make([]string, 0, keep+n) // the bases of the last RecentWords words
 	for _, w := range recent[max(0, len(recent)-keep):] {
@@ -127,27 +164,9 @@ func (pk *Picker) Portion(recent []string, n int, level float64, p Params) []str
 		last = Base(recent[len(recent)-1])
 		sentence = strings.HasSuffix(recent[len(recent)-1], ".")
 	}
-	caps := layer(level, p.CapsFrom, p.CapsMax)
-	punct := 0.0
-	if len(pk.punct) > 0 {
-		punct = layer(level, p.PunctFrom, p.PunctMax)
-	}
 	out := make([]string, 0, n)
-	weights := make([]float64, size)
 	for len(out) < n {
-		uses := map[string]int{}
-		for _, w := range window {
-			uses[w]++
-		}
-		total := 0.0
-		for i, w := range pk.words[:size] {
-			weights[i] = math.Pow(p.RepeatPenalty, float64(uses[w]))
-			if w == last && size > 1 {
-				weights[i] = 0
-			}
-			total += weights[i]
-		}
-		base := pk.words[pick(weights, total, pk.rng.Float64())]
+		base := pk.words[pk.drawWord(window, last, size, p)]
 		word := base
 		if sentence || (caps > 0 && pk.rng.Float64() < caps) {
 			word = capitalize(base)
@@ -172,6 +191,37 @@ func (pk *Picker) Portion(recent []string, n int, level float64, p Params) []str
 		last = base
 	}
 	return out
+}
+
+// drawWord picks the index of one word of the first size, with the weight
+// RepeatPenalty^(uses in window), and 0 for last. First by rejection: a
+// random word is kept with the chance of its weight (at most 1), which
+// gives exactly those odds; most words are not recent, so this almost
+// always ends at once. After tries misses (a short list full of recent
+// words) it weighs every word instead, with the same odds.
+func (pk *Picker) drawWord(window []string, last string, size int, p Params) int {
+	uses := make(map[string]int, len(window))
+	for _, w := range window {
+		uses[w]++
+	}
+	weight := func(w string) float64 {
+		if w == last && size > 1 {
+			return 0
+		}
+		return math.Pow(p.RepeatPenalty, float64(uses[w]))
+	}
+	for range tries {
+		i := pk.rng.Intn(size)
+		if pk.rng.Float64() < weight(pk.words[i]) {
+			return i
+		}
+	}
+	weights, total := make([]float64, size), 0.0
+	for i, w := range pk.words[:size] {
+		weights[i] = weight(w)
+		total += weights[i]
+	}
+	return pick(weights, total, pk.rng.Float64())
 }
 
 // MaxRank is how many of the most common words the level allows: RankMin at

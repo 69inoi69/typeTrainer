@@ -1,6 +1,7 @@
 // Sharing the stats screen: "image" saves a PNG card with the five numbers
-// and the speed of the last rounds of Climb. It takes exactly what the
-// screen shows (the round length picked there, stats.js shownStats). Nothing on the stats screen can be selected by dragging
+// and the speed of the last rounds of Climb or of a Freetype list. It takes
+// exactly what the screen shows (the mode, list and round length picked
+// there, stats.js shownStats). Nothing on the stats screen can be selected by dragging
 // (style.css): this button is the way to take the numbers with you. (A
 // "copy as text" button was removed, owner, 2026-10-18: the picture is
 // enough.)
@@ -10,7 +11,7 @@
 // texts in i18n.js and its click here.
 
 import { t } from "./i18n.js";
-import { $, S } from "./state.js";
+import { $, S, listLabel } from "./state.js";
 import { shownStats, summary } from "./stats.js";
 import { lengthLabel } from "./settings.js";
 
@@ -34,7 +35,7 @@ function confirm(btn, key) {
 // the colours of the current theme. Read once per click, never per key.
 const W = 1200, H = 630;
 function drawCard() {
-  const { s, length } = shownStats();
+  const { s, length, mode, list } = shownStats();
   const css = getComputedStyle(document.documentElement);
   const v = (name) => css.getPropertyValue(name).trim();
   const mono = v("--mono"), ui = v("--ui"), logo = v("--logo");
@@ -54,7 +55,7 @@ function drawCard() {
   const tw = c.measureText("type").width;
   c.fillStyle = v("--text");
   c.fillText("Trainer", pad + tw, pad + 32);
-  const title = `${t("mode.free")} · ${lengthLabel(length)}`;
+  const title = mode === "climb" ? `${t("mode.free")} · ${lengthLabel(length)}` : `${t("mode.freetype")} ${listLabel(list)} · ${lengthLabel(length)}`;
   c.font = `600 15px ${ui}`;
   c.fillStyle = v("--sub");
   c.textAlign = "right";

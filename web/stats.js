@@ -1,22 +1,23 @@
 // The stats screen, a page that scrolls (as monkeytype's account page):
-// Climb's, the second mode (learning has no stats screen: its progress is
-// the letters row, owner 2026-10-19). The personal best of every round
-// length (the cells also pick the length shown below), all time (time
-// typing, rounds, words, days in a row and the activity calendar of the last
-// year, both modes), then the picked length in detail (tiles with the level,
-// and the WPM chart). The exact numbers live in tooltips (hover, or keyboard
-// focus).
+// Climb's and Freetype's (learning has no stats screen: its progress is
+// the letters row, owner 2026-10-19). On top the switch of the two modes
+// (and, for Freetype, of its word lists: every list is a history of its
+// own), then the personal best of every round length (the cells also pick
+// the length shown below), all time (time typing, rounds, words, days in a
+// row and the activity calendar of the last year, every mode), then the
+// picked length in detail (tiles, with the level in Climb, and the WPM
+// chart). The exact numbers live in tooltips (hover, or keyboard focus).
 // refreshStats() keeps S.lastStats (learning: the letters) fresh for the
-// typing screen. Rounds of different lengths are never mixed: the detail
-// shows one length at a time (the one chosen in the settings, or another
-// one picked above).
+// typing screen. Rounds of different lengths (and lists) are never mixed:
+// the detail shows one at a time (the ones of the typing screen, or others
+// picked on this screen).
 // Layer: middle. Imports the bottom layer, tools.js (tooltips) and settings.js.
 // Called by: typing.js (refreshStats after every portion and round),
 // languages.js (on a language change), input.js (on the Stats tab, a resize
-// and a new round length).
+// and a new round length; resetStatsPick when the stats open).
 
 import { i18nVars, t, applyI18n } from "./i18n.js";
-import { el, S, reducedMotion, levelNumber } from "./state.js";
+import { $, el, S, reducedMotion, levelNumber, listLabel } from "./state.js";
 import { getJSON } from "./api.js";
 import { LENGTHS, lengthLabel, firstRoundDone } from "./settings.js";
 
@@ -26,7 +27,6 @@ let introVars = "";
 export async function refreshStats() {
   S.lastStats = await getJSON(`/stats?length=${S.settings.length}`);
   activityStale = true;                             // a round may have been added: asked again when shown
-  other = null;                                     // back to the chosen length
   if (S.lastStats.lengths.length) firstRoundDone(); // finished rounds before: the live numbers are earned
   const vars = [S.lastStats.targetWpm, S.lastStats.masteryMin, Math.round(S.lastStats.masteryErr)];
   // the intro's texts carry these numbers: fill them again only when they
@@ -41,14 +41,35 @@ export async function refreshStats() {
 
 // Draws the stats screen from the last answers (no server call, except
 // for another round length picked on this screen).
-// What the stats screen shows right now: {s: Climb's answer (S.free,
-// modes.js), length} (share.js copies and draws exactly that).
+// What the stats screen shows: a mode outside learning ("climb" or
+// "freetype"), Freetype's list and a round length. It starts as the typing
+// screen's (resetStatsPick, when the stats open); the switches on this
+// screen change it.
+const pick = { mode: "climb", list: 0, length: "" };
+export function resetStatsPick() {
+  Object.assign(pick, { mode: S.mode === "freetype" ? "freetype" : "climb", list: S.freetypeList, length: S.settings.length });
+}
+// The answer for the pick: the typing screen's own (S.climb, S.freetype,
+// modes.js) when it is the same, else one fetched for this screen (other).
+let other = null;   // {key, data}
+const keyOf = (p) => `${p.mode} ${p.list} ${p.length}`;
+function own(p) {
+  if (p.length !== S.settings.length) return null;
+  if (p.mode === "climb") return S.climb;
+  return p.list === S.freetypeList ? S.freetype : null;
+}
+const statsUrl = (p) => p.mode === "climb" ? `/freeplay/stats?length=${p.length}` : `/freetype/stats?length=${p.length}&list=${p.list}`;
+
+// What the stats screen shows right now: {s: the answer, mode, list,
+// length} (share.js copies and draws exactly that).
 export function shownStats() {
-  const picked = other && other.length !== S.settings.length;
-  return { s: picked ? other.data : S.free, length: picked ? other.length : S.settings.length };
+  if (!pick.length) resetStatsPick();
+  const s = own(pick) ?? (other?.key === keyOf(pick) ? other.data : null);
+  return { s, ...pick };
 }
 export function renderStats() {
-  const { s, length } = shownStats();
+  const { s, length, mode, list } = shownStats();
+  renderPick(mode, list);
   if (!s) return;
   // the bests are of every length, in whichever answer is shown
   renderLengthFilter(s.lengths ?? [], length, s.bests ?? {});
@@ -56,7 +77,7 @@ export function renderStats() {
   const sessions = [...s.sessions].reverse(); // oldest first
   // nothing to share before the first round of this length
   document.getElementById("btn-image").disabled = !s.sessionCount;
-  el.tiles.innerHTML = tiles(sessions, s.sessionCount, S.settings.goal, s.level);
+  el.tiles.innerHTML = tiles(sessions, s.sessionCount, S.settings.goal, mode === "climb" ? s.level : null);
   drawActivity();
   if (activityStale) loadActivity();
 
@@ -89,8 +110,8 @@ function tiles(sessions, count, goal, level) {
   const last10 = (f) => t("tile.last10") + trend(f);
   const wpm = avg(last, (x) => x.wpm);
   const out = [
-    // where the next round starts (1..100): the thermostat of Climb
-    `<div class="tile level" data-tip="tile.levelTip"><b>${levelNumber(level ?? 0)}</b><small>${t("tile.level")}</small><span class="meta">${t("tile.levelNote")}</span></div>`,
+    // where the next round starts (1..100): the thermostat of Climb (null: Freetype has none)
+    level != null ? `<div class="tile level" data-tip="tile.levelTip"><b>${levelNumber(level)}</b><small>${t("tile.level")}</small><span class="meta">${t("tile.levelNote")}</span></div>` : "",
     tile(count, t("tile.exercises")),
     tile(num(wpm), t("tile.wpm"), last10((x) => x.wpm), " speed"),
     tile(num(avg(last, (x) => x.accuracy), "%"), t("tile.acc"), last10((x) => x.accuracy)),
@@ -209,10 +230,46 @@ export function summary(s) {
   ];
 }
 
+// ---------- the mode, the list and the length shown ----------
+// Shows the pick: the answer is asked for first when it is not the typing
+// screen's own. Only the parts below change: no opening animation of the
+// whole screen again (owner, 2026-10-18: everything vanished and came
+// back), just a short fade of the parts that show the new pick.
+async function choose(change) {
+  Object.assign(pick, change);
+  const key = keyOf(pick);
+  if (!own(pick) && other?.key !== key) {
+    const data = await getJSON(statsUrl(pick));
+    if (keyOf(pick) !== key) return;               // picked again meanwhile
+    other = { key, data };
+  }
+  el.viewStats.classList.remove("grow");
+  renderStats();
+  if (reducedMotion()) return;
+  for (const part of [el.lengthFilter, el.tiles, el.chart.closest(".panel")]) {
+    part?.animate?.([{ opacity: 0.35 }, { opacity: 1 }], { duration: 220, easing: "ease-out" });
+  }
+}
+
+// The switch of the two modes, and for Freetype the row of its lists
+// (the lists offered come with every /freetype/stats answer).
+const pickEl = $("stats-pick");
+function renderPick(mode, list) {
+  const tab = (m, key) => `<button type="button" role="tab" data-mode="${m}" aria-selected="${m === mode}">${t(key)}</button>`;
+  const lists = mode === "freetype" ? (S.freetype?.lists ?? []) : [];
+  pickEl.innerHTML = `<div class="stats-modes" role="tablist" aria-label="${t("stats.modes")}">${tab("climb", "mode.free")}${tab("freetype", "mode.freetype")}</div>` +
+    (lists.length ? `<div class="stats-lists" role="tablist" aria-label="${t("freetype.list")}">` + lists.map((n) =>
+      `<button type="button" role="tab" class="wl" data-list="${n}" aria-selected="${n === list}" data-tip-text="${t("freetype.listN", { n })}">${listLabel(n)}</button>`).join("") + `</div>` : "");
+}
+pickEl.addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  b.blur();
+  if (b.dataset.mode && b.dataset.mode !== pick.mode) choose({ mode: b.dataset.mode, list: pick.list || S.freetypeList }).catch(console.error);
+  if (b.dataset.list && Number(b.dataset.list) !== pick.list) choose({ list: Number(b.dataset.list) }).catch(console.error);
+});
+
 // ---------- one round length at a time ----------
-// other: the rounds of a length other than the chosen one, picked on this
-// screen ({length, data: the /freeplay/stats answer}).
-let other = null;
 // The personal bests, as on monkeytype's account page: a cell for every
 // round length, always, in the settings' order (owner, 2026-10-16: the row
 // must not change with the history or the settings), plus any older length
@@ -239,18 +296,7 @@ el.lengthFilter.addEventListener("click", async (e) => {
   const b = e.target.closest("button[data-length]");
   if (!b) return;
   b.blur();
-  const id = b.dataset.length;
-  if (id === S.settings.length) other = null;
-  else other = { length: id, data: await getJSON(`/freeplay/stats?length=${id}`) };
-  // only the detail of the length changes: no opening animation of the
-  // whole screen again (owner, 2026-10-18: everything vanished and came
-  // back), just a short fade of the parts that show the new length
-  el.viewStats.classList.remove("grow");
-  renderStats();
-  if (reducedMotion()) return;
-  for (const part of [el.tiles, el.chart.closest(".panel")]) {
-    part?.animate?.([{ opacity: 0.35 }, { opacity: 1 }], { duration: 220, easing: "ease-out" });
-  }
+  await choose({ length: b.dataset.length });
 });
 
 // Bar chart of WPM per round, drawn as SVG by hand (no chart library).

@@ -25,12 +25,13 @@ Lublin University of Technology (2027).
 - **Letters open one by one**, the home row first. A new letter opens when
   every open letter is typed with few mistakes at 30 words per minute; you
   always see how close each letter is and what it still needs.
-- **Two modes.** *Learn* is for beginners: the trainer picks the words and
+- **Three modes.** *Learn* is for beginners: the trainer picks the words and
   opens the letters. *Climb* is for those who can type: the text gets harder
   as you get better (rarer words, then capitals, then punctuation), at a
-  level that follows you. Climb never changes your Learn progress.
-- **Statistics** (Climb): every round, your level, your best per round
-  length and an activity calendar. You can save them as a picture.
+  level that follows you. *Freetype* is just typing: words from the 200 to
+  25 000 most common ones, as you pick. Neither changes your Learn progress.
+- **Statistics** (Climb and Freetype): every round, your level, your best per round
+  length (and word list) and an activity calendar. You can save them as a picture.
 - **Settings:** round length (10, 30 or 60 words, or 30 or 60 seconds), live
   speed, keyboard (on a computer), caret style, dark or light theme.
 - **Works on a phone.**

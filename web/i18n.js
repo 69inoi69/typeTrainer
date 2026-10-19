@@ -38,7 +38,7 @@ const I18N = {
     "toast.exported": "Progress saved to a file",
     "toast.imported": "Progress loaded: <b>{n}</b> rounds",
     "toast.importFail": "Could not load this file. Use one made with Export",
-    "tip.stats": "Climb stats · Shift+Tab",
+    "tip.stats": "Climb and Freetype stats · Shift+Tab",
     "tip.lang": "Alt + 1…4",
     "intro.kicker0": "Home row",
     "intro.title0": "Put your fingers on the middle row",
@@ -124,6 +124,13 @@ const I18N = {
     "mode.learn": "Learn", "mode.free": "Climb",
     "tip.learn": "Learn: touch typing from the first letters, words picked for your weak ones",
     "tip.free": "Climb: for those who can type. The text gets harder as you get better",
+    "mode.freetype": "Freetype",
+    "tip.freetype": "Freetype: just type. Words from the list you pick, nothing adapts",
+    // Freetype's word lists (letters.js, result.js, stats.js)
+    "freetype.words": "words", "freetype.list": "Word list",
+    "freetype.listN": "The {n} most common words",
+    "freetype.listTip": "The words of the round came from this many of the most common words",
+    "stats.modes": "Mode",
     // Climb's level (letters.js, result.js, stats.js)
     "climb.level": "Level",
     "tip.level": "Climb's level, 1 to 100: it goes up while you type cleanly and steadily, and down when mistakes pile up",

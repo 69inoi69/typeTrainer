@@ -2,10 +2,10 @@
 // type, in rounds of the length chosen in the settings), the caret, what
 // every keypress does, the clean-word streak, the live WPM / accuracy, and
 // sending the result when a round ends. The letters bar is in letters.js,
-// the result screen in result.js. The same screen serves both modes
+// the result screen in result.js. The same screen serves all three modes
 // (modes.js): learning talks to /portion and /results, Climb to /freeplay/*
 // and sends with every portion how it went, so the server can move its
-// level (freeplay.NextLevel).
+// level (freeplay.NextLevel), Freetype to /freetype/* with its word list.
 // Layer: middle. Imports the bottom layer, keyboard.js, stats.js, result.js,
 // letters.js, modes.js and settings.js.
 // Called by: input.js (handleChar, backspace, restartRound, stopRound and the rest
@@ -279,27 +279,33 @@ function portionDone(k) {
   }).catch((err) => { console.error(err); el.hint.textContent = t("err.server"); });
 }
 
-// Climb: nothing is learned about letters. What is sent is the words of
-// the round (not to repeat them) and how portion k went: its accuracy and
-// speed, and the pace of the round so far; the server moves the level by
-// it and builds the next words at the new level. Once the round has all
-// its portions, nothing more is asked for (the level of the last portions
+// Climb and Freetype: nothing is learned about letters. What is sent is
+// the words of the round (not to repeat them) and, in Climb, how portion k
+// went: its accuracy and speed, and the pace of the round so far; the
+// server moves the level by it and builds the next words at the new level.
+// Freetype sends its word list instead. Once the round has all its
+// portions, nothing more is asked for (Climb's level of the last portions
 // still counts: it is sent with the result).
 function freePortionDone(k) {
   const por = portions[k];
   sentUpTo = por.end + 1;
   showPortion(k + 1);
   if (!needMore()) return;
-  const how = { level: S.climbLevel, ...portionFacts(por), pace: Math.round(currentWpm(lastTime)) };
+  const how = S.mode === "climb"
+    ? { level: S.climbLevel, ...portionFacts(por), pace: Math.round(currentWpm(lastTime)) }
+    : { list: S.freetypeList };
   const id = streamId;
   queue = queue.then(async () => {
     if (id !== streamId) return;
-    const res = await postJSON("/freeplay/portion", { recent: recentWords(), ...how });
+    const res = await postJSON(portionRoute(), { recent: recentWords(), ...how });
     if (id !== streamId) return;
     appendPortions(res.portions);
-    setClimbLevel(res.level);
+    if (S.mode === "climb") setClimbLevel(res.level);
   }).catch((err) => { console.error(err); el.hint.textContent = t("err.server"); });
 }
+
+// Where the words of the current mode come from.
+const portionRoute = () => ({ learn: "/portion", climb: "/freeplay/portion", freetype: "/freetype/portion" })[S.mode];
 
 // How one portion went: the share of its positions typed without a
 // mistake (percent) and its speed from the measured presses (wpm).
@@ -362,10 +368,10 @@ function resetStream() {
 export async function loadExercise() {
   resetStream();
   const id = streamId;
-  const res = await postJSON(learning() ? "/portion" : "/freeplay/portion", { start: true, recent: [] });
+  const res = await postJSON(portionRoute(), { start: true, recent: [], list: S.freetypeList });
   if (id !== streamId) return;
   roundBefore = S.lastStats;
-  if (!learning()) { setClimbLevel(res.level); roundLevel = res.level; }   // where this round starts
+  if (S.mode === "climb") { setClimbLevel(res.level); roundLevel = res.level; }   // where this round starts
   limit = lengthOf(S.settings.length);
   roundWords = limit.kind === "words" ? limit.n : 0;
   appendPortions(res.portions);
@@ -916,7 +922,8 @@ async function finishRound(byLastKey = false) {
     await queue;                                       // portions still on their way
     streamId++;                                        // nothing more for this round
     if (!typed.length) { await loadExercise(); return; } // nothing typed: nothing to keep
-    if (S.mode === "free") { await finishFree(wpm, accuracy, typed, fullSeconds(end)); return; }
+    if (S.mode === "climb") { await finishFree(wpm, accuracy, typed, fullSeconds(end)); return; }
+    if (S.mode === "freetype") { await finishFreetype(wpm, accuracy, typed, fullSeconds(end)); return; }
     // keys: the whole round, kept by the server as its raw record (it learns only from samples)
     const res = await postJSON("/results", {
       samples, keys: typed, chars: typed.length, wpm, accuracy, perSecond: fullSeconds(end), length: S.settings.length, device: device(),
@@ -955,12 +962,27 @@ async function finishRound(byLastKey = false) {
 const device = () => (isTouch() ? "touch" : "keyboard");
 
 async function finishFree(wpm, accuracy, keys, perSecond) {
-  const before = S.free?.sessions ?? [];
+  const before = S.climb?.sessions ?? [];
   const res = await postJSON("/freeplay/results", { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length, device: device(), level: S.climbLevel ?? 0 });
   firstRoundDone();
   await refreshFreeplay();
   const best = before.length > 0 && wpm > Math.max(...before.map((x) => x.wpm));
   if (best) FX.burstFrom(el.wpm, 80);
   await showResult({ wpm, accuracy, consistency: res.consistency, best, climb: { from: roundLevel, to: S.climbLevel ?? 0 }, words: typedWords(), ...roundFacts() });
+  await loadExercise();
+}
+
+// The end of a Freetype round: it goes to the history of its word list
+// (POST /freetype/results). A personal best is the fastest round of this
+// list and length.
+async function finishFreetype(wpm, accuracy, keys, perSecond) {
+  const list = S.freetypeList;
+  const before = S.freetype?.sessions ?? [];
+  const res = await postJSON("/freetype/results", { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length, device: device(), list });
+  firstRoundDone();
+  await refreshFreeplay();
+  const best = before.length > 0 && wpm > Math.max(...before.map((x) => x.wpm));
+  if (best) FX.burstFrom(el.wpm, 80);
+  await showResult({ wpm, accuracy, consistency: res.consistency, best, list, words: typedWords(), ...roundFacts() });
   await loadExercise();
 }

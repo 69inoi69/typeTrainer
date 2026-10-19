@@ -126,8 +126,8 @@ func (s *Server) learn(user string, l *Language, samples []engine.Sample) (stats
 	return
 }
 
-// resultsRequest is the body of /results, and (with Level, without
-// Samples) of /freeplay/results.
+// resultsRequest is the body of /results, and (without Samples) of
+// /freeplay/results (with Level) and /freetype/results (with List).
 type resultsRequest struct {
 	// Samples: the keypresses not yet learned with /portion. The model
 	// learns from these.
@@ -149,6 +149,9 @@ type resultsRequest struct {
 	Device string `json:"device"`
 	// Level: Climb only, the level the round ended at (freeplay.NextLevel).
 	Level float64 `json:"level"`
+	// List: Freetype only, the word list of the round (its n most common
+	// words, one of Server.freetypeLists).
+	List int `json:"list"`
 }
 
 // POST /api/v1/results?lang= -> the round is over: stores it in the

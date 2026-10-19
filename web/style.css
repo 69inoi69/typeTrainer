@@ -451,7 +451,7 @@ body.one-lang .lang-switch, body.one-lang .lang-hint { display: none; }
 }
 .rail-group { display: flex; }
 .rail .switch { grid-auto-flow: column; grid-auto-columns: 1fr; }
-.nav-switch { --n: 3; }
+.nav-switch { --n: 4; }
 .rail .switch button, .rail-btn {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
   width: 72px; height: 50px; padding: 0 2px; border-radius: 10px; background: none; color: var(--sub);
@@ -468,7 +468,7 @@ body.one-lang .lang-switch, body.one-lang .lang-hint { display: none; }
 .rail .switch-thumb::after { left: calc(50% - 9px); width: 18px; height: 2px; }
 /* Climb: no letters to learn, so their row takes no room and the text
    comes right under the header (the slot under it stays for warnings) */
-body[data-mode="free"] .letter-row { display: none; }
+body[data-mode="climb"] .letter-row { display: none; }
 
 .pop { position: relative; }
 
@@ -578,6 +578,13 @@ body[data-mode="free"] .letter-row { display: none; }
   0%, 30% { background: color-mix(in srgb, var(--ok) 30%, var(--panel)); color: var(--ok); }
 }
 .chip:not(.locked):hover { transform: translateY(-2px); }
+/* Freetype's word lists in the letters row (letters.js renderLists): plain
+   words as on monkeytype's config bar, the chosen one in the accent colour */
+.wl-lbl { align-self: center; margin-right: 6px; color: var(--sub); font-size: .8rem; }
+.wl { padding: 2px 8px; border: 0; border-radius: 6px; background: none; color: var(--sub); font: inherit; font-size: .9rem; cursor: pointer; transition: color .15s, opacity .4s var(--ease); }
+.wl:hover { color: var(--text); }
+.wl[aria-pressed="true"] { color: var(--accent-text); }
+body.typing-now #letters .wl { opacity: .4; }
 /* a small bounce and one soft ring that spreads out and fades (no confetti) */
 @keyframes pop {
   0% { transform: scale(.6); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 80%, transparent); }
@@ -1147,6 +1154,16 @@ button:disabled:active { transform: none; }
    of N seconds, a cell per length: the length small, the best WPM big, the
    accuracy of that round under it. A cell is also the switch of the length
    shown below: the picked one gets a gold bar and its number turns gold. */
+/* which history the screen shows (stats.js renderPick): the two modes as
+   words, the chosen one bright with a line under it, as the nav; Freetype's
+   lists after them */
+.stats-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; }
+.stats-modes { display: flex; gap: 4px; }
+.stats-modes button { padding: 4px 10px; border: 0; background: none; color: var(--sub); font: inherit; font-size: 1rem; cursor: pointer; box-shadow: inset 0 -2px 0 transparent; transition: color .15s, box-shadow .15s; }
+.stats-modes button:hover { color: var(--text); }
+.stats-modes button[aria-selected="true"] { color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+.stats-lists { display: flex; flex-wrap: wrap; gap: 2px; }
+.stats-lists .wl[aria-selected="true"] { color: var(--accent-text); }
 .pbs { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 4fr); gap: 14px; }
 .pb-group { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); padding: 6px; gap: 4px; }
 .pb {

@@ -80,7 +80,7 @@ func newApp() (http.Handler, config.Config, error) {
 	return server.WithGuest(mux), cfg, nil
 }
 
-// loadLanguage reads one language's layout and word list and builds its
+// loadLanguage reads one language's layout and word lists and builds its
 // generator (the unlock order is computed from the words, with the home row
 // of the layout first).
 func loadLanguage(info language.Language, cfg config.Config, seed int64) (*api.Language, error) {
@@ -111,5 +111,12 @@ func loadLanguage(info language.Language, cfg config.Config, seed int64) (*api.L
 		}
 	}
 	free := freeplay.NewPicker(words, punct, rand.New(rand.NewSource(seed+1)))
-	return &api.Language{Info: info, Gen: gen, Free: free, LayoutJSON: layoutJSON}, nil
+	// Freetype's long list (tools/wordlists/free.py); a language without
+	// one offers the lists its words.txt is long enough for
+	long := words
+	if data, err := files.ReadFile("data/langs/" + info.ID + "/free.txt"); err == nil {
+		long = info.Words(string(data))
+	}
+	freetype := freeplay.NewPicker(long, nil, rand.New(rand.NewSource(seed+2)))
+	return &api.Language{Info: info, Gen: gen, Free: free, Freetype: freetype, LayoutJSON: layoutJSON}, nil
 }
