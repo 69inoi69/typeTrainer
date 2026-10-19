@@ -8,18 +8,16 @@
 // mastered fade from their keys: the fingers know them, the eyes need not
 // look (touch typing is not looking down). The status line before the
 // first key says how many letters are open.
-// In Climb there are no letters to learn: the bar is empty, every key is
-// open, and the status line shows the level and what it brings. In
-// Freetype the bar holds its word lists instead (200 to 25k most common
-// words; a click picks one, input.js onListPick).
+// In Climb and Freetype there are no letters to learn: the bar is hidden
+// and every key is open; in Climb the status line shows the level and what
+// it brings. (Freetype's word lists are in the round bar, modebar.js.)
 // Layer: middle. Imports the bottom layer and modes.js.
 // Called by: typing.js (renderLetters when a portion or round changes the
 // letters, or Climb's level; markNewLetter / markMastered just before),
-// result.js (letterNeeds, for the letters of a learning round), input.js
-// (onListPick).
+// result.js (letterProgress, letterNeeds, for the result of a learning round).
 
 import { t } from "./i18n.js";
-import { el, S, levelNumber, listLabel } from "./state.js";
+import { el, S, levelNumber } from "./state.js";
 import { learning } from "./modes.js";
 
 // One-time animations for the next render (set by typing.js)
@@ -52,10 +50,9 @@ let chipOf = {};              // letter -> its chip, from the last build
 export function renderLetters() {
   if (!learning()) {
     builtFor = captionFor = "";
-    if (S.mode === "climb") { listsFor = ""; renderFreeLetters(); } else renderLists();
+    renderFreeLetters();
     return;
   }
-  listsFor = "";                // the row holds letters now, not lists
   if (!S.exercise) return;
   const info = {};
   for (const k of S.lastStats?.keys ?? []) info[k.char] = k;
@@ -146,45 +143,20 @@ const pill = (icon, cls, tip, label, value) =>
   `<span class="stat ${cls}"${tip ? ` data-tip="${tip}"` : ""}><svg viewBox="0 0 24 24" aria-hidden="true">${STAT_ICONS[icon]}</svg>` +
   `<span class="lbl">${label}</span>${value}</span>`;
 
-// Climb: no letters to learn, every key is open. The status line shows
-// the level of the round and what it brings (the layers of
-// freeplay.Portion; their levels come with /freeplay/stats).
+// Climb and Freetype: no letters to learn, every key is open. In Climb the
+// status line shows the level of the round and what it brings (the layers
+// of freeplay.Portion; their levels come with /freeplay/stats).
 function renderFreeLetters() {
   el.letters.replaceChildren();
   for (const key of Object.values(S.keyEls)) key.classList.remove("locked", "known");
   if (S.altgrEl) S.altgrEl.classList.remove("locked");
-  if (S.climbLevel == null) { el.lettersCaption.innerHTML = ""; return; }
+  if (S.mode !== "climb" || S.climbLevel == null) { el.lettersCaption.innerHTML = ""; return; }
   const level = S.climbLevel;
   const brings = [t(level < 0.25 ? "climb.common" : level < 0.6 ? "climb.wider" : "climb.rare"),
     ...[[S.climb?.capsFrom, "climb.caps"], [S.climb?.punctFrom, "climb.punct"]].filter(([from]) => from != null && level >= from).map(([, key]) => t(key))];
   el.lettersCaption.innerHTML = pill("level", "focus", "tip.level", t("climb.level"), `<b>${levelNumber(level)}</b>`) +
     `<span class="begin mode-note">${brings.join(" · ")}</span>`;
 }
-
-// Freetype: every key is open; the bar holds the word lists, the chosen
-// one marked. Nothing to say in the status line: the bar says it.
-let listListener = null;
-export function onListPick(fn) { listListener = fn; }
-// Built again only when the lists or the choice change (this runs on
-// every portion).
-let listsFor = "";
-function renderLists() {
-  const lists = S.freetype?.lists ?? [];
-  const key = JSON.stringify([S.lang, lists, S.freetypeList, t("freetype.words")]);
-  if (key === listsFor && el.letters.firstChild) return;
-  listsFor = key;
-  for (const k of Object.values(S.keyEls)) k.classList.remove("locked", "known");
-  if (S.altgrEl) S.altgrEl.classList.remove("locked");
-  el.lettersCaption.innerHTML = "";
-  el.letters.innerHTML = `<span class="wl-lbl">${t("freetype.words")}</span>` + lists.map((n) =>
-    `<button type="button" class="wl" data-list="${n}" aria-pressed="${n === S.freetypeList}" data-tip-text="${t("freetype.listN", { n })}">${listLabel(n)}</button>`).join("");
-}
-el.letters.addEventListener("click", (e) => {
-  const b = e.target.closest("button[data-list]");
-  if (!b) return;
-  b.blur();
-  listListener?.(Number(b.dataset.list));
-});
 
 // ---------- one letter's progress ----------
 // The mastery rule (engine.MeetsGoal) has three parts: enough presses, few

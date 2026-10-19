@@ -108,8 +108,8 @@ Details: `docs/ARCHITECTURE.md`.
 - **Three modes, all open to everyone (owner, 2026-10-19).** *Learn* is for
   beginners: the adaptive trainer, letters open one by one from the home
   row, with no difficulty switches (the algorithm decides what to practise).
-  It has no stats screen: its progress is the letters row and the result
-  screen, made plain (what is mastered, what still needs work and why).
+  It has no stats screen: its progress is the letters row and a short
+  result (what the round achieved and what comes next; no charts there).
   *Climb* is for people who can already type (`internal/freeplay`): one
   level (1..100) follows the typist like a thermostat, up after portions
   typed cleanly, down when mistakes pile up; it brings rarer words, then
@@ -119,15 +119,18 @@ Details: `docs/ARCHITECTURE.md`.
   25 000 most common words); nothing adapts, every list has its own
   history, and the stats screen shows it next to Climb. There is no entry
   test.
-- **Settings change how much and how it looks, never what.** The settings
-  panel (`web/settings.js`) offers round length (10/20/30/40/50 words, 15/30/60/90 s),
-  live numbers on/off, the streak badge on/off, the caret style and a personal
-  speed goal (shown on the stats screen only, never seen by the algorithm), in both modes. They are not
-  difficulty switches. Every round keeps its length, and rounds of different
-  lengths are never mixed in one chart or record. Freetype's word list is
-  not a setting but the point of that mode: it lives in the mode itself
-  (the row above the text), and rounds on different lists are never mixed
-  either.
+- **Settings change how much and how it looks, never what.** What a round
+  is belongs to each mode and sits in the round bar above the text
+  (`web/modebar.js`; owner, 2026-10-19): Learn offers short (15 words) or
+  normal (30); Climb words or time (10-50 words, 15-90 s); Freetype the
+  same plus its word list (the point of that mode, not a difficulty
+  switch). Each mode remembers its own length. The settings window
+  (`web/settings.js`) keeps what holds for the whole app: live numbers
+  on/off, the streak badge on/off, the caret style, the theme, the
+  keyboard, a personal speed goal (shown on the stats screen only, never
+  seen by the algorithm) and the data. Every round keeps its length, and
+  rounds of different lengths or lists are never mixed in one chart or
+  record.
 - **Where the work goes (owner, 2026-10-19).** Both modes are being built
   now, freely: try an idea, the owner tests it, keep or drop it; the old
   schedule does not limit what we try. Keep the modes apart: nothing in

@@ -12,7 +12,7 @@ import (
 // that changing the config does not silently change what the tests check.
 var testParams = Params{
 	PortionWords: 6, AheadPortions: 2, RoundPortions: 5, RecentWords: 20, RepeatPenalty: 0.3,
-	LevelStart: 0.2, LevelUp: 0.03, LevelDown: 0.06, UpAccuracy: 96, DownAccuracy: 92, SlowShare: 0.85,
+	LevelStart: 0.2, LevelUp: 0.03, LevelDown: 0.06, UpAccuracy: 96, DownAccuracy: 92, SlowShare: 0.85, PartialMin: 3,
 	RankMin: 200, CapsFrom: 0.35, CapsMax: 0.3, PunctFrom: 0.55, PunctMax: 0.35, StopShare: 0.4,
 }
 

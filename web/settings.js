@@ -1,22 +1,25 @@
-// The settings window (Esc or the gear in the navigation): how long a round
-// is, the live numbers on or off, the streak badge on or off, the look of
-// the caret, the colour theme, a personal speed goal for the stats screen,
-// the on-screen keyboard on or off, and exporting, importing and resetting
-// the progress (tools.js does those three). Settings change
-// HOW MUCH and HOW IT LOOKS, never WHAT is practised: the words still come
-// from the algorithm (learning) or at the level of Climb's thermostat, so
-// they are not difficulty switches.
+// The settings window (Esc or the gear in the navigation): what holds for
+// the whole app: the live numbers on or off, the streak badge on or off,
+// the look of the caret, the colour theme, a personal speed goal for the
+// stats screen, the on-screen keyboard on or off, and exporting, importing
+// and resetting the progress (tools.js does those three). Settings change
+// HOW IT LOOKS, never WHAT is practised. How long a round is belongs to
+// each mode and is set in the round bar above the text (modebar.js); this
+// module keeps the lengths and remembers each mode's (lengthFor,
+// setLength).
 // Everything is kept in this browser (localStorage, "tt." keys); when that
 // is blocked, the defaults are used and the app works the same.
 // Layer: middle. Imports only the bottom layer.
 // Called by: app.js (loadSettings at start), input.js (settingsOpen,
-// openSettings, closeSettings, onSettingsClose, onLengthChange, onKbToggle),
-// typing.js and stats.js (lengthOf, lengthLabel, firstRoundDone).
+// openSettings, closeSettings, onSettingsClose, onKbToggle, setLength),
+// modes.js (lengthFor), modebar.js, typing.js and stats.js (the lengths,
+// lengthOf, lengthLabel, firstRoundDone).
 // To add a setting: a default in S.settings (state.js), reading it in
 // loadSettings(), its look in applySettings() (usually a class on <body>
 // styled in style.css), an entry in ROWS, a branch in apply(), and its
-// texts in i18n.js. A setting may change how much or how
-// it looks, never what is practised (AGENTS.md).
+// texts in i18n.js. A setting here holds for the whole app and changes how
+// it looks, never what is practised (AGENTS.md); a choice of one mode goes
+// into the round bar (modebar.js).
 
 import { t } from "./i18n.js";
 import { $, S, store, isTouch } from "./state.js";
@@ -29,6 +32,29 @@ import { $, S, store, isTouch } from "./state.js";
 // the stats screen.)
 export const LENGTHS = ["words-10", "words-20", "words-30", "words-40", "words-50", "time-15", "time-30", "time-60", "time-90"];
 export const DEFAULT_LENGTH = "words-30";   // the same as storage.DefaultLength
+// Learning offers two only (owner, 2026-10-19): short and normal, nothing
+// to weigh up for a beginner, and no rounds on time (15 seconds at a
+// beginner's 10-15 wpm would be 3 words, too few to learn from).
+export const LEARN_LENGTHS = ["words-15", "words-30"];
+
+// Each mode remembers its own round length (tt.length.<mode>). Before,
+// one length in the settings held for every mode (tt.length): Climb and
+// Freetype start from it.
+const lengthsOf = (mode) => (mode === "learn" ? LEARN_LENGTHS : LENGTHS);
+export function lengthFor(mode) {
+  const ok = lengthsOf(mode);
+  for (const id of [store.get(`tt.length.${mode}`), store.get("tt.length")]) {
+    if (ok.includes(id)) return id;
+  }
+  return DEFAULT_LENGTH;
+}
+// A new length for mode (one of its lengths); the current mode's is also
+// S.settings.length, the length the typing screen uses.
+export function setLength(mode, id) {
+  if (!lengthsOf(mode).includes(id)) return;
+  store.set(`tt.length.${mode}`, id);
+  if (mode === S.mode) S.settings.length = id;
+}
 // The caret styles, in the order of the buttons ("line" is the default).
 // To add one: its id here, its look in style.css (body[data-caret="id"]
 // .caret and a small picture .cs.id) and its name in i18n.js ("settings.id").
@@ -54,8 +80,7 @@ export function lengthLabel(id) {
 // Reads the saved choices (anything unknown falls back to the default) and
 // applies them. Called once at start, before the first round.
 export function loadSettings() {
-  const length = store.get("tt.length");
-  S.settings.length = LENGTHS.includes(length) ? length : DEFAULT_LENGTH;
+  S.settings.length = lengthFor(S.mode);               // modes.js sets it again for the mode restored
   S.settings.live = store.get("tt.live") === "1";      // never chosen: hidden (see firstRoundDone)
   S.settings.streak = store.get("tt.streak") !== "0";  // the streak badge: on unless turned off
   const caret = store.get("tt.caret");
@@ -88,10 +113,6 @@ export function firstRoundDone() {
   if (win.open) render();
 }
 
-// Someone else wants to know when the round length changes (input.js starts
-// a new round and reloads the stats).
-let lengthListener = () => {};
-export function onLengthChange(fn) { lengthListener = fn; }
 // The keyboard choice is carried out by input.js (the same as Alt+K), so
 // this module does not need the keyboard module.
 let kbListener = () => {};
@@ -114,8 +135,6 @@ function choice(key, value, label, chosen) {
 }
 const seg = (buttons) => `<span class="seg">${buttons.join("")}</span>`;
 const onOff = (key, on) => seg([choice(key, "", t("settings.off"), !on), choice(key, "1", t("settings.on"), on)]);   // on on the right, as on a switch
-const lengths = (kind, unit) => seg(LENGTHS.filter((id) => id.startsWith(kind + "-"))
-  .map((id) => choice("length", id, lengthOf(id).n + unit, id === S.settings.length)));
 const ICON = {
   export: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19h14"/></svg>',
   import: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M5 19h14"/></svg>',
@@ -129,8 +148,6 @@ const action = (id, icon, label, cls = "btn") => `<button type="button" class="$
 // To add a setting: one entry here (and its key in the click handler below,
 // its default in S.settings, its texts in i18n.js).
 const ROWS = [
-  { group: "settings.round", name: "settings.words", ctl: () => lengths("words", "") },
-  { group: "settings.round", name: "settings.time", ctl: () => lengths("time", t("settings.sec")) },
   { group: "settings.look", name: "settings.live", ctl: () => onOff("live", S.settings.live) },
   { group: "settings.look", name: "settings.streak", ctl: () => onOff("streak", S.settings.streak) },
   { group: "settings.look", name: "settings.keyboard", ctl: () => onOff("kb", !S.kbHidden), show: () => !isTouch() },   // no keyboard on touch screens
@@ -171,12 +188,7 @@ search.addEventListener("input", () => { cur = 0; render(); });
 
 // A choice was clicked (or picked with the arrows): save it and apply it.
 function apply(key, value) {
-  if (key === "length") {
-    if (value === S.settings.length) return;
-    S.settings.length = value;
-    store.set("tt.length", value);
-    lengthListener();
-  } else if (key === "live") {
+  if (key === "live") {
     S.settings.live = value === "1";
     store.set("tt.live", value === "1" ? "1" : "0");
   } else if (key === "streak") {

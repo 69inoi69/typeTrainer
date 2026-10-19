@@ -844,7 +844,11 @@ thermostat.
 
 **The thermostat** (`NextLevel`), after every portion of 6 words, from its
 accuracy (the share of its letters typed without a mistake), its speed and
-the pace of the round so far:
+the pace of the round so far. Every portion counts, also once the round
+has all its words, and so does the shorter last one when it has at least
+3 words (`PartialMin`; 1-2 words are too few to judge). (Until 2026-10-19
+the level moved only when the browser asked for more words, so a round of
+10 words, built at once, never moved it.)
 
 ```
 accuracy <  92 %                                  ->  level - 0.06
@@ -879,6 +883,7 @@ marks are those the layout has keys for (`,` and `.`).
 | `LevelUp` / `LevelDown` | 0.03 / 0.06 | the whole way in about 27 good portions (5 rounds); a bad portion costs two good ones, so the level does not run away |
 | `UpAccuracy` / `DownAccuracy` | 96 / 92 | up: at most ~1 mistake in 25 letters; down: more than ~1 in 12 |
 | `SlowShare` | 0.85 | 15 % slower than the round so far is a real slowdown, not noise |
+| `PartialMin` | 3 | the end of a round counts from half a portion on; 1-2 words are noise |
 | `RankMin` | 200 | level 0 = monkeytype's "English 200" |
 | `CapsFrom` / `CapsMax` | 0.35 / 0.3 | capitals come after the words got wider; at most every third word |
 | `PunctFrom` / `PunctMax` / `StopShare` | 0.55 / 0.35 / 0.4 | punctuation last; 2 of 5 marks are full stops |
