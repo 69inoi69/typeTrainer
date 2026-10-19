@@ -1,7 +1,6 @@
-// Sharing the stats screen: "image" saves a PNG card with the five numbers,
-// the speed of the last rounds and the letters. It takes exactly what the
-// screen shows (the mode and round length picked there, stats.js
-// shownStats). Nothing on the stats screen can be selected by dragging
+// Sharing the stats screen: "image" saves a PNG card with the five numbers
+// and the speed of the last rounds of Climb. It takes exactly what the
+// screen shows (the round length picked there, stats.js shownStats). Nothing on the stats screen can be selected by dragging
 // (style.css): this button is the way to take the numbers with you. (A
 // "copy as text" button was removed, owner, 2026-10-18: the picture is
 // enough.)
@@ -11,7 +10,7 @@
 // texts in i18n.js and its click here.
 
 import { t } from "./i18n.js";
-import { $ } from "./state.js";
+import { $, S } from "./state.js";
 import { shownStats, summary } from "./stats.js";
 import { lengthLabel } from "./settings.js";
 
@@ -35,7 +34,7 @@ function confirm(btn, key) {
 // the colours of the current theme. Read once per click, never per key.
 const W = 1200, H = 630;
 function drawCard() {
-  const { s, free, length } = shownStats();
+  const { s, length } = shownStats();
   const css = getComputedStyle(document.documentElement);
   const v = (name) => css.getPropertyValue(name).trim();
   const mono = v("--mono"), ui = v("--ui"), logo = v("--logo");
@@ -55,7 +54,7 @@ function drawCard() {
   const tw = c.measureText("type").width;
   c.fillStyle = v("--text");
   c.fillText("Trainer", pad + tw, pad + 32);
-  const title = `${t(free ? "mode.free" : "mode.learn")} · ${lengthLabel(length)}`;
+  const title = `${t("mode.free")} · ${lengthLabel(length)}`;
   c.font = `600 15px ${ui}`;
   c.fillStyle = v("--sub");
   c.textAlign = "right";
@@ -80,8 +79,8 @@ function drawCard() {
 
   // the speed of the last rounds, as bars, with the goal as a dashed line
   const rounds = [...s.sessions].reverse().slice(-30);
-  const cy = ty + tileH + 40, ch = free ? H - cy - pad : 150;
-  const goal = free ? s.testWpm : s.targetWpm;
+  const cy = ty + tileH + 40, ch = H - cy - pad;
+  const goal = S.settings.goal;                     // the personal goal; 0 = none, no line
   const max = Math.max(goal, ...rounds.map((x) => x.wpm), 1) * 1.1;
   const slot = (W - pad * 2) / 30, bw = Math.min(26, slot - 6);
   rounds.forEach((x, i) => {
@@ -93,37 +92,17 @@ function drawCard() {
   c.fillStyle = v("--sub");
   c.font = `600 12px ${ui}`;
   c.fillText(t("stats.speed").toUpperCase(), pad, cy - 14);
-  const gy = cy + ch - (goal / max) * ch;
-  c.strokeStyle = v("--sub");
-  c.setLineDash([6, 6]);
-  c.beginPath(); c.moveTo(pad, gy); c.lineTo(W - pad, gy); c.stroke();
-  c.setLineDash([]);
-  c.fillStyle = v("--sub");
-  c.font = `600 12px ${ui}`;
-  c.textAlign = "right";
-  c.fillText(t("share.goal", { wpm: goal }).toUpperCase(), W - pad, gy - 8);
-  c.textAlign = "left";
-
-  // learning: every letter, open ones bright, mastered ones with a dot
-  if (!free && s.keys?.length) {
-    const keys = [...s.keys].sort((a, b) => Number(b.unlocked) - Number(a.unlocked));
-    const ly = H - pad - 40, size = Math.min(40, (W - pad * 2) / keys.length - 6);
-    keys.forEach((k, i) => {
-      const x = pad + i * (size + 6);
-      c.fillStyle = k.unlocked ? v("--panel") : v("--bg");
-      roundRect(c, x, ly, size, size, 7);
-      c.fill();
-      if (!k.unlocked) { c.strokeStyle = v("--line"); c.stroke(); }
-      c.fillStyle = k.unlocked ? v("--text") : v("--sub");
-      c.font = `400 ${Math.round(size * 0.5)}px ${mono}`;
-      c.textAlign = "center";
-      c.fillText(k.char, x + size / 2, ly + size * 0.66);
-      c.textAlign = "left";
-      if (k.mastered) {
-        c.fillStyle = v("--ok");
-        c.beginPath(); c.arc(x + size - 7, ly + 7, 3, 0, Math.PI * 2); c.fill();
-      }
-    });
+  if (goal) {
+    const gy = cy + ch - (goal / max) * ch;
+    c.strokeStyle = v("--sub");
+    c.setLineDash([6, 6]);
+    c.beginPath(); c.moveTo(pad, gy); c.lineTo(W - pad, gy); c.stroke();
+    c.setLineDash([]);
+    c.fillStyle = v("--sub");
+    c.font = `600 12px ${ui}`;
+    c.textAlign = "right";
+    c.fillText(t("share.goal", { wpm: goal }).toUpperCase(), W - pad, gy - 8);
+    c.textAlign = "left";
   }
   // the address, small, bottom right
   c.fillStyle = v("--sub");

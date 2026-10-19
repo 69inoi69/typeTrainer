@@ -3,8 +3,9 @@
 // own (owner, 2026-10-16, variant "A"): on top, the two main numbers big on
 // the left (speed, accuracy) and a wide chart of each word's speed on the
 // right; under them one row of smaller facts (consistency, time, the
-// characters) and, at its right end, what happened (a new letter, letters
-// mastered, the test verdict); then the words themselves, coloured by speed,
+// characters, Climb's level); in learning, a line of where the letters
+// stand (mastered, to practise and why, the next one); then the words
+// themselves, coloured by speed,
 // each with its own speed on hover or tap. No jokes or tips: the owner wants
 // plain results here (2026-10-16); fun lines may come back later on their word.
 // It sits in the same fixed window as the text, so the page never moves.
@@ -18,16 +19,17 @@
 // of the round, or Esc): the caller passes what to show.
 // compareStats() works out what a learning round changed, for that screen.
 // Display only: nothing here changes what is measured or sent.
-// Layer: middle. Imports the bottom layer (feel.js for the timings) and
-// tools.js (tooltips).
+// Layer: middle. Imports the bottom layer (feel.js for the timings),
+// tools.js (tooltips) and letters.js (what a letter still needs).
 // Called by: typing.js (showResult, compareStats at the end of a round),
 // input.js (resultOpen, closeResult: Enter / Esc / Tab go on).
 // To add a fact: another cell in the row in showResult, its text in i18n.js.
 
 import { t } from "./i18n.js";
-import { $, el, isTouch, reducedMotion } from "./state.js";
+import { $, el, S, isTouch, reducedMotion, levelNumber } from "./state.js";
 import { FEEL } from "./feel.js";
 import { showTip } from "./tools.js";
+import { letterNeeds } from "./letters.js";
 
 
 const box = $("result");
@@ -36,7 +38,7 @@ let done = null;           // resolves the promise of the open result
 export const resultOpen = () => done !== null;
 
 // r: { wpm, accuracy, consistency (null = too short), newLetter, best, mastered: [chars],
-//      test: "pass" | "fail" | "stopped" (the typing test only),
+//      learn: true in learning (the letters block), climb: {from, to} in Climb (its level),
 //      words: [{letters: [{c, bad}], wpm}] (typing.js typedWords),
 //      chars: {correct, wrong, extra, missed}, seconds (typing.js roundFacts) }
 export function showResult(r) {
@@ -83,16 +85,39 @@ export function showResult(r) {
       `${part(c.correct, "result.correct", "")}${part(c.wrong, "result.wrong", c.wrong ? " bad" : "")}` +
       `${part(c.extra, "result.extra", c.extra ? " bad" : "", "result.extraTip")}${part(c.missed, "result.missed", "", "result.missedTip")}</span></span>`);
   }
-  // at the row's right end: the test verdict. A new letter and the letters
-  // mastered in this round are not repeated here (owner, 2026-10-18): the
-  // letters row above the result shows them, the new one pops, the
-  // mastered ones shine and get their tick, the next one has its frame.
-  if (r.test) row.push(`<p class="r-main${r.test === "pass" ? " k-best" : ""}"><span>${t(`result.test.${r.test}`)}</span></p>`);
+  // Climb: the level the round ended at, and how far it moved
+  if (r.climb) {
+    const d = levelNumber(r.climb.to) - levelNumber(r.climb.from);
+    const move = d ? ` <span class="trend ${d > 0 ? "up" : "down"}">${d > 0 ? "↑" : "↓"} ${Math.abs(d)}</span>` : "";
+    row.push(`<span class="r-num mid" tabindex="0" data-tip-text="${t("tip.level")}"><span class="r-lbl">${t("climb.level")}</span><b>${levelNumber(r.climb.to)}${move}</b></span>`);
+  }
 
   const body = `<div class="r-top${graph ? "" : " solo"}">${hero}${graph}</div>` +
-    (row.length ? `<div class="r-row">${row.join("")}</div>` : "") + list;
-  // a test that did not pass: the button starts it again
-  return open(body, r.test && r.test !== "pass" ? "result.tryAgain" : "result.nextBtn");
+    (row.length ? `<div class="r-row">${row.join("")}</div>` : "") + (r.learn ? learnLetters() : "") + list;
+  return open(body, "result.nextBtn");
+}
+
+// Learning: where the letters stand after the round, in words a beginner
+// reads at a glance (owner, 2026-10-19: progress must be plain): the ones
+// mastered, the ones still to practise with what each needs, and the next
+// letter with what opens it. The letters row above shows the same as
+// chips; here there is time to read.
+function learnLetters() {
+  const info = Object.fromEntries((S.lastStats?.keys ?? []).map((k) => [k.char, k]));
+  const open = S.exercise?.unlocked ?? [];
+  const mastered = open.filter((c) => info[c]?.mastered);
+  const practise = open.filter((c) => !info[c]?.mastered);
+  const next = S.exercise?.locked?.[0];
+  const part = (label, value) => `<span class="r-lp"><span class="r-lbl">${label}</span>${value}</span>`;
+  const parts = [];
+  if (mastered.length) parts.push(part(`<span tabindex="0" data-tip-text="${t("tip.mastered")}">${t("result.mastered")}</span>`, `<b class="ok">${mastered.join(" ")}</b>`));
+  if (practise.length) {
+    parts.push(part(t("result.practise"), `<span class="r-lv">${practise.map((c) =>
+      `<span class="r-li"><b>${c}</b><small>${letterNeeds(info[c]).map((n) => t(n)).join(", ")}</small></span>`).join("")}</span>`));
+  }
+  if (next) parts.push(part(t("result.next"), `<span class="r-li"><b class="next">${next}</b><small>${t(practise.length ? "result.nextWhen" : "result.nextSoon")}</small></span>`));
+  else parts.push(part(t("result.next"), `<span class="r-li"><small>${t("result.allOpen")}</small></span>`));
+  return `<div class="r-letters">${parts.join("")}</div>`;
 }
 
 // Splits the speeds of this round's words into SPEED_BANDS equal steps
@@ -148,15 +173,13 @@ function speedChart(words, bands) {
     `<span class="r-xaxis" aria-hidden="true"><span>1</span><span>${pts.length}</span></span></div></div>`;
 }
 
-// The button's icon: an arrow for the next round (new words), a circle
-// arrow for "Try again" after a failed typing test.
+// The button's icon: an arrow for the next round (new words).
 const ICON_NEXT = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>`;
-const ICON_AGAIN = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>`;
 
 // Puts the result into the window and waits until it is closed.
 function open(body, btn) {
   box.innerHTML = `<div class="r-body">${body}</div>` +
-    `<p class="r-foot"><button type="button" class="btn r-next">${btn === "result.tryAgain" ? ICON_AGAIN : ICON_NEXT}<span>${t(btn)}</span>${isTouch() ? "" : "<kbd>enter</kbd>"}</button></p>`;
+    `<p class="r-foot"><button type="button" class="btn r-next">${ICON_NEXT}<span>${t(btn)}</span>${isTouch() ? "" : "<kbd>enter</kbd>"}</button></p>`;
   // phones have no hover: a tap on a word, a dot of the chart or the
   // characters shows its tooltip (and must not reach the text window, which would open the phone keyboard)
   box.querySelector(".r-body").addEventListener("click", (e) => {

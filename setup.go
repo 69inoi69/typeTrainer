@@ -81,13 +81,15 @@ func newApp() (http.Handler, config.Config, error) {
 }
 
 // loadLanguage reads one language's layout and word list and builds its
-// generator (the unlock order is computed from the words).
+// generator (the unlock order is computed from the words, with the home row
+// of the layout first).
 func loadLanguage(info language.Language, cfg config.Config, seed int64) (*api.Language, error) {
 	layoutJSON, err := files.ReadFile("data/layouts/" + info.Layout + ".json")
 	if err != nil {
 		return nil, err
 	}
-	if _, err := layout.Parse(layoutJSON); err != nil { // fail early on a broken layout
+	lay, err := layout.Parse(layoutJSON) // fail early on a broken layout
+	if err != nil {
 		return nil, err
 	}
 	wordData, err := files.ReadFile("data/langs/" + info.ID + "/words.txt")
@@ -99,7 +101,15 @@ func loadLanguage(info language.Language, cfg config.Config, seed int64) (*api.L
 		return nil, fmt.Errorf("word list is empty")
 	}
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(seed)), cfg.Engine)
+	gen.SetHome(lay.RestingKeys(), cfg.Engine)
 	gen.SetWordParams(cfg.Words)
-	free := freeplay.NewPicker(words, rand.New(rand.NewSource(seed+1)))
+	// Climb's punctuation: the marks the layout has keys of their own for
+	var punct []string
+	for _, mark := range []string{",", "."} {
+		if lay.FingerFor(mark) != "" {
+			punct = append(punct, mark)
+		}
+	}
+	free := freeplay.NewPicker(words, punct, rand.New(rand.NewSource(seed+1)))
 	return &api.Language{Info: info, Gen: gen, Free: free, LayoutJSON: layoutJSON}, nil
 }

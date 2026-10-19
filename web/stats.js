@@ -1,21 +1,23 @@
-// The stats screen, a page that scrolls (as monkeytype's account page): the
-// personal best of every round length (the cells also pick the length shown
-// below), all time (time typing, rounds, words, days in a row and the
-// activity calendar of the last year), then the picked length in detail
-// (tiles and the WPM chart), the difficulty heatmap keyboard and the letter
-// chips. The exact numbers live in tooltips (hover, or keyboard focus).
-// refreshStats() also keeps S.lastStats fresh for the typing screen. Rounds
-// of different lengths are never mixed: the detail shows one length at a
-// time (the one chosen in the settings, or another one picked above).
+// The stats screen, a page that scrolls (as monkeytype's account page):
+// Climb's, the second mode (learning has no stats screen: its progress is
+// the letters row, owner 2026-10-19). The personal best of every round
+// length (the cells also pick the length shown below), all time (time
+// typing, rounds, words, days in a row and the activity calendar of the last
+// year, both modes), then the picked length in detail (tiles with the level,
+// and the WPM chart). The exact numbers live in tooltips (hover, or keyboard
+// focus).
+// refreshStats() keeps S.lastStats (learning: the letters) fresh for the
+// typing screen. Rounds of different lengths are never mixed: the detail
+// shows one length at a time (the one chosen in the settings, or another
+// one picked above).
 // Layer: middle. Imports the bottom layer, tools.js (tooltips) and settings.js.
 // Called by: typing.js (refreshStats after every portion and round),
 // languages.js (on a language change), input.js (on the Stats tab, a resize
 // and a new round length).
 
 import { i18nVars, t, applyI18n } from "./i18n.js";
-import { el, S, reducedMotion } from "./state.js";
+import { el, S, reducedMotion, levelNumber } from "./state.js";
 import { getJSON } from "./api.js";
-import { showTip } from "./tools.js";
 import { LENGTHS, lengthLabel, firstRoundDone } from "./settings.js";
 
 // S.lastStats: the letters and the rounds of the length chosen in the
@@ -39,39 +41,28 @@ export async function refreshStats() {
 
 // Draws the stats screen from the last answers (no server call, except
 // for another round length picked on this screen).
-// Free practice shows its own history (S.free, modes.js): the tiles and the
-// chart, no letters (style.css hides their panels, body[data-mode="free"]).
-// What the stats screen shows right now: {s: the answer, free, length}
-// (share.js copies and draws exactly that).
+// What the stats screen shows right now: {s: Climb's answer (S.free,
+// modes.js), length} (share.js copies and draws exactly that).
 export function shownStats() {
-  const free = S.mode === "free";
-  const own = free ? S.free : S.lastStats;
-  const picked = other && other.free === free && other.length !== S.settings.length;
-  return { s: picked ? other.data : own, free, length: picked ? other.length : S.settings.length };
+  const picked = other && other.length !== S.settings.length;
+  return { s: picked ? other.data : S.free, length: picked ? other.length : S.settings.length };
 }
 export function renderStats() {
-  const { s, free, length } = shownStats();
+  const { s, length } = shownStats();
   if (!s) return;
-  renderModeFilter(free);
   // the bests are of every length, in whichever answer is shown
   renderLengthFilter(s.lengths ?? [], length, s.bests ?? {});
   document.getElementById("len-head").textContent = lengthLabel(length);
   const sessions = [...s.sessions].reverse(); // oldest first
   // nothing to share before the first round of this length
   document.getElementById("btn-image").disabled = !s.sessionCount;
-  el.tiles.innerHTML = tiles(sessions, s.sessionCount, free ? 0 : S.settings.goal, s.targetWpm);
+  el.tiles.innerHTML = tiles(sessions, s.sessionCount, S.settings.goal, s.level);
   drawActivity();
   if (activityStale) loadActivity();
 
-  // the chart last: it is drawn at the size of its box, and on a desktop
-  // that box takes the height the keyboard and the letters leave (style.css)
-  if (!free) {
-    drawHeatKeyboard(s.keys);
-    drawLetterGrid(s.keys);   // the same colour scale as the keyboard
-  }
-  // the dashed line: your own goal when you set one (learning), else the
-  // trainer's target (the test speed in free practice)
-  drawChart(sessions, free ? s.testWpm : S.settings.goal || s.targetWpm, s.sessionCount);
+  // the chart last: it is drawn at the size of its box (style.css); the
+  // dashed line is your own goal, when you set one in the settings
+  drawChart(sessions, S.settings.goal, s.sessionCount);
 }
 
 // ---------- the tiles ----------
@@ -80,7 +71,7 @@ export function renderStats() {
 // moved against the 10 rounds before (from 5 of them on), and the personal
 // goal when there is one. The value comes first in the HTML (screen readers:
 // value, then what it is); style.css puts the label on top.
-function tiles(sessions, count, goal, target) {
+function tiles(sessions, count, goal, level) {
   const avg = (arr, f) => arr.length ? arr.reduce((a, x) => a + f(x), 0) / arr.length : null;
   const last = sessions.slice(-10), before = sessions.slice(-20, -10);
   const num = (v, unit = "") => v === null ? "—" : Math.round(v) + (unit && `<i>${unit}</i>`);
@@ -98,6 +89,8 @@ function tiles(sessions, count, goal, target) {
   const last10 = (f) => t("tile.last10") + trend(f);
   const wpm = avg(last, (x) => x.wpm);
   const out = [
+    // where the next round starts (1..100): the thermostat of Climb
+    `<div class="tile level" data-tip="tile.levelTip"><b>${levelNumber(level ?? 0)}</b><small>${t("tile.level")}</small><span class="meta">${t("tile.levelNote")}</span></div>`,
     tile(count, t("tile.exercises")),
     tile(num(wpm), t("tile.wpm"), last10((x) => x.wpm), " speed"),
     tile(num(avg(last, (x) => x.accuracy), "%"), t("tile.acc"), last10((x) => x.accuracy)),
@@ -108,7 +101,7 @@ function tiles(sessions, count, goal, target) {
     const left = wpm === null ? null : Math.max(0, Math.round(goal - wpm));
     const note = left === null ? "" : left ? t("tile.toGo", { n: left }) : t("tile.reached");
     const part = wpm === null ? 0 : Math.min(1, wpm / goal);
-    out.push(`<div class="tile goal${left === 0 ? " done" : ""}" data-tip-text="${t("tile.goalTip", { target })}">` +
+    out.push(`<div class="tile goal${left === 0 ? " done" : ""}" data-tip="tile.goalTip">` +
       `<b>${goal}</b><small>${t("tile.goal")}</small><span class="meta">${note}</span>` +
       `<i class="goal-bar" style="--p:${part.toFixed(3)}"></i></div>`);
   }
@@ -216,26 +209,9 @@ export function summary(s) {
   ];
 }
 
-// ---------- type or freetype ----------
-// Once freetype is open, a small switch says whose statistics these are; a
-// click changes the mode itself (input.js, chooseMode), as the navigation does.
-const modeFilter = document.getElementById("mode-filter");
-let modeListener = () => {};
-export function onStatsMode(fn) { modeListener = fn; }
-function renderModeFilter(free) {
-  modeFilter.innerHTML = !S.free?.unlocked ? "" : [["learn", "mode.learn"], ["free", "mode.free"]].map(([m, key]) =>
-    `<button type="button" role="tab" data-mode="${m}" aria-selected="${(m === "free") === free}">${t(key)}</button>`).join("");
-}
-modeFilter.addEventListener("click", (e) => {
-  const b = e.target.closest("button[data-mode]");
-  if (!b) return;
-  b.blur();
-  modeListener(b.dataset.mode);
-});
-
 // ---------- one round length at a time ----------
 // other: the rounds of a length other than the chosen one, picked on this
-// screen ({free, length, data: the /stats or /freeplay/stats answer}).
+// screen ({length, data: the /freeplay/stats answer}).
 let other = null;
 // The personal bests, as on monkeytype's account page: a cell for every
 // round length, always, in the settings' order (owner, 2026-10-16: the row
@@ -263,90 +239,23 @@ el.lengthFilter.addEventListener("click", async (e) => {
   const b = e.target.closest("button[data-length]");
   if (!b) return;
   b.blur();
-  const id = b.dataset.length, free = S.mode === "free";
+  const id = b.dataset.length;
   if (id === S.settings.length) other = null;
-  else other = { free, length: id, data: await getJSON(`${free ? "/freeplay/stats" : "/stats"}?length=${id}`) };
+  else other = { length: id, data: await getJSON(`/freeplay/stats?length=${id}`) };
   // only the detail of the length changes: no opening animation of the
   // whole screen again (owner, 2026-10-18: everything vanished and came
   // back), just a short fade of the parts that show the new length
   el.viewStats.classList.remove("grow");
   renderStats();
   if (reducedMotion()) return;
-  for (const part of [el.tiles, el.chart.closest(".panel"), ...document.querySelectorAll("#view-stats .stats-pair .panel")]) {
+  for (const part of [el.tiles, el.chart.closest(".panel")]) {
     part?.animate?.([{ opacity: 0.35 }, { opacity: 1 }], { duration: 220, easing: "ease-out" });
   }
 });
 
-const HEAT_FLOOR = 0.35;   // difficulty that is red at the least (see drawHeatKeyboard)
-// Difficulty heatmap: the keyboard of the language, but grey, and every key
-// from gold to red by the difficulty the algorithm gives its letter, against
-// the hardest letter measured (HEAT_FLOOR at the least). Dashed = no data yet. Hover (or tap) a key for the numbers.
-// It lives only on the stats screen, so it never distracts while typing.
-function drawHeatKeyboard(keys) {
-  if (!S.layout) return;
-  const byChar = new Map(keys.map((k) => [k.char, k]));
-  // the colour is the difficulty against the hardest letter measured, so
-  // the letters differ even when all are fairly easy (owner, 2026-10-18:
-  // every key looked the same); at least HEAT_FLOOR, so a set of easy
-  // letters stays gold instead of turning red
-  const hardest = Math.max(HEAT_FLOOR, ...keys.filter((k) => k.count).map((k) => k.difficulty));
-  el.heatKb.innerHTML = "";
-  S.layout.rows.forEach((row, i) => {
-    const rowEl = document.createElement("div");
-    rowEl.className = "kb-row";
-    rowEl.style.paddingLeft = `calc(var(--u) * ${S.layout.offsets?.[i] ?? 0})`;
-    for (const k of row) {
-      const key = document.createElement("div");
-      key.className = "key hk" + (k.home ? " home" : "");
-      if (k.width) key.style.width = `calc(var(--u) * ${k.width} + var(--u) * .12 * ${k.width - 1})`;
-      key.innerHTML = `<span class="heat"></span><span class="lbl"></span>`;
-      key.querySelector(".lbl").textContent = k.char === " " ? t("key.space") : (k.label || k.char);
-      if (k.alt) {
-        const alt = document.createElement("span");
-        alt.className = "alt";
-        alt.textContent = k.alt;
-        key.appendChild(alt);
-      }
-      // one key can carry two letters (a and ą): the harder one colours it
-      const letters = k.modifier ? [] : [k.char, k.alt].filter(Boolean).map((c) => byChar.get(c)).filter(Boolean);
-      const seen = letters.filter((s) => s.count);
-      if (!letters.length) key.classList.add("none");                  // not a letter of this language
-      else if (!seen.length) key.classList.add(letters.some((s) => s.unlocked) ? "nodata" : "locked");
-      else {
-        key.style.setProperty("--heat", (Math.max(...seen.map((s) => s.difficulty)) / hardest).toFixed(3));
-        if (seen.every((s) => s.mastered)) key.classList.add("mastered");
-      }
-      if (letters.length) {
-        key.dataset.tipText = letters.map(heatLine).join("   |   ");
-        key.tabIndex = 0;                                              // the numbers by keyboard too
-      }
-      rowEl.appendChild(key);
-    }
-    el.heatKb.appendChild(rowEl);
-  });
-}
-// "b: 25% errors · 811 ms · presses: 4"
-function heatLine(s) {
-  let info;
-  if (!s.count) info = s.unlocked ? t("letter.noData") : t("letter.locked");
-  else {
-    info = [t("letter.err", { e: Math.round(s.errorRate * 100) })];
-    if (s.avgMs) info.push(t("letter.ms", { ms: Math.round(s.avgMs) }));
-    info.push(t("heat.count", { n: s.count }));
-    if (s.mastered) info.push(t("letter.mastered"));
-    info = info.join(" · ");
-  }
-  return `${s.char}: ${info}`;
-}
-// phones have no hover: a tap on a key shows its numbers
-el.heatKb.addEventListener("click", (e) => {
-  const key = e.target.closest("[data-tip-text]");
-  if (key) showTip(key);
-});
-
 // Bar chart of WPM per round, drawn as SVG by hand (no chart library).
-// target: the goal line (the trainer's target speed, or the test speed in
-// free practice); total: all rounds of this length, so a bar can say "#41".
+// target: the goal line, the personal goal from the settings (0 = none);
+// total: all rounds of this length, so a bar can say "#41".
 function drawChart(sessions, target, total) {
   if (!sessions.length) {
     el.chart.innerHTML = `<div class="empty">${t("chart.empty")}</div>`;
@@ -356,7 +265,9 @@ function drawChart(sessions, target, total) {
   const first = total - sessions.length + 1; // number of the oldest shown round
   const scope = sessions.length === total ? t("chart.all") : t("chart.last", { n: sessions.length });
   const withAvg = sessions.length >= 3;                  // fewer: no trend to show
-  el.chartNote.textContent = t(withAvg ? "chart.noteAvg" : "chart.note", { scope, target });
+  el.chartNote.textContent = target
+    ? t(withAvg ? "chart.noteAvg" : "chart.note", { scope, target })
+    : t(withAvg ? "chart.noteAvgNoGoal" : "chart.noteNoGoal", { scope });
 
   // draw at the real pixel size of the box (style.css sizes it to fit the
   // screen), so text stays 11px on a phone too. The "no rounds yet" line
@@ -382,7 +293,7 @@ function drawChart(sessions, target, total) {
     const d = `M${bx},${base} V${top + r} Q${bx},${top} ${bx + r},${top} H${bx + bw - r} Q${bx + bw},${top} ${bx + bw},${top + r} V${base} Z`;
     svg += `<path class="bar${i === sessions.length - 1 ? " last" : ""}" data-i="${i}" style="--i:${i}" d="${d}"/>`;   /* --i: its turn to grow (style.css) */
   });
-  svg += `<line class="target" x1="${padL}" x2="${W - padR}" y1="${y(target)}" y2="${y(target)}"/>`;
+  if (target) svg += `<line class="target" x1="${padL}" x2="${W - padR}" y1="${y(target)}" y2="${y(target)}"/>`;
   // the trend: the average of each round and the up to 9 before it, so one
   // good or bad round does not hide where you are going
   if (withAvg) {
@@ -426,24 +337,3 @@ function niceMax(v) {
   const step = steps.find((s) => s * 4 >= v * 1.05) ?? Math.ceil(v * 1.05 / 400) * 100;
   return step * 4;
 }
-
-// Every letter as a small chip, weakest first: the letter, and under it a
-// thin bar as long and as red as its difficulty against the hardest letter,
-// as on the keyboard (green dot = mastered).
-// The numbers are in the tooltip, the same line as on the heatmap keyboard.
-function drawLetterGrid(keys) {
-  const hardest = Math.max(HEAT_FLOOR, ...keys.filter((k) => k.count).map((k) => k.difficulty));
-  // open letters first (weakest first, as the server sorts them), locked ones last
-  keys = [...keys.filter((k) => k.unlocked), ...keys.filter((k) => !k.unlocked)];
-  el.letterGrid.innerHTML = keys.map((k) => {
-    const cls = "lchip" + (k.unlocked ? "" : " locked") + (k.mastered ? " mastered" : "") + (k.count ? "" : " nodata");
-    const d = k.count ? (k.difficulty / hardest).toFixed(3) : 0;
-    return `<div class="${cls}" tabindex="0" style="--d:${d}" data-tip-text="${heatLine(k)}">` +
-      `<span class="ch">${k.char}</span><i class="meter"></i></div>`;
-  }).join("");
-}
-// phones have no hover: a tap on a chip shows its numbers
-el.letterGrid.addEventListener("click", (e) => {
-  const chip = e.target.closest("[data-tip-text]");
-  if (chip) showTip(chip);
-});

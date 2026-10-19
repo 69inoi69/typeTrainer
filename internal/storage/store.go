@@ -47,6 +47,10 @@ type Session struct {
 	// Unlocked is how many letters were open after the round (learning
 	// only; 0 in free practice and in old history).
 	Unlocked int `json:"unlocked,omitempty"`
+	// Level is where Climb's difficulty stood at the end of the round, 0..1
+	// (freeplay.NextLevel); the next round goes on from it. 0 in learning
+	// and in old history.
+	Level float64 `json:"level,omitempty"`
 	// Group: the study group the round was typed in (learning only):
 	// "" = the adaptive trainer, GroupRandom = the control group.
 	Group string `json:"group,omitempty"`
@@ -189,11 +193,9 @@ type Store interface {
 	Group(user, lang string) (string, error)
 	SetGroup(user, lang, group string) error
 
-	// Free practice (internal/freeplay) is kept apart from learning: its
-	// own history, and a flag set once the typing test is passed. Its
-	// rounds never change the letter statistics above.
-	TestPassed(user, lang string) (bool, error)
-	SetTestPassed(user, lang string, passed bool) error
+	// Climb, the second mode (internal/freeplay), is kept apart from
+	// learning: its own history. Its rounds never change the letter
+	// statistics above.
 	AddFreeplaySession(user, lang string, s Session) error
 	RecentFreeplaySessions(user, lang, length string, limit int) ([]Session, error) // newest first
 	FreeplaySessionCount(user, lang, length string) (int, error)

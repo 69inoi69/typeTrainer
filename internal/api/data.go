@@ -32,14 +32,15 @@ type langExport struct {
 	Keys     map[string]engine.KeyStat `json:"keys"`            // the raw statistics per letter
 	Sessions []storage.Session         `json:"sessions"`        // finished exercises, OLDEST first
 	Group    string                    `json:"group,omitempty"` // study group ("" = the normal app)
-	// free practice: absent in files from before it existed
+	// Climb, the second mode: absent in files from before it existed
+	// (files from when it was free practice may also carry "testPassed",
+	// the flag of the typing test that is gone: it is ignored)
 	Freeplay *freeplayExport `json:"freeplay,omitempty"`
 }
 
-// freeplayExport is the free practice part of langExport.
+// freeplayExport is the Climb part of langExport.
 type freeplayExport struct {
-	TestPassed bool              `json:"testPassed"`
-	Sessions   []storage.Session `json:"sessions"` // OLDEST first
+	Sessions []storage.Session `json:"sessions"` // OLDEST first, each with its level
 }
 
 // summaries drops the raw keys of every session: the stats pages show many
@@ -85,11 +86,6 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request, user strin
 		serverError(w, err)
 		return
 	}
-	passed, err := s.store.TestPassed(user, id)
-	if err != nil {
-		serverError(w, err)
-		return
-	}
 	group, err := s.store.Group(user, id)
 	if err != nil {
 		serverError(w, err)
@@ -107,7 +103,7 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request, user strin
 	}
 	writeJSON(w, http.StatusOK, langExport{
 		Unlocked: unlocked, Keys: keys, Sessions: oldestFirst(newestFirst), Group: group,
-		Freeplay: &freeplayExport{TestPassed: passed, Sessions: oldestFirst(free)},
+		Freeplay: &freeplayExport{Sessions: oldestFirst(free)},
 	})
 }
 
@@ -159,10 +155,6 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request, user strin
 		}
 	}
 	if f := in.Freeplay; f != nil {
-		if err := s.store.SetTestPassed(user, id, f.TestPassed); err != nil {
-			serverError(w, err)
-			return
-		}
 		for _, sess := range f.Sessions {
 			if err := s.store.AddFreeplaySession(user, id, sess); err != nil {
 				serverError(w, err)

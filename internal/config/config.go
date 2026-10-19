@@ -49,7 +49,7 @@ type Config struct {
 	Auth        auth.Params // accounts: passwords, login cookies, name rules
 	Engine      engine.Params
 	Words       engine.WordParams // how far down the frequency list learning words may come from
-	Freeplay    freeplay.Params   // free practice and the typing test that opens it
+	Freeplay    freeplay.Params   // Climb, the second mode: its words and its level
 	Sim         sim.Params        // only for the simulation tool (go run ./tools/sim)
 }
 
@@ -103,6 +103,17 @@ func Default() Config {
 
 			MasteryMinSamples: 20,   // at least 20 occurrences...
 			MasteryErrorRate:  0.05, // ...under 5% mistakes, and at TargetWPM
+			// once mastered, a letter stays mastered up to 10% mistakes and
+			// 10% slower than the goal (440 ms, ~27 WPM): one slip no longer
+			// takes it back, and every letter need not be clean at once
+			KeepErrorRate: 0.10,
+			KeepSlowdown:  0.10,
+			// a letter not mastered yet: +0.2 difficulty for the focus, that
+			// is e^2 ~ 7x the weight of an equal mastered letter at T = 0.1
+			// (a letter slightly too slow got about 13% of the focus, like any
+			// other, and could block every new letter: the audit, section 3.3)
+			UnmasteredBonus: 0.2,
+			HomeBoost:       4, // the resting keys count 4x as frequent: the first English lesson is a s l d e f r
 
 			StartLetters:  6,   // first lesson: at least 6 letters
 			MinWords:      30,  // ...and at least 30 real words to choose from
@@ -135,12 +146,28 @@ func Default() Config {
 		Freeplay: freeplay.Params{
 			PortionWords:  6,   // the same stream as in learning: one line per portion...
 			AheadPortions: 2,   // ...two waiting...
-			RoundPortions: 5,   // ...and rounds of 30 words (the test is one such round)
+			RoundPortions: 5,   // ...and rounds of 30 words
 			RecentWords:   20,  // "do not repeat" looks at the last 20 words
 			RepeatPenalty: 0.3, // a word used recently is rarer, as in learning
 
-			TestWPM:      30, // the typing test: the goal speed of learning (TargetWPM)...
-			TestAccuracy: 97, // ...with at most about 1 mistake in 33 key presses
+			// The thermostat. A new typist starts low (common words only) and
+			// climbs fast while it is easy: +0.03 per portion of 6 words typed
+			// well is the whole way in about 27 good portions, five rounds.
+			// A bad portion costs twice that, so the level settles where the
+			// typist makes a mistake in roughly every 12-25 letters.
+			LevelStart:   0.2,
+			LevelUp:      0.03,
+			LevelDown:    0.06,
+			UpAccuracy:   96,   // up: at most ~1 mistake in 25 letters...
+			DownAccuracy: 92,   // down: more than ~1 in 12
+			SlowShare:    0.85, // clean but 15% slower than the round so far: hold
+
+			RankMin:   200,  // level 0: the 200 most common words (monkeytype "200"); level 1: all ~2000
+			CapsFrom:  0.35, // capitals from level 35 of 100...
+			CapsMax:   0.3,  // ...up to every third word
+			PunctFrom: 0.55, // commas and full stops from level 55...
+			PunctMax:  0.35, // ...up to a mark after every third word
+			StopShare: 0.4,  // 2 of 5 marks are full stops (a sentence starts after each)
 		},
 		// A made-up typist: assumptions of the simulation, not measured values.
 		// docs/ALGORITHM.md section 11 explains them.

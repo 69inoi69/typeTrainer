@@ -44,8 +44,7 @@ type langData struct {
 	group    string // study group ("" or GroupRandom)
 	sessions []Session
 
-	testPassed bool      // free practice opened by the typing test
-	freeplay   []Session // the history of free practice, oldest first
+	freeplay []Session // the history of Climb, oldest first
 }
 
 // NewMemoryStore returns an empty store.
@@ -208,19 +207,6 @@ func (m *MemoryStore) SetGroup(user, lang, group string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.data(user, lang).group = group
-	return nil
-}
-
-func (m *MemoryStore) TestPassed(user, lang string) (bool, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return m.data(user, lang).testPassed, nil
-}
-
-func (m *MemoryStore) SetTestPassed(user, lang string, passed bool) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.data(user, lang).testPassed = passed
 	return nil
 }
 

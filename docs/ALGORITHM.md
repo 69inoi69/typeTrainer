@@ -17,14 +17,15 @@ The user types **real words** in one of four languages (English, Polish,
 Ukrainian, Russian). For every letter the program keeps a
 short, constantly updated picture of how well the user types it: how often they
 make a mistake on it and how long it takes. These two numbers are combined into
-one **difficulty** between 0 and 1. Letters are introduced **gradually**, most
-frequent first; a new letter opens only when every open letter is typed
-accurately at the target speed. Inside the open letters, each next word is
+one **difficulty** between 0 and 1. Letters are introduced **gradually**, the
+home row and the most frequent letters first; a new letter opens only when
+every open letter is typed accurately at the target speed (and stays so). Inside the open letters, each next word is
 chosen at random, but with probabilities shaped by difficulty, so weak letters
 show up much more often and strong ones still appear sometimes. Learning has
-no settings: the model alone decides what to practise. (Free practice, a
-separate mode in `internal/freeplay`, draws words evenly from the whole list
-and never feeds this model; see docs/ARCHITECTURE.md, "Modes".)
+no settings: the model alone decides what to practise. (Climb, the second
+mode in `internal/freeplay`, for people who can already type, has its own
+rule, section 13, and never feeds this model; see docs/ARCHITECTURE.md,
+"Modes".)
 
 ## 2. Design decisions
 
@@ -213,37 +214,67 @@ uniform choice.
 ## 6. Unlocking letters
 
 **Order.** Letters are sorted by how often they occur in the word list of the
-language. The order is computed from the data, not written by hand, so a new
-language only needs a word list. With the included lists (first lesson in bold):
+language, but a letter under a resting finger counts `HomeBoost = 4` times
+(`Generator.SetHome`). The resting keys come from the layout data
+(`layout.RestingKeys`): in the row with the home bumps, one key per finger,
+`a s d f j k l ;` on QWERTY, `ф ы в а о л д ж` on the Russian ЙЦУКЕН. The
+order is computed from the data, not written by hand, so a new language only
+needs a word list and a layout. With the included lists (first lesson in bold):
 
 | Language | Unlock order |
 |---|---|
-| English | **e a r s t i** n o l d c g h u p m y f w b k v x j q z |
-| Polish | **a i e o z m n** w r s y c d p t k j ł u b l ę g ć ś ó ą ż h f ź ń |
-| Ukrainian | **о а и т в н р і** с е д у п л м к з б я ь й ч ш г ж х ю є ц ї щ ф |
-| Russian | **о а е т и с н р** л в д м у п ь к я з б г ш ч й ы ж ю х ц щ ф э ъ |
+| English | **a s l d e f r** t i n o k c g h u p m y w b v j x z q |
+| Polish | **a s d k j i e l o** z m n w r y c p t ł u b ę g ć ś ó ą ż f h ź ń |
+| Ukrainian | **о а в і д л и т** н ж р с е у п м к з б я ь й ч ш г х ю є ц ї ф щ |
+| Russian | **о а л в д е т** и с н ы ж р м у п ь к я б з г ш ч й ю х ф ц щ э ъ |
+
+**Why the home row first (owner, 2026-10-19).** Plain frequency put
+`e a r s t i` first for English: three rows at once, so a beginner reaches up
+from the first minute and the fingers never learn where they rest. Touch
+typing courses start from the home row for that reason. Why a boost and not
+"all eight resting keys first": with real words a rare home letter would
+starve. English `j` has one word among the first nine letters ("jerk"),
+Russian `ф` none, and a focus on such a letter would repeat that one word.
+With the boost, the frequent home letters (`a s l d f`, `о а л в д`) come first
+and a rare one (`j`, `ж`, `ф`) keeps its place by frequency. A boost of 2
+still started English with `a s e l d r`, 3 with `a s l e d r`; 4 is the
+smallest that also brings `f`, the left index finger's home.
 
 Letters that never occur in the list (Polish q v x, Ukrainian ґ) are not in the
 order and never appear in exercises.
 
 **First lesson.** At least `StartLetters = 6` letters, and more if needed until
-at least `MinWords = 30` real words can be built from them: 6 letters for
-English, 7 for Polish, 8 for Ukrainian and Russian. Without this rule the first
-lesson would cycle through a handful of words.
+at least `MinWords = 30` real words can be built from them: 7 letters for
+English (39 words) and Russian (38), 8 for Ukrainian (35), 9 for Polish (34).
+Without this rule the first lesson would cycle through a handful of words.
 
 **Every language has its own progress.** Statistics, unlocked letters and
 history are stored per language: mastering `e` in English says nothing about
 `е` in Russian, even though both sit on similar keys.
 
-**Mastery** of a letter is a plain yes/no rule on the smoothed values:
+**Mastery** of a letter is a plain yes/no rule on the smoothed values, with
+a margin once it is reached (`engine.MeetsGoal`, `Mastered`):
 
 ```
-mastered = n >= 20  and  ErrEMA <= 0.05  and  TimeEMA <= TargetMs (400 ms)
+meets the goal = n >= 20  and  ErrEMA <= 0.05  and  TimeEMA <= TargetMs (400 ms)
+stays mastered =             ErrEMA <= 0.10  and  TimeEMA <= TargetMs * 1.1 (440 ms)
 ```
 
-In words: at least 20 occurrences, under 5 % mistakes, at 30 WPM or faster.
-It is checked on the raw values (not on the shrunk difficulty) so it can be
-explained to a user in one sentence.
+In words: at least 20 occurrences, under 5 % mistakes, at 30 WPM or faster;
+after that the letter stays mastered until it is clearly worse: over 10 %
+mistakes or slower than about 27 WPM (`KeepErrorRate`, `KeepSlowdown`). It is
+checked on the raw values (not on the shrunk difficulty) so it can be
+explained to a user in one sentence. The state is remembered per letter
+(`KeyStat.Held`, updated by every sample in `Update`).
+
+**Why the margin (owner, 2026-10-19; the audit, `docs/ALGORITHM-AUDIT.md`
+3.1).** Without it, one mistake (ErrEMA jumps by `Alpha` = 0.1, over the 0.05
+goal) took a mastered letter back for about 7 of its presses, and the next
+letter needed every open letter to be clean at the same moment. The wait for
+a new letter then grew with every letter opened (from about 29 to about 106
+words in the simulation), although every letter was at the goal. A margin
+between "reach" and "keep" (hysteresis, as a thermostat has) makes the state
+stable: a letter is reached once and lost only for a clear reason.
 
 **Next letter.** After each portion of the stream (section 7): if every open
 letter is mastered, the next letter in the order opens. At most one letter per
@@ -269,6 +300,16 @@ allowed.
 ```
 P(letter) = exp(d_letter / T) / Σ exp(d_i / T)        T = Temperature = 0.1
 ```
+
+Here `d` is the difficulty plus `UnmasteredBonus = 0.2` for a letter that is
+not mastered yet (only for choosing, never shown as the letter's difficulty):
+a letter that holds back the next one is practised more. Before, a letter a
+little too slow (450 ms, speed part 0.08) got about the same share as any
+mastered letter, about 13 % of the portions, and could block every new letter
+for good (the audit, section 3.3). With the bonus it gets about 7 times the
+weight of an equal mastered letter. While nothing is mastered every letter
+gets the bonus, and softmax does not change when every weight is shifted the
+same: the first lessons choose exactly as before.
 
 This is the softmax (Boltzmann) distribution, used in the same way in
 reinforcement learning for choosing between actions. The **temperature** `T` is
@@ -333,7 +374,7 @@ words or an hour at 30 WPM; then the penalty is gone. Choices behind this:
   lengths (10 words to 60 seconds, section 7, "The round"), so "N rounds"
   would mean different amounts of practice. Typed letters do not depend on
   the round length. Letter mastery no longer measures progress here: every
-  letter is already mastered once the last one opens. Free practice does not
+  letter is already mastered once the last one opens. Climb does not
   count: it never touches learning data. The number is computed from the
   history, so it needs no new stored field and survives export/import; a
   reset starts it again.
@@ -414,8 +455,7 @@ the last key on), and the first key after the pause is not measured, like
 the first key after a Backspace.
 
 The settings (`web/settings.js`) can make a round 10, 20, 40 or 50 words
-(60 until 2026-10-18), or 15, 30, 60 or 90 seconds, instead of the default 30 words (`RoundPortions` portions, which
-the typing test always uses). Only the end of the round moves: the stream
+(60 until 2026-10-18), or 15, 30, 60 or 90 seconds, instead of the default 30 words (`RoundPortions` portions). Only the end of the round moves: the stream
 keeps asking for portions until the round has enough words (a time round
 until the time is up), and a words round ends on the last letter of its
 last word even in the middle of a portion; the samples of that portion go
@@ -445,6 +485,10 @@ All in `internal/config/config.go`.
 | `Temperature` | 0.1 | focus strength | chosen with the simulation (section 11.1): fastest learning at a small loss of variety; was 0.25 |
 | `MasteryMinSamples` | 20 | evidence needed for mastery | ≈ one EMA memory length |
 | `MasteryErrorRate` | 0.05 | max mistakes for mastery | 95 % accuracy, a common minimum goal |
+| `KeepErrorRate` | 0.10 | a mastered letter stays mastered up to this error rate | twice the goal: one slip (+0.1 at most) is not enough to lose it, a real problem is (section 6) |
+| `KeepSlowdown` | 0.10 | ...and up to TargetMs · 1.1 (440 ms, ~27 WPM) | the running average wobbles about ±15 ms around a steady speed; 40 ms is clearly more |
+| `UnmasteredBonus` | 0.2 | added to the difficulty of a letter not mastered yet, for the choice only | e^(0.2/0.1) ≈ 7 times the weight of an equal mastered letter: a blocking letter gets about half the portions among ten (section 7) |
+| `HomeBoost` | 4 | a resting key counts this many times as frequent in the unlock order | the smallest boost that starts English with the home row and `f` (section 6) |
 | `StartLetters` / `MinWords` | 6 / 30 | first lesson | enough variety from the first minute |
 | `RepeatPenalty` | 0.3 | less repetition of recent words | variety |
 | `ExerciseWords` | 20 | words per exercise of the earlier strategy (`Next`), and the unit of the simulation | short loop, model updates often |
@@ -485,10 +529,13 @@ user data is a good subject for the evaluation chapter (section 11).
 - **Simplified spelling.** Russian `ё` is typed as `е`, and Ukrainian words with
   an apostrophe (`м'ясо`, `п'ять`) are left out for now.
 - **One stubborn letter blocks progress.** If one letter never reaches mastery,
-  nothing new opens. The focus pushes that letter, which is the intended
-  behaviour, but a cap (for example "open anyway after N exercises") may be needed.
-- **Letter frequency, not keyboard position,** decides the order. Courses often
-  start from the home row instead. This could be added as a second sorting key.
+  nothing new opens. Since 2026-10-19 the focus pushes such a letter much
+  harder (`UnmasteredBonus`, section 7), but a person who does not get
+  faster on it still waits; a cap (for example "open anyway after N
+  portions") may be needed. Real data will tell.
+- **The order is frequency with a home row boost,** not a full course plan
+  (home row, then the top row, then the bottom row). A full plan would need
+  words for every step; real words decide where a rare letter goes.
 
 ## 10. Where your own model can go further
 
@@ -720,6 +767,24 @@ ramp runs during them):
   number of different words stays the same (Ukrainian `ф` and English `q`
   have exactly 10 words in the list).
 
+**After the home row order, the mastery margin and the bonus for unmastered
+letters (2026-10-19).** The same simulation (20 typists per strategy), before
+and after the three changes of sections 6 and 7 together:
+
+| Language | Stream: exercises to the goal (median) | All letters open (exercises) | Variety, first 30 (dist / rep / top) |
+|---|---|---|---|
+| en | 166 → 122 (−27 %) | 149 → 106 | 77 / 42 / 78 → 77 / 43 / 84 |
+| ru | 240 → 175 (−27 %) | 225 → 154 | 77 / 44 / 74 → 73 / 47 / 78 |
+
+- **A quarter less typing to the goal** in both languages. Most of it is the
+  margin: letters at the goal no longer drop out by chance, so the next
+  letter opens as soon as the last one is reached.
+- **The focus pushes a little harder in the first lessons** (`top` +4 to +6
+  points): the unmastered letters get the bonus while the mastered ones do
+  not. Repetition (`rep`) stays about the same.
+- **The expert is unchanged** within the spread (every letter is mastered
+  from the start, so neither the margin nor the bonus acts).
+
 Limits: the typist is invented. Letters do not influence each other, there is
 no forgetting, and learning is the same exponential curve for every letter. The
 simulation compares strategies under the same assumptions; it does not predict
@@ -766,3 +831,58 @@ documents every filtering step:
    in the list for the app. Not for Polish `q`, `v`, `x` and Ukrainian `ґ`:
    they occur only in loan words and names, and filling them brings in names
    (`vincent`, `quinn`, `ґрегорі`).
+
+## 13. Climb, the second mode
+
+Code: `internal/freeplay` (tests in `freeplay_test.go`); the routes in
+`internal/api/freeplay.go`. For people who can already type: no letters
+to unlock, one number, the **level** (0..1, shown as 1..100), says how hard
+the text is. The idea is the "flow channel" (Csikszentmihalyi): a task a
+little harder than your skill keeps you engaged and growing; much harder
+frustrates, much easier bores. So the level follows the typist like a
+thermostat.
+
+**The thermostat** (`NextLevel`), after every portion of 6 words, from its
+accuracy (the share of its letters typed without a mistake), its speed and
+the pace of the round so far:
+
+```
+accuracy <  92 %                                  ->  level - 0.06
+accuracy >= 96 %  and  speed >= 0.85 * pace       ->  level + 0.03
+otherwise                                         ->  level stays
+```
+
+Clean and steady typing climbs; mistakes take it down, twice as fast as it
+climbs, so it settles where the typist makes a mistake in roughly every 12
+to 25 letters. Clean but clearly slower (the text got hard) holds the level:
+that is the zone. A new typist starts at 0.2; a round starts where the last
+one ended (stored with each round, `storage.Session.Level`).
+
+**What the level does** (`Portion`), in layers:
+
+| Level | Words | Capitals | Punctuation |
+|---|---|---|---|
+| 0 | the 200 most common | none | none |
+| 0.35 | ~800 | starts | none |
+| 0.55 | ~1200 | 9 % of words | starts |
+| 1 | the whole list (~2000) | 30 % of words, and after every full stop | a comma or full stop after 35 % of words |
+
+The words come evenly from the `MaxRank(level)` most common ones (a word used
+recently is rarer, the same word never twice in a row), so a higher level
+means rarer and longer words on average. A capital is typed with Shift; the
+on-screen hands light the little finger of the other hand for it. The
+marks are those the layout has keys for (`,` and `.`).
+
+| Name | Value | Reason |
+|---|---|---|
+| `LevelStart` | 0.2 | common words only; a fluent typist climbs out in a round or two |
+| `LevelUp` / `LevelDown` | 0.03 / 0.06 | the whole way in about 27 good portions (5 rounds); a bad portion costs two good ones, so the level does not run away |
+| `UpAccuracy` / `DownAccuracy` | 96 / 92 | up: at most ~1 mistake in 25 letters; down: more than ~1 in 12 |
+| `SlowShare` | 0.85 | 15 % slower than the round so far is a real slowdown, not noise |
+| `RankMin` | 200 | level 0 = monkeytype's "English 200" |
+| `CapsFrom` / `CapsMax` | 0.35 / 0.3 | capitals come after the words got wider; at most every third word |
+| `PunctFrom` / `PunctMax` / `StopShare` | 0.55 / 0.35 / 0.4 | punctuation last; 2 of 5 marks are full stops |
+
+All values are reasoned, not fitted; the stats screen (Climb's own) shows the
+level of every round, which is the data to tune them on.
+

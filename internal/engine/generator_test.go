@@ -51,9 +51,43 @@ func TestWeightedPick_EdgeCases(t *testing.T) {
 
 // The unlock order is by letter frequency in the word list.
 func TestLetterOrder_MostFrequentFirst(t *testing.T) {
-	order := letterOrder([]string{"eee", "ee", "ta", "t"})
+	order := letterOrder([]string{"eee", "ee", "ta", "t"}, nil, 1)
 	if strings.Join(order, "") != "eta" {
 		t.Fatalf("got %v, want e t a", order)
+	}
+}
+
+// Home letters count HomeBoost times: a home letter a third as frequent
+// as another moves ahead of it with a boost of 4, not with 2.
+func TestLetterOrder_HomeLettersBoosted(t *testing.T) {
+	words := []string{"eee", "eee", "ttt", "a", "a"} // e 6, t 3, a 2
+	home := map[string]bool{"a": true}
+	if got := strings.Join(letterOrder(words, home, 4), ""); got != "aet" { // a counts 8
+		t.Errorf("boost 4: got %s, want a e t", got)
+	}
+	if got := strings.Join(letterOrder(words, home, 2), ""); got != "eat" { // a counts 4: after e (6), before t (3)
+		t.Errorf("boost 2: got %s, want e a t", got)
+	}
+	if got := strings.Join(letterOrder(words, home, 1), ""); got != "eta" {
+		t.Errorf("boost 1 (off): got %s, want e t a", got)
+	}
+}
+
+// SetHome reorders and sizes the first lesson again: it still has enough
+// real words, and with no home letters the order is plain frequency.
+func TestSetHome_FirstLessonStillHasEnoughWords(t *testing.T) {
+	g := newTestGen(1)
+	plain := strings.Join(g.Order(), "")
+	g.SetHome([]string{"a", "s", "d", "f", "j", "k", "l"}, testParams)
+	if g.Order()[0] != "a" {
+		t.Errorf("order starts with %q, want the home letter a", g.Order()[0])
+	}
+	if n := len(g.eligible(g.Start())); n < testParams.MinWords {
+		t.Errorf("first lesson has only %d words", n)
+	}
+	g.SetHome(nil, testParams)
+	if got := strings.Join(g.Order(), ""); got != plain {
+		t.Errorf("no home letters: order %s, want the plain %s", got, plain)
 	}
 }
 
@@ -208,5 +242,36 @@ func TestLetterRune(t *testing.T) {
 		if got := letterRune(in); got != want {
 			t.Errorf("letterRune(%q) = %q, want %q", in, got, want)
 		}
+	}
+}
+
+// A letter that is a little too slow and holds back the next one gets much
+// more of the focus than the mastered letters (UnmasteredBonus); without
+// the bonus it gets about an equal share (the audit, section 3.3).
+func TestUnmasteredBonus_SlowLetterGetsTheFocus(t *testing.T) {
+	g := newTestGen(1)
+	open := g.Order()[:10]
+	stats := map[string]KeyStat{}
+	for _, c := range open {
+		stats[c] = repeat(KeyStat{}, Sample{Char: c, Ms: 380}, 40) // mastered, near the goal
+	}
+	slow := open[3]
+	stats[slow] = repeat(KeyStat{}, Sample{Char: slow, Ms: 450}, 40) // never met the goal
+	share := func(p Params) float64 {
+		pl := g.newPool(stats, 10, 0, p)
+		total := 0.0
+		for _, w := range pl.letterW {
+			total += w
+		}
+		return pl.letterW[3] / total
+	}
+	off := testParams
+	off.UnmasteredBonus = 0
+	with, without := share(testParams), share(off)
+	if with < 0.4 {
+		t.Errorf("slow letter gets %.0f%% of the focus with the bonus, want at least 40%%", with*100)
+	}
+	if without > 0.2 {
+		t.Errorf("without the bonus it gets %.0f%%: the test no longer shows the problem", without*100)
 	}
 }

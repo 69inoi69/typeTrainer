@@ -2,9 +2,10 @@
 // type, in rounds of the length chosen in the settings), the caret, what
 // every keypress does, the clean-word streak, the live WPM / accuracy, and
 // sending the result when a round ends. The letters bar is in letters.js,
-// the result screen in result.js. The same screen serves every mode
-// (modes.js): learning talks to /portion and /results, free practice and the
-// typing test to /freeplay/*.
+// the result screen in result.js. The same screen serves both modes
+// (modes.js): learning talks to /portion and /results, Climb to /freeplay/*
+// and sends with every portion how it went, so the server can move its
+// level (freeplay.NextLevel).
 // Layer: middle. Imports the bottom layer, keyboard.js, stats.js, result.js,
 // letters.js, modes.js and settings.js.
 // Called by: input.js (handleChar, backspace, restartRound, stopRound and the rest
@@ -27,7 +28,7 @@ import { highlightNextKey, pulseKey, glowKey, requestFit } from "./keyboard.js";
 import { refreshStats } from "./stats.js";
 import { showResult, compareStats } from "./result.js";
 import { renderLetters, markNewLetter, markMastered } from "./letters.js";
-import { learning, refreshFreeplay, setMode } from "./modes.js";
+import { learning, refreshFreeplay } from "./modes.js";
 import { lengthOf, firstRoundDone } from "./settings.js";
 
 // Typing state, used only by the typing code.
@@ -145,8 +146,6 @@ function scrollText(top, jump) {
 // letter of its last word (no space needed after it); a time round when the
 // time is up. Either ends earlier with Esc, see finishRound(). A long pause
 // pauses it (IDLE_PAUSE_MS), the same as leaving the window.
-// The typing test is always one full server round (RoundPortions portions,
-// 30 words), whatever the settings say.
 const IDLE_PAUSE_MS = 10000; // no key for this long during a round = the user stepped away: paused
 const RECENT_SENT = 40;      // words of the round sent as "recent" (the server uses the last RecentWords)
 let portions = [];           // {start, end, focus}: positions of each portion; end = its last space
@@ -161,6 +160,7 @@ let endAt = -1;              // a words round: position of the space after its l
 let wordsTyped = 0;          // words finished in this round
 let roundBefore = null;      // the statistics when the round started (for the result)
 let roundNewLetter = "";     // a letter that opened during the round
+let roundLevel = 0;          // Climb: the level the round started at (the result shows the move)
 // Words appear one at a time: the portions come from the server as before,
 // but only the words up to SHOWN_AHEAD after the current one are visible;
 // finishing a word reveals exactly one more (it fades in). Hidden words keep
@@ -279,20 +279,50 @@ function portionDone(k) {
   }).catch((err) => { console.error(err); el.hint.textContent = t("err.server"); });
 }
 
-// Free practice and the test: nothing is learned, so nothing is sent but the
-// words of the round (not to repeat them). Once the round has all its
-// portions, nothing more is asked for.
+// Climb: nothing is learned about letters. What is sent is the words of
+// the round (not to repeat them) and how portion k went: its accuracy and
+// speed, and the pace of the round so far; the server moves the level by
+// it and builds the next words at the new level. Once the round has all
+// its portions, nothing more is asked for (the level of the last portions
+// still counts: it is sent with the result).
 function freePortionDone(k) {
-  sentUpTo = portions[k].end + 1;
+  const por = portions[k];
+  sentUpTo = por.end + 1;
   showPortion(k + 1);
   if (!needMore()) return;
+  const how = { level: S.climbLevel, ...portionFacts(por), pace: Math.round(currentWpm(lastTime)) };
   const id = streamId;
   queue = queue.then(async () => {
     if (id !== streamId) return;
-    const res = await postJSON("/freeplay/portion", { recent: recentWords() });
+    const res = await postJSON("/freeplay/portion", { recent: recentWords(), ...how });
     if (id !== streamId) return;
     appendPortions(res.portions);
+    setClimbLevel(res.level);
   }).catch((err) => { console.error(err); el.hint.textContent = t("err.server"); });
+}
+
+// How one portion went: the share of its positions typed without a
+// mistake (percent) and its speed from the measured presses (wpm).
+function portionFacts(por) {
+  let typed = 0, clean = 0, ms = 0, timed = 0;
+  for (let i = por.start; i <= por.end; i++) {
+    const r = records[i];
+    if (!r) continue;
+    typed++;
+    if (!r.errors) clean++;
+    if (r.ms > 0) { ms += r.ms; timed++; }
+  }
+  return {
+    accuracy: typed ? Math.round((clean / typed) * 1000) / 10 : 100,
+    wpm: timed ? Math.min(400, Math.round(12000 / (ms / timed))) : 0,
+  };
+}
+
+// Climb's level changed (a new round or a portion): the status line shows it.
+function setClimbLevel(level) {
+  if (typeof level !== "number" || level === S.climbLevel) return;
+  S.climbLevel = level;
+  renderLetters();
 }
 
 // Has the user typed anything in this round yet?
@@ -335,10 +365,8 @@ export async function loadExercise() {
   const res = await postJSON(learning() ? "/portion" : "/freeplay/portion", { start: true, recent: [] });
   if (id !== streamId) return;
   roundBefore = S.lastStats;
-  // the test is one full server round; everything else follows the settings
-  limit = S.mode === "test"
-    ? { kind: "words", n: res.round * (res.portions[0]?.words.length ?? 0) }
-    : lengthOf(S.settings.length);
+  if (!learning()) { setClimbLevel(res.level); roundLevel = res.level; }   // where this round starts
+  limit = lengthOf(S.settings.length);
   roundWords = limit.kind === "words" ? limit.n : 0;
   appendPortions(res.portions);
   renderProgress();
@@ -888,7 +916,6 @@ async function finishRound(byLastKey = false) {
     await queue;                                       // portions still on their way
     streamId++;                                        // nothing more for this round
     if (!typed.length) { await loadExercise(); return; } // nothing typed: nothing to keep
-    if (S.mode === "test") { await finishTest(wpm, accuracy, typed.length); return; }
     if (S.mode === "free") { await finishFree(wpm, accuracy, typed, fullSeconds(end)); return; }
     // keys: the whole round, kept by the server as its raw record (it learns only from samples)
     const res = await postJSON("/results", {
@@ -906,7 +933,7 @@ async function finishRound(byLastKey = false) {
     if (S.exercise) S.exercise.focus = "";
     renderLetters();        // the letters bar agrees with the result at once, not only after it closes
     if (r.best) FX.burstFrom(el.wpm, 80);
-    await showResult({ wpm, accuracy, consistency: res.consistency, newLetter: roundNewLetter, ...r, words: typedWords(), ...roundFacts(end) });
+    await showResult({ wpm, accuracy, consistency: res.consistency, newLetter: roundNewLetter, ...r, learn: true, words: typedWords(), ...roundFacts(end) });
     await loadExercise();   // built from the UPDATED model
   } catch (err) {
     // said where the eyes are (it used to go only to the screen-reader
@@ -920,34 +947,20 @@ async function finishRound(byLastKey = false) {
   }
 }
 
-// The end of a free practice round: it goes to the free practice history
-// only (POST /freeplay/results), never to the letter statistics.
+// The end of a Climb round: it goes to Climb's history only (POST
+// /freeplay/results) with the level it ended at, never to the letter
+// statistics.
 // What the round is typed on, stored with it (recorded only, for the thesis:
 // phone rounds may later count differently, docs/ALGORITHM.md section 9)
 const device = () => (isTouch() ? "touch" : "keyboard");
 
 async function finishFree(wpm, accuracy, keys, perSecond) {
   const before = S.free?.sessions ?? [];
-  const res = await postJSON("/freeplay/results", { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length, device: device() });
+  const res = await postJSON("/freeplay/results", { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length, device: device(), level: S.climbLevel ?? 0 });
   firstRoundDone();
   await refreshFreeplay();
   const best = before.length > 0 && wpm > Math.max(...before.map((x) => x.wpm));
   if (best) FX.burstFrom(el.wpm, 80);
-  await showResult({ wpm, accuracy, consistency: res.consistency, best, words: typedWords(), ...roundFacts() });
-  await loadExercise();
-}
-
-// The end of the typing test. Only a full round counts (Esc
-// stops the test). The server checks the numbers (freeplay.Passed) and
-// remembers a pass; the test is in no history. A pass goes on to free
-// practice; otherwise the next round is the test again ("Try again" on the
-// result, owner 2026-10-16), and the Learn tab leaves it.
-async function finishTest(wpm, accuracy, chars) {
-  const full = wordsTyped >= roundWords;
-  const res = full ? await postJSON("/freeplay/test", { wpm, accuracy, chars }) : { passed: false };
-  await refreshFreeplay();
-  if (res.passed) FX.burstFrom(el.wpm, 80);
-  await showResult({ wpm, accuracy, test: !full ? "stopped" : res.passed ? "pass" : "fail", words: typedWords(), ...roundFacts() });
-  if (res.passed) setMode("free");
+  await showResult({ wpm, accuracy, consistency: res.consistency, best, climb: { from: roundLevel, to: S.climbLevel ?? 0 }, words: typedWords(), ...roundFacts() });
   await loadExercise();
 }

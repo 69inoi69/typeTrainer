@@ -29,12 +29,12 @@ export const el = {
   live: $("live"), wpm: $("wpm"), raw: $("raw"), acc: $("acc"), progress: $("progress"), progressLabel: $("progress-label"),
   letters: $("letters"), lettersCaption: $("letters-caption"),
   tooltip: $("tooltip"),
-  btnNew: $("btn-new"), heatKb: $("heat-kb"),
+  btnNew: $("btn-new"),
   hands: $("hands"),
   intro: $("intro"),
   nav: $("nav-switch"), tabLearn: $("tab-learn"), tabFree: $("tab-free"), tabStats: $("tab-stats"),
   viewType: $("view-type"), viewStats: $("view-stats"),
-  lengthFilter: $("length-filter"), tiles: $("tiles"), chart: $("chart"), chartNote: $("chart-note"), letterGrid: $("letter-grid"),
+  lengthFilter: $("length-filter"), tiles: $("tiles"), chart: $("chart"), chartNote: $("chart-note"),
   langSwitch: $("lang-switch"), warn: $("layout-warn"),
   streak: $("streak"), streakN: $("streak-n"),
 };
@@ -59,8 +59,9 @@ export const S = {
   pos: 0,                 // index of the character to type next
   busy: false,            // true while a finished run is being saved
   view: "type",           // "type" or "stats"
-  mode: "learn",          // "learn", "free" or "test" (modes.js)
-  free: null,             // last /freeplay/stats answer
+  mode: "learn",          // "learn" or "free" (Climb, modes.js)
+  free: null,             // last /freeplay/stats answer (Climb)
+  climbLevel: null,       // Climb: the level of the round being typed, 0..1 (typing.js)
   settings: { length: "words-30", live: false, caret: "line", theme: "dark", streak: true, goal: 0 },   // settings.js
   kbHidden: false,        // keyboard and hands switched off
 };
@@ -73,6 +74,9 @@ export const store = { // localStorage can be blocked; the app must work without
 // Is guide A (intro.js) on screen? Here, not in intro.js, because typing.js
 // needs it too and must not import intro.js.
 export const introOpen = () => !el.intro.classList.contains("hidden") && !el.intro.classList.contains("closing");
+// Climb's level as people see it: 1..100 for the 0..1 of the server
+// (freeplay.NextLevel).
+export const levelNumber = (level) => Math.round(level * 99) + 1;
 // A touch screen (phone, tablet): no physical keyboard, no hover.
 export const isTouch = () => matchMedia("(pointer: coarse)").matches;
 // "Reduce motion" in the OS: the small JavaScript animations are skipped too

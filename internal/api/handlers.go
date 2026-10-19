@@ -7,7 +7,7 @@
 // How it connects: setup.go builds one Server (NewServer) with the loaded
 // languages and a storage.Store, calls Register to add the routes, and wraps
 // the whole site in WithGuest. The handlers do no maths themselves: learning
-// goes to internal/engine, free practice to internal/freeplay, passwords and
+// goes to internal/engine, Climb (the second mode) to internal/freeplay, passwords and
 // tokens to internal/auth, and all data to the store.
 //
 // The files: handlers.go (routes, shared helpers), learning.go, freeplay.go,
@@ -35,7 +35,7 @@ import (
 type Language struct {
 	Info       language.Language
 	Gen        *engine.Generator // learning: the adaptive word choice
-	Free       *freeplay.Picker  // free practice: words drawn evenly
+	Free       *freeplay.Picker  // Climb: words at the typist's level
 	LayoutJSON []byte            // data/layouts/<layout>.json, sent to the browser as is
 }
 
@@ -93,7 +93,6 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/activity", s.withLang(s.handleActivity))
 	mux.HandleFunc("POST /api/v1/freeplay/portion", s.withLang(s.handleFreeplayPortion))
 	mux.HandleFunc("POST /api/v1/freeplay/results", s.withLang(s.handleFreeplayResults))
-	mux.HandleFunc("POST /api/v1/freeplay/test", s.withLang(s.handleFreeplayTest))
 	mux.HandleFunc("GET /api/v1/freeplay/stats", s.withLang(s.handleFreeplayStats))
 }
 

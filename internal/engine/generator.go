@@ -5,7 +5,7 @@ package engine
 // difficulty scores of model.go and is explained in docs/ALGORITHM.md,
 // sections 6 (unlocking) and 7 (choosing the words). internal/api calls
 // Portion (or RandomPortion for the hidden control group) for every few
-// words and NextUnlocked after every saved round.
+// words and NextUnlocked after every portion typed.
 
 import (
 	"math"
@@ -32,7 +32,7 @@ import (
 type Generator struct {
 	words []string       // the dictionary, most frequent first
 	rank  map[string]int // word -> its place in words (0 = the most frequent)
-	order []string       // unlock order: letters sorted by frequency in the dictionary
+	order []string       // unlock order: letters sorted by frequency in the dictionary (SetHome: the home row first)
 	start int            // how many letters the first lesson has
 	wp    WordParams     // how the frequency limit grows (SetWordParams)
 	floor map[string]int // letter -> rank of its FloorWords-th most common word in the whole list
@@ -88,20 +88,44 @@ func NewGenerator(words []string, rng *rand.Rand, p Params) *Generator {
 			g.rank[w] = i
 		}
 	}
-	g.order = letterOrder(words)
+	g.order = letterOrder(words, nil, 1)
 	g.start = g.firstLessonSize(p)
 	return g
 }
 
-// letterOrder sorts letters by how often they appear in the word list.
-// With the included English list this gives e a r s t i n o l d ... (the
-// table in docs/ALGORITHM.md section 6), so the first lessons already allow
-// many real words.
-func letterOrder(words []string) []string {
-	count := map[string]int{}
+// SetHome puts the home row first: the letters under the resting fingers
+// (layout.RestingKeys, asdf jkl; on QWERTY) count p.HomeBoost times as
+// frequent when the unlock order is made, and the first lesson is sized
+// again. Plain frequency put e a r s t i first, spread over three rows; a
+// beginner then reaches up from the first minute and never finds the home
+// position. Boosting instead of "all eight first" keeps real words: a rare
+// home letter (English j, Russian ф) has almost no common words and comes
+// later anyway. Call it once, before the generator is used.
+func (g *Generator) SetHome(home []string, p Params) {
+	set := map[string]bool{}
+	for _, c := range home {
+		set[c] = true
+	}
+	g.order = letterOrder(g.words, set, p.HomeBoost)
+	g.start = g.firstLessonSize(p)
+}
+
+// letterOrder sorts letters by how often they appear in the word list; a
+// letter in home counts boost times (boost <= 1: plain frequency). With the
+// included English list and the home row boosted 4 times this gives
+// a s l d e f r t i n o k ... (the table in docs/ALGORITHM.md section 6).
+func letterOrder(words []string, home map[string]bool, boost float64) []string {
+	count := map[string]float64{}
 	for _, w := range words {
 		for _, r := range w {
 			count[string(r)]++
+		}
+	}
+	if boost > 1 {
+		for c := range count {
+			if home[c] {
+				count[c] *= boost
+			}
 		}
 	}
 	order := make([]string, 0, len(count))
@@ -150,8 +174,9 @@ func (g *Generator) Clamp(unlocked int) int {
 }
 
 // NextUnlocked decides whether to open the next letter: yes if every open
-// letter is mastered. At most one letter per call (internal/api calls it
-// once per saved round), so the user is never flooded with new keys.
+// letter is mastered (Mastered: reached the goal and not clearly worse
+// since). At most one letter per call (internal/api calls it after every
+// portion), so the user is never flooded with new keys.
 // It returns the new unlocked count, already clamped.
 func (g *Generator) NextUnlocked(stats map[string]KeyStat, unlocked int, p Params) int {
 	unlocked = g.Clamp(unlocked)
@@ -234,6 +259,9 @@ func (g *Generator) newPool(stats map[string]KeyStat, unlocked, typed int, p Par
 	best := -1.0
 	for i, c := range pl.open {
 		d := Difficulty(stats[c], p)
+		if !Mastered(stats[c], p) {
+			d += p.UnmasteredBonus // a letter that holds back the next one is practised more
+		}
 		diff[letterRune(c)] = d
 		pl.letterW[i] = SoftmaxWeight(d, p)
 		if d > best {
