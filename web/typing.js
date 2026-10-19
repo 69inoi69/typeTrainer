@@ -77,15 +77,18 @@ export function fitText() {
 // translate). We read the letter's position once per animation frame:
 // several calls in one frame (fast typing) cost a single layout read.
 // jump = true: move at once, without the glide (a new text, a resize).
+// last = true: the round's last key; the caret goes just past the letter
+// typed, and the text does not scroll (the stream may already hold the next
+// words on a line below, which would scroll the finished text away).
 let caretFrame = 0;
-export function placeCaret(jump) {
+export function placeCaret(jump, last = false) {
   cancelAnimationFrame(caretFrame);
   caretFrame = requestAnimationFrame(() => {
     if (!spans.length) return;
     // after the extra letters of this word, if there are any
-    const extra = extras.get(S.pos)?.at(-1);
-    const atEnd = S.pos >= spans.length || !!extra;
-    const s = extra || spans[Math.min(S.pos, spans.length - 1)];
+    const extra = last ? null : extras.get(S.pos)?.at(-1);
+    const atEnd = last || S.pos >= spans.length || !!extra;
+    const s = last ? spans[Math.max(0, S.pos - 1)] : extra || spans[Math.min(S.pos, spans.length - 1)];
     breathe(el.textBox.classList.contains("typing"));
     const x = s.offsetLeft + (atEnd ? s.offsetWidth : 0);
     const h = s.offsetHeight;
@@ -97,7 +100,7 @@ export function placeCaret(jump) {
     // keep the current line in view: from the third line on, scroll so that
     // it is the second one
     let top = el.text.scrollTop;
-    if (lineH) {
+    if (lineH && !last) {
       const line = Math.round(s.offsetTop / lineH);
       top = Math.max(0, Math.min(line - 1, Math.ceil(el.text.scrollHeight / lineH) - TEXT_LINES)) * lineH;
       if (Math.abs(el.text.scrollTop - top) > 1) scrollText(top, jump);
@@ -539,7 +542,7 @@ export function handleChar(ch) {
   }
   lastTime = now; afterBackspace = false; afterPause = false;
   // after lastTime: the time of the round ends with this keypress
-  if (roundOver) { placeCaret(false); finishRound(true); return; }   // the caret goes past the last letter too
+  if (roundOver) { placeCaret(false, true); finishRound(true); return; }   // the caret goes past the last letter too
   highlightNextKey();
   placeCaret(false);
 }
