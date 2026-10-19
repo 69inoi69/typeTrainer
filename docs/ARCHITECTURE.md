@@ -73,7 +73,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | bottom | `state.js` | Shared state `S`, page elements `el`, `store` (localStorage that may be blocked), small helpers. |
 | bottom | `i18n.js` | Every interface text in all four languages, `t()`, `tPick()` (a random text from a pool), `applyI18n()`, `setUiLang()`. |
 | bottom | `fx.js` | Visual rewards: confetti, bumps, the message queue on the top line of the text block (outside typing), the start screen. They never affect what is measured. |
-| bottom | `feel.js` | `FEEL`: every knob of how a keypress feels (caret glide, key dip and finger tap, red tint of a wrong key, caret flinch, shake and breath, hands over the keyboard, mistake marks), also given to the CSS as `--feel-*`. Tuning the feel = changing a number here. |
+| bottom | `feel.js` | `FEEL`: every knob of how a keypress feels (caret glide, key dip and finger tap, red tint of a wrong key, caret flinch, shake and breath, hands over the keyboard, mistake marks), also given to the CSS as `--feel-*` (`applyFeel()`, again after the tuning panel changes a value). Tuning the feel = changing a number here. |
 | bottom | `api.js` | `getJSON` / `postJSON` for `/api/v1/`, with `?lang=` added. |
 | middle | `tools.js` | Tooltips, and the data buttons of the settings window: export / import, reset (with its confirm window). |
 | middle | `keyboard.js` | On-screen keyboard and hands from the layout data, the next key and finger, the on / off button (remembered separately for learning and free practice), the automatic size that fits the window. |
@@ -88,6 +88,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `modes.js` | The modes (learning / free practice / typing test), the navigation tabs that show them (`renderNav`: learn · freetype · stats), `refreshFreeplay()` (`S.free`), the mode remembered per language. |
 | middle | `ambient.js` | The quiet background: outlines of keycaps with the open letters drifting down in the empty fields left and right (CSS animations only), and the screen saver after a minute with no key and no mouse. Decoration only. |
 | middle | `settings.js` | The settings window (Esc or the gear): round length, live numbers, caret, theme, keyboard on / off (carried out by `input.js`), export / import / reset (wired by `tools.js`); drawn from one list of rows (`ROWS`) with search and arrow keys; kept in `localStorage` (`S.settings`). |
+| middle | `tune.js` | The hidden tuning panel: `?tune` in the address shows the `FEEL` knobs (caret glide and curve, when the letters change colour, flinch, breath, line scroll, key dip and tint, finger tap) as sliders that change the feel live; the changed values stay in `localStorage` (`tt.tune`) and apply only with `?tune`; "Copy values" gives them to be written into `feel.js`. Never linked from the interface. |
 | top | `input.js` | Keydown and phone input (with the one-space sentinel that makes Backspace work on phone keyboards), the navigation (learn · freetype · stats), keyboard on / off (settings and Alt+K), window resize: sends each action to the module that handles it. |
 | top | `app.js` | Entry point: `init()`. |
 

@@ -135,8 +135,9 @@ onGoalChange(() => { if (S.view === "stats") { el.viewStats.classList.remove("gr
 // Desktop: keydown gives us the real key. preventDefault stops the character
 // from ALSO arriving through the hidden input (and space from scrolling).
 document.addEventListener("keydown", (e) => {
-  // the settings window and the reset confirm window handle their own keys
-  if (document.querySelector("dialog[open]")) return;
+  // the settings window and the reset confirm window handle their own keys,
+  // and so do the fields of the hidden tuning panel (tune.js)
+  if (document.querySelector("dialog[open]") || e.target.closest?.(".tune")) return;
   if (introOpen()) { introKey(e); return; }
   // the profile card is open: keys go to its name field, Esc closes it
   if (profileOpen()) {
