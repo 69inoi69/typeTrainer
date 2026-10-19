@@ -50,6 +50,11 @@ export const FEEL = {
   // letter shows"). The round's time still ends at that key: this wait is
   // not in the speed.
   resultHoldMs: 250,
+  // During that wait the finished text fades out (its last part, after the
+  // caret has arrived), then the result comes in: it fades in while rising
+  // a little (owner, 2026-10-19: a plain 200 ms fade read as no transition).
+  resultInMs: 320,          // the result coming in (0 = at once)
+  resultRisePx: 12,         // how far it rises while it comes in (0 = only fades)
 
   // The key on the virtual keyboard answers a press: a short, soft dip.
   keyPressMs: 90,           // duration of the dip
@@ -97,6 +102,9 @@ export function applyFeel() {
   root.setProperty("--feel-caret-ms", FEEL.caretGlideMs + "ms");
   root.setProperty("--caret-curve", FEEL.caretCurve);
   root.setProperty("--feel-colour-at", String(FEEL.letterColourAt));
+  root.setProperty("--feel-result-hold", FEEL.resultHoldMs + "ms");
+  root.setProperty("--feel-result-in", FEEL.resultInMs + "ms");
+  root.setProperty("--feel-result-rise", FEEL.resultRisePx + "px");
   root.setProperty("--feel-mark-line", FEEL.markLine + "px");
   root.setProperty("--feel-hand", String(FEEL.handScale));
   root.setProperty("--feel-finger-lift", String(-FEEL.fingerLiftPx));   // in units of the hand drawing (style.css --hu)
