@@ -753,20 +753,14 @@ body[data-mode="free"] .letter-row { display: none; }
    the whole text again on every frame). Only on the way to "typed": a
    mistake (red) and Backspace show at once. */
 .text span.ok { color: var(--text); transition: color 0s linear calc(var(--feel-caret-ms, 0ms) * var(--feel-colour-at, .5)); }
-/* the letter under the caret (typing.js placeCaret): a step brighter than
-   the rest of the untyped text, so the eye finds it at once. It lights up
-   half way through the glide too, with the typed letter: lit at once, it
-   jumped ahead and the caret, still on the old letter, read as lagging
-   behind it (owner, 2026-10-19: "it lags, and on monkeytype it does not";
-   monkeytype has no such highlight). */
-.text span.cur { color: color-mix(in srgb, var(--text) 62%, var(--sub)); transition: color 0s linear calc(var(--feel-caret-ms, 0ms) * var(--feel-colour-at, .5)); }
+/* No highlight on the letter under the caret: the caret marks it already,
+   and a lit next letter jumped ahead of the gliding caret (owner,
+   2026-10-19: "why is the next letter lit? remove it"). */
 /* the focus letter (the one being practised) is tinted until it is typed:
    a muted gold, half way to the grey of the text (owner, 2026-10-18: the
    brighter tint pulled the eye away from the words) */
 .text span.fx { color: color-mix(in srgb, var(--accent) 46%, var(--sub)); }
 :root[data-theme="light"] .text span.fx { color: color-mix(in srgb, var(--accent-text) 80%, var(--sub)); }
-.text span.fx.cur { color: var(--accent-text); }
-:root[data-theme="light"] .text span.fx.cur { color: var(--accent-text); }
 /* no glow on the text at rest: crisp letters read better; a mistake keeps a
    short red glow (text-shadow moves nothing, so it costs nothing on a keypress) */
 .text span.bad, .text span.extra { text-shadow: 0 0 10px color-mix(in srgb, var(--error) 45%, transparent); }
