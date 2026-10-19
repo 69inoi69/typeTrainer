@@ -37,9 +37,12 @@ export const FEEL = {
   // matched within 0.2%, almost even; also carries the streak badge
   caretCurve: "cubic-bezier(.31, .16, .69, .84)",
   // When the typed letter turns white, as a part of the glide: 0 = at the
-  // key press, 1 = when the caret arrives. Half way reads as "the caret
-  // passes the letter" (owner, 2026-10-18).
-  letterColourAt: 0.5,
+  // key press, 1 = when the caret arrives. Half way (0.5) was tried so the
+  // letter would not run ahead of the caret (owner, 2026-10-18); then the
+  // owner wanted no delay at all on what is typed (2026-10-19: "is there a
+  // delay on input? remove it"): the letter shows at the key press, as on
+  // monkeytype, and the caret follows.
+  letterColourAt: 0,
   lineScrollMs: 120,        // the text moving up a line (0 = at once)
   // After the last letter of a round, the finished text stays this long
   // before the result comes: the caret reaches the end and the last letter

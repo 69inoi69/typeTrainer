@@ -745,14 +745,13 @@ body[data-mode="free"] .letter-row { display: none; }
 #view-type:has(> .text-box.paused) > :is(.hands, .keyboard) { opacity: .3; }
 .text-box.paused :is(.caret, .focus-hint) { opacity: 0; }
 
-/* A typed letter turns white when the caret passes it, not before: the
-   caret glides for --feel-caret-ms, so the colour changes part way through
-   that glide, half way by default (--feel-colour-at, FEEL.letterColourAt;
-   owner, 2026-10-18: the letter went white and only then the caret came). One change, delayed: no fade, nothing painted per frame (a
-   short warm glow on every typed letter was dropped for that: it painted
-   the whole text again on every frame). Only on the way to "typed": a
-   mistake (red) and Backspace show at once. */
-.text span.ok { color: var(--text); transition: color 0s linear calc(var(--feel-caret-ms, 0ms) * var(--feel-colour-at, .5)); }
+/* A typed letter turns white at the key press by default (FEEL.letterColourAt
+   = 0); it can wait for part of the caret's glide instead (--feel-colour-at:
+   0.5 = when the caret is half way). One change, no fade, nothing painted
+   per frame (a short warm glow on every typed letter was dropped for that:
+   it painted the whole text again on every frame). A mistake (red) and
+   Backspace always show at once. */
+.text span.ok { color: var(--text); transition: color 0s linear calc(var(--feel-caret-ms, 0ms) * var(--feel-colour-at, 0)); }
 /* No highlight on the letter under the caret: the caret marks it already,
    and a lit next letter jumped ahead of the gliding caret (owner,
    2026-10-19: "why is the next letter lit? remove it"). */
