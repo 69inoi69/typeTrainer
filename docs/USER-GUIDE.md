@@ -89,7 +89,7 @@ the normal server, it shows yours.
     with a person icon until you are logged in, then your picture and name);
   - **the navigation**: a column at the left edge of a wide window, a bar at
     the bottom of a narrow window or a phone. Two groups: the three screens
-    **Learn**, **Climb** and **Stats**, then **Settings**.
+    **Learn**, **Climb**, **Freetype** and **Stats**, then **Settings**.
     The chosen screen has a short yellow bar next to it.
   From your first keypress until the end of the round everything around the
   text steps back: the whole header fades, the logo a little less than the
@@ -98,8 +98,8 @@ the normal server, it shows yours.
   bright; what never changes (labels, menus, explanations) is quieter,
   labels small and grey. Everything uses one monospace font, Geist Mono,
   which comes with the app (it looks the same on every computer).
-- **Learn** and **Climb** in the navigation choose the mode; both are open
-  to everyone, and the mode is remembered per language.
+- **Learn**, **Climb** and **Freetype** in the navigation choose the mode;
+  all are open to everyone, and the mode is remembered per language.
   - **Learn** is for beginners: the trainer opens the letters one by one,
     starting on the home row (`a s l d e f r` in English), and picks words
     for your weak letters. Its progress is in plain sight, there is no stats
@@ -119,7 +119,13 @@ the normal server, it shows yours.
     other hand's little finger, the hands show it), then commas and full
     stops (from level 55). The next round starts where the last one ended,
     and the result shows the level and how far it moved.
-  **Stats** are Climb's: its rounds, its level and your activity.
+  - **Freetype** is just typing, as on monkeytype: nothing adapts. The row
+    above the text picks the word list: **200**, **1k**, **5k**, **10k** or
+    **25k**, the most common words of the language (a click starts a new
+    round on that list; it is remembered per language). The words are in
+    lower case, without punctuation. The result names the list.
+  **Stats** are Climb's and Freetype's: on top you pick which (and, for
+  Freetype, the word list); every list has its own rounds and bests.
 - **Settings** (`Esc`, or the gear in the navigation) opens one window in
   the middle of the screen. Typing filters it (search), `↑ ↓` pick a row,
   `← →` change its value, `Enter` presses a button, `Esc` closes it. On a
@@ -139,7 +145,7 @@ the normal server, it shows yours.
   - **theme**: dark (default) or light: a warm paper page with white cards,
     its own colours rather than the dark theme turned inside out.
   - **keyboard** (the keys and the hands): on or off (same as `Alt + K`; remembered
-    in your browser, separately for Learn and for Climb, where they start
+    in your browser, separately for Learn and for Climb and Freetype, where they start
     hidden). Not on a phone or tablet: there you type
     on the device's own keyboard, so the option is not shown. There
     is no size setting: the keyboard is always as big as the window allows

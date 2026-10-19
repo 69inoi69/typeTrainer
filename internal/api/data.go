@@ -1,18 +1,19 @@
 // Data routes: reset, export and import of everything stored for a language
-// (learning and free practice together).
+// (learning, Climb and Freetype together).
 
 package api
 
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"typingtrainer/internal/engine"
 	"typingtrainer/internal/storage"
 )
 
 // POST /api/v1/reset?lang= -> deletes all statistics, unlocked letters and
-// history of the language (learning and free practice), for whoever asks:
+// history of the language (every mode), for whoever asks:
 // the logged-in account or this browser's guest. Used by the reset button
 // of the settings panel (web/tools.js), which calls it once for every language.
 func (s *Server) handleReset(w http.ResponseWriter, r *http.Request, user string, l *Language) {
@@ -36,11 +37,15 @@ type langExport struct {
 	// (files from when it was free practice may also carry "testPassed",
 	// the flag of the typing test that is gone: it is ignored)
 	Freeplay *freeplayExport `json:"freeplay,omitempty"`
+	// Freetype, the third mode: list ("1000") -> its history; absent in
+	// files from before it existed
+	Freetype map[string]freeplayExport `json:"freetype,omitempty"`
 }
 
-// freeplayExport is the Climb part of langExport.
+// freeplayExport is the history of Climb (each round with its level) or of
+// one Freetype list, in langExport.
 type freeplayExport struct {
-	Sessions []storage.Session `json:"sessions"` // OLDEST first, each with its level
+	Sessions []storage.Session `json:"sessions"` // OLDEST first
 }
 
 // summaries drops the raw keys of every session: the stats pages show many
@@ -91,20 +96,36 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request, user strin
 		serverError(w, err)
 		return
 	}
-	freeCount, err := s.store.FreeplaySessionCount(user, id, "")
+	free, err := s.allFreeplay(user, id, storage.ModeClimb)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	free, err := s.store.RecentFreeplaySessions(user, id, "", freeCount)
-	if err != nil {
-		serverError(w, err)
-		return
+	freetype := map[string]freeplayExport{}
+	for _, n := range s.freetypeLists(l) {
+		h, err := s.allFreeplay(user, id, storage.FreetypeMode(n))
+		if err != nil {
+			serverError(w, err)
+			return
+		}
+		if len(h) > 0 {
+			freetype[strconv.Itoa(n)] = freeplayExport{Sessions: h}
+		}
 	}
 	writeJSON(w, http.StatusOK, langExport{
 		Unlocked: unlocked, Keys: keys, Sessions: oldestFirst(newestFirst), Group: group,
-		Freeplay: &freeplayExport{Sessions: oldestFirst(free)},
+		Freeplay: &freeplayExport{Sessions: free}, Freetype: freetype,
 	})
+}
+
+// allFreeplay is the whole history of one mode outside learning, oldest first.
+func (s *Server) allFreeplay(user, lang, mode string) ([]storage.Session, error) {
+	count, err := s.store.FreeplaySessionCount(user, lang, mode, "")
+	if err != nil {
+		return nil, err
+	}
+	newestFirst, err := s.store.RecentFreeplaySessions(user, lang, mode, "", count)
+	return oldestFirst(newestFirst), err
 }
 
 // POST /api/v1/import?lang= <the JSON from /export> -> REPLACES everything stored
@@ -121,7 +142,8 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request, user strin
 		badRequest(w, "invalid JSON")
 		return
 	}
-	if msg := validateImport(in, s.cfg.MaxImportSessions, s.cfg.MaxEvents, len(l.Gen.Order()), l.Info.Alphabet, s.validLength); msg != "" {
+	okList := func(n int) bool { return s.validList(l, n) }
+	if msg := validateImport(in, s.cfg.MaxImportSessions, s.cfg.MaxEvents, len(l.Gen.Order()), l.Info.Alphabet, s.validLength, okList); msg != "" {
 		badRequest(w, msg)
 		return
 	}
@@ -154,9 +176,17 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request, user strin
 			return
 		}
 	}
-	if f := in.Freeplay; f != nil {
-		for _, sess := range f.Sessions {
-			if err := s.store.AddFreeplaySession(user, id, sess); err != nil {
+	histories := map[string][]storage.Session{}
+	if in.Freeplay != nil {
+		histories[storage.ModeClimb] = in.Freeplay.Sessions
+	}
+	for list, f := range in.Freetype {
+		n, _ := strconv.Atoi(list) // checked by validateImport
+		histories[storage.FreetypeMode(n)] = f.Sessions
+	}
+	for mode, sessions := range histories {
+		for _, sess := range sessions {
+			if err := s.store.AddFreeplaySession(user, id, mode, sess); err != nil {
 				serverError(w, err)
 				return
 			}

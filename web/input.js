@@ -1,6 +1,6 @@
 // Everything the user does with keys and buttons, sent to the module that
 // handles it: keydown and the phone input, the navigation (Type / Stats,
-// learn / climb), the keyboard on / off choice of
+// learn / climb / freetype, Freetype's word list), the keyboard on / off choice of
 // the settings, window resize, the "stop" button of touch screens.
 // Layer: top. Imports anything; nothing imports it (app.js only loads it).
 // It holds almost no logic of its own: it decides WHO gets an action (an
@@ -11,14 +11,15 @@
 
 import { $, el, S, introOpen, isTouch, focusText } from "./state.js";
 import { applyKb, requestFit } from "./keyboard.js";
-import { refreshStats, renderStats } from "./stats.js";
+import { refreshStats, renderStats, resetStatsPick } from "./stats.js";
 import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, stopRound, loadExercise, roundStarted, pauseRound, checkLayout, checkCaps } from "./typing.js";
 import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
 import { resultOpen, closeResult, settleResult } from "./result.js";
 import { settingsOpen, openSettings, onSettingsClose, onLengthChange, onKbToggle, onGoalChange } from "./settings.js";
-import { setMode, refreshFreeplay, renderNav } from "./modes.js";
+import { setMode, refreshFreeplay, renderNav, setFreetypeList } from "./modes.js";
+import { onListPick } from "./letters.js";
 import { buildAmbient } from "./ambient.js";
 import "./share.js";   // the copy / image buttons of the stats screen: it wires them itself
 
@@ -66,10 +67,11 @@ function setView(name) {
   if (stats) settleResult();                   // a result left open keeps its final look
   el.viewType.hidden = stats;
   el.viewStats.hidden = !stats;
-  const seen = JSON.stringify([S.mode, S.settings.length, S.lastStats?.sessionCount, S.free?.sessionCount]);
+  const seen = JSON.stringify([S.mode, S.settings.length, S.lastStats?.sessionCount, S.climb?.sessionCount, S.freetype?.sessionCount, S.freetypeList]);
   el.viewStats.classList.toggle("grow", stats && seen !== statsSeen);
   if (stats) statsSeen = seen;
   if (stats) {
+    resetStatsPick();                          // the mode, list and length of the typing screen
     setTyping(false);                          // the header comes back
     refreshStats().catch(console.error);
     renderStats();
@@ -84,7 +86,7 @@ function setView(name) {
 }
 el.tabStats.addEventListener("click", (e) => { e.currentTarget.blur(); setView("stats"); });
 
-// ---------- modes: learn / climb ----------
+// ---------- modes: learn / climb / freetype ----------
 // A new mode starts a new round; a round already begun is dropped, as when
 // the language changes (learning keeps every portion sent so far).
 // The result screen stays open until "new round", and the round counts as
@@ -108,7 +110,16 @@ function chooseMode(m) {
   if (S.view !== "type") setView("type");
 }
 el.tabLearn.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("learn"); });
-el.tabFree.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("free"); });
+el.tabClimb.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("climb"); });
+el.tabFreetype.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("freetype"); });
+// Freetype's word list (letters.js draws the buttons): a new list starts a
+// new round, as a new mode does
+onListPick(async (n) => {
+  if (n === S.freetypeList || S.busy) return;
+  await setFreetypeList(n);
+  if (resultOpen()) { el.live.classList.remove("final"); closeResult(); }
+  else { el.live.classList.remove("final"); loadExercise().catch(console.error); }
+});
 
 // ---------- settings: a new round length ----------
 // The stats follow the new length; a round not started yet is rebuilt with

@@ -16,6 +16,7 @@ package storage
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -60,6 +61,15 @@ type Session struct {
 	// check whether phone rounds should count differently.
 	Device string `json:"device,omitempty"`
 }
+
+// The histories outside learning (Store.AddFreeplaySession and the rest).
+// ModeClimb keeps the first name of the second mode, "freeplay", because
+// rounds stored before are saved under it.
+const ModeClimb = "freeplay"
+
+// FreetypeMode is the history of Freetype on the list of the n most
+// common words: "freetype-1000".
+func FreetypeMode(n int) string { return "freetype-" + strconv.Itoa(n) }
 
 // Day is the practice of one calendar day, learning and free practice
 // together: the stats screen builds its totals (time typing, rounds), the
@@ -193,14 +203,16 @@ type Store interface {
 	Group(user, lang string) (string, error)
 	SetGroup(user, lang, group string) error
 
-	// Climb, the second mode (internal/freeplay), is kept apart from
-	// learning: its own history. Its rounds never change the letter
-	// statistics above.
-	AddFreeplaySession(user, lang string, s Session) error
-	RecentFreeplaySessions(user, lang, length string, limit int) ([]Session, error) // newest first
-	FreeplaySessionCount(user, lang, length string) (int, error)
-	FreeplaySessionLengths(user, lang string) ([]string, error)
-	BestFreeplayRounds(user, lang string) (map[string]Session, error) // as BestRounds
+	// The modes outside learning (internal/freeplay) are kept apart from
+	// learning and from each other: mode is ModeClimb, or FreetypeMode(n)
+	// for each word list of Freetype (rounds on different lists are not
+	// compared, like rounds of different lengths). Their rounds never
+	// change the letter statistics above.
+	AddFreeplaySession(user, lang, mode string, s Session) error
+	RecentFreeplaySessions(user, lang, mode, length string, limit int) ([]Session, error) // newest first
+	FreeplaySessionCount(user, lang, mode, length string) (int, error)
+	FreeplaySessionLengths(user, lang, mode string) ([]string, error)
+	BestFreeplayRounds(user, lang, mode string) (map[string]Session, error) // as BestRounds
 
 	// PracticeDays: every day with a finished round in this language,
 	// learning and free practice together, oldest first. tz is the user's

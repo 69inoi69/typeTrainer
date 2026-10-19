@@ -44,7 +44,7 @@ type langData struct {
 	group    string // study group ("" or GroupRandom)
 	sessions []Session
 
-	freeplay []Session // the history of Climb, oldest first
+	freeplay map[string][]Session // mode (ModeClimb, FreetypeMode) -> its history, oldest first
 }
 
 // NewMemoryStore returns an empty store.
@@ -215,7 +215,11 @@ func (m *MemoryStore) PracticeDays(user, lang string, tz time.Duration) ([]Day, 
 	defer m.mu.Unlock()
 	d := m.data(user, lang)
 	byDate := map[string]*Day{}
-	for _, s := range append(append([]Session{}, d.sessions...), d.freeplay...) {
+	all := append([]Session{}, d.sessions...)
+	for _, h := range d.freeplay {
+		all = append(all, h...)
+	}
+	for _, s := range all {
 		date := s.FinishedAt.UTC().Add(tz).Format("2006-01-02")
 		day := byDate[date]
 		if day == nil {
@@ -234,36 +238,39 @@ func (m *MemoryStore) PracticeDays(user, lang string, tz time.Duration) ([]Day, 
 	return out, nil
 }
 
-func (m *MemoryStore) AddFreeplaySession(user, lang string, s Session) error {
+func (m *MemoryStore) AddFreeplaySession(user, lang, mode string, s Session) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	d := m.data(user, lang)
-	d.freeplay = append(d.freeplay, s.WithLength())
+	if d.freeplay == nil {
+		d.freeplay = map[string][]Session{}
+	}
+	d.freeplay[mode] = append(d.freeplay[mode], s.WithLength())
 	return nil
 }
 
-func (m *MemoryStore) RecentFreeplaySessions(user, lang, length string, limit int) ([]Session, error) {
+func (m *MemoryStore) RecentFreeplaySessions(user, lang, mode, length string, limit int) ([]Session, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return newestFirst(m.data(user, lang).freeplay, length, limit), nil
+	return newestFirst(m.data(user, lang).freeplay[mode], length, limit), nil
 }
 
-func (m *MemoryStore) BestFreeplayRounds(user, lang string) (map[string]Session, error) {
+func (m *MemoryStore) BestFreeplayRounds(user, lang, mode string) (map[string]Session, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return bestOf(m.data(user, lang).freeplay), nil
+	return bestOf(m.data(user, lang).freeplay[mode]), nil
 }
 
-func (m *MemoryStore) FreeplaySessionCount(user, lang, length string) (int, error) {
+func (m *MemoryStore) FreeplaySessionCount(user, lang, mode, length string) (int, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return countLength(m.data(user, lang).freeplay, length), nil
+	return countLength(m.data(user, lang).freeplay[mode], length), nil
 }
 
-func (m *MemoryStore) FreeplaySessionLengths(user, lang string) ([]string, error) {
+func (m *MemoryStore) FreeplaySessionLengths(user, lang, mode string) ([]string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return lengths(m.data(user, lang).freeplay), nil
+	return lengths(m.data(user, lang).freeplay[mode]), nil
 }
 
 // Reset forgets the user's language; the next call to data() starts it

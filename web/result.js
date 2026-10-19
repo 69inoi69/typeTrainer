@@ -26,7 +26,7 @@
 // To add a fact: another cell in the row in showResult, its text in i18n.js.
 
 import { t } from "./i18n.js";
-import { $, el, S, isTouch, reducedMotion, levelNumber } from "./state.js";
+import { $, el, S, isTouch, reducedMotion, levelNumber, listLabel } from "./state.js";
 import { FEEL } from "./feel.js";
 import { showTip } from "./tools.js";
 import { letterNeeds } from "./letters.js";
@@ -39,6 +39,7 @@ export const resultOpen = () => done !== null;
 
 // r: { wpm, accuracy, consistency (null = too short), newLetter, best, mastered: [chars],
 //      learn: true in learning (the letters block), climb: {from, to} in Climb (its level),
+//      list: the word list in Freetype,
 //      words: [{letters: [{c, bad}], wpm}] (typing.js typedWords),
 //      chars: {correct, wrong, extra, missed}, seconds (typing.js roundFacts) }
 export function showResult(r) {
@@ -91,6 +92,8 @@ export function showResult(r) {
     const move = d ? ` <span class="trend ${d > 0 ? "up" : "down"}">${d > 0 ? "↑" : "↓"} ${Math.abs(d)}</span>` : "";
     row.push(`<span class="r-num mid" tabindex="0" data-tip-text="${t("tip.level")}"><span class="r-lbl">${t("climb.level")}</span><b>${levelNumber(r.climb.to)}${move}</b></span>`);
   }
+  // Freetype: the word list of the round
+  if (r.list) row.push(num(listLabel(r.list), "", "freetype.list", "mid", "freetype.listTip"));
 
   const body = `<div class="r-top${graph ? "" : " solo"}">${hero}${graph}</div>` +
     (row.length ? `<div class="r-row">${row.join("")}</div>` : "") + (r.learn ? learnLetters() : "") + list;

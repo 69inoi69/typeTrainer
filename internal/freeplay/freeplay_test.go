@@ -225,3 +225,74 @@ func TestBase(t *testing.T) {
 		}
 	}
 }
+
+// Freetype draws only from the size most common words, in lower case and
+// without marks; a size out of range is clamped to the list.
+func TestFreetype_OnlyTheChosenWords(t *testing.T) {
+	words := []string{"the", "of", "and", "zebra", "quixotic"}
+	pk := NewPicker(words, marks, rand.New(rand.NewSource(7)))
+	for _, w := range pk.Freetype(nil, 2000, 3, testParams) {
+		if w != "the" && w != "of" && w != "and" {
+			t.Fatalf("size 3: %q is not one of the 3 most common words", w)
+		}
+	}
+	seen := map[string]bool{}
+	for _, w := range pk.Freetype(nil, 2000, 1000, testParams) {
+		seen[w] = true
+	}
+	if len(seen) != len(words) {
+		t.Errorf("size above the list: saw %d words, want all %d", len(seen), len(words))
+	}
+	if got := pk.Freetype([]string{"of"}, 5, 0, testParams); len(got) != 5 || got[0] != "the" {
+		t.Errorf("size 0 means the first word only: %v", got)
+	}
+	if got := pk.Size(); got != len(words) {
+		t.Errorf("Size %d, want %d", got, len(words))
+	}
+}
+
+// The quick draw (rejection) and the full weighing give the same odds: on
+// a short list full of recent words most draws end in the full weighing,
+// on a long list almost none do, and both must match the weights
+// RepeatPenalty^uses. Here: "a" used twice (0.09), "b" once (0.3), "c" and
+// "d" not at all (1), last word "b" excluded -> a : c : d = 0.09 : 1 : 1.
+func TestDraw_OddsAreTheWeights(t *testing.T) {
+	pk := NewPicker([]string{"a", "b", "c", "d"}, nil, rand.New(rand.NewSource(8)))
+	p := plain()
+	recent := []string{"a", "a", "b"}
+	count := map[string]int{}
+	const n = 60000
+	for i := 0; i < n; i++ {
+		count[pk.Freetype(recent, 1, 4, p)[0]]++
+	}
+	if count["b"] != 0 {
+		t.Fatalf("the last word came again: %v", count)
+	}
+	total := 0.09 + 1 + 1
+	for w, weight := range map[string]float64{"a": 0.09, "c": 1, "d": 1} {
+		want := weight / total * n
+		if math.Abs(float64(count[w])-want) > 4*math.Sqrt(want) {
+			t.Errorf("%q drawn %d times, want about %.0f (%v)", w, count[w], want, count)
+		}
+	}
+}
+
+// The full weighing (after the quick draw misses): a short list where the
+// only word allowed is rare still gives that word, and weights that are all
+// 0 still give a word of the list.
+func TestDraw_FullWeighing(t *testing.T) {
+	pk := NewPicker([]string{"a", "b"}, nil, rand.New(rand.NewSource(9)))
+	p := plain()
+	recent := []string{"a", "a", "a", "a", "a", "a", "a", "a", "a", "b"} // a: 0.3^9, b: the last word
+	for i := 0; i < 200; i++ {
+		if got := pk.Freetype(recent, 1, 2, p)[0]; got != "a" {
+			t.Fatalf("only %q is allowed, got %q", "a", got)
+		}
+	}
+	p.RepeatPenalty = 0 // a recent word weighs 0: with "b" last, every weight is 0
+	for i := 0; i < 50; i++ {
+		if got := pk.Freetype([]string{"a", "b"}, 1, 2, p)[0]; got != "a" && got != "b" {
+			t.Fatalf("all weights 0: %q is not a word of the list", got)
+		}
+	}
+}

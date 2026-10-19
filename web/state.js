@@ -32,7 +32,7 @@ export const el = {
   btnNew: $("btn-new"),
   hands: $("hands"),
   intro: $("intro"),
-  nav: $("nav-switch"), tabLearn: $("tab-learn"), tabFree: $("tab-free"), tabStats: $("tab-stats"),
+  nav: $("nav-switch"), tabLearn: $("tab-learn"), tabClimb: $("tab-climb"), tabFreetype: $("tab-freetype"), tabStats: $("tab-stats"),
   viewType: $("view-type"), viewStats: $("view-stats"),
   lengthFilter: $("length-filter"), tiles: $("tiles"), chart: $("chart"), chartNote: $("chart-note"),
   langSwitch: $("lang-switch"), warn: $("layout-warn"),
@@ -59,8 +59,10 @@ export const S = {
   pos: 0,                 // index of the character to type next
   busy: false,            // true while a finished run is being saved
   view: "type",           // "type" or "stats"
-  mode: "learn",          // "learn" or "free" (Climb, modes.js)
-  free: null,             // last /freeplay/stats answer (Climb)
+  mode: "learn",          // "learn", "climb" or "freetype" (modes.js)
+  climb: null,            // last /freeplay/stats answer (Climb)
+  freetype: null,         // last /freetype/stats answer (Freetype: its lists, the chosen one's rounds)
+  freetypeList: 0,        // Freetype: the chosen word list (its n most common words; 0 = not known yet)
   climbLevel: null,       // Climb: the level of the round being typed, 0..1 (typing.js)
   settings: { length: "words-30", live: false, caret: "line", theme: "dark", streak: true, goal: 0 },   // settings.js
   kbHidden: false,        // keyboard and hands switched off
@@ -77,6 +79,8 @@ export const introOpen = () => !el.intro.classList.contains("hidden") && !el.int
 // Climb's level as people see it: 1..100 for the 0..1 of the server
 // (freeplay.NextLevel).
 export const levelNumber = (level) => Math.round(level * 99) + 1;
+// A Freetype word list by its size, as on monkeytype: 200, 1k, 5k, 25k.
+export const listLabel = (n) => n >= 1000 && n % 1000 === 0 ? `${n / 1000}k` : String(n);
 // A touch screen (phone, tablet): no physical keyboard, no hover.
 export const isTouch = () => matchMedia("(pointer: coarse)").matches;
 // "Reduce motion" in the OS: the small JavaScript animations are skipped too

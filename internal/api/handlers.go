@@ -7,11 +7,12 @@
 // How it connects: setup.go builds one Server (NewServer) with the loaded
 // languages and a storage.Store, calls Register to add the routes, and wraps
 // the whole site in WithGuest. The handlers do no maths themselves: learning
-// goes to internal/engine, Climb (the second mode) to internal/freeplay, passwords and
+// goes to internal/engine, Climb and Freetype (the second and third modes)
+// to internal/freeplay, passwords and
 // tokens to internal/auth, and all data to the store.
 //
-// The files: handlers.go (routes, shared helpers), learning.go, freeplay.go,
-// data.go (reset, export, import), auth.go (accounts, guests) and
+// The files: handlers.go (routes, shared helpers), learning.go, freeplay.go
+// (Climb), freetype.go, data.go (reset, export, import), auth.go (accounts, guests) and
 // validate.go (checks on what the browser sends). Every route is listed in
 // the API table of docs/ARCHITECTURE.md.
 package api
@@ -36,6 +37,7 @@ type Language struct {
 	Info       language.Language
 	Gen        *engine.Generator // learning: the adaptive word choice
 	Free       *freeplay.Picker  // Climb: words at the typist's level
+	Freetype   *freeplay.Picker  // Freetype: the long list (free.txt), drawn evenly
 	LayoutJSON []byte            // data/layouts/<layout>.json, sent to the browser as is
 }
 
@@ -73,7 +75,7 @@ func NewServer(cfg config.Config, store storage.Store, langs []*Language) *Serve
 // withLang; only the language list and the account routes are not.
 //
 // To add a route: a handler method in the file of its part (learning.go,
-// freeplay.go, data.go, auth.go), one line here, a test in setup_test.go
+// freeplay.go, freetype.go, data.go, auth.go), one line here, a test in setup_test.go
 // and a row in the API table of docs/ARCHITECTURE.md.
 func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/languages", s.handleLanguages)
@@ -94,6 +96,9 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/freeplay/portion", s.withLang(s.handleFreeplayPortion))
 	mux.HandleFunc("POST /api/v1/freeplay/results", s.withLang(s.handleFreeplayResults))
 	mux.HandleFunc("GET /api/v1/freeplay/stats", s.withLang(s.handleFreeplayStats))
+	mux.HandleFunc("POST /api/v1/freetype/portion", s.withLang(s.handleFreetypePortion))
+	mux.HandleFunc("POST /api/v1/freetype/results", s.withLang(s.handleFreetypeResults))
+	mux.HandleFunc("GET /api/v1/freetype/stats", s.withLang(s.handleFreetypeStats))
 }
 
 // langHandler gets, besides the request, WHOSE data it works with and in

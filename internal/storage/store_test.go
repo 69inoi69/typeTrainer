@@ -25,6 +25,7 @@ var storeTests = map[string]func(*testing.T, Store){
 	"RecentSessionsNewestFirst": testRecentSessionsNewestFirst,
 	"Reset":                     testReset,
 	"Freeplay":                  testFreeplay,
+	"FreetypeModes":             testFreetypeModes,
 	"UsersAreSeparate":          testUsersAreSeparate,
 	"Users":                     testUsers,
 	"Logins":                    testLogins,
@@ -117,25 +118,64 @@ func testReset(t *testing.T, m Store) {
 // the level of each round; Reset clears it too.
 func testFreeplay(t *testing.T, m Store) {
 	for _, w := range []float64{50, 60} {
-		m.AddFreeplaySession(u, "en", Session{WPM: w, Level: w / 100})
+		m.AddFreeplaySession(u, "en", ModeClimb, Session{WPM: w, Level: w / 100})
 	}
 	m.AddSession(u, "en", Session{WPM: 20})
 
-	if c, _ := m.FreeplaySessionCount(u, "en", ""); c != 2 {
+	if c, _ := m.FreeplaySessionCount(u, "en", ModeClimb, ""); c != 2 {
 		t.Fatalf("freeplay sessions = %d, want 2", c)
 	}
 	if c, _ := m.SessionCount(u, "en", ""); c != 1 {
 		t.Fatalf("learning sessions = %d, want 1 (freeplay must not mix in)", c)
 	}
-	if got, _ := m.RecentFreeplaySessions(u, "en", "", 5); len(got) != 2 || got[0].WPM != 60 || got[0].Level != 0.6 {
+	if got, _ := m.RecentFreeplaySessions(u, "en", ModeClimb, "", 5); len(got) != 2 || got[0].WPM != 60 || got[0].Level != 0.6 {
 		t.Fatalf("recent freeplay = %+v, want newest first, with its level", got)
 	}
-	if c, _ := m.FreeplaySessionCount(u, "pl", ""); c != 0 {
+	if c, _ := m.FreeplaySessionCount(u, "pl", ModeClimb, ""); c != 0 {
 		t.Fatal("the history leaked into another language")
 	}
 	m.Reset(u, "en")
-	if c, _ := m.FreeplaySessionCount(u, "en", ""); c != 0 {
+	if c, _ := m.FreeplaySessionCount(u, "en", ModeClimb, ""); c != 0 {
 		t.Fatalf("after reset: sessions=%d", c)
+	}
+}
+
+// Every Freetype word list is a history of its own, apart from Climb's;
+// all of them count as practice days, and Reset clears them all.
+func testFreetypeModes(t *testing.T, m Store) {
+	small, big := FreetypeMode(200), FreetypeMode(25000)
+	if small != "freetype-200" {
+		t.Fatalf("FreetypeMode(200) = %q", small)
+	}
+	at := time.Date(2026, 10, 19, 12, 0, 0, 0, time.UTC)
+	m.AddFreeplaySession(u, "en", small, Session{WPM: 80, Length: "words-30", FinishedAt: at})
+	m.AddFreeplaySession(u, "en", small, Session{WPM: 90, Length: "time-30", FinishedAt: at})
+	m.AddFreeplaySession(u, "en", big, Session{WPM: 50, Length: "words-30", FinishedAt: at})
+	m.AddFreeplaySession(u, "en", ModeClimb, Session{WPM: 60, FinishedAt: at})
+
+	for mode, want := range map[string]int{small: 2, big: 1, ModeClimb: 1, FreetypeMode(1000): 0} {
+		if c, _ := m.FreeplaySessionCount(u, "en", mode, ""); c != want {
+			t.Errorf("%s: %d rounds, want %d", mode, c, want)
+		}
+	}
+	if got, _ := m.RecentFreeplaySessions(u, "en", big, "", 5); len(got) != 1 || got[0].WPM != 50 {
+		t.Errorf("recent of %s = %+v, want only its own round", big, got)
+	}
+	if l, _ := m.FreeplaySessionLengths(u, "en", small); len(l) != 2 {
+		t.Errorf("lengths of %s = %v, want 2", small, l)
+	}
+	if b, _ := m.BestFreeplayRounds(u, "en", small); b["words-30"].WPM != 80 || b["time-30"].WPM != 90 {
+		t.Errorf("bests of %s = %+v", small, b)
+	}
+	if b, _ := m.BestFreeplayRounds(u, "en", big); b["words-30"].WPM != 50 {
+		t.Errorf("bests of %s = %+v, want its own 50", big, b)
+	}
+	if days, _ := m.PracticeDays(u, "en", 0); len(days) != 1 || days[0].Rounds != 4 {
+		t.Errorf("practice days = %+v, want one day with all 4 rounds", days)
+	}
+	m.Reset(u, "en")
+	if c, _ := m.FreeplaySessionCount(u, "en", small, ""); c != 0 {
+		t.Errorf("after reset: %d rounds", c)
 	}
 }
 
@@ -145,12 +185,12 @@ func testUsersAreSeparate(t *testing.T, m Store) {
 	m.SaveKeyStats("ann", "en", map[string]engine.KeyStat{"e": {Count: 5}})
 	m.SetUnlocked("ann", "en", 9)
 	m.AddSession("ann", "en", Session{WPM: 40})
-	m.AddFreeplaySession("ann", "en", Session{WPM: 70})
+	m.AddFreeplaySession("ann", "en", ModeClimb, Session{WPM: 70})
 
 	stats, _ := m.KeyStats("bob", "en")
 	unlocked, _ := m.Unlocked("bob", "en")
 	count, _ := m.SessionCount("bob", "en", "")
-	free, _ := m.FreeplaySessionCount("bob", "en", "")
+	free, _ := m.FreeplaySessionCount("bob", "en", ModeClimb, "")
 	if len(stats) != 0 || unlocked != 0 || count != 0 || free != 0 {
 		t.Fatalf("bob sees ann's data: stats=%v unlocked=%d sessions=%d free=%d",
 			stats, unlocked, count, free)
@@ -281,7 +321,7 @@ func testLengths(t *testing.T, m Store) {
 	m.AddSession(u, "en", Session{WPM: 40, Length: "time-60"})
 	m.AddSession(u, "en", Session{WPM: 50, Length: "words-10"})
 	m.AddSession(u, "en", Session{WPM: 60, Length: "time-60"})
-	m.AddFreeplaySession(u, "en", Session{WPM: 70, Length: "words-60"})
+	m.AddFreeplaySession(u, "en", ModeClimb, Session{WPM: 70, Length: "words-60"})
 
 	if c, _ := m.SessionCount(u, "en", ""); c != 4 {
 		t.Fatalf("all lengths: %d, want 4", c)
@@ -300,11 +340,11 @@ func testLengths(t *testing.T, m Store) {
 	if want := []string{"time-60", "words-10", "words-30"}; fmt.Sprint(lengths) != fmt.Sprint(want) {
 		t.Fatalf("lengths = %v, want %v", lengths, want)
 	}
-	free, _ := m.FreeplaySessionLengths(u, "en")
+	free, _ := m.FreeplaySessionLengths(u, "en", ModeClimb)
 	if fmt.Sprint(free) != "[words-60]" {
 		t.Fatalf("free lengths = %v (learning must not mix in)", free)
 	}
-	if c, _ := m.FreeplaySessionCount(u, "en", "words-60"); c != 1 {
+	if c, _ := m.FreeplaySessionCount(u, "en", ModeClimb, "words-60"); c != 1 {
 		t.Fatalf("free words-60: %d", c)
 	}
 	if none, _ := m.SessionLengths(u, "pl"); none == nil || len(none) != 0 {
@@ -323,7 +363,7 @@ func testLettersTyped(t *testing.T, m Store) {
 	m.AddSession(u, "en", Session{Chars: 50, Unlocked: 26})
 	m.AddSession(u, "pl", Session{Chars: 999, Unlocked: 32})              // another language
 	m.AddSession("someone-else", "en", Session{Chars: 999, Unlocked: 26}) // another user
-	m.AddFreeplaySession(u, "en", Session{Chars: 999})                    // free practice never counts
+	m.AddFreeplaySession(u, "en", ModeClimb, Session{Chars: 999})         // free practice never counts
 	if n, _ := m.LettersTyped(u, "en", 26); n != 200 {
 		t.Fatalf("all letters open: %d, want 200", n)
 	}
@@ -372,12 +412,12 @@ func testGroup(t *testing.T, m Store) {
 func testDevice(t *testing.T, m Store) {
 	m.AddSession(u, "en", Session{WPM: 30, Device: DeviceTouch})
 	m.AddSession(u, "en", Session{WPM: 31})
-	m.AddFreeplaySession(u, "en", Session{WPM: 40, Device: DeviceKeyboard})
+	m.AddFreeplaySession(u, "en", ModeClimb, Session{WPM: 40, Device: DeviceKeyboard})
 	got, _ := m.RecentSessions(u, "en", "", 2)
 	if len(got) != 2 || got[0].Device != "" || got[1].Device != DeviceTouch {
 		t.Fatalf("learning devices: %+v", got)
 	}
-	free, _ := m.RecentFreeplaySessions(u, "en", "", 1)
+	free, _ := m.RecentFreeplaySessions(u, "en", ModeClimb, "", 1)
 	if len(free) != 1 || free[0].Device != DeviceKeyboard {
 		t.Fatalf("free practice device: %+v", free)
 	}
@@ -393,7 +433,7 @@ func testPracticeDays(t *testing.T, m Store) {
 	at := func(s string) time.Time { v, _ := time.Parse(time.RFC3339, s); return v }
 	// 60 wpm, 100%: 300 letters = 60 words = 1 minute
 	m.AddSession(u, "en", Session{WPM: 60, Accuracy: 100, Chars: 300, FinishedAt: at("2026-10-17T10:00:00Z")})
-	m.AddFreeplaySession(u, "en", Session{WPM: 30, Accuracy: 100, Chars: 150, FinishedAt: at("2026-10-17T22:30:00Z")})
+	m.AddFreeplaySession(u, "en", ModeClimb, Session{WPM: 30, Accuracy: 100, Chars: 150, FinishedAt: at("2026-10-17T22:30:00Z")})
 	m.AddSession(u, "en", Session{WPM: 0, Accuracy: 0, Chars: 0, FinishedAt: at("2026-10-18T09:00:00Z")})                   // WPM 0: no time
 	m.AddSession(u, "pl", Session{WPM: 60, Accuracy: 100, Chars: 300, FinishedAt: at("2026-10-17T10:00:00Z")})              // another language
 	m.AddSession("someone-else", "en", Session{WPM: 60, Accuracy: 100, Chars: 300, FinishedAt: at("2026-10-17T10:00:00Z")}) // another user
@@ -430,7 +470,7 @@ func testBestRounds(t *testing.T, m Store) {
 	m.AddSession(u, "en", Session{WPM: 55, Accuracy: 97, Length: "words-10", Keys: keys})
 	m.AddSession(u, "en", Session{WPM: 55, Accuracy: 80, Length: "words-10"}) // as fast, later: not it
 	m.AddSession(u, "en", Session{WPM: 30, Accuracy: 99, Length: "time-30"})
-	m.AddFreeplaySession(u, "en", Session{WPM: 99, Accuracy: 100, Length: "words-10"}) // free practice apart
+	m.AddFreeplaySession(u, "en", ModeClimb, Session{WPM: 99, Accuracy: 100, Length: "words-10"}) // free practice apart
 	m.AddSession("someone-else", "en", Session{WPM: 99, Length: "words-10"})
 
 	b, _ := m.BestRounds(u, "en")
@@ -440,7 +480,7 @@ func testBestRounds(t *testing.T, m Store) {
 	if b["words-10"].Keys != nil {
 		t.Fatalf("a best round keeps its raw keys: %v", b["words-10"].Keys)
 	}
-	f, _ := m.BestFreeplayRounds(u, "en")
+	f, _ := m.BestFreeplayRounds(u, "en", ModeClimb)
 	if len(f) != 1 || f["words-10"].WPM != 99 {
 		t.Fatalf("free practice bests %+v, want words-10 99 wpm", f)
 	}

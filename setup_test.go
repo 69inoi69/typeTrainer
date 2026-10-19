@@ -344,6 +344,81 @@ func TestApp_Climb(t *testing.T) {
 	}
 }
 
+// Freetype, the third mode: words from the list the typist chose (the n
+// most common of free.txt), lower case, no level; every list has its own
+// history, apart from Climb and learning; export/import carry them.
+func TestApp_Freetype(t *testing.T) {
+	h, _, _ := newApp()
+	_, st := call(t, h, "GET", "/api/v1/freetype/stats?lang=en", "")
+	lists := fmt.Sprint(st["lists"])
+	if lists != "[200 1000 5000 10000 25000]" || st["list"] != float64(200) || st["sessionCount"] != float64(0) {
+		t.Fatalf("new user: lists %v, list %v, rounds %v", lists, st["list"], st["sessionCount"])
+	}
+	// a hidden language without free.txt offers what its words.txt allows
+	if _, ru := call(t, h, "GET", "/api/v1/freetype/stats?lang=ru", ""); fmt.Sprint(ru["lists"]) != "[200 1000]" {
+		t.Fatalf("ru lists: %v", ru["lists"])
+	}
+	code, out := call(t, h, "POST", "/api/v1/freetype/portion?lang=en", `{"start":true,"list":200}`)
+	if code != 200 || len(out["portions"].([]any)) != 3 || out["level"] != nil {
+		t.Fatalf("first portions: %d %v", code, out)
+	}
+	for _, p := range out["portions"].([]any) {
+		for _, w := range p.(map[string]any)["words"].([]any) {
+			if w != strings.ToLower(w.(string)) || strings.ContainsAny(w.(string), ",.") {
+				t.Fatalf("Freetype words are plain: %q", w)
+			}
+		}
+	}
+	for _, bad := range []string{`{"start":true,"list":300}`, `{"start":true}`} {
+		if code, _ := call(t, h, "POST", "/api/v1/freetype/portion?lang=en", bad); code != 400 {
+			t.Fatalf("%s: a list not offered must be rejected", bad)
+		}
+	}
+	round := func(list int, wpm float64) int {
+		code, _ := call(t, h, "POST", "/api/v1/freetype/results?lang=en", fmt.Sprintf(
+			`{"wpm":%v,"accuracy":98,"chars":150,"perSecond":[5,5,5,5,5,5],"list":%d,"keys":[{"char":"t","errors":0,"ms":200}]}`, wpm, list))
+		return code
+	}
+	if round(1000, 80) != 200 || round(1000, 85) != 200 || round(25000, 60) != 200 {
+		t.Fatal("results not stored")
+	}
+	if code := round(300, 80); code != 400 {
+		t.Fatal("a result on a list not offered must be rejected")
+	}
+	if code, _ := call(t, h, "POST", "/api/v1/freetype/results?lang=en", `{"wpm":50,"accuracy":98,"chars":10,"list":200,"keys":[{"char":"T","errors":0,"ms":200}]}`); code != 400 {
+		t.Fatal("a capital is not a Freetype letter")
+	}
+	_, k := call(t, h, "GET", "/api/v1/freetype/stats?lang=en&list=1000", "")
+	_, big := call(t, h, "GET", "/api/v1/freetype/stats?lang=en&list=25000", "")
+	_, climb := call(t, h, "GET", "/api/v1/freeplay/stats?lang=en", "")
+	_, learn := call(t, h, "GET", "/api/v1/stats?lang=en", "")
+	if k["sessionCount"] != float64(2) || big["sessionCount"] != float64(1) || climb["sessionCount"] != float64(0) || learn["sessionCount"] != float64(0) {
+		t.Fatalf("histories: 1k %v, 25k %v, climb %v, learning %v", k["sessionCount"], big["sessionCount"], climb["sessionCount"], learn["sessionCount"])
+	}
+	if code, _ := call(t, h, "GET", "/api/v1/freetype/stats?lang=en&list=7", ""); code != 400 {
+		t.Fatal("stats of a list not offered must be rejected")
+	}
+
+	// export -> reset -> import brings every list back
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, guestRequest("GET", "/api/v1/export?lang=en", ""))
+	file := rec.Body.String()
+	if !strings.Contains(file, `"freetype":{"1000":`) {
+		t.Fatalf("export lacks Freetype: %.300s", file)
+	}
+	call(t, h, "POST", "/api/v1/reset?lang=en", "")
+	if code, out := call(t, h, "POST", "/api/v1/import?lang=en", file); code != 200 {
+		t.Fatalf("import: %d %v", code, out)
+	}
+	if _, k := call(t, h, "GET", "/api/v1/freetype/stats?lang=en&list=1000", ""); k["sessionCount"] != float64(2) {
+		t.Fatalf("import lost Freetype: %v", k["sessionCount"])
+	}
+	bad := strings.Replace(file, `"freetype":{"1000":`, `"freetype":{"999":`, 1)
+	if code, _ := call(t, h, "POST", "/api/v1/import?lang=en", bad); code != 400 {
+		t.Fatal("an import with an unknown list must be rejected")
+	}
+}
+
 // /results keeps every keypress of the round as its raw record, but the
 // model learns only from "samples": a key sent with /portion and again in
 // "keys" is counted once. The stats page gets the numbers only; the raw

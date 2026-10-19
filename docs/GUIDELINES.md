@@ -20,10 +20,11 @@ there is a reason not to).
 ## 1. Product decisions
 
 **Established**
-- typeTrainer teaches touch typing with real words. Two modes, both open:
+- typeTrainer teaches touch typing with real words. Three modes, all open:
   Learn for beginners (letters from the home row, progress shown plainly,
-  no stats screen) and Climb for those who can type (a level that follows
-  the typist; the stats screen is Climb's) (`AGENTS.md`, "Two modes").
+  no stats screen), Climb for those who can type (a level that follows
+  the typist) and Freetype for just typing (a word list you pick); the
+  stats screen is Climb's and Freetype's (`AGENTS.md`, "Three modes").
 - Settings change how much and how it looks, never what is practised. No
   difficulty switches, no "open all letters". Tab starts a new round.
 - Visual rewards never change what is measured or sent to the server.
@@ -33,8 +34,8 @@ there is a reason not to).
 - Every feature answers "what does this help the user learn or understand?"
   If the answer is "it looks nice" or "other apps have it", it waits.
 - Prefer improving what exists over adding something new.
-- A feature that touches Learn data must not leak into Climb, and the
-  other way round.
+- A feature that touches Learn data must not leak into Climb or Freetype,
+  and the other way round.
 
 ## 2. Layout and space
 
@@ -159,7 +160,7 @@ consequences, the same word for the same thing. All text lives in
   (Off on the left, On on the right), `.btn` buttons (`.danger` for
   destructive), `data-tip` tooltips, `--ctl` (38 px) as the height of every
   control.
-- Naming: Learn, Climb, Stats, Settings; round, focus, mastered, level
+- Naming: Learn, Climb, Freetype, Stats, Settings; round, focus, mastered, level
   (`docs/UI-TEXT.md`, word list).
 
 **Recommended**

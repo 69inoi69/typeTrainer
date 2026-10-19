@@ -97,7 +97,7 @@ func validateSamples(samples []engine.Sample, max int, alphabet string) string {
 // validateImport makes sure a loaded file cannot put impossible numbers or
 // foreign letters into the statistics. letters = how many letters the
 // language's unlock order has.
-func validateImport(in langExport, maxSessions, maxEvents, letters int, alphabet string, okLength func(string) bool) string {
+func validateImport(in langExport, maxSessions, maxEvents, letters int, alphabet string, okLength func(string) bool, okList func(int) bool) string {
 	if in.Unlocked < 0 || in.Unlocked > letters {
 		return "unlocked: out of range"
 	}
@@ -125,6 +125,19 @@ func validateImport(in langExport, maxSessions, maxEvents, letters int, alphabet
 	if in.Freeplay != nil {
 		if msg := validateSessions(in.Freeplay.Sessions, maxSessions, maxEvents, letters, climbAlphabet(alphabet), okLength); msg != "" {
 			return "freeplay " + msg
+		}
+	}
+	for list, f := range in.Freetype {
+		if n, err := strconv.Atoi(list); err != nil || !okList(n) {
+			return "freetype: unknown list " + list
+		}
+		if msg := validateSessions(f.Sessions, maxSessions, maxEvents, letters, alphabet, okLength); msg != "" {
+			return "freetype " + msg
+		}
+		for _, sess := range f.Sessions {
+			if sess.Level != 0 {
+				return "freetype: a round has no level"
+			}
 		}
 	}
 	return ""

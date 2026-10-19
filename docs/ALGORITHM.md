@@ -886,3 +886,38 @@ marks are those the layout has keys for (`,` and `.`).
 All values are reasoned, not fitted; the stats screen (Climb's own) shows the
 level of every round, which is the data to tune them on.
 
+
+## 14. Freetype, the third mode
+
+Freetype is for just typing, as on monkeytype: nothing adapts and nothing
+is learned. The typist picks a word list, "the n most common words" with n
+one of 200, 1000, 5000, 10 000, 25 000 (`FreetypeLists` in
+`internal/config`), and the words are drawn evenly from it
+(`freeplay.Picker.Freetype`), in lower case, without punctuation. Every
+list has its own history (`storage.FreetypeMode`): a round on 200 common
+words and one on 25 000 rare ones are not compared, like rounds of
+different lengths.
+
+**The draw** is the one Climb uses (`draw`): a word's weight is
+`RepeatPenalty^(uses in the last RecentWords words)`, and the word just
+typed is never next. On a list of 25 000 words, weighing every word for
+every word drawn would be slow, so `drawWord` first draws by rejection: a
+random word is kept with the chance of its weight (at most 1). That gives
+exactly the same odds as weighing the list (a word comes out with a chance
+proportional to its weight), and as almost no word is recent, it almost
+always ends at the first try. After 32 misses (a short list full of recent
+words) it weighs the whole list instead, with the same odds; so the result
+never depends on which way was taken (`TestDraw_OddsAreTheWeights`).
+
+**The long list** (`data/langs/en/free.txt`, built by
+`tools/wordlists/free.py`). The 2000 words of learning come from subtitle
+counts with a hand-made block list (section 12). Past a few thousand words
+those counts are full of names, slang and fragments, too many to block by
+hand, so the long list adds a spelling dictionary: a word is kept only if
+the Hunspell dictionary of the language (en_US, from SCOWL) accepts it in
+lower case. Names are written with a capital there, so they drop out by
+themselves. Offensive words are removed by the dictionary's own marks
+(NOSUGGEST) and a public list of bad words (LDNOOBW). Of the 50 000 most
+frequent subtitle words, about 30 800 pass; the list keeps the first
+25 000. For now only English has a long list; a language without one
+offers the lists its 2000 words allow (200 and 1000).

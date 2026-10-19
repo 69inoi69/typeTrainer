@@ -49,7 +49,7 @@ type Config struct {
 	Auth        auth.Params // accounts: passwords, login cookies, name rules
 	Engine      engine.Params
 	Words       engine.WordParams // how far down the frequency list learning words may come from
-	Freeplay    freeplay.Params   // Climb, the second mode: its words and its level
+	Freeplay    freeplay.Params   // Climb (its words and its level) and Freetype (its word lists)
 	Sim         sim.Params        // only for the simulation tool (go run ./tools/sim)
 }
 
@@ -168,6 +168,10 @@ func Default() Config {
 			PunctFrom: 0.55, // commas and full stops from level 55...
 			PunctMax:  0.35, // ...up to a mark after every third word
 			StopShare: 0.4,  // 2 of 5 marks are full stops (a sentence starts after each)
+
+			// Freetype: the lists of monkeytype's English (200, 1k, 5k, 10k,
+			// 25k most common words); data/langs/en/free.txt has 25 000.
+			FreetypeLists: []int{200, 1000, 5000, 10000, 25000},
 		},
 		// A made-up typist: assumptions of the simulation, not measured values.
 		// docs/ALGORITHM.md section 11 explains them.
