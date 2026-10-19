@@ -276,3 +276,23 @@ func TestDraw_OddsAreTheWeights(t *testing.T) {
 		}
 	}
 }
+
+// The full weighing (after the quick draw misses): a short list where the
+// only word allowed is rare still gives that word, and weights that are all
+// 0 still give a word of the list.
+func TestDraw_FullWeighing(t *testing.T) {
+	pk := NewPicker([]string{"a", "b"}, nil, rand.New(rand.NewSource(9)))
+	p := plain()
+	recent := []string{"a", "a", "a", "a", "a", "a", "a", "a", "a", "b"} // a: 0.3^9, b: the last word
+	for i := 0; i < 200; i++ {
+		if got := pk.Freetype(recent, 1, 2, p)[0]; got != "a" {
+			t.Fatalf("only %q is allowed, got %q", "a", got)
+		}
+	}
+	p.RepeatPenalty = 0 // a recent word weighs 0: with "b" last, every weight is 0
+	for i := 0; i < 50; i++ {
+		if got := pk.Freetype([]string{"a", "b"}, 1, 2, p)[0]; got != "a" && got != "b" {
+			t.Fatalf("all weights 0: %q is not a word of the list", got)
+		}
+	}
+}

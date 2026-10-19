@@ -216,12 +216,27 @@ func (pk *Picker) drawWord(window []string, last string, size int, p Params) int
 			return i
 		}
 	}
-	weights, total := make([]float64, size), 0.0
-	for i, w := range pk.words[:size] {
-		weights[i] = weight(w)
-		total += weights[i]
+	// weigh the whole list: once for the total, once more to find where the
+	// random point falls (no slice of weights: nothing allocated per call)
+	total := 0.0
+	for _, w := range pk.words[:size] {
+		total += weight(w)
 	}
-	return pick(weights, total, pk.rng.Float64())
+	if total <= 0 { // every weight 0: any word
+		return pk.rng.Intn(size)
+	}
+	point, found := pk.rng.Float64()*total, size-1
+	for i, w := range pk.words[:size] {
+		x := weight(w)
+		if x > 0 {
+			found = i // float rounding: the last word with a weight
+		}
+		if point < x {
+			return i
+		}
+		point -= x
+	}
+	return found
 }
 
 // MaxRank is how many of the most common words the level allows: RankMin at
@@ -239,25 +254,4 @@ func capitalize(w string) string {
 		return w
 	}
 	return string(unicode.ToUpper(r)) + w[size:]
-}
-
-// pick returns the index whose segment the point r*total falls in (the
-// weights laid end to end); all-zero weights pick uniformly.
-func pick(weights []float64, total, r float64) int {
-	if total <= 0 {
-		return int(r * float64(len(weights)))
-	}
-	point := r * total
-	for i, w := range weights {
-		if point < w {
-			return i
-		}
-		point -= w
-	}
-	for i := len(weights) - 1; i >= 0; i-- { // float rounding
-		if weights[i] > 0 {
-			return i
-		}
-	}
-	return len(weights) - 1
 }
