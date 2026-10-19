@@ -13,6 +13,7 @@ package layout
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 // Key is one key of the keyboard picture.
@@ -58,6 +59,46 @@ func Parse(data []byte) (*Layout, error) {
 		}
 	}
 	return &l, nil
+}
+
+// RestingKeys returns the keys the fingers rest on: in the row with the
+// home bumps (F and J on QWERTY), one key per finger, the bump key for the
+// index fingers and for the others the key next to the hand (A S D, K L ;).
+// The learning order starts from them (engine.Generator.SetHome).
+func (l *Layout) RestingKeys() []string {
+	for _, row := range l.Rows {
+		bump := false
+		for _, k := range row {
+			bump = bump || k.Home
+		}
+		if !bump {
+			continue
+		}
+		var out []string
+		taken := map[string]bool{}
+		for _, k := range row { // the bump keys first: they decide the index fingers
+			if k.Home && !taken[k.Finger] {
+				taken[k.Finger] = true
+				out = append(out, k.Char)
+			}
+		}
+		// left hand: the key nearest the middle wins, so go right to left;
+		// right hand: left to right
+		for i := len(row) - 1; i >= 0; i-- {
+			if k := row[i]; strings.HasPrefix(k.Finger, "l") && !taken[k.Finger] && !k.Modifier {
+				taken[k.Finger] = true
+				out = append(out, k.Char)
+			}
+		}
+		for _, k := range row {
+			if strings.HasPrefix(k.Finger, "r") && !taken[k.Finger] && !k.Modifier {
+				taken[k.Finger] = true
+				out = append(out, k.Char)
+			}
+		}
+		return out
+	}
+	return nil
 }
 
 // FingerFor returns the finger id for a character ("" if not on the layout).

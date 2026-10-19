@@ -89,8 +89,8 @@ sentences and ends with a full stop.
 |---|---|
 | one typing run (10–50 words or 15–90 s) | round |
 | the learning mode, the main one | Learn |
-| free practice, words from the whole list | Freetype |
-| the one-time test that opens Freetype | typing test |
+| the second mode, harder as you get better | Climb |
+| how hard Climb is now, 1 to 100 | level |
 | the letter the trainer is drilling now | focus |
 | a letter that meets the goal | mastered |
 | the next letter to open | next letter |
@@ -98,7 +98,7 @@ sentences and ends with a full stop.
 | deleting all progress | Reset all progress (in "Danger zone") |
 | speed | wpm after a number ("30 wpm"), WPM as a label on its own |
 
-`wpm`, `raw` and the mode names Learn and Freetype stay in English in every
+`wpm`, `raw` and the mode names Learn and Climb stay in English in every
 language.
 
 ## How it looks

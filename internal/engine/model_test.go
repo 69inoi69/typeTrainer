@@ -13,6 +13,7 @@ var testParams = Params{
 	PriorDifficulty: 0.7, PriorStrength: 5,
 	Temperature:       0.1,
 	MasteryMinSamples: 20, MasteryErrorRate: 0.05,
+	KeepErrorRate: 0.10, KeepSlowdown: 0.10, UnmasteredBonus: 0.2, HomeBoost: 4,
 	StartLetters: 6, MinWords: 30, RepeatPenalty: 0.3, ExerciseWords: 20,
 	PortionWords: 6, AheadPortions: 2, RecentWords: 20, RetryWords: 2, RoundPortions: 5,
 	RankStart: 200, RankStep: 200, RankPenalty: 0.5,
@@ -138,5 +139,72 @@ func TestSoftmaxWeight_TemperatureControlsFocus(t *testing.T) {
 	}
 	if SoftmaxWeight(0, testParams) <= 0 {
 		t.Fatal("weight must never be 0")
+	}
+}
+
+// clean feeds n clean presses of ms milliseconds.
+func clean(s KeyStat, ms float64, n int) KeyStat {
+	return repeat(s, Sample{Char: "a", Ms: ms}, n)
+}
+
+// One slip no longer takes a mastered letter back: it stays mastered (Held)
+// although it is below the goal for a few presses.
+func TestHeld_OneSlipKeepsMastery(t *testing.T) {
+	s := clean(KeyStat{}, 300, 25)
+	if !s.Held || !Mastered(s, testParams) {
+		t.Fatalf("25 clean presses at 300 ms: want mastered and held, got %+v", s)
+	}
+	s = Update(s, Sample{Char: "a", Errors: 1}, testParams) // ErrEMA jumps to about 0.1
+	if MeetsGoal(s, testParams) {
+		t.Fatalf("after a mistake the letter should be below the goal right now (ErrEMA %.3f)", s.ErrEMA)
+	}
+	if !Mastered(s, testParams) {
+		t.Errorf("one mistake took the mastery back (ErrEMA %.3f, keep up to %.2f)", s.ErrEMA, testParams.KeepErrorRate)
+	}
+}
+
+// Clearly worse loses it: more mistakes than KeepErrorRate, or slower than
+// TargetMs * (1 + KeepSlowdown).
+func TestHeld_ClearlyWorseLosesMastery(t *testing.T) {
+	s := clean(KeyStat{}, 300, 25)
+	for i := 0; i < 3; i++ { // three mistakes in a row: ErrEMA ~0.27
+		s = Update(s, Sample{Char: "a", Errors: 1}, testParams)
+	}
+	if Mastered(s, testParams) {
+		t.Errorf("three mistakes in a row (ErrEMA %.3f): still mastered", s.ErrEMA)
+	}
+	s = clean(KeyStat{}, 300, 25)
+	s = clean(s, 520, 30) // TimeEMA climbs to ~515 ms, over 440
+	if Mastered(s, testParams) {
+		t.Errorf("TimeEMA %.0f ms, over the keep limit: still mastered", s.TimeEMA)
+	}
+	s = clean(KeyStat{}, 300, 25)
+	s = clean(s, 430, 30) // a little slower than the goal, inside the margin
+	if !Mastered(s, testParams) {
+		t.Errorf("TimeEMA %.0f ms, inside the keep limit: lost the mastery", s.TimeEMA)
+	}
+}
+
+// The margin only keeps a letter: to become mastered it must meet the goal
+// itself. A letter at 430 ms that never was at 400 is not mastered.
+func TestHeld_NeedsTheGoalFirst(t *testing.T) {
+	s := clean(KeyStat{}, 430, 40)
+	if s.Held || Mastered(s, testParams) {
+		t.Errorf("a letter at %.0f ms that never met the goal counts as mastered", s.TimeEMA)
+	}
+}
+
+// Without a margin (Keep* at or below the goal) the rule is the plain goal,
+// as before Held existed.
+func TestHeld_NoMarginIsThePlainGoal(t *testing.T) {
+	p := testParams
+	p.KeepErrorRate, p.KeepSlowdown = 0, 0
+	s := KeyStat{}
+	for i := 0; i < 25; i++ {
+		s = Update(s, Sample{Char: "a", Ms: 300}, p)
+	}
+	s = Update(s, Sample{Char: "a", Errors: 1}, p)
+	if Mastered(s, p) {
+		t.Errorf("no margin: one mistake should take the mastery back (ErrEMA %.3f)", s.ErrEMA)
 	}
 }

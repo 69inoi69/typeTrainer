@@ -29,6 +29,7 @@ import (
 	"typingtrainer/internal/config"
 	"typingtrainer/internal/engine"
 	"typingtrainer/internal/language"
+	"typingtrainer/internal/layout"
 	"typingtrainer/internal/sim"
 )
 
@@ -89,7 +90,15 @@ func main() {
 		if err != nil {
 			fail(err)
 		}
-		runLanguage(l.ID, l.Words(string(list)), cfg, ts)
+		layoutJSON, err := os.ReadFile("data/layouts/" + l.Layout + ".json")
+		if err != nil {
+			fail(err)
+		}
+		lay, err := layout.Parse(layoutJSON)
+		if err != nil {
+			fail(err)
+		}
+		runLanguage(l.ID, l.Words(string(list)), lay.RestingKeys(), cfg, ts)
 	}
 }
 
@@ -130,8 +139,9 @@ func engineParams(k int, t float64, cfg config.Config) engine.Params {
 
 // runLanguage prints the table of one language: one row per strategy (and
 // per temperature for the engine strategies), each the summary of p.Runs
-// beginners (Run) and p.Runs experts (RunOpen).
-func runLanguage(id string, words []string, cfg config.Config, temps []float64) {
+// beginners (Run) and p.Runs experts (RunOpen). home: the resting keys of
+// the language's layout, put first in the unlock order as in the app.
+func runLanguage(id string, words, home []string, cfg config.Config, temps []float64) {
 	p := cfg.Sim
 	fmt.Printf("\n%s (%d words)\n", id, len(words))
 	fmt.Printf("%-22s %6s %6s %7s %5s %4s %5s | %-29s | %-29s\n", "", "", "", "", "", "", "", "beginner, first", "expert")
@@ -165,6 +175,7 @@ func runLanguage(id string, words []string, cfg config.Config, temps []float64) 
 			// streams apart, so one part using more numbers does not change
 			// what another part draws.
 			gen := engine.NewGenerator(words, rand.New(rand.NewSource(seed)), ep)
+			gen.SetHome(home, ep)
 			gen.SetWordParams(cfg.Words)
 			typist := sim.NewTypist(gen.Order(), p, rand.New(rand.NewSource(seed))).
 				Clone(rand.New(rand.NewSource(seed + 1000)))
@@ -173,6 +184,7 @@ func runLanguage(id string, words []string, cfg config.Config, temps []float64) 
 			res = append(res, sim.Run(gen, s, typist, ep, p))
 
 			gen = engine.NewGenerator(words, rand.New(rand.NewSource(seed)), ep)
+			gen.SetHome(home, ep)
 			gen.SetWordParams(cfg.Words)
 			expert := sim.NewExpert(gen.Order(), p, rand.New(rand.NewSource(seed))).
 				Clone(rand.New(rand.NewSource(seed + 1000)))

@@ -104,31 +104,33 @@ Details: `docs/ARCHITECTURE.md`.
 - **Phones and tablets show only the stats and the account (2026-10-18).**
   Practice needs a computer keyboard; thumbs on glass would skew the letter
   model. The phone layout of the typing screen is not maintained.
-- **Two modes and a test.** *Learning* is the adaptive trainer: all the
-  algorithm work lives there, with no difficulty switches (the algorithm
-  decides what to practise). *Free practice* draws words evenly from the whole
-  list, has its own history and never feeds the letter model
-  (`internal/freeplay`). It opens when every letter is unlocked, or after the
-  one-time *typing test* (one 30-word round at 30 WPM and 97% accuracy). No
-  self-declared skill level: the test is the only early way in.
+- **Two modes, both open to everyone (owner, 2026-10-19).** *Learn* is for
+  beginners: the adaptive trainer, letters open one by one from the home
+  row, with no difficulty switches (the algorithm decides what to practise).
+  It has no stats screen: its progress is the letters row and the result
+  screen, made plain (what is mastered, what still needs work and why).
+  *Climb* is for people who can already type (`internal/freeplay`): one
+  level (1..100) follows the typist like a thermostat, up after portions
+  typed cleanly, down when mistakes pile up; it brings rarer words, then
+  capitals, then punctuation. It has its own history and the stats screen,
+  and never feeds the letter model. There is no entry test.
 - **Settings change how much and how it looks, never what.** The settings
   panel (`web/settings.js`) offers round length (10/20/30/40/50 words, 15/30/60/90 s),
   live numbers on/off, the streak badge on/off, the caret style and a personal
   speed goal (shown on the stats screen only, never seen by the algorithm), in both modes. They are not
   difficulty switches. Every round keeps its length, and rounds of different
-  lengths are never mixed in one chart or record. The typing test ignores
-  the settings: it is always one full 30-word round.
-- **Where the work goes (2026-10).** Learning is the main focus until the
-  defense: the algorithm, word choice and how learning looks and feels.
-  Free practice is a deliberately minimal, separate mode (a future
-  Monkeytype-like mode with its own statistics) and grows only after the
-  defense. The typing test is provisional and will likely change. Keep the
-  two modes apart: nothing in free practice may touch learning data.
+  lengths are never mixed in one chart or record.
+- **Where the work goes (owner, 2026-10-19).** Both modes are being built
+  now, freely: try an idea, the owner tests it, keep or drop it; the old
+  schedule does not limit what we try. Keep the two modes apart: nothing in
+  Climb may touch learning data.
 - **A hidden control group for the thesis study.** `?group=random` makes
   learning draw random open words instead of using the algorithm (every
   round stores its group). It is never shown or offered in the interface.
-- **Everyone starts from the first letters.** No "open all letters" in the
-  interface: experienced typists unlock the rest quickly by typing well.
+- **Everyone starts from the first letters** (in Learn), and the first
+  letters sit on the home row (the resting keys count 4 times as frequent
+  in the unlock order). No "open all letters" in the interface:
+  experienced typists unlock the rest quickly by typing well, or go to Climb.
 - **The math in `internal/engine/model.go` is the core of my thesis.** Do not
   change formulas or parameter values on your own. If you think something
   should change, explain it and ask.

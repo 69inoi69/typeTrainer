@@ -4,9 +4,8 @@
 // the on-screen keyboard on or off, and exporting, importing and resetting
 // the progress (tools.js does those three). Settings change
 // HOW MUCH and HOW IT LOOKS, never WHAT is practised: the words still come
-// from the algorithm (learning) or evenly from the list (free practice), so
-// they are not difficulty switches. The typing test ignores the round
-// length: it is always one full round of 30 words.
+// from the algorithm (learning) or at the level of Climb's thermostat, so
+// they are not difficulty switches.
 // Everything is kept in this browser (localStorage, "tt." keys); when that
 // is blocked, the defaults are used and the app works the same.
 // Layer: middle. Imports only the bottom layer.

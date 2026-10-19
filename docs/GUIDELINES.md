@@ -20,9 +20,10 @@ there is a reason not to).
 ## 1. Product decisions
 
 **Established**
-- typeTrainer teaches touch typing with real words. Learn is the main mode
-  and the focus until the thesis defense; Freetype stays minimal; the typing
-  test is provisional (`AGENTS.md`, "Where the work goes").
+- typeTrainer teaches touch typing with real words. Two modes, both open:
+  Learn for beginners (letters from the home row, progress shown plainly,
+  no stats screen) and Climb for those who can type (a level that follows
+  the typist; the stats screen is Climb's) (`AGENTS.md`, "Two modes").
 - Settings change how much and how it looks, never what is practised. No
   difficulty switches, no "open all letters". Tab starts a new round.
 - Visual rewards never change what is measured or sent to the server.
@@ -32,7 +33,7 @@ there is a reason not to).
 - Every feature answers "what does this help the user learn or understand?"
   If the answer is "it looks nice" or "other apps have it", it waits.
 - Prefer improving what exists over adding something new.
-- A feature that touches Learn data must not leak into Freetype, and the
+- A feature that touches Learn data must not leak into Climb, and the
   other way round.
 
 ## 2. Layout and space
@@ -158,7 +159,7 @@ consequences, the same word for the same thing. All text lives in
   (Off on the left, On on the right), `.btn` buttons (`.danger` for
   destructive), `data-tip` tooltips, `--ctl` (38 px) as the height of every
   control.
-- Naming: Learn, Freetype, Stats, Settings; round, focus, mastered
+- Naming: Learn, Climb, Stats, Settings; round, focus, mastered, level
   (`docs/UI-TEXT.md`, word list).
 
 **Recommended**
@@ -214,7 +215,7 @@ consequences, the same word for the same thing. All text lives in
 - Look at the real result in a browser, not just the code: the screen that
   changed, at phone and desktop width, in both themes when colours change.
 - Check the edges: no data yet, a very long name, the first and the last
-  letter, a round stopped early, the typing test, Freetype.
+  letter, a round stopped early, Climb at a low and a high level.
 - Check what is next to the change, not only the element that was asked
   about.
 

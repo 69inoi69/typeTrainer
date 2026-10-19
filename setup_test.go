@@ -273,72 +273,74 @@ func TestApp_ResultsConsistency(t *testing.T) {
 	}
 }
 
-// Free practice: locked for a new user; the typing test opens it only at
-// 30 WPM and 97 %; its rounds go to their own history and never change the
-// letter statistics of learning; export/import carry it and reset clears it.
-func TestApp_FreeplayAndTest(t *testing.T) {
+// Climb, the second mode: open to everyone; a new round starts at the
+// user's level (LevelStart at first, then where the last round ended); a
+// portion typed well moves it up, one typed badly moves it down; capitals
+// and punctuation may be typed; its rounds go to their own history with
+// their level and never change the letter statistics of learning;
+// export/import carry it and reset clears it.
+func TestApp_Climb(t *testing.T) {
 	h, _, _ := newApp()
 	_, st := call(t, h, "GET", "/api/v1/freeplay/stats?lang=en", "")
-	if st["unlocked"] != false || st["testPassed"] != false {
+	if st["level"] != 0.2 || st["sessionCount"] != float64(0) {
 		t.Fatalf("new user: %v", st)
 	}
-	// the words of the test come from the full list (any letter)
 	code, out := call(t, h, "POST", "/api/v1/freeplay/portion?lang=en", `{"start":true}`)
-	if code != 200 || len(out["portions"].([]any)) != 3 || out["round"] != float64(5) {
-		t.Fatalf("freeplay portion: %d %v", code, out)
+	if code != 200 || len(out["portions"].([]any)) != 3 || out["round"] != float64(5) || out["level"] != 0.2 {
+		t.Fatalf("first portions: %d %v", code, out)
 	}
-	round := `{"wpm":55,"accuracy":99,"chars":150,"perSecond":[5,5,5,5,5,5,5,5]}`
-	if code, _ := call(t, h, "POST", "/api/v1/freeplay/results?lang=en", round); code != 403 {
-		t.Fatalf("locked freeplay results: %d, want 403", code)
+	_, up := call(t, h, "POST", "/api/v1/freeplay/portion?lang=en", `{"level":0.5,"accuracy":99,"wpm":70,"pace":70}`)
+	_, down := call(t, h, "POST", "/api/v1/freeplay/portion?lang=en", `{"level":0.5,"accuracy":85,"wpm":70,"pace":70}`)
+	if up["level"].(float64) <= 0.5 || down["level"].(float64) >= 0.5 {
+		t.Fatalf("thermostat: clean -> %v, mistakes -> %v", up["level"], down["level"])
 	}
-	// a failed test (too slow, then too inaccurate) changes nothing
-	for _, body := range []string{`{"wpm":29,"accuracy":100,"chars":150}`, `{"wpm":80,"accuracy":96,"chars":150}`} {
-		if _, out := call(t, h, "POST", "/api/v1/freeplay/test?lang=en", body); out["passed"] != false || out["unlocked"] != false {
-			t.Fatalf("failed test %s: %v", body, out)
-		}
+	if code, _ := call(t, h, "POST", "/api/v1/freeplay/portion?lang=en", `{"level":2}`); code != 400 {
+		t.Fatal("a level over 1 must be rejected")
 	}
-	if _, out := call(t, h, "POST", "/api/v1/freeplay/test?lang=en", `{"wpm":30,"accuracy":97,"chars":150}`); out["passed"] != true || out["unlocked"] != true {
-		t.Fatalf("passed test: %v", out)
-	}
-	if _, pl := call(t, h, "GET", "/api/v1/freeplay/stats?lang=pl", ""); pl["unlocked"] != false {
-		t.Fatal("the test of one language opened another")
-	}
+	// capitals and punctuation are fine in Climb's raw record
+	round := `{"wpm":55,"accuracy":99,"chars":150,"perSecond":[5,5,5,5,5,5,5,5],"level":0.64,
+		"keys":[{"char":"T","errors":0,"ms":200},{"char":",","errors":0,"ms":180},{"char":".","errors":1,"ms":300}]}`
 	if code, out := call(t, h, "POST", "/api/v1/freeplay/results?lang=en", round); code != 200 || out["consistency"] == nil {
-		t.Fatalf("freeplay results: %d %v", code, out)
+		t.Fatalf("results: %d %v", code, out)
+	}
+	if code, _ := call(t, h, "POST", "/api/v1/freeplay/results?lang=en", `{"wpm":55,"accuracy":99,"chars":10,"level":1.5}`); code != 400 {
+		t.Fatal("a level over 1 in a result must be rejected")
 	}
 	_, st = call(t, h, "GET", "/api/v1/freeplay/stats?lang=en", "")
 	_, learn := call(t, h, "GET", "/api/v1/stats?lang=en", "")
-	if st["sessionCount"] != float64(1) || learn["sessionCount"] != float64(0) {
-		t.Fatalf("histories mixed: freeplay %v, learning %v", st["sessionCount"], learn["sessionCount"])
+	if st["sessionCount"] != float64(1) || learn["sessionCount"] != float64(0) || st["level"] != 0.64 {
+		t.Fatalf("histories: climb %v (level %v), learning %v", st["sessionCount"], st["level"], learn["sessionCount"])
+	}
+	if _, next := call(t, h, "POST", "/api/v1/freeplay/portion?lang=en", `{"start":true}`); next["level"] != 0.64 {
+		t.Fatalf("the next round must start where the last one ended: %v", next["level"])
 	}
 	for _, k := range learn["keys"].([]any) {
 		if k.(map[string]any)["count"] != float64(0) {
-			t.Fatalf("freeplay changed the letter statistics: %v", k)
+			t.Fatalf("Climb changed the letter statistics: %v", k)
 		}
 	}
+	if _, pl := call(t, h, "GET", "/api/v1/freeplay/stats?lang=pl", ""); pl["sessionCount"] != float64(0) {
+		t.Fatal("the history of one language leaked into another")
+	}
 
-	// export -> reset -> import brings the flag and the history back
+	// export -> reset -> import brings the history and the level back
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, guestRequest("GET", "/api/v1/export?lang=en", ""))
 	file := rec.Body.String()
 	call(t, h, "POST", "/api/v1/reset?lang=en", "")
-	if _, st := call(t, h, "GET", "/api/v1/freeplay/stats?lang=en", ""); st["unlocked"] != false || st["sessionCount"] != float64(0) {
-		t.Fatalf("reset did not clear free practice: %v", st)
+	if _, st := call(t, h, "GET", "/api/v1/freeplay/stats?lang=en", ""); st["sessionCount"] != float64(0) || st["level"] != 0.2 {
+		t.Fatalf("reset did not clear Climb: %v", st)
 	}
 	if code, out := call(t, h, "POST", "/api/v1/import?lang=en", file); code != 200 {
 		t.Fatalf("import: %d %v", code, out)
 	}
-	if _, st := call(t, h, "GET", "/api/v1/freeplay/stats?lang=en", ""); st["unlocked"] != true || st["sessionCount"] != float64(1) {
-		t.Fatalf("import lost free practice: %v", st)
+	if _, st := call(t, h, "GET", "/api/v1/freeplay/stats?lang=en", ""); st["sessionCount"] != float64(1) || st["level"] != 0.64 {
+		t.Fatalf("import lost Climb: %v", st)
 	}
-}
-
-// Every letter unlocked in learning opens free practice without the test.
-func TestApp_FreeplayOpensWithAllLetters(t *testing.T) {
-	h, _, _ := newApp()
-	call(t, h, "POST", "/api/v1/progress?lang=uk", `{"unlockAll":true}`)
-	if _, st := call(t, h, "GET", "/api/v1/freeplay/stats?lang=uk", ""); st["unlocked"] != true || st["testPassed"] != false {
-		t.Fatalf("all letters open: %v", st)
+	// a file from the free practice days, with the typing test's flag: still loads
+	old := strings.Replace(file, `"freeplay":{`, `"freeplay":{"testPassed":true,`, 1)
+	if code, out := call(t, h, "POST", "/api/v1/import?lang=en", old); code != 200 {
+		t.Fatalf("old file: %d %v", code, out)
 	}
 }
 
@@ -648,8 +650,7 @@ func TestApp_RoundLengths(t *testing.T) {
 	if code, _ := call(t, h, "GET", "/api/v1/stats?lang=en&length=nope", ""); code != 400 {
 		t.Fatalf("unknown length in stats: %d", code)
 	}
-	// free practice keeps its own lengths
-	call(t, h, "POST", "/api/v1/freeplay/test?lang=en", `{"chars":150,"wpm":40,"accuracy":100}`)
+	// Climb keeps its own lengths
 	if code := round("/api/v1/freeplay/results?lang=en", "time-30", 60); code != 200 {
 		t.Fatalf("freeplay results: %d", code)
 	}

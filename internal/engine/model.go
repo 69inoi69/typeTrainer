@@ -42,6 +42,24 @@ type Params struct {
 
 	MasteryMinSamples int     // a letter needs this many samples before it can count as mastered
 	MasteryErrorRate  float64 // ...and a smoothed error rate at or below this
+	// Once mastered, a letter stays mastered until it is clearly worse
+	// (KeyStat.Held): one slip no longer takes it back (docs/ALGORITHM.md
+	// section 6). Values at or below the goal = no such margin.
+	KeepErrorRate float64 // a mastered letter stays mastered up to this error rate
+	KeepSlowdown  float64 // ...and up to TargetMs * (1 + KeepSlowdown)
+
+	// UnmasteredBonus is added to the difficulty of every open letter that
+	// is not mastered yet, for the focus and the word choice only: a letter
+	// that holds back the next one is practised more, even when it is only
+	// a little slow. Softmax ignores a shift that every letter gets, so it
+	// changes nothing while no letter is mastered.
+	UnmasteredBonus float64
+
+	// HomeBoost: when the unlock order is made, a letter under a resting
+	// finger (asdf jkl; on QWERTY) counts as this many times as frequent, so
+	// the first lessons sit on the home row (generator.go SetHome). 1 = plain
+	// frequency.
+	HomeBoost float64
 
 	StartLetters  int     // first lesson has at least this many letters
 	MinWords      int     // ...and enough letters to build at least this many real words
@@ -88,6 +106,9 @@ type KeyStat struct {
 	ErrEMA     float64 `json:"errEma"`     // smoothed probability of making a mistake
 	TimeEMA    float64 `json:"timeEma"`    // smoothed time per keypress, ms (clean presses only)
 	TimedCount int     `json:"timedCount"` // samples included in TimeEMA
+	// Held: the letter reached the goal (MeetsGoal) and has not been clearly
+	// worse since (KeepErrorRate, KeepSlowdown). Set by Update.
+	Held bool `json:"held,omitempty"`
 }
 
 // emaStep is the smoothing factor for the n-th sample (docs/ALGORITHM.md
@@ -119,6 +140,11 @@ func Update(s KeyStat, smp Sample, p Params) KeyStat {
 	if smp.Errors == 0 && smp.Ms > 0 && smp.Ms <= p.MaxIntervalMs {
 		s.TimedCount++
 		s.TimeEMA += emaStep(s.TimedCount, p.Alpha) * (smp.Ms - s.TimeEMA)
+	}
+	if s.Held {
+		s.Held = keeps(s, p)
+	} else {
+		s.Held = MeetsGoal(s, p)
 	}
 	return s
 }
@@ -176,16 +202,35 @@ func Difficulty(s KeyStat, p Params) float64 {
 	return (n*RawDifficulty(s, p) + k*p.PriorDifficulty) / (n + k)
 }
 
-// Mastered says whether a letter has reached the goal: enough samples,
+// MeetsGoal says whether a letter is at the goal right now: enough samples,
 // few mistakes, and at least target speed. This is a plain yes/no rule on
 // the raw numbers so it is easy to explain to a user ("type e at 30 WPM
 // with under 5% mistakes"). It uses the raw numbers, not Difficulty, so the
 // prior never holds a letter back once the data is there (docs/ALGORITHM.md
 // section 6).
-func Mastered(s KeyStat, p Params) bool {
+func MeetsGoal(s KeyStat, p Params) bool {
 	return s.Count >= p.MasteryMinSamples &&
 		s.ErrEMA <= p.MasteryErrorRate &&
 		s.TimedCount > 0 && s.TimeEMA <= p.TargetMs()
+}
+
+// keeps says whether a letter that was mastered stays mastered: it may get
+// a little worse than the goal, but not clearly worse. Without this margin
+// one mistake (ErrEMA jumps by Alpha = 0.1, over the 0.05 goal) took a
+// mastered letter back for about 7 presses, and the next letter waited until
+// every open letter happened to be clean at the same moment (the audit,
+// docs/ALGORITHM-AUDIT.md section 3.1).
+func keeps(s KeyStat, p Params) bool {
+	return s.ErrEMA <= max(p.KeepErrorRate, p.MasteryErrorRate) &&
+		s.TimedCount > 0 && s.TimeEMA <= p.TargetMs()*(1+max(0, p.KeepSlowdown))
+}
+
+// Mastered says whether a letter counts as mastered: it reached the goal
+// and has not been clearly worse since (Held), or it is at the goal now (a
+// letter from before Held existed). The next letter opens when every open
+// letter is mastered (generator.go NextUnlocked).
+func Mastered(s KeyStat, p Params) bool {
+	return s.Held || MeetsGoal(s, p)
 }
 
 // SoftmaxWeight turns difficulty into a selection weight:

@@ -117,8 +117,13 @@ func validateImport(in langExport, maxSessions, maxEvents, letters int, alphabet
 	if msg := validateSessions(in.Sessions, maxSessions, maxEvents, letters, alphabet, okLength); msg != "" {
 		return msg
 	}
+	for _, sess := range in.Sessions {
+		if sess.Level != 0 {
+			return "sessions: a learning round has no level"
+		}
+	}
 	if in.Freeplay != nil {
-		if msg := validateSessions(in.Freeplay.Sessions, maxSessions, maxEvents, letters, alphabet, okLength); msg != "" {
+		if msg := validateSessions(in.Freeplay.Sessions, maxSessions, maxEvents, letters, climbAlphabet(alphabet), okLength); msg != "" {
 			return "freeplay " + msg
 		}
 	}
@@ -140,6 +145,9 @@ func validateSessions(sessions []storage.Session, max, maxEvents, letters int, a
 		}
 		if sess.Unlocked < 0 || sess.Unlocked > letters {
 			return "sessions: unlocked out of range"
+		}
+		if !inRange(sess.Level, 0, 1) {
+			return "sessions: level out of range"
 		}
 		if !okLength(sess.Length) {
 			return "sessions: unknown length " + sess.Length

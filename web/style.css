@@ -174,7 +174,7 @@ input, textarea { user-select: text; -webkit-user-select: text; }
    like every other text (all capitals read as template chrome and are
    harder to read; owner, 2026-10-16: capitals only at the start). */
 .lbl-ui, .metric small, .stat .lbl, .tile small, .r-lbl,
-.panel-note, .heat-legend, .profile-field small, .profile-label, .intro-kicker {
+.panel-note, .profile-field small, .profile-label, .intro-kicker {
   font-family: var(--ui); font-size: .75rem; font-weight: 500; color: var(--sub);
 }
 /* buttons, menus, tooltips and guides: the plain font, normal case */
@@ -213,16 +213,16 @@ button, .tooltip, .hints, .rail small, .intro p, .intro h2, .account-msg,
 .opt-text small { font-size: .72rem; color: var(--sub); line-height: 1.35; }
 .opt-ctl { display: flex; gap: 6px; flex: none; }
 /* a segmented choice */
-.seg, .mode-filter {
+.seg {
   display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 2px; border-radius: var(--r-md);
   background: var(--panel); box-shadow: var(--ring);
 }
-.seg button, .mode-filter button {
+.seg button {
   display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px;
   background: none; color: var(--sub); font-size: .78rem; min-width: 34px; justify-content: center;
 }
-.seg button:hover, .mode-filter button:hover { background: none; color: var(--text); }
-.seg button[aria-pressed="true"], .mode-filter button[aria-selected="true"] {
+.seg button:hover { background: none; color: var(--text); }
+.seg button[aria-pressed="true"] {
   background: var(--accent-fill); color: var(--on-accent); box-shadow: 0 2px 10px -3px rgba(220, 160, 20, .55);
 }
 /* a plain button in a panel */
@@ -466,18 +466,7 @@ body.one-lang .lang-switch, body.one-lang .lang-hint { display: none; }
 /* bottom bar: the thumb's bar sits on the top edge of the chosen button */
 .rail .switch-thumb { top: -4px; left: 0; height: 2px; width: calc(100% / var(--n)); transform: translateX(calc(var(--i) * 100%)); }
 .rail .switch-thumb::after { left: calc(50% - 9px); width: 18px; height: 2px; }
-/* freetype: its icon, with a small lock while it is closed */
-.nav-switch .ico { position: relative; display: block; }
-.nav-switch .ico svg { width: 100%; height: 100%; }
-.nav-switch .lock {
-  position: absolute; right: -6px; bottom: -3px; width: 11px !important; height: 11px !important;
-  stroke-width: 2.4; display: none; color: var(--sub); background: var(--bg); border-radius: 3px;
-}
-.nav-switch .locked .lock { display: block; }
-.nav-switch .locked:not([aria-selected="true"]) .ico > svg:first-child { opacity: .55; }
-/* free practice has no letters to learn: their panels on the stats screen go */
-body[data-mode="free"] .learn-only { display: none; }
-/* freetype: no letters to learn, so their row takes no room and the text
+/* Climb: no letters to learn, so their row takes no room and the text
    comes right under the header (the slot under it stays for warnings) */
 body[data-mode="free"] .letter-row { display: none; }
 
@@ -526,14 +515,14 @@ body[data-mode="free"] .letter-row { display: none; }
 }
 /* The text starts at the same height on every tab, with or without the
    keyboard under it: centring it moved the text whenever the keyboard
-   came or went (Learn has it, Freetype hides it), and on a phone it left a
+   came or went (Learn has it, Climb hides it), and on a phone it left a
    big hole under the header. */
 #view-type { margin-block: clamp(4px, 3vh, 32px) auto; }
 .view { animation: view-in var(--med) var(--ease); }
 @keyframes view-in { from { opacity: 0; transform: translateY(6px); } }
 
 /* ---------- letters bar (unlock progress) ---------- */
-/* min-height = one chip: free practice shows no letters, and an empty row must
+/* min-height = one chip: Climb shows no letters, and an empty row must
    keep its height, or the keyboard below gets more room and grows (fitKeyboard) */
 .letter-row { display: flex; flex-wrap: nowrap; justify-content: center; gap: 5px; min-height: calc(.9rem * 1.75); }
 /* always one row: with many letters (Polish, Ukrainian, Russian: 32) the chips get narrower */
@@ -544,22 +533,34 @@ body[data-mode="free"] .letter-row { display: none; }
   transition: background var(--med), color var(--med), transform var(--med);
 }
 .chip.mastered { color: var(--text); }
+/* how close an open letter is to mastered (letters.js letterProgress): a
+   thin bar along the bottom of the chip, its weakest part of the rule;
+   gone once the tick comes. The tooltip says what it still needs. */
+.chip .prog {
+  position: absolute; left: 18%; right: 18%; bottom: 3px; height: 2px; border-radius: 2px;
+  background: color-mix(in srgb, var(--sub) 30%, transparent); pointer-events: none;
+}
+.chip .prog::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background: var(--accent); transform-origin: left; transform: scaleX(var(--p, 0));
+  transition: transform .5s var(--ease);
+}
+.chip.mastered .prog { display: none; }
+.chip.focus .prog { background: color-mix(in srgb, var(--on-accent) 25%, transparent); }
+.chip.focus .prog::after { background: var(--on-accent); }
 /* mastered: a small green tick in a dark round badge at the top right
    corner, so it stays visible on any chip, the yellow focus one too
    (owner, 2026-10-16: the plain green dot vanished on yellow).
    ::before is the badge, ::after the tick (a mask, so it takes var(--ok)). */
-.chip.mastered::before, .lchip.mastered::before {
+.chip.mastered::before {
   content: ""; position: absolute; top: -4px; right: -4px; width: 11px; height: 11px;
   border-radius: 50%; background: var(--bg); z-index: 1;
 }
-.chip.mastered::after, .lchip.mastered::after {
+.chip.mastered::after {
   content: ""; position: absolute; top: -2px; right: -2px; width: 7px; height: 7px; z-index: 2;
   background: var(--ok);
   -webkit-mask: var(--tick) center / contain no-repeat; mask: var(--tick) center / contain no-repeat;
 }
-/* the stats chips are big: the badge sits inside the corner */
-.lchip.mastered::before { top: 4px; right: 4px; }
-.lchip.mastered::after { top: 6px; right: 6px; }
 :root { --tick: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 12.5l5 5L20 6.5' fill='none' stroke='black' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 /* three states at a glance: open = a raised chip, focus = lit gold,
    locked = only an outline */
@@ -598,7 +599,7 @@ body[data-mode="free"] .letter-row { display: none; }
   color: var(--sub); font-size: .82rem; transition: opacity .4s var(--ease), transform var(--med) var(--ease);
 }
 .letters-caption::before { content: ""; width: 1px; height: 1.2em; margin-left: 4px; background: var(--line); }
-.letters-caption:empty { display: none; }       /* free practice: nothing to say */
+.letters-caption:empty { display: none; }       /* nothing to say */
 .text-box.blurred .letters-caption { opacity: .5; }
 .stat {
   display: inline-flex; align-items: center; gap: 7px; flex: none;
@@ -954,7 +955,10 @@ body[data-caret="outline"] .caret {
   content: ""; position: absolute; bottom: 18%; width: 28%; height: 2px;
   background: currentColor; border-radius: 2px; opacity: .7;
 }
-.key .lbl { position: relative; }
+.key .lbl { position: relative; transition: opacity .6s var(--ease); }
+/* a letter you have mastered fades from its key (letters.js): the fingers
+   know it, the eyes need not look down; the key itself and its colour stay */
+.keyboard .key.known:not(.next) .lbl { opacity: .14; }
 .key .alt {                           /* letter typed with AltGr, e.g. ą on the a key */
   position: absolute; right: 12%; bottom: 8%; font-size: .62em; opacity: .7;
 }
@@ -1103,7 +1107,6 @@ button:disabled:active { transform: none; }
 #view-stats.grow .tile:nth-child(5) { animation-delay: 120ms; }
 #view-stats.grow .tile:nth-child(6) { animation-delay: 150ms; }
 #view-stats.grow .panel { animation-delay: 100ms; }
-#view-stats.grow .stats-pair .panel { animation-delay: 160ms; }
 #view-stats.grow .chart .bar {
   transform-box: fill-box; transform-origin: 50% 100%;
   animation: bar-grow 480ms cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(140ms + var(--i, 0) * 6ms);
@@ -1124,6 +1127,8 @@ button:disabled:active { transform: none; }
 .tile .meta { display: flex; align-items: center; gap: 6px; min-height: 1.2em; font-size: .72rem; color: var(--sub); white-space: nowrap; }
 .tile b { display: block; font-size: 1.75rem; font-weight: 500; letter-spacing: -.02em; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1.05; }
 .tile.speed b { color: var(--accent-text); }   /* the speeds: best and recent */
+.tile.level b { color: var(--accent-text); }   /* Climb's level: where the next round starts */
+.tile.level { cursor: default; }
 .tile b i { font-style: normal; font-size: .55em; color: var(--sub); }   /* the % after a number */
 .tile small { display: block; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* how a "last 10" number moved against the 10 rounds before */
@@ -1142,7 +1147,6 @@ button:disabled:active { transform: none; }
    of N seconds, a cell per length: the length small, the best WPM big, the
    accuracy of that round under it. A cell is also the switch of the length
    shown below: the picked one gets a gold bar and its number turns gold. */
-.mode-filter { align-self: flex-start; }
 .pbs { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 4fr); gap: 14px; }
 .pb-group { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); padding: 6px; gap: 4px; }
 .pb {
@@ -1205,56 +1209,8 @@ button:disabled:active { transform: none; }
 /* The stats screen scrolls like a page (owner, 2026-10-18: fitting it all
    in one window was not worth it): the chart has a height of its own. */
 .chart:has(> .empty) { height: auto; }   /* no rounds yet: one line of text, not an empty half screen */
-/* free practice has no letters: the chart takes their room */
-body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
-/* the keyboard a little wider than the letters; one under the other on a narrow screen */
-.stats-pair { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; }
-@media (max-width: 860px) { .stats-pair { grid-template-columns: minmax(0, 1fr); } }
-
-/* ---------- stats: difficulty heatmap keyboard ---------- */
-/* grey keys (no finger colours), red only = how hard the letter is */
-/* the keys are as big as the panel's width allows (100cqw = the panel) */
-.heat-panel { container-type: inline-size; display: flex; flex-direction: column; }
-.heat-kb {
-  --u: min(46px, calc(100cqw / 13.8)); --hk: var(--panel-2);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(var(--u) * .12);
-  flex: 1; user-select: none; padding-top: 4px;
-}
-:root[data-theme="light"] .heat-kb { --hk: #eef0f3; }
-/* the letters bigger, bolder and in the text colour (owner, 2026-10-18:
-   "hardly anything is visible"), the same face as the drawn keyboard */
-.heat-kb .key.hk { font-family: "Geist Mono Keys", var(--mono); font-weight: 600; font-size: calc(var(--u) * .42); color: var(--text); }
-.heat-kb .key.hk:is(.locked, .none) { color: var(--sub); }
-.key.hk { background: var(--hk); border-bottom-color: color-mix(in srgb, var(--text) 10%, transparent); cursor: default; }
-/* the heat: from a faint gold (easy) through orange to red (hard); one
-   colour scale, so the eye reads "how hard" without a legend */
-.key.hk .heat {
-  position: absolute; inset: 0; pointer-events: none;
-  background: color-mix(in oklab, var(--error) calc(var(--heat, 0) * 100%), var(--accent));
-  opacity: calc(.12 + var(--heat, 0) * .8); transition: opacity .4s;
-}
-.key.hk:is(.nodata, .locked, .none) .heat { opacity: 0; }   /* nothing measured: no colour at all */
-.key.hk .alt { opacity: .8; }
-.key.hk:not(.none):hover { transform: translateY(-2px); }
-.key.hk.none { opacity: .3; }                          /* not a letter of this language */
-.key.hk.nodata, .key.hk.locked {                       /* dashed = nothing measured yet */
-  background: transparent; border-bottom-color: transparent;
-  outline: 1px dashed color-mix(in srgb, var(--sub) 80%, transparent); outline-offset: -1px;
-}
-.key.hk.locked { opacity: .45; }
-.key.hk.mastered::before {                             /* the same green tick as on the letter chips (keys are dark: no badge needed) */
-  content: ""; position: absolute; top: 3px; right: 3px; width: 8px; height: 8px; z-index: 1;
-  background: var(--ok); -webkit-mask: var(--tick) center / contain no-repeat; mask: var(--tick) center / contain no-repeat;
-}
-.heat-legend { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.heat-scale {
-  width: 60px; height: 6px; border-radius: 4px;
-  background: linear-gradient(to right, color-mix(in srgb, var(--accent) 25%, var(--panel)), var(--accent), #f08a2c, var(--error));
-}
-.heat-sample {
-  width: 11px; height: 11px; border-radius: 3px; margin-left: 10px;
-  outline: 1px dashed color-mix(in srgb, var(--sub) 80%, transparent); outline-offset: -1px;
-}
+/* the chart is the main thing below the tiles: it gets real height */
+.chart { height: clamp(200px, 50vh, 520px); }
 .panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin-bottom: 10px; }
 .panel h2 { font-size: .9rem; font-weight: 500; letter-spacing: -.01em; margin: 0; color: var(--text); }
 .empty { color: var(--sub); padding: 28px 0; text-align: center; }
@@ -1270,27 +1226,6 @@ body[data-mode="free"] .chart { height: clamp(200px, 50vh, 520px); }
 .chart .hit { fill: transparent; cursor: default; }
 .chart .bar.hover { fill: var(--text); }
 
-/* letter chips: the letter, a thin difficulty bar under it (--d: 0..1) */
-.letter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 6px; }
-.lchip {
-  position: relative; height: 50px; border-radius: var(--r-md); background: var(--panel-2); box-shadow: var(--lift); cursor: default;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
-  transition: transform var(--med) var(--ease), background var(--med);
-}
-.lchip:not(.locked):hover, .lchip:focus-visible { transform: translateY(-2px); background: color-mix(in srgb, var(--text) 6%, var(--panel)); }
-.lchip .ch { font-size: 1.05rem; font-weight: 500; line-height: 1; color: var(--text); }
-.lchip .meter {
-  width: 60%; height: 3px; border-radius: 2px; background: color-mix(in srgb, var(--text) 8%, transparent); position: relative; overflow: hidden;
-}
-/* the same scale as the heat keyboard: gold (easy) to red (hard) */
-.lchip .meter::after {
-  content: ""; position: absolute; inset: 0; width: calc(var(--d) * 100%); border-radius: 2px;
-  background: color-mix(in oklab, var(--error) calc(var(--d) * 100%), var(--accent));
-}
-.lchip.nodata .meter { background: none; outline: 1px dashed color-mix(in srgb, var(--sub) 60%, transparent); }
-.lchip.locked { background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 18%, transparent); }
-.lchip.locked .ch { color: color-mix(in srgb, var(--sub) 60%, transparent); }
-.lchip.locked .meter { visibility: hidden; }
 
 /* ---------- tooltip & toast ---------- */
 .tooltip {
@@ -1465,6 +1400,19 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
 .r-main b { color: var(--accent-text); font-weight: 500; }
 /* the test verdict at the row's right end, centred (owner, 2026-10-18) */
 .r-row > .r-main { text-align: center; }
+.r-num .trend { font-size: .5em; vertical-align: middle; margin-left: 6px; }
+/* learning: where the letters stand (result.js learnLetters), one line of
+   three parts: mastered, to practise (each with what it needs), next */
+.r-letters { display: flex; flex-wrap: wrap; gap: 10px 32px; font-size: 1rem; color: var(--sub); }
+.r-lp { display: flex; flex-direction: column; gap: 4px; }
+.r-lp .r-lbl { font-size: .85rem; }
+.r-lp .r-lbl [data-tip-text] { outline: none; cursor: default; text-decoration: underline dotted color-mix(in srgb, var(--sub) 60%, transparent); text-underline-offset: 4px; }
+.r-lv { display: flex; flex-wrap: wrap; gap: 4px 22px; }
+.r-li { display: inline-flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+.r-lp b { font-weight: 600; color: var(--text); font-size: 1.15rem; }
+.r-lp b.ok { color: var(--ok); letter-spacing: .12em; }
+.r-lp b.next { color: var(--accent-text); }
+.r-lp small { font-size: .85rem; }
 /* the words of the round in the text font, each coloured by its speed in
    this round (result.js speedBands): s1 slowest = red, through yellow, to
    s5 fastest = green; a mistyped letter is underlined in red. A long round
@@ -1665,8 +1613,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
      (owner, 2026-10-16). The text stays at the top: while you type, the
      phone's own keyboard covers the bottom half of the screen. */
   .chip { font-size: clamp(.8rem, 3.6vw, .95rem); flex: none; width: 1.6em; height: 1.6em; }
-  /* test / freetype: the note goes under the pill (it never changes during
-     the round, so the slot growing by a line does not make anything jump) */
+  /* Climb: the note goes under the level (one line more: nothing jumps,
+     the level changes only between portions) */
   .letters-caption:has(.mode-note) { flex-wrap: wrap; row-gap: 2px; }
   .letters-caption .mode-note { flex-basis: 100%; text-align: left; white-space: nowrap; }
   .letters-caption { gap: 12px; }
@@ -1823,8 +1771,6 @@ body.live-off .live .metric.num { display: none; }
 .cs.block { width: 8px; opacity: .4; }
 .cs.underline { width: 8px; background: linear-gradient(to top, currentColor 2px, transparent 2px); }
 .cs.outline { width: 8px; background: none; box-shadow: inset 0 0 0 1.5px currentColor; }
-/* the stats screen: whose stats and one round length at a time (.seg look) */
-.mode-filter:empty { display: none; }
 
 /* ---------- the quiet background (ambient.js) ---------- */
 /* Outlines of keycaps drifting down in the empty fields, behind everything

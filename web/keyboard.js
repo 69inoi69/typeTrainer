@@ -68,13 +68,17 @@ export function drawKeyboard() {
   }
 }
 
-// The key that types ch: its own key, or the base key for an AltGr letter.
-const keyFor = (ch) => S.keyEls[ch] || S.keyEls[S.altBase[ch]] || null;
+// The key that types ch: its own key, or the base key for an AltGr letter;
+// a capital (Climb) is typed on the key of its small letter.
+const baseOf = (ch) => { const lc = ch.toLowerCase(); return S.altBase[lc] ?? lc; };
+const keyFor = (ch) => S.keyEls[ch] || S.keyEls[baseOf(ch)] || null;
 
 // Which finger presses the next key: that finger lights up on the two
 // hands above the keyboard. Space = both thumbs; an AltGr letter = the right
-// thumb (holding AltGr) plus the finger of the base key. The same thing is
-// also written as a sentence, but only for screen readers.
+// thumb (holding AltGr) plus the finger of the base key; a capital (Climb)
+// = the finger of its key plus the little finger of the other hand, which
+// holds Shift (the touch typing rule). The same thing is also written as a
+// sentence, but only for screen readers.
 let nextKeyEl = null;
 let handFingers = {};      // finger id ("lp", ..., "thl", "thr") -> <i> on the hands
 let litFingers = [];       // fingers that are lit now
@@ -84,12 +88,13 @@ export function highlightNextKey() {
   for (const f of litFingers) f.classList.remove("on");
   litFingers = [];
   const ch = S.text[S.pos];
-  const base = S.altBase[ch] ?? ch;      // "ą" is typed on the "a" key
+  const base = ch === undefined ? ch : baseOf(ch);   // "ą" is typed on the "a" key, "A" too
   nextKeyEl = S.keyEls[base] || null;
   if (!nextKeyEl) { el.hint.innerHTML = "&nbsp;"; return; }
   nextKeyEl.classList.add("next");
   const fingerId = fingerOf[base];
   let ids = fingerId === "th" ? ["thl", "thr"] : [fingerId];
+  if (ch !== ch.toLowerCase()) ids.push(fingerId.startsWith("l") ? "rp" : "lp");   // Shift: the other hand
   const vars = { key: ch === " " ? t("key.space") : ch, base, finger: t(`finger.${fingerId}`) };
   if (S.altBase[ch]) {
     if (S.altgrEl) S.altgrEl.classList.add("next");
@@ -122,7 +127,7 @@ export function pulseKey(ch, ok) {
       { duration: FEEL.keyMissMs, easing: "ease-out" });
   }
   if (!FEEL.fingerTapPx) return;
-  const id = fingerOf[S.altBase[ch] ?? ch];
+  const id = fingerOf[baseOf(ch)];
   for (const f of id === "th" ? [handFingers.thl, handFingers.thr] : [handFingers[id]]) {
     const tap = `translate(calc(var(--dx) * var(--hu) * ${FEEL.fingerTapPx}), calc(var(--dy) * var(--hu) * ${FEEL.fingerTapPx}))`;
     f?.animate([{ transform: "none" }, { transform: tap }, { transform: "none" }],
@@ -144,15 +149,15 @@ export function glowKey(ch) {
 // through input.js): keyboard and hands together. Its size is not a
 // setting: it is always the largest that fits the window (fitKeyboard
 // below). Remembered in localStorage, separately
-// for learning (tt.kbHidden) and for free practice and the test
-// (tt.kbHidden.free): someone who comes to free practice can already type
-// without looking, so there the keyboard starts hidden.
+// for learning (tt.kbHidden) and for Climb (tt.kbHidden.free): someone who
+// comes to Climb can already type without looking, so there the keyboard
+// starts hidden.
 const kbKey = () => (S.mode === "learn" ? "tt.kbHidden" : "tt.kbHidden.free");
 
 // Read the saved choice of the current mode and show / hide the keyboard.
 // Touch screens never show it: you type with your thumbs on the phone's own
 // keyboard, which also covers this part of the screen (owner, 2026-10-16).
-// Never chosen yet: learning shows it, free practice hides it.
+// Never chosen yet: learning shows it, Climb hides it.
 // animate = true when the user switches the mode: it folds away smoothly.
 export function restoreKb(animate = false) {
   const saved = store.get(kbKey());

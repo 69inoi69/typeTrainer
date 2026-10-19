@@ -113,15 +113,11 @@ func testReset(t *testing.T, m Store) {
 	}
 }
 
-// Free practice has its own history and test flag, apart from learning and
-// per language; Reset clears them too.
+// Climb has its own history, apart from learning and per language, with
+// the level of each round; Reset clears it too.
 func testFreeplay(t *testing.T, m Store) {
-	if p, _ := m.TestPassed(u, "en"); p {
-		t.Fatal("a new language must start with the test not passed")
-	}
-	m.SetTestPassed(u, "en", true)
 	for _, w := range []float64{50, 60} {
-		m.AddFreeplaySession(u, "en", Session{WPM: w})
+		m.AddFreeplaySession(u, "en", Session{WPM: w, Level: w / 100})
 	}
 	m.AddSession(u, "en", Session{WPM: 20})
 
@@ -131,17 +127,15 @@ func testFreeplay(t *testing.T, m Store) {
 	if c, _ := m.SessionCount(u, "en", ""); c != 1 {
 		t.Fatalf("learning sessions = %d, want 1 (freeplay must not mix in)", c)
 	}
-	if got, _ := m.RecentFreeplaySessions(u, "en", "", 5); len(got) != 2 || got[0].WPM != 60 {
-		t.Fatalf("recent freeplay = %+v, want newest first", got)
+	if got, _ := m.RecentFreeplaySessions(u, "en", "", 5); len(got) != 2 || got[0].WPM != 60 || got[0].Level != 0.6 {
+		t.Fatalf("recent freeplay = %+v, want newest first, with its level", got)
 	}
-	if p, _ := m.TestPassed(u, "pl"); p {
-		t.Fatal("the test flag leaked into another language")
+	if c, _ := m.FreeplaySessionCount(u, "pl", ""); c != 0 {
+		t.Fatal("the history leaked into another language")
 	}
 	m.Reset(u, "en")
-	p, _ := m.TestPassed(u, "en")
-	c, _ := m.FreeplaySessionCount(u, "en", "")
-	if p || c != 0 {
-		t.Fatalf("after reset: passed=%v sessions=%d", p, c)
+	if c, _ := m.FreeplaySessionCount(u, "en", ""); c != 0 {
+		t.Fatalf("after reset: sessions=%d", c)
 	}
 }
 
@@ -151,17 +145,15 @@ func testUsersAreSeparate(t *testing.T, m Store) {
 	m.SaveKeyStats("ann", "en", map[string]engine.KeyStat{"e": {Count: 5}})
 	m.SetUnlocked("ann", "en", 9)
 	m.AddSession("ann", "en", Session{WPM: 40})
-	m.SetTestPassed("ann", "en", true)
 	m.AddFreeplaySession("ann", "en", Session{WPM: 70})
 
 	stats, _ := m.KeyStats("bob", "en")
 	unlocked, _ := m.Unlocked("bob", "en")
 	count, _ := m.SessionCount("bob", "en", "")
-	passed, _ := m.TestPassed("bob", "en")
 	free, _ := m.FreeplaySessionCount("bob", "en", "")
-	if len(stats) != 0 || unlocked != 0 || count != 0 || passed || free != 0 {
-		t.Fatalf("bob sees ann's data: stats=%v unlocked=%d sessions=%d passed=%v free=%d",
-			stats, unlocked, count, passed, free)
+	if len(stats) != 0 || unlocked != 0 || count != 0 || free != 0 {
+		t.Fatalf("bob sees ann's data: stats=%v unlocked=%d sessions=%d free=%d",
+			stats, unlocked, count, free)
 	}
 
 	m.SetUnlocked("bob", "en", 3)
@@ -269,7 +261,7 @@ func testSessionFields(t *testing.T, m Store) {
 // Every field of a letter comes back as it was stored, and SaveKeyStats
 // replaces the whole set (a letter left out is gone).
 func testKeyStatsFields(t *testing.T, m Store) {
-	k := engine.KeyStat{Count: 25, Mistakes: 3, ErrEMA: 0.0625, TimeEMA: 412.75, TimedCount: 20}
+	k := engine.KeyStat{Count: 25, Mistakes: 3, ErrEMA: 0.0625, TimeEMA: 412.75, TimedCount: 20, Held: true}
 	m.SaveKeyStats(u, "pl", map[string]engine.KeyStat{"ą": k, " ": {Count: 1}})
 	got, _ := m.KeyStats(u, "pl")
 	if len(got) != 2 || got["ą"] != k || got[" "].Count != 1 {

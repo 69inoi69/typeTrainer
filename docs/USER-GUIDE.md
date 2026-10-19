@@ -89,7 +89,7 @@ the normal server, it shows yours.
     with a person icon until you are logged in, then your picture and name);
   - **the navigation**: a column at the left edge of a wide window, a bar at
     the bottom of a narrow window or a phone. Two groups: the three screens
-    **Learn**, **Freetype** and **Stats**, then **Settings**.
+    **Learn**, **Climb** and **Stats**, then **Settings**.
     The chosen screen has a short yellow bar next to it.
   From your first keypress until the end of the round everything around the
   text steps back: the whole header fades, the logo a little less than the
@@ -98,19 +98,28 @@ the normal server, it shows yours.
   bright; what never changes (labels, menus, explanations) is quieter,
   labels small and grey. Everything uses one monospace font, Geist Mono,
   which comes with the app (it looks the same on every computer).
-- **Learn** and **Freetype** in the navigation choose the mode. **Learn** is
-  learning, the trainer: it picks words for your weak letters and opens new
-  ones. **Freetype** is free practice: words from the whole list, its own
-  history, and nothing changes in learning (nothing is shown above its
-  text). **stats** shows the statistics
-  of the mode you were in; once freetype is open, a small learn / freetype
-  switch on the stats screen changes the mode there too. Freetype opens when every letter is open, or
-  right away if you pass the **typing test**: while it is locked (a small
-  lock on its icon), clicking it starts the test, one round of 30 words at
-  30 wpm with 97% accuracy. Only a full round counts (`Esc` stops the test);
-  if it does not pass, the result's button says **Try again** and starts
-  the test once more (the Learn tab goes back to learning). The mode is
-  remembered per language.
+- **Learn** and **Climb** in the navigation choose the mode; both are open
+  to everyone, and the mode is remembered per language.
+  - **Learn** is for beginners: the trainer opens the letters one by one,
+    starting on the home row (`a s l d e f r` in English), and picks words
+    for your weak letters. Its progress is in plain sight, there is no stats
+    screen for it: in the row of letters every open letter has a thin bar of
+    how close it is to mastered (its weakest part: presses, mistakes or
+    speed), and its tooltip says its numbers and what it still needs
+    ("needs fewer mistakes, more speed"); the next letter's tooltip names
+    the letters still to master. On the keyboard the letter of a key you
+    have mastered fades away: your fingers know it, your eyes need not look.
+    After every round the result says which letters are mastered, which to
+    practise and why, and which letter comes next.
+  - **Climb** is for those who can already type: no letters to unlock, the
+    text simply gets harder as you get better. A level from 1 to 100 (shown
+    next to the numbers, with what it brings) goes up a little after every
+    line typed cleanly and steadily, and down when mistakes pile up. Higher
+    levels bring rarer words, then capitals (from level 35, Shift with the
+    other hand's little finger, the hands show it), then commas and full
+    stops (from level 55). The next round starts where the last one ended,
+    and the result shows the level and how far it moved.
+  **Stats** are Climb's: its rounds, its level and your activity.
 - **Settings** (`Esc`, or the gear in the navigation) opens one window in
   the middle of the screen. Typing filters it (search), `↑ ↓` pick a row,
   `← →` change its value, `Enter` presses a button, `Esc` closes it. On a
@@ -118,7 +127,7 @@ the normal server, it shows yours.
   - **round length**: 10, 20, 30, 40 or 50 words, or 15, 30, 60 or 90 seconds (default 30
     words). A words round ends with the last letter of its last word, a time
     round when the time is up; the counter in the text card shows the words
-    or the seconds left. The typing test is always 30 words.
+    or the seconds left.
   - **live speed** (wpm and accuracy while typing): on or off. A brand-new user does
     not see them until the first finished round (a beginner should not
     chase speed); then they appear and you can hide them again. The word
@@ -130,8 +139,8 @@ the normal server, it shows yours.
   - **theme**: dark (default) or light: a warm paper page with white cards,
     its own colours rather than the dark theme turned inside out.
   - **keyboard** (the keys and the hands): on or off (same as `Alt + K`; remembered
-    in your browser, separately for learning and for free practice / the
-    test, where they start hidden). Not on a phone or tablet: there you type
+    in your browser, separately for Learn and for Climb, where they start
+    hidden). Not on a phone or tablet: there you type
     on the device's own keyboard, so the option is not shown. There
     is no size setting: the keyboard is always as big as the window allows
     without making the page scroll.
@@ -174,8 +183,7 @@ the normal server, it shows yours.
   A mistake ends the streak and the badge goes away. New
   records, mastered letters and new letters still get a small confetti.
 - **While you type** the feedback is where your eyes already are: the focus
-  letter of each portion is tinted in the text, the letter under the caret
-  is a step brighter than the rest, and the numbers line changes once per
+  letter of each portion is tinted in the text, and the numbers line changes once per
   word (calm, not every key). A letter typed right turns white at once (as
   on monkeytype, nothing to slow the page down); a mistake makes the caret shrink, turn red
   and shake for a tenth of a second. The key on the drawn keyboard dips and
@@ -195,10 +203,12 @@ the normal server, it shows yours.
   under 5 seconds get none). Under them, smaller: Characters (right, wrong,
   extra and missed letters, for example `128/3/0/1`; hover for what each
   number is) and the Time of the round, from the first to the last press.
-  A new letter or letters mastered in this round are not written in the
-  result: the row of letters above it shows them (the new letter pops in,
-  mastered ones shine and get their tick, the next letter to open has a
-  gold dashed frame). Then which letters got faster
+  In Learn a line under them says where the letters stand: **Mastered**
+  (hover it for the rule), **To practise** with what each letter needs, and
+  the **Next letter**; the row of letters above shows the same (the new
+  letter pops in, mastered ones shine and get their tick, the next letter to
+  open has a gold dashed frame). In Climb the row of facts ends with the
+  **Level** and how far it moved in this round. Then which letters got faster
   or slower, as the time per press before and now (for example
   `s 320→250ms`), Faster on the left and Slower on the right, then the
   words of the round as you typed them, a letter that had a mistake
@@ -232,10 +242,10 @@ the normal server, it shows yours.
 - Behind Settings the page dims.
 - Shortcuts, also listed small at the bottom of the page: `Esc` stop /
   settings ·
-  `Shift + Tab` Learn / stats · `Alt + K` keyboard and hands on / off.
+  `Shift + Tab` typing / stats · `Alt + K` keyboard and hands on / off.
 - **Stats**: nothing on the page can be selected by dragging; instead the
-  stats screen has **image** (a PNG card with the five numbers, the speed of
-  the last 30 rounds and every letter, in the colours of the current theme).
+  stats screen has **image** (a PNG card with the five numbers and the speed
+  of the last 30 rounds of Climb, in the colours of the current theme).
   It takes what the screen shows.
 - The top line of the text card shows **wpm**, **raw** (every keypress counts,
   wrong ones too, like on monkeytype; only shown, never stored) and accuracy.

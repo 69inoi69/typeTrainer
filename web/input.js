@@ -1,6 +1,6 @@
 // Everything the user does with keys and buttons, sent to the module that
 // handles it: keydown and the phone input, the navigation (Type / Stats,
-// learning / free practice), the keyboard on / off choice of
+// learn / climb), the keyboard on / off choice of
 // the settings, window resize, the "stop" button of touch screens.
 // Layer: top. Imports anything; nothing imports it (app.js only loads it).
 // It holds almost no logic of its own: it decides WHO gets an action (an
@@ -11,7 +11,7 @@
 
 import { $, el, S, introOpen, isTouch, focusText } from "./state.js";
 import { applyKb, requestFit } from "./keyboard.js";
-import { refreshStats, renderStats, onStatsMode } from "./stats.js";
+import { refreshStats, renderStats } from "./stats.js";
 import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, stopRound, loadExercise, roundStarted, pauseRound, checkLayout, checkCaps } from "./typing.js";
 import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
@@ -84,18 +84,14 @@ function setView(name) {
 }
 el.tabStats.addEventListener("click", (e) => { e.currentTarget.blur(); setView("stats"); });
 
-// ---------- modes: type (learning) / freetype (free practice) ----------
-// While freetype is locked, its tab starts the typing test (modes.js).
+// ---------- modes: learn / climb ----------
 // A new mode starts a new round; a round already begun is dropped, as when
 // the language changes (learning keeps every portion sent so far).
-// The stats screen can switch the mode too (its own small switch, stats.js):
-// then it stays on the stats screen.
 // The result screen stays open until "new round", and the round counts as
 // busy until then. Going to another mode from there closes the result: the
 // ending round then loads its next text, already in the new mode. (Before,
 // the tabs ignored every click while a result was open somewhere.)
-function chooseMode(m, stay = false) {
-  if (m === "free" && !S.free?.unlocked) m = "test";
+function chooseMode(m) {
   if (m !== S.mode) {
     if (resultOpen()) {
       setMode(m);
@@ -109,21 +105,18 @@ function chooseMode(m, stay = false) {
       loadExercise().catch(console.error);
     }
   }
-  if (stay && m !== "test") renderStats();
-  else if (S.view !== "type") setView("type");
+  if (S.view !== "type") setView("type");
 }
 el.tabLearn.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("learn"); });
 el.tabFree.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("free"); });
-onStatsMode((m) => chooseMode(m, true));
 
 // ---------- settings: a new round length ----------
 // The stats follow the new length; a round not started yet is rebuilt with
-// it (a round already begun keeps its length to the end). The test always
-// has its own length.
+// it (a round already begun keeps its length to the end).
 onLengthChange(() => {
   refreshStats().catch(console.error);
   refreshFreeplay().then(() => { if (S.view === "stats") renderStats(); }).catch(console.error);
-  if (!roundStarted() && !S.busy && S.mode !== "test") loadExercise().catch(console.error);
+  if (!roundStarted() && !S.busy) loadExercise().catch(console.error);
 });
 
 // a new personal goal: only the stats screen shows it
