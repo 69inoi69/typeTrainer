@@ -745,14 +745,13 @@ body[data-mode="free"] .letter-row { display: none; }
 #view-type:has(> .text-box.paused) > :is(.hands, .keyboard) { opacity: .3; }
 .text-box.paused :is(.caret, .focus-hint) { opacity: 0; }
 
-/* A typed letter turns white when the caret passes it, not before: the
-   caret glides for --feel-caret-ms, so the colour changes part way through
-   that glide, half way by default (--feel-colour-at, FEEL.letterColourAt;
-   owner, 2026-10-18: the letter went white and only then the caret came). One change, delayed: no fade, nothing painted per frame (a
-   short warm glow on every typed letter was dropped for that: it painted
-   the whole text again on every frame). Only on the way to "typed": a
-   mistake (red) and Backspace show at once. */
-.text span.ok { color: var(--text); transition: color 0s linear calc(var(--feel-caret-ms, 0ms) * var(--feel-colour-at, .5)); }
+/* A typed letter turns white at the key press by default (FEEL.letterColourAt
+   = 0); it can wait for part of the caret's glide instead (--feel-colour-at:
+   0.5 = when the caret is half way). One change, no fade, nothing painted
+   per frame (a short warm glow on every typed letter was dropped for that:
+   it painted the whole text again on every frame). A mistake (red) and
+   Backspace always show at once. */
+.text span.ok { color: var(--text); transition: color 0s linear calc(var(--feel-caret-ms, 0ms) * var(--feel-colour-at, 0)); }
 /* No highlight on the letter under the caret: the caret marks it already,
    and a lit next letter jumped ahead of the gliding caret (owner,
    2026-10-19: "why is the next letter lit? remove it"). */
@@ -1097,6 +1096,7 @@ button:disabled:active { transform: none; }
    opens; a resize redraws without it): the tiles rise one after another,
    the panels follow, the bars grow from the baseline left to right. */
 #view-stats.grow .tile, #view-stats.grow .panel { animation: rise 280ms var(--ease) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
 #view-stats.grow .tile:nth-child(2) { animation-delay: 30ms; }
 #view-stats.grow .tile:nth-child(3) { animation-delay: 60ms; }
 #view-stats.grow .tile:nth-child(4) { animation-delay: 90ms; }
@@ -1387,26 +1387,14 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
   width: 100%;
   display: flex; flex-direction: column;
 }
-/* The result opens as one short sequence, not all at once: the numbers and
-   the chart first, then the row of facts, the words and the button (60 ms
-   apart, each a small rise); the speed counts up from 0 and the chart is
-   revealed from left to right, as if drawn. Under 0.7 s in all. */
-@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
-.r-top, .r-row, .r-wordlist, .r-foot { animation: rise 260ms var(--ease) both; }
-.r-row { animation-delay: 60ms; }
-.r-wordlist { animation-delay: 120ms; }
-.r-foot { animation-delay: 180ms; }
-.r-plot { animation: draw 600ms cubic-bezier(.4, 0, .2, 1) 80ms both; }
+/* The result simply fades in, all at once, after the last letter has shown
+   (typing.js finishRound, FEEL.resultHoldMs). No sequence, no count-up of
+   the speed, no chart drawing itself (owner, 2026-10-19: "just show the
+   result at once"). */
+.result:not([hidden]) { animation: fade 200ms var(--ease) both; }
 /* back from the stats to a result already seen: no entrance again
    (result.js settleResult), the letters row neither */
 #view-type.settled .result *, #view-type.settled .result, #view-type.settled .chip { animation: none; }
-@keyframes draw { from { clip-path: inset(-10px 100% -30px -12px); } to { clip-path: inset(-10px -12px -30px -12px); } }
-/* the count: a registered integer property animates from 0 to --to, and the
-   counter shows it (a browser without @property shows the final number) */
-@property --n { syntax: "<integer>"; inherits: false; initial-value: 0; }
-.r-count { --n: var(--to); counter-reset: n var(--n); animation: count-up 600ms cubic-bezier(.2, .8, .2, 1); font-variant-numeric: tabular-nums; }
-.r-count::after { content: counter(n); }
-@keyframes count-up { from { --n: 0; } }
 .result[hidden] { display: none; }
 .result p { margin: 0; }
 .r-body { display: flex; flex-direction: column; }

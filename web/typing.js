@@ -539,7 +539,7 @@ export function handleChar(ch) {
   }
   lastTime = now; afterBackspace = false; afterPause = false;
   // after lastTime: the time of the round ends with this keypress
-  if (roundOver) { finishRound(); return; }
+  if (roundOver) { placeCaret(false); finishRound(true); return; }   // the caret goes past the last letter too
   highlightNextKey();
   placeCaret(false);
 }
@@ -856,9 +856,14 @@ export function stopRound() {
 // or Esc): the numbers of the round go to the history, the result screen
 // shows what changed, then the next round starts. The time of the round
 // ends at its last keypress, so a stop with Esc does not lower the WPM.
-async function finishRound() {
+// byLastKey: it ended with its last letter; the finished text then stays
+// for FEEL.resultHoldMs (the last letter turns white, the caret arrives)
+// before anything changes. A plain wait before a screen change, not an
+// animation; S.busy keeps every key and the clock out of it.
+async function finishRound(byLastKey = false) {
   S.busy = true;
   const end = lastTime;
+  if (byLastKey && FEEL.resultHoldMs > 0) await new Promise((r) => setTimeout(r, FEEL.resultHoldMs));
   const wpm = Math.round(currentWpm(end) * 10) / 10;
   const accuracy = Math.round(currentAccuracy() * 10) / 10;
   // the live line keeps showing this result (in white) until the next
