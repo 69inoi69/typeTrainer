@@ -1387,11 +1387,22 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
   width: 100%;
   display: flex; flex-direction: column;
 }
-/* The result simply fades in, all at once, after the last letter has shown
-   (typing.js finishRound, FEEL.resultHoldMs). No sequence, no count-up of
-   the speed, no chart drawing itself (owner, 2026-10-19: "just show the
-   result at once"). */
-.result:not([hidden]) { animation: fade 200ms var(--ease) both; }
+/* The way to the result (owner, 2026-10-19: "keep something", but no
+   sequence, no count-up, no chart drawing itself): after the last letter
+   the finished text fades out in the second half of the wait
+   (FEEL.resultHoldMs, typing.js adds .ending), then the whole result comes
+   in at once, fading in while it rises a little (FEEL.resultIn*). */
+.text-box.ending .text {
+  opacity: 0;
+  transition: opacity calc(var(--feel-result-hold, 250ms) * .5) var(--ease) calc(var(--feel-result-hold, 250ms) * .5);
+}
+.text-box.ending .caret {   /* the same fade, and its glide to the end goes on */
+  opacity: 0;
+  transition: translate var(--feel-caret-ms, 0ms) var(--caret-curve),
+    opacity calc(var(--feel-result-hold, 250ms) * .5) var(--ease) calc(var(--feel-result-hold, 250ms) * .5);
+}
+.result:not([hidden]) { animation: result-in var(--feel-result-in, 320ms) var(--ease) both; }
+@keyframes result-in { from { opacity: 0; transform: translateY(var(--feel-result-rise, 12px)); } }
 /* back from the stats to a result already seen: no entrance again
    (result.js settleResult), the letters row neither */
 #view-type.settled .result *, #view-type.settled .result, #view-type.settled .chip { animation: none; }

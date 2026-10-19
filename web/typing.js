@@ -858,12 +858,17 @@ export function stopRound() {
 // ends at its last keypress, so a stop with Esc does not lower the WPM.
 // byLastKey: it ended with its last letter; the finished text then stays
 // for FEEL.resultHoldMs (the last letter turns white, the caret arrives)
-// before anything changes. A plain wait before a screen change, not an
-// animation; S.busy keeps every key and the clock out of it.
+// and fades out in its second half (class "ending", a CSS transition)
+// before the result comes. A plain wait before a screen change, not an
+// animation; S.busy keeps every key and the clock out of it. result.js
+// takes "ending" off when the result opens, the finally below otherwise.
 async function finishRound(byLastKey = false) {
   S.busy = true;
   const end = lastTime;
-  if (byLastKey && FEEL.resultHoldMs > 0) await new Promise((r) => setTimeout(r, FEEL.resultHoldMs));
+  if (byLastKey && FEEL.resultHoldMs > 0) {
+    el.textBox.classList.add("ending");
+    await new Promise((r) => setTimeout(r, FEEL.resultHoldMs));
+  }
   const wpm = Math.round(currentWpm(end) * 10) / 10;
   const accuracy = Math.round(currentAccuracy() * 10) / 10;
   // the live line keeps showing this result (in white) until the next
@@ -907,6 +912,7 @@ async function finishRound(byLastKey = false) {
     FX.toast(t("err.save"));
     loadExercise().catch(console.error);
   } finally {
+    el.textBox.classList.remove("ending");
     S.busy = false;
   }
 }

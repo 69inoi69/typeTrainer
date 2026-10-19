@@ -173,6 +173,7 @@ function open(body, btn) {
   box.hidden = false;
   el.viewType.classList.remove("settled");   // a new result plays its entrance
   el.textBox.classList.add("resulting");
+  el.textBox.classList.remove("ending");   // the faded text (typing.js finishRound) is hidden now anyway
   // phone: the round is over, so its keyboard closes and the whole result
   // is in view (owner, 2026-10-16); "Next round" opens it again
   if (isTouch()) el.input.blur();
