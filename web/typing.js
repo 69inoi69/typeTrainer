@@ -78,7 +78,6 @@ export function fitText() {
 // several calls in one frame (fast typing) cost a single layout read.
 // jump = true: move at once, without the glide (a new text, a resize).
 let caretFrame = 0;
-let curSpan = null;        // the letter under the caret (class "cur", a step brighter)
 export function placeCaret(jump) {
   cancelAnimationFrame(caretFrame);
   caretFrame = requestAnimationFrame(() => {
@@ -87,10 +86,6 @@ export function placeCaret(jump) {
     const extra = extras.get(S.pos)?.at(-1);
     const atEnd = S.pos >= spans.length || !!extra;
     const s = extra || spans[Math.min(S.pos, spans.length - 1)];
-    // the letter to type next: one class moves with the caret (setState
-    // rewrites a typed letter's class, so it never stays on one)
-    const cur = atEnd ? null : s;
-    if (cur !== curSpan) { curSpan?.classList.remove("cur"); cur?.classList.add("cur"); curSpan = cur; }
     breathe(el.textBox.classList.contains("typing"));
     const x = s.offsetLeft + (atEnd ? s.offsetWidth : 0);
     const h = s.offsetHeight;

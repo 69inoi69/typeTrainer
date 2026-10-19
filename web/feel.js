@@ -36,9 +36,9 @@ export const FEEL = {
   // the shape of that glide (CSS timing function): monkeytype's inOut(1.25),
   // matched within 0.2%, almost even; also carries the streak badge
   caretCurve: "cubic-bezier(.31, .16, .69, .84)",
-  // When the typed letter turns white and the next one lights up, as a part
-  // of the glide: 0 = at the key press, 1 = when the caret arrives. Half way
-  // reads as "the caret passes the letter" (owner, 2026-10-18 and -19).
+  // When the typed letter turns white, as a part of the glide: 0 = at the
+  // key press, 1 = when the caret arrives. Half way reads as "the caret
+  // passes the letter" (owner, 2026-10-18).
   letterColourAt: 0.5,
   lineScrollMs: 120,        // the text moving up a line (0 = at once)
 
