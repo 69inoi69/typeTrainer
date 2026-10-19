@@ -41,6 +41,12 @@ export const FEEL = {
   // passes the letter" (owner, 2026-10-18).
   letterColourAt: 0.5,
   lineScrollMs: 120,        // the text moving up a line (0 = at once)
+  // After the last letter of a round, the finished text stays this long
+  // before the result comes: the caret reaches the end and the last letter
+  // turns white first (owner, 2026-10-19: "the result starts before the last
+  // letter shows"). The round's time still ends at that key: this wait is
+  // not in the speed.
+  resultHoldMs: 250,
 
   // The key on the virtual keyboard answers a press: a short, soft dip.
   keyPressMs: 90,           // duration of the dip

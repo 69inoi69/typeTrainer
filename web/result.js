@@ -39,15 +39,10 @@ export const resultOpen = () => done !== null;
 //      chars: {correct, wrong, extra, missed}, seconds (typing.js roundFacts) }
 export function showResult(r) {
   // a number: a fixed label on top, the value under it; size "big" (the
-  // two main numbers) or "mid" (the row of facts)
-  // The hero number counts up from 0 when the result opens (style.css
-  // .r-count, a CSS animation of a registered number property): the counter
-  // is only drawn, the real value is there for screen readers.
-  const num = (value, unit, label, size, tip) => {
-    const shown = size.includes("hero")
-      ? `<span class="sr-only">${value}</span><span class="r-count" aria-hidden="true" style="--to:${value}"></span>` : value;
-    return `<span class="r-num ${size}"${tip ? ` tabindex="0" data-tip-text="${t(tip)}"` : ""}><span class="r-lbl">${t(label)}</span><b>${shown}<small>${unit}</small></b></span>`;
-  };
+  // two main numbers) or "mid" (the row of facts). Shown as it is: no count
+  // up from 0 (owner, 2026-10-19: "just show the result at once").
+  const num = (value, unit, label, size, tip) =>
+    `<span class="r-num ${size}"${tip ? ` tabindex="0" data-tip-text="${t(tip)}"` : ""}><span class="r-lbl">${t(label)}</span><b>${value}<small>${unit}</small></b></span>`;
 
   // 1. the top: speed and accuracy big on the left, the speed the biggest
   // ("hero": the one number to see first). No "new best" tag (owner,

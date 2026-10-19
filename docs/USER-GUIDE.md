@@ -181,9 +181,9 @@ the normal server, it shows yours.
   and shake for a tenth of a second. The key on the drawn keyboard dips and
   the finger that pressed it taps down with it. While you pause, the caret
   breathes (fades out and in) instead of blinking.
-- **The result** opens as one short sequence: the speed counts up from 0,
-  the word chart draws itself from left to right, then the facts, the words
-  and the button follow. **The stats screen** opens the same way: the tiles
+- **The result** comes a quarter of a second after the last letter (the
+  last letter turns white and the caret reaches the end first; this wait is
+  not in the speed) and simply fades in, all at once. **The stats screen** opens the same way: the tiles
   rise one after another and the bars grow from the baseline, but only when
   there is something new since you last looked; switching back and forth
   between the screens plays nothing again, and a result you come back to

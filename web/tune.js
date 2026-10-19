@@ -32,6 +32,7 @@ const KNOBS = [
   ]],
   ["tune.text", [
     ["lineScrollMs", 0, 400, 10],
+    ["resultHoldMs", 0, 1000, 10],
   ]],
   ["tune.keys", [
     ["keyPressMs", 0, 300, 10],
