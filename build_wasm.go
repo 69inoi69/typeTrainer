@@ -14,6 +14,8 @@ const accountsOn = false
 func behindProxy() bool { return false }
 
 // openStore: a browser has no database; the data lives in the page's memory.
+// pages/wasm-shim.js keeps a copy in IndexedDB (through /export and /import),
+// so the Go side needs nothing for that.
 func openStore() (storage.Store, error) {
 	return storage.NewMemoryStore(), nil
 }

@@ -46,8 +46,8 @@ Lublin University of Technology (2027).
 - **English only for now.** Polish, Ukrainian and Russian data is in the
   repository and comes back later.
 - **Accounts** work only when you run the server yourself (see below). The
-  website has no accounts and forgets your progress when you close the tab;
-  to keep it, use Export in Settings and Import it next time.
+  website has no accounts and keeps your progress in this browser; Export in
+  Settings moves it to another browser or computer.
 
 ## Run it locally
 
