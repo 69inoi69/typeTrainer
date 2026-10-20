@@ -863,9 +863,9 @@ body[data-caret="outline"] .caret {
 /* Each finger is a rounded bar in its finger color; the one to use lights up
    and lifts a little. Sizes follow the keyboard unit --u, so the hands grow
    and shrink with the keyboard. Every finger is its own layer (index.html):
-   the lift is the CSS "translate" and the tap (keyboard.js pulseKey) the
-   "transform", both moved by the graphics card, so they never fight and
-   never make the page paint again. */
+   the lift is the CSS "translate", moved by the graphics card. The finger
+   no longer taps or bounces on a keypress (measured, 2026-10-20: every
+   animation started per key made the typed letter show later). */
 .hands {
   display: flex; justify-content: center; align-items: flex-end; gap: calc(var(--u) * .9 * var(--feel-hand, 1));
   margin: 6px 0 8px; user-select: none; pointer-events: none;
@@ -908,14 +908,12 @@ body[data-caret="outline"] .caret {
 .hand .finger.on {
   /* along the finger: --dx/--dy is the way it points (index.html) */
   translate: calc(var(--dx) * var(--feel-finger-lift, -6) * var(--hu)) calc(var(--dy) * var(--feel-finger-lift, -6) * var(--hu));
-  animation: finger-on 260ms cubic-bezier(.3, 1.6, .5, 1);
 }
 /* an optional see-through outline (--feel-finger-glow, 0 = none) */
 .hand .finger.on .skin {
   fill: var(--fc); paint-order: stroke;
   stroke: color-mix(in srgb, var(--fc) 30%, transparent); stroke-width: var(--feel-finger-glow, 0);
 }
-@keyframes finger-on { from { translate: calc(var(--dx) * var(--hu)) calc(var(--dy) * var(--hu)); } }
 
 /* visually hidden, still read by screen readers (the finger sentence) */
 .sr-only {
@@ -929,6 +927,7 @@ body[data-caret="outline"] .caret {
    counted by fitKeyboard, keyboard.js) */
 .keyboard {
   display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * .12); user-select: none;
+  isolation: isolate;   /* the lit key (.lit, z-index 1) stays under the hands */
   width: max-content; max-width: 100%; margin-inline: auto; padding: 10px 12px 12px;
   border-radius: var(--r-lg); background: color-mix(in srgb, var(--panel) 55%, transparent); box-shadow: var(--ring);
 }
@@ -965,11 +964,11 @@ body.kb-nofit :is(#keyboard, #hands) { display: none; }
 .key .lbl { position: relative; transition: opacity .6s var(--ease); }
 /* a letter you have mastered fades from its key (letters.js): the fingers
    know it, the eyes need not look down; the key itself and its colour stay */
-.keyboard .key.known:not(.next) .lbl { opacity: .14; }
+.keyboard .key.known .lbl { opacity: .14; }
 .key .alt {                           /* letter typed with AltGr, e.g. ą on the a key */
   position: absolute; right: 12%; bottom: 8%; font-size: .62em; opacity: .7;
 }
-.key.next .alt { opacity: 1; }
+.key > .lit .alt { opacity: 1; }
 .key.mod .lbl { font-size: .8em; }
 /* locked: dark, with a faint edge and a dim label (not see-through: that looked washed out) */
 .key.locked:not(.next) {
@@ -1007,16 +1006,37 @@ body.kb-nofit :is(#keyboard, #hands) { display: none; }
    So it is the one key in its full finger colour: much brighter than the
    dark keys around it (deeper than the pale ones on the light page),
    raised a little (FEEL.nextKeyLiftPx) and glowing in the same colour as
-   the finger above (owner, 2026-10-18: a white key showed no colour). */
-.keyboard .key.next {
+   the finger above (owner, 2026-10-18: a white key showed no colour).
+   That look is drawn once on every key, in a layer of its own over it
+   (.lit, keyboard.js addLit), and only shown on the next key: switching
+   it is a change of opacity the graphics card does alone, the keys are
+   never painted again while you type (measured, 2026-10-20). The key under
+   it never changes, so its own rules here do not depend on .next. */
+.keyboard .key { overflow: visible; }   /* the glow of .lit reaches past the key */
+.keyboard .key > .lit {
+  position: absolute; inset: 0; z-index: 1;   /* above the neighbouring keys too */
+  display: flex; align-items: center; justify-content: center; padding-bottom: var(--skirt);
+  border-radius: inherit; font-style: normal; pointer-events: none;
   color: #15161a; translate: 0 var(--feel-next-lift, -3px);
   background: radial-gradient(120% 90% at 50% 30%, rgba(255, 255, 255, .35), transparent 60%), var(--fc);
   box-shadow:
     inset 0 calc(-1 * var(--skirt)) 0 color-mix(in srgb, var(--fc) 60%, #0b0c0f),
     0 0 0 2px color-mix(in srgb, var(--fc) 60%, transparent),
     0 8px 22px -4px color-mix(in srgb, var(--fc) 55%, transparent);
+  /* when its key is pressed the light sinks a little and goes out (a dip
+     of FEEL.keyPress*): opacity and scale of a layer of its own, which the
+     graphics card animates alone; it comes on at once (no transition in
+     the .next state) */
+  opacity: 0; scale: var(--feel-key-press-scale, .96); will-change: opacity, scale;
+  transition: opacity var(--feel-key-press-ms, 90ms) ease-out, scale var(--feel-key-press-ms, 90ms) cubic-bezier(.2, .8, .2, 1);
 }
-.keyboard .key.locked:not(.next) {
+.keyboard .key.next > .lit { opacity: 1; scale: 1; transition: none; }
+.keyboard .key.wide > .lit, .keyboard .key.mod > .lit { font-size: .8em; text-transform: none; }
+.keyboard .key.home > .lit::after {   /* the bump on F and J, as on the key */
+  content: ""; position: absolute; bottom: 22%; width: 28%; height: 2px;
+  background: currentColor; border-radius: 2px; opacity: .7;
+}
+.keyboard .key.locked {
   color: color-mix(in srgb, var(--sub) 70%, var(--bg));
   background: linear-gradient(to bottom, rgba(255, 255, 255, .025), rgba(0, 0, 0, .06)), color-mix(in srgb, var(--fc) 3%, var(--bg));
   box-shadow:
@@ -1031,21 +1051,21 @@ body.kb-nofit :is(#keyboard, #hands) { display: none; }
 :root[data-theme="light"] :is(.keyboard, .intro) .key, :root[data-theme="light"] .hand .finger {
   --fcd: color-mix(in oklab, var(--fc) 72%, #1d1428);
 }
-:root[data-theme="light"] :is(.keyboard, .intro) .key:not(.next) {
+:root[data-theme="light"] :is(.keyboard, .intro) .key {
   color: var(--text);
   background: radial-gradient(120% 90% at 50% 30%, rgba(255, 255, 255, .35), transparent 60%), color-mix(in srgb, var(--fc) 62%, #fff);
   box-shadow:
     inset 0 calc(-1 * var(--skirt)) 0 var(--fcd), inset 0 1px 0 rgba(255, 255, 255, .6), inset 0 0 0 1px rgba(30, 32, 40, .10),
     0 2px 0 rgba(40, 35, 20, .18), 0 6px 12px -6px rgba(40, 35, 20, .35);
 }
-:root[data-theme="light"] .keyboard .key.locked:not(.next) {
+:root[data-theme="light"] .keyboard .key.locked {
   color: color-mix(in srgb, var(--sub) 85%, var(--bg));
   background: linear-gradient(to bottom, #fff, #f3f4f6);
   box-shadow:
     inset 0 calc(-1 * var(--skirt)) 0 color-mix(in srgb, var(--fc) 45%, #fff), inset 0 0 0 1px rgba(30, 32, 40, .10),
     0 2px 0 rgba(40, 35, 20, .12);
 }
-:root[data-theme="light"] .keyboard .key.next {
+:root[data-theme="light"] .keyboard .key > .lit {
   color: #fff;   /* the deep shade of its colour among the pale ones */
   background: radial-gradient(120% 90% at 50% 30%, rgba(255, 255, 255, .18), transparent 60%), var(--fcd);
   box-shadow:

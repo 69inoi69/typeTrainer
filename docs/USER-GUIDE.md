@@ -197,8 +197,8 @@ the normal server, it shows yours.
   letter of each portion is tinted in the text, and the numbers line changes once per
   word (calm, not every key). A letter typed right turns white at once (as
   on monkeytype, nothing to slow the page down); a mistake makes the caret shrink, turn red
-  and shake for a tenth of a second. The key on the drawn keyboard dips and
-  the finger that pressed it taps down with it. While you pause, the caret
+  and shake for a tenth of a second. The lit key on the drawn keyboard dips
+  a little as its light goes out, and the next key and finger light up. While you pause, the caret
   breathes (fades out and in) instead of blinking.
 - **The result** comes a quarter of a second after the last letter: the
   caret reaches the end, the finished text fades out (this wait is not in

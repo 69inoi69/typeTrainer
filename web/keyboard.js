@@ -51,6 +51,7 @@ export function drawKeyboard() {
     rowEl.style.paddingLeft = `calc(var(--u) * ${S.layout.offsets?.[i] ?? 0})`;
     for (const k of row) {
       const key = makeKey(k);
+      addLit(key);
       rowEl.appendChild(key);
       if (k.modifier) { S.altgrEl = key; continue; }
       S.keyEls[k.char] = key;
@@ -66,6 +67,24 @@ export function drawKeyboard() {
     f.style.setProperty("--fc", S.layout.fingers[id.startsWith("th") ? "th" : id].color);
     handFingers[id] = f;
   }
+}
+
+// The lit look of a key (the next key to press), drawn once, under the
+// key's own legend, in a layer of its own that stays invisible (style.css
+// .keyboard .key > .lit). Lighting a key only turns that layer's opacity on:
+// the graphics card shows it, nothing is painted again. Before, the key
+// itself changed colour, glow and height on every keypress, which painted
+// the keyboard again and made a layer for the lift every time (measured,
+// 2026-10-20: about a third of the work of a keypress with the keyboard on).
+// It is a copy of the key's legend because it covers the key.
+function addLit(key) {
+  const lit = document.createElement("i");
+  lit.className = "lit";
+  lit.setAttribute("aria-hidden", "true");
+  lit.textContent = key.querySelector(".lbl").textContent;
+  const alt = key.querySelector(".alt");
+  if (alt) lit.appendChild(alt.cloneNode(true));
+  key.appendChild(lit);
 }
 
 // The key that types ch: its own key, or the base key for an AltGr letter;
@@ -109,30 +128,20 @@ export function highlightNextKey() {
   }
 }
 
-// Key feedback with the Web Animations API: runs on the compositor and
-// needs no class juggling or layout reads, so it costs almost nothing.
-// The finger that pressed the key taps down with it (FEEL.fingerTap*), back
-// along the way it points (--dx/--dy, in units of the drawing, --hu): it
-// animates "transform", so the lift of the finger to use ("translate") is
-// not touched.
+// A wrong key gets a quick red tint in the theme's --error (FEEL.keyMiss*,
+// Web Animations API). A right key needs nothing here: it was the lit one,
+// and its light sinks away as the next key lights up (style.css .lit,
+// FEEL.keyPress*). Before, every keypress started 5-7 animations (a dip of
+// the key, a tap and a bounce of the finger, lifts): they made the typed
+// letter show one or two frames later (measured, 2026-10-20).
+// Nothing to do while the keyboard is off.
 export function pulseKey(ch, ok) {
+  if (ok || S.kbHidden) return;
   const k = keyFor(ch);
   if (!k || !k.animate || reducedMotion()) return;
-  if (ok) {   // a short, soft press (knobs: FEEL.keyPress*)
-    k.animate([{ transform: `translateY(1px) scale(${FEEL.keyPressScale})` }, { transform: "none" }],
-      { duration: FEEL.keyPressMs, easing: "cubic-bezier(.2,.8,.2,1)" });
-  } else {    // the wrong key gets a quick red tint in the theme's --error (FEEL.keyMiss*)
-    const red = `color-mix(in srgb, ${themeColor("--error")} ${Math.round(FEEL.keyMissAlpha * 100)}%, transparent)`;
-    k.animate([{ boxShadow: `inset 0 0 0 999px ${red}` }, { boxShadow: "inset 0 0 0 999px transparent" }],
-      { duration: FEEL.keyMissMs, easing: "ease-out" });
-  }
-  if (!FEEL.fingerTapPx) return;
-  const id = fingerOf[baseOf(ch)];
-  for (const f of id === "th" ? [handFingers.thl, handFingers.thr] : [handFingers[id]]) {
-    const tap = `translate(calc(var(--dx) * var(--hu) * ${FEEL.fingerTapPx}), calc(var(--dy) * var(--hu) * ${FEEL.fingerTapPx}))`;
-    f?.animate([{ transform: "none" }, { transform: tap }, { transform: "none" }],
-      { duration: FEEL.fingerTapMs, easing: "cubic-bezier(.2,.8,.2,1)" });
-  }
+  const red = `color-mix(in srgb, ${themeColor("--error")} ${Math.round(FEEL.keyMissAlpha * 100)}%, transparent)`;
+  k.animate([{ boxShadow: `inset 0 0 0 999px ${red}` }, { boxShadow: "inset 0 0 0 999px transparent" }],
+    { duration: FEEL.keyMissMs, easing: "ease-out" });
 }
 
 // A letter just opened: its key glows once with a soft ring in the theme's
