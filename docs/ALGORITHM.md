@@ -330,6 +330,7 @@ one letter at a time, but never on the same one for long.
 D(word)   = average difficulty of the word's letters (each occurrence counts)
 F(word)   = RankPenalty^(max(0, rank(word) - MaxRank) / RankStep)
 P(word)  ~ exp(D(word) / T) * F(word) * RepeatPenalty^(uses in the last RecentWords words)
+P(word)  = 0 when it was used MaxRepeats times in the round (and for the word just before or after)
 ```
 
 Among words that contain the focus letter, the ones that also contain other weak
@@ -391,7 +392,7 @@ words or an hour at 30 WPM; then the penalty is gone. Choices behind this:
 
   With `FloorWords = 10`, the 10 most common words of such a letter come
   freely (all of its words if it has fewer). A portion has 6 words and the
-  repeat penalty looks at the last 20, so 10 words fill a portion without a
+  repeat penalty looks at the last 24, so 10 words fill a portion without a
   repeat. The words are counted in the whole list, not only among the open
   words: in the first lessons every letter has few open words, and counting
   only those would let rare words in exactly where common ones matter most
@@ -412,10 +413,34 @@ words or an hour at 30 WPM; then the penalty is gone. Choices behind this:
   them among the 200 most common), so a hard limit would leave the user with
   a handful of words. The penalty only makes the common ones much more likely.
 - `RankPenalty` outside `(0, 1)` or `RankStep <= 0` turns the penalty off.
-  A word list shorter than `RankStart` gets no penalty at all. `RepeatPenalty = 0.3` makes a word that was used in the
-last `RecentWords = 20` words of the stream unlikely, and the same word never
-appears twice in a row (also across the border of two portions). If the
-focus letter has too few words, a word without it is taken.
+  A word list shorter than `RankStart` gets no penalty at all.
+
+**No word too often.** `RepeatPenalty = 0.3` makes a word that was used in
+the last `RecentWords = 24` words of the round unlikely (24 plus the 6 of the
+portion being built: the whole round of 30), and the same word never appears
+twice in a row (also across the border of two portions). On top of the
+penalty, a hard cap: a word used `MaxRepeats = 2` times in that window is not
+picked again. When the cap leaves the focus letter no word, the slot takes
+any open word by the same weights (`D`, `F` with the general `MaxRank`, the
+penalty), so the round still trains the focus letter in most of its words
+but no word comes a third time. Why (owner, 2026-10-20): the penalty alone is
+weak when a letter has few words. English `z` and `q` have 10 words each in
+the whole list, and a round focused on them showed only 10 different words in
+30 (`pizza` 6 times, `size` 5); common short words repeated 4 times too (`an`,
+`in`, `too`). With the cap a round on `z` or `q` has about 20 different words.
+The price is measured in 11.1: the focus letter gets fewer words when its
+words run out, so reaching the goal takes a few percent more typing. Only a
+dictionary too small for both rules relaxes them (first the cap, then
+"not twice in a row").
+
+**No one-letter words.** Words shorter than `MinWordLetters = 2` are left
+out of learning when the generator is made (`NewGenerator`): English `a` and
+`i`, Polish `w`, `z`, `o`, `u`, Russian `я`, `в`, `и`. They are among the most common words
+of every list, so they came up often, and a lone letter is not a word to
+practise (owner, 2026-10-20: "filler"). They are left out before anything is
+counted, so they take no part in the unlock order, the first lesson or the
+ranks. The word lists keep them (section 12): Climb and Freetype draw from
+their own lists and are not affected.
 
 **Mistyped words come back.** Words the user typed with a mistake (a wrong or
 extra letter, or skipped letters; a mistake fixed with Backspace counts too)
@@ -491,10 +516,12 @@ All in `internal/config/config.go`.
 | `HomeBoost` | 4 | a resting key counts this many times as frequent in the unlock order | the smallest boost that starts English with the home row and `f` (section 6) |
 | `StartLetters` / `MinWords` | 6 / 30 | first lesson | enough variety from the first minute |
 | `RepeatPenalty` | 0.3 | less repetition of recent words | variety |
+| `MaxRepeats` | 2 | a word comes at most this many times in a round | the penalty alone let a rare letter's 10 words come 5-6 times in 30 (section 7); 2 still lets a mistyped word come back |
+| `MinWordLetters` | 2 | shorter words never appear in learning | `a`, `i`, `в` are filler, not practice (section 7) |
 | `ExerciseWords` | 20 | words per exercise of the earlier strategy (`Next`), and the unit of the simulation | short loop, model updates often |
 | `PortionWords` | 6 | words per portion of the stream, one focus letter each | about one line: the model reacts after every line, the focus changes often enough not to bore |
 | `AheadPortions` | 2 | portions waiting after the one being typed | about two lines to read ahead; fewer would leave the window half empty |
-| `RecentWords` | 20 | the repeat penalty looks at this many last words | the same window as one exercise had |
+| `RecentWords` | 24 | the repeat penalty and the cap look at this many last words | with the portion being built (6), a whole round of 30; was 20, the window of one exercise |
 | `RetryWords` | 2 | most mistyped words put back into one portion | at most a third of a portion is repetition |
 | `RoundPortions` | 5 | portions per round (30 words), one result in the history | chosen by the owner: a clear end; about 1-2 minutes for a beginner, 20 seconds for a fast typist |
 | `RankStart` | 200 | words up to this frequency rank come without a penalty until every letter is open | the size of monkeytype's smallest list ("English 200"): the core words of a language |
@@ -785,6 +812,38 @@ and after the three changes of sections 6 and 7 together:
 - **The expert is unchanged** within the spread (every letter is mastered
   from the start, so neither the margin nor the bonus acts).
 
+**No one-letter words, at most two uses of a word per round (2026-10-20).**
+The same simulation (20 typists per strategy), the stream before and after
+`MinWordLetters = 2` and `MaxRepeats = 2` (with `RecentWords` 20 → 24), and
+with only the first of them (cap off) to tell the two apart:
+
+| Language | Stream | Exercises to the goal (median / mean) | All letters open | Variety, first 30 (dist / rep / top) | Letters per word, first 30 |
+|---|---|---|---|---|---|
+| en | before | 122 / 127 | 106 | 77 / 43 / 84 | 3.7 |
+| en | no one-letter words only | 123 / 123 | 107 | 77 / 42 / 85 | 3.8 |
+| en | both (configured) | 134 / 133 | 108 | 79 / 40 / 86 | 3.9 |
+| ru | before | 175 / 176 | 154 | 73 / 47 / 78 | 3.4 |
+| ru | both (configured) | 183 / 185 | 154 | 76 / 45 / 80 | 3.8 |
+
+- **Leaving out one-letter words changes nothing measurable** in English
+  (within the spread); the words get a little longer, because `a` and `i`
+  were among the most frequent. In Russian the first lessons lose the
+  one-letter words (`я`, `в`, `и`, `с`, `у`, `а`, `о`, `к`), so the words
+  get 0.4 letters longer.
+- **The cap costs 5-9 % more typing to the goal** (en 123 → 134 median,
+  ru 175 → 183), while the moment the last letter opens stays the same. The
+  cost sits at the end: when the last, rarest letters (`j`, `x`, `z`, `q`)
+  are the focus, their words run out and a third of the round goes to other
+  letters, so they collect presses more slowly. `MaxRepeats = 3` (tried)
+  costs nothing measurable (122 / 127) but lets a word come three times in
+  a round; 2 is configured for variety, the complaint that started this.
+- **The averages move little** (`dist` +2-3 points, `rep` -2-3): over the
+  first 30 exercises most words were not repeated anyway. The cap acts where
+  the averages do not look: per round, a rare letter's round goes from ~10 to
+  ~20 different words in 30, and no word comes more than twice (counted with
+  the configured generator, every letter mastered but the newest).
+- The expert is unchanged within the spread.
+
 Limits: the typist is invented. Letters do not influence each other, there is
 no forgetting, and learning is the same exponential curve for every letter. The
 simulation compares strategies under the same assumptions; it does not predict
@@ -816,6 +875,7 @@ documents every filtering step:
 1. lowercase; Russian ё → е;
 2. only words made of the language's alphabet;
 3. one-letter words only if they are real words (en: a, i; pl: a, i, o, u, w, z; ...);
+   learning leaves even those out (`MinWordLetters`, section 7), the lists keep them;
 4. no tokens without a vowel (encoding garbage in the source);
 5. Ukrainian: drop words more than 1.6× more frequent in the Russian list
    (Ukrainian subtitles contain a lot of Russian text; known Russian words fall

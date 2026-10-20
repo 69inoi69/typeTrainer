@@ -141,6 +141,7 @@ func rampParams() Params {
 	p := testParams
 	p.StartLetters, p.MinWords = 2, 1
 	p.RankStart, p.RankStep = 50, 50
+	p.MinWordLetters = 0 // the made-up lists below count their one-letter words
 	return p
 }
 

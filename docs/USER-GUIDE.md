@@ -111,6 +111,8 @@ the normal server, it shows yours.
     have mastered fades away: your fingers know it, your eyes need not look.
     After every round the result says which letters are mastered, which to
     practise and why, and which letter comes next.
+    The words are real words, never one letter alone (`a`, `i`), and no
+    word comes more than twice in a round.
   - **Climb** is for those who can already type: no letters to unlock, the
     text simply gets harder as you get better. A level from 1 to 100 (shown
     next to the numbers, with what it brings) goes up a little after every

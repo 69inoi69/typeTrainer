@@ -99,6 +99,7 @@ func TestPortion_RetryWordsComeBack(t *testing.T) {
 func TestPortion_RecentWindow(t *testing.T) {
 	p := testParams
 	p.PortionWords = 1
+	p.MaxRepeats = 0 // only the penalty: with the cap the filler would ban ab and ba
 	words := strings.Fields("ab ba aab")
 	count := func(recent []string) int {
 		hit := 0
@@ -110,15 +111,16 @@ func TestPortion_RecentWindow(t *testing.T) {
 		}
 		return hit
 	}
-	used := []string{"aab", "aab", "aab", "ab"}                 // aab used 3 times recently
-	old := append(append([]string{}, used...), make20("ba")...) // the same, but long ago
+	used := []string{"aab", "aab", "aab", "ab"}                                // aab used 3 times recently
+	old := append(append([]string{}, used...), filler("ba", p.RecentWords)...) // the same, but long ago
 	if a, b := count(used), count(old); a >= b {
 		t.Fatalf("recent uses should lower the chance: %d (recent) vs %d (old)", a, b)
 	}
 }
 
-func make20(w string) []string {
-	out := make([]string, 20)
+// filler: n words, w and "ab" by turns.
+func filler(w string, n int) []string {
+	out := make([]string, n)
 	for i := range out {
 		if i%2 == 0 {
 			out[i] = w
@@ -127,6 +129,59 @@ func make20(w string) []string {
 		}
 	}
 	return out
+}
+
+// MaxRepeats: in a whole round no word comes more than twice, even for a
+// focus letter with only two words (here c: "cab" and "abc"); the slots
+// those two cannot fill take other open words.
+func TestPortion_MaxRepeatsInARound(t *testing.T) {
+	p := testParams
+	p.StartLetters, p.MinWords = 3, 1
+	words := append(abWords()[2:62], "cab", "abc") // a and b words of 2..5 letters
+	// c is the only letter not mastered: it is the focus of every portion
+	good := KeyStat{Count: 100, ErrEMA: 0.01, TimeEMA: 300, TimedCount: 100, Held: true}
+	stats := map[string]KeyStat{"a": good, "b": good, "c": {}}
+	for seed := int64(0); seed < 50; seed++ {
+		g := NewGenerator(words, newRng(seed), p)
+		var round []string
+		for i := 0; i < p.RoundPortions; i++ {
+			por := g.Portion(stats, 3, 0, round, nil, p)
+			if por.Focus != "c" {
+				t.Fatalf("focus %q, want c", por.Focus)
+			}
+			round = append(round, por.Words...)
+		}
+		uses := map[string]int{}
+		for _, w := range round {
+			uses[w]++
+			if uses[w] > p.MaxRepeats {
+				t.Fatalf("seed %d: %q %d times in %v", seed, w, uses[w], round)
+			}
+		}
+		if uses["cab"]+uses["abc"] != 2*p.MaxRepeats {
+			t.Fatalf("seed %d: the focus words should fill their cap first: %v", seed, round)
+		}
+	}
+}
+
+// Words shorter than MinWordLetters never appear and take no rank; 0 keeps them.
+func TestNewGenerator_MinWordLetters(t *testing.T) {
+	words := strings.Fields("a i as is sa si ass")
+	p := testParams
+	p.StartLetters, p.MinWords = 1, 0
+	g := NewGenerator(words, newRng(1), p)
+	for _, w := range g.Words(len(g.Order())) {
+		if len(w) < p.MinWordLetters {
+			t.Fatalf("short word %q in %v", w, g.Words(len(g.Order())))
+		}
+	}
+	if g.Rank("a") != -1 || g.Rank("as") != 0 {
+		t.Fatalf("ranks: a %d (want -1), as %d (want 0)", g.Rank("a"), g.Rank("as"))
+	}
+	p.MinWordLetters = 0
+	if g = NewGenerator(words, newRng(1), p); len(g.Words(len(g.Order()))) != len(words) {
+		t.Fatalf("MinWordLetters 0 must keep every word: %v", g.Words(len(g.Order())))
+	}
 }
 
 // No words per portion, no dictionary, or one word: no panic, no endless loop.
