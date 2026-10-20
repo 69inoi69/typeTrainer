@@ -7,7 +7,8 @@
 // (the "flow channel" of Csikszentmihalyi; docs/ALGORITHM.md section 13).
 //
 // What the level changes, in layers (Portion):
-//   - the words: from the most common ones at level 0 to the whole list at 1;
+//   - the words: from the most common ones at level 0 to the whole long
+//     list (free.txt, 25 000 words in English) at 1, on a log scale (MaxRank);
 //   - capitals: from CapsFrom on, on a growing share of the words;
 //   - punctuation: from PunctFrom on, commas and full stops, and the word
 //     after a full stop starts with a capital.
@@ -240,12 +241,21 @@ func (pk *Picker) drawWord(window []string, last string, size int, p Params) int
 	return found
 }
 
-// MaxRank is how many of the most common words the level allows: RankMin at
-// level 0, growing in a straight line to the whole list at level 1.
+// MaxRank is how many of the most common words the level allows:
+//
+//	MaxRank = RankMin * (words in the list / RankMin)^level
+//
+// RankMin at level 0, the whole list at level 1, and in between every step
+// of the level multiplies the limit by the same factor (a straight line on
+// a log scale). Why not a straight line: word frequencies fall steeply
+// (Zipf's law), so with 25 000 words a straight line would already reach
+// rank 12 600, words like "pippin", at level 0.5. With the log scale level
+// 0.5 is about the 2 200 most common words (docs/ALGORITHM.md section 13).
 func (pk *Picker) MaxRank(level float64, p Params) int {
 	n := len(pk.words)
 	lo := min(max(p.RankMin, 1), n)
-	return min(n, lo+int(math.Round(math.Max(0, math.Min(1, level))*float64(n-lo))))
+	level = math.Max(0, math.Min(1, level))
+	return min(n, max(lo, int(math.Round(float64(lo)*math.Pow(float64(n)/float64(lo), level)))))
 }
 
 // capitalize puts the first letter in upper case (Polish, Cyrillic too).

@@ -53,8 +53,8 @@ its own.
 | `internal/language` | Parses `languages.json`; `Allows(word)` checks a word against the alphabet. |
 | `data/languages.json` | The languages: id, name, label, layout, alphabet, OS layout name. |
 | `data/layouts/*.json` | Keys, rows, finger per key, AltGr letters, finger colors. |
-| `data/langs/<id>/words.txt` | Word list per language, most frequent first (learning and Climb). |
-| `data/langs/<id>/free.txt` | Freetype's long list (English only for now: 25 000 words, `tools/wordlists/free.py`). |
+| `data/langs/<id>/words.txt` | Word list per language, most frequent first (learning; Climb and Freetype too in a language without `free.txt`). |
+| `data/langs/<id>/free.txt` | The long list of Climb and Freetype (English only for now: 25 000 words, `tools/wordlists/free.py`). |
 | `internal/sim` | Simulation for the evaluation chapter: a made-up typist and three word-choice strategies (docs/ALGORITHM.md, section 11.1). Not used by the app. |
 | `tools/sim/` | `go run ./tools/sim`: runs the simulation on the real word lists and prints the table. |
 | `tools/wordlists/` | Python script + block lists that build the word lists (not part of the app). |

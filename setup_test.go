@@ -294,6 +294,26 @@ func TestApp_Climb(t *testing.T) {
 	if up["level"].(float64) <= 0.5 || down["level"].(float64) >= 0.5 {
 		t.Fatalf("thermostat: clean -> %v, mistakes -> %v", up["level"], down["level"])
 	}
+	// the top levels draw from the long list (free.txt), past words.txt
+	list, _ := os.ReadFile("data/langs/en/words.txt")
+	short := map[string]bool{}
+	for _, w := range strings.Fields(string(list)) {
+		short[w] = true
+	}
+	beyond := 0
+	for range 5 {
+		_, top := call(t, h, "POST", "/api/v1/freeplay/portion?lang=en", `{"level":1,"accuracy":99,"wpm":70,"pace":70}`)
+		for _, p := range top["portions"].([]any) {
+			for _, w := range p.(map[string]any)["words"].([]any) {
+				if !short[strings.ToLower(strings.TrimRight(w.(string), ",."))] {
+					beyond++
+				}
+			}
+		}
+	}
+	if beyond < 20 { // 30 words at level 1: almost all are past the 2000 of words.txt
+		t.Fatalf("level 1 drew only %d of 30 words past words.txt", beyond)
+	}
 	if code, _ := call(t, h, "POST", "/api/v1/freeplay/portion?lang=en", `{"level":2}`); code != 400 {
 		t.Fatal("a level over 1 must be rejected")
 	}

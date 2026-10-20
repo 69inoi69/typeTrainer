@@ -47,7 +47,8 @@ func TestPortion_Uniform(t *testing.T) {
 }
 
 // The level opens the list: at 0 only the RankMin most common words, at 1
-// the whole list, in between a straight line.
+// the whole list, in between a straight line on a log scale
+// (200 * (1200/200)^0.5 = 490).
 func TestMaxRank(t *testing.T) {
 	words := make([]string, 1200)
 	for i := range words {
@@ -57,7 +58,7 @@ func TestMaxRank(t *testing.T) {
 	for _, c := range []struct {
 		level float64
 		want  int
-	}{{0, 200}, {0.5, 700}, {1, 1200}, {-1, 200}, {2, 1200}} {
+	}{{0, 200}, {0.5, 490}, {0.25, 313}, {1, 1200}, {-1, 200}, {2, 1200}} {
 		if got := pk.MaxRank(c.level, testParams); got != c.want {
 			t.Errorf("level %v: MaxRank %d, want %d", c.level, got, c.want)
 		}
