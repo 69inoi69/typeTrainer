@@ -115,6 +115,17 @@ export function placeCaret(jump, last = false) {
     if (jump) requestAnimationFrame(() => el.caret.classList.remove("jump"));
   });
 }
+// A window too short for the whole page (the page zoomed far in, 300-500 %)
+// scrolls: the text card is brought into view when a round starts and at
+// its first key, so what you type is never below the edge of the window.
+// One layout read, once per round, never per key.
+function keepTextInView() {
+  if (S.view !== "type" || document.documentElement.scrollHeight <= innerHeight) return;
+  const r = el.textBox.getBoundingClientRect();
+  if (r.top >= 0 && r.bottom <= innerHeight) return;
+  scrollTo({ top: scrollY + r.top - 8 });
+}
+
 // Moves the text window to scrollTop = top in FEEL.lineScrollMs, fast at the
 // start, soft at the end. The browser's own smooth scroll cannot be timed and
 // takes ~400 ms, which felt like honey. scrollTop cannot be animated by CSS or
@@ -407,6 +418,7 @@ export async function loadExercise() {
   highlightNextKey();
   showPortion(0);
   placeCaret(true);
+  requestAnimationFrame(keepTextInView);     // after the keyboard has its size for this window
 }
 
 // ---------- typing ----------
@@ -552,6 +564,7 @@ export function handleChar(ch) {
   if (startTime === null) {
     startTime = now;
     el.live.classList.remove("final");
+    keepTextInView();
   }
   el.textBox.classList.add("typing");
   setTyping(true);                         // does nothing if it is on already
