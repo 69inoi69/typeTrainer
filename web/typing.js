@@ -82,6 +82,8 @@ export function fitText() {
 // typed, and the text does not scroll (the stream may already hold the next
 // words on a line below, which would scroll the finished text away).
 let caretFrame = 0;
+let kick = false;            // a right key since the last frame: the caret answers it (kickCaret)
+let caretX = 0, caretY = 0;  // where the caret went last time, for the trail's length
 export function placeCaret(jump, last = false) {
   cancelAnimationFrame(caretFrame);
   caretFrame = requestAnimationFrame(() => {
@@ -98,6 +100,8 @@ export function placeCaret(jump, last = false) {
     // position in the separate CSS "translate" property, so an animation of
     // "scale" never multiplies the position (the caret flew away once)
     el.caret.style.translate = `${x - 1}px ${s.offsetTop + h * 0.09}px`;
+    if (kick && !jump) kickCaret(x - caretX, s.offsetTop === caretY);
+    kick = false; caretX = x; caretY = s.offsetTop;
     // keep the current line in view: from the third line on, scroll so that
     // it is the second one
     let top = el.text.scrollTop;
@@ -520,6 +524,34 @@ function flinchCaret() {
     { scale: "1 1", transform: "none", backgroundColor: red },
   ], { duration: FEEL.caretFlinchMs, easing: "ease-out" });
 }
+// A right key: the caret starts a little bigger and settles (FEEL.caretKick*),
+// and a short trail from where it was shrinks into it (FEEL.caretTrail*),
+// both in the same frame as the glide. dx: how far the caret moved, px;
+// sameLine: it stayed on its line (no trail across a line break or going
+// back). One Web Animation for each, kept for the whole page: a key only
+// gives the trail its new length and rewinds both (a new animation on every
+// key costs the browser more). Only "scale" and "opacity" move, on layers of
+// their own, so nothing is laid out or painted again.
+let kickAnim = null, trailAnim = null;
+function kickCaret(dx, sameLine) {
+  if (!el.caret.animate || reducedMotion()) return;
+  if (FEEL.caretKickMs && FEEL.caretKickScale !== 1) {
+    const k = FEEL.caretKickScale;
+    const frames = [{ scale: `${k} ${k}` }, { scale: "1 1" }];
+    kickAnim ??= el.caret.animate(frames, { duration: FEEL.caretKickMs, easing: "ease-out" });
+    kickAnim.effect.setKeyframes(frames);
+    kickAnim.effect.updateTiming({ duration: FEEL.caretKickMs });
+    kickAnim.currentTime = 0; kickAnim.play();
+  }
+  const trail = el.caret.firstElementChild;
+  if (!FEEL.caretTrailMs || !FEEL.caretTrailAlpha || !sameLine || dx <= 0 || !trail) return;
+  // the trail is drawn 100 px long (style.css .caret-trail) and scaled to dx
+  const frames = [{ scale: `${dx / 100} 1`, opacity: FEEL.caretTrailAlpha }, { scale: "0 1", opacity: 0 }];
+  trailAnim ??= trail.animate(frames, { duration: FEEL.caretTrailMs, easing: "ease-out" });
+  trailAnim.effect.setKeyframes(frames);
+  trailAnim.effect.updateTiming({ duration: FEEL.caretTrailMs });
+  trailAnim.currentTime = 0; trailAnim.play();
+}
 // While a round waits for the next key, the caret breathes (fades out and in)
 // after FEEL.caretBreathDelayMs of quiet; every key starts the wait again, so
 // it stays solid while you type. One Web Animation for the whole round: a key
@@ -601,7 +633,7 @@ export function handleChar(ch) {
       const ok = ch === S.text[S.pos];
       record(S.pos, !ok, now);
       setState(S.pos, ok ? 1 : 2);
-      if (ok) correctPresses++;
+      if (ok) { correctPresses++; kick = true; }
       else mistake();
       pulseKey(ch, ok);
       const space = S.text[S.pos] === " ";

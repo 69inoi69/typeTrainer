@@ -4,7 +4,7 @@
 // The CSS reads the same values as custom properties (--feel-*), set below.
 // None of this changes what is measured or sent to the server.
 // Layer: bottom. Imports nothing.
-// Used by: keyboard.js (red tint, hand size), typing.js (caret flinch and
+// Used by: keyboard.js (red tint, hand size), typing.js (caret kick, trail, flinch and
 // breath, line scroll), and style.css (caret glide, the lift and dip of the
 // next key, the lift of the finger) through the --feel-* properties.
 // Speed rule (owner, 2026-10-18, "as smooth as monkeytype"): what moves on
@@ -56,6 +56,19 @@ export const FEEL = {
   // A wrong key: a quick red tint, a hint rather than an alarm.
   keyMissMs: 200,           // duration of the tint
   keyMissAlpha: 0.4,        // strength of the red at the start (0..1)
+
+  // The caret answers every right key, so it reads as moved by the press,
+  // not sliding over the letters (owner, 2026-10-20: "it just slips along").
+  // Both start in the frame of the key press, together with the glide, and
+  // only move or fade the caret's own layers (scale, opacity): nothing waits
+  // for them and nothing is painted again.
+  // A kick: the caret starts a little bigger and settles back as it glides.
+  caretKickMs: 110,         // duration of the kick (0 = none)
+  caretKickScale: 1.22,     // its size at the start (1 = none)
+  // A trail: a short streak of the caret's colour behind it, from where it
+  // was, that shrinks into it as it glides. Not on a new line or going back.
+  caretTrailMs: 0,          // how long the trail lasts (0 = none; try 90)
+  caretTrailAlpha: 0.45,    // its strength at the start (0..1)
 
   // The caret flinches on a mistake: it shrinks, turns red and shakes for
   // an instant, then comes back; its glide to the next letter is not touched.

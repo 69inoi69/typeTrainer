@@ -23,6 +23,10 @@ const KNOBS = [
   ["tune.caret", [
     ["caretGlideMs", 0, 200, 5],
     ["caretCurve"],
+    ["caretKickMs", 0, 300, 10],
+    ["caretKickScale", 1, 2, 0.02],
+    ["caretTrailMs", 0, 300, 10],
+    ["caretTrailAlpha", 0, 1, 0.05],
     ["caretFlinchMs", 0, 400, 10],
     ["caretFlinchScale", 0.3, 1, 0.05],
     ["caretShakePx", 0, 8, 1],
