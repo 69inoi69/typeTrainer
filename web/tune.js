@@ -40,8 +40,6 @@ const KNOBS = [
     ["keyPressScale", 0.8, 1, 0.01],
     ["keyMissMs", 0, 500, 10],
     ["keyMissAlpha", 0, 1, 0.05],
-    ["fingerTapPx", 0, 10, 1],
-    ["fingerTapMs", 0, 300, 10],
     ["nextKeyLiftPx", 0, 10, 1],
   ]],
 ];

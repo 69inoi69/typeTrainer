@@ -4,9 +4,9 @@
 // The CSS reads the same values as custom properties (--feel-*), set below.
 // None of this changes what is measured or sent to the server.
 // Layer: bottom. Imports nothing.
-// Used by: keyboard.js (key dip, red tint, finger tap, hand size), typing.js
-// (caret flinch and breath, line scroll), and style.css (caret glide, the
-// lift of the next key and the finger) through the --feel-* properties.
+// Used by: keyboard.js (red tint, hand size), typing.js (caret flinch and
+// breath, line scroll), and style.css (caret glide, the lift and dip of the
+// next key, the lift of the finger) through the --feel-* properties.
 // Speed rule (owner, 2026-10-18, "as smooth as monkeytype"): what moves on
 // every key only moves (translate, transform, opacity of a whole element),
 // which the graphics card does without the page being painted again; no
@@ -49,7 +49,8 @@ export const FEEL = {
   resultInMs: 320,          // the result coming in (0 = at once)
   resultRisePx: 12,         // how far it rises while it comes in (0 = only fades)
 
-  // The key on the virtual keyboard answers a press: a short, soft dip.
+  // The key on the virtual keyboard answers a press: as its light goes
+  // out it sinks a little, a short, soft dip (style.css .lit).
   keyPressMs: 90,           // duration of the dip
   keyPressScale: 0.96,      // how deep it dips (1 = no dip)
   // A wrong key: a quick red tint, a hint rather than an alarm.
@@ -76,9 +77,6 @@ export const FEEL = {
   handScale: 1.4,           // hand width in keys: 2 * handScale (1 = the old size)
   fingerLiftPx: 8,          // how far the finger to use lifts, in units of the hand drawing (100 = its width)
   fingerGlowPx: 0,          // a see-through outline around it, in the hand drawing's units (0 = none; owner, 2026-10-18: it looked like double vision)
-  // The finger that presses a key taps down a little with it.
-  fingerTapPx: 3,           // how far it moves down, in the same units (0 = off)
-  fingerTapMs: 110,         // duration
   // The hands rest on the top edge of the keyboard, as real hands over the
   // keys: they overlap it by this part of a key (their wrists fade out
   // anyway). It also leaves more height for bigger keys.
@@ -102,6 +100,8 @@ export function applyFeel() {
   root.setProperty("--feel-finger-lift", String(-FEEL.fingerLiftPx));   // in units of the hand drawing (style.css --hu)
   root.setProperty("--feel-finger-glow", String(FEEL.fingerGlowPx));
   root.setProperty("--feel-next-lift", -FEEL.nextKeyLiftPx + "px");
+  root.setProperty("--feel-key-press-ms", FEEL.keyPressMs + "ms");
+  root.setProperty("--feel-key-press-scale", String(FEEL.keyPressScale));
   root.setProperty("--feel-hand-overlap", String(FEEL.handOverlap));
 }
 applyFeel();
