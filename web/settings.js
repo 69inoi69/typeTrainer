@@ -1,8 +1,11 @@
 // The settings window (Esc or the gear in the navigation): what holds for
-// the whole app: the live numbers on or off, the streak badge of Freetype
-// on or off, what falls in the background, the look of the caret, the colour theme, a personal speed goal for the
-// stats screen, a daily goal in minutes for the Learn panel, the on-screen
-// keyboard on or off, and exporting, importing
+// the whole app: the live numbers on or off, the text size, the caret (its
+// look and glide), marks on the spaces, the streak badge of Freetype on or
+// off, what falls in the background, the colour theme; how typing answers
+// (the caret stops on a mistake, sounds and their volume); the on-screen
+// keyboard (on or off, the next key lit, the finger colours); the goals (a
+// daily goal in minutes for the Learn panel, a speed goal for the stats
+// screen, a rest reminder); and exporting, importing
 // and resetting the progress (tools.js does those three). Settings change
 // HOW IT LOOKS, never WHAT is practised. How long a round is belongs to
 // each mode and is set in the round bar above the text (modebar.js); this
@@ -15,10 +18,12 @@
 // openSettings, onSettingsClose, onKbToggle, setLength),
 // modes.js (lengthFor), modebar.js, typing.js and stats.js (the lengths,
 // lengthOf, lengthLabel, firstRoundDone).
-// To add a setting: a default in S.settings (state.js), reading it in
-// loadSettings(), its look in applySettings() (usually a class on <body>
-// styled in style.css), an entry in ROWS, a branch in apply(), and its
-// texts in i18n.js. A setting here holds for the whole app and changes how
+// To add a setting: a plain choice or an on/off switch is one entry in
+// CHOICES or SWITCHES (below) and one in ROWS, its look in style.css (the
+// body data attribute or class it gets) and its texts in i18n.js; anything
+// else needs a default in S.settings (state.js), reading it in
+// loadSettings(), its look in applySettings(), an entry in ROWS, a branch
+// in apply(), and its texts in i18n.js. A setting here holds for the whole app and changes how
 // it looks, never what is practised (AGENTS.md); a choice of one mode goes
 // into the round bar (modebar.js).
 
@@ -75,6 +80,33 @@ const BG_NAMES = { keys: "settings.bgKeys", letters: "settings.bgLetters", words
 // 15 by default: a beginner's honest daily dose; more is a choice.
 const DAILY = [0, 5, 10, 15, 20, 30, 45, 60];
 const DAILY_DEFAULT = 15;
+// Plain choices (owner, 2026-10-20, after keybr): S.settings[name] is one of
+// values (in the order of the buttons), def when nothing valid is saved,
+// kept in localStorage under key.
+// What each does: caret glide (style.css body[data-glide]), text size
+// (body[data-size]), a mark on every space (body[data-ws]), sounds
+// (sound.js), their volume, the rest reminder (typing.js restCheck,
+// minutes, "0" = off).
+// To add one: an entry here, a row in ROWS, its look in style.css (the
+// body data attribute of the same name is set for every choice) or its
+// use in the code, and its texts in i18n.js.
+const CHOICES = {
+  glide: { key: "tt.glide", values: ["smooth", "jump"], def: "smooth" },
+  size: { key: "tt.size", values: ["s", "m", "l"], def: "m" },
+  ws: { key: "tt.ws", values: ["none", "dot", "bar"], def: "none" },
+  sound: { key: "tt.sound", values: ["off", "errors", "keys"], def: "off" },
+  volume: { key: "tt.volume", values: ["25", "50", "75", "100"], def: "50" },
+  rest: { key: "tt.rest", values: ["0", "20", "30", "45", "60"], def: "0" },
+};
+// On/off switches: S.settings[name], the default, the localStorage key.
+// stop: the caret waits on a wrong key (typing.js handleChar); nextKey:
+// the next key and finger light up (keyboard.js); fingers: the keys in
+// finger colours (style.css body.fingers-off).
+const SWITCHES = {
+  stop: { key: "tt.stop", on: false },
+  nextKey: { key: "tt.nextKey", on: true },
+  fingers: { key: "tt.fingers", on: true },
+};
 
 // "time-60" -> {kind: "time", n: 60}
 export function lengthOf(id) {
@@ -106,6 +138,14 @@ export function loadSettings() {
   S.settings.goal = GOALS.includes(goal) ? goal : 0;
   const daily = store.get("tt.daily");
   S.settings.daily = daily !== null && DAILY.includes(Number(daily)) ? Number(daily) : DAILY_DEFAULT;
+  for (const [name, c] of Object.entries(CHOICES)) {
+    const v = store.get(c.key);
+    S.settings[name] = c.values.includes(v) ? v : c.def;
+  }
+  for (const [name, w] of Object.entries(SWITCHES)) {
+    const v = store.get(w.key);
+    S.settings[name] = v === null ? w.on : v === "1";
+  }
   applySettings();
 }
 // The look: classes on <body> and data-theme on <html>, style.css does the
@@ -115,6 +155,8 @@ function applySettings() {
   document.body.classList.toggle("live-off", !S.settings.live);
   document.body.classList.toggle("streak-off", !S.settings.streak);   // style.css hides the badge
   document.body.dataset.caret = S.settings.caret;      // style.css: body[data-caret=...]
+  for (const name of Object.keys(CHOICES)) document.body.dataset[name] = S.settings[name];
+  document.body.classList.toggle("fingers-off", !S.settings.fingers);
   document.documentElement.dataset.theme = S.settings.theme;
   document.querySelector('meta[name="theme-color"]')
     ?.setAttribute("content", getComputedStyle(document.documentElement).getPropertyValue("--bg").trim());
@@ -142,6 +184,10 @@ export function onGoalChange(fn) { goalListener = fn; }
 // Another background: input.js draws it again (ambient.js).
 let bgListener = () => {};
 export function onBgChange(fn) { bgListener = fn; }
+// Another text size or next-key choice: input.js fits the text and the
+// keyboard again and lights the next key (or not).
+let typingListener = () => {};
+export function onTypingLook(fn) { typingListener = fn; }
 
 // ---------- the window ----------
 // Esc or the gear opens it (input.js, the button below). Every setting is one
@@ -166,30 +212,43 @@ const action = (id, icon, label, cls = "btn") => `<button type="button" class="$
 
 // The rows, top to bottom. group: the small heading above (null: a line
 // instead); name: the i18n key of its name (also what search looks in);
-// ctl: its buttons; show: whether it is there at all.
-// To add a setting: one entry here (and its key in the click handler below,
-// its default in S.settings, its texts in i18n.js).
+// desc: the i18n key of what it does and why you might want it, shown in
+// a tooltip over the name (owner, 2026-10-20: a line under every row took
+// too much room); ctl: its buttons; show: whether it is there at all.
+// To add a setting: one entry here (and its key in CHOICES / SWITCHES or
+// the click handler below, its default in S.settings, its texts in i18n.js).
+const pick = (name, label) => seg(CHOICES[name].values.map((v) => choice(name, v, label(v), S.settings[name] === v)));
 const ROWS = [
-  { group: "settings.look", name: "settings.live", ctl: () => onOff("live", S.settings.live) },
-  { group: "settings.look", name: "settings.streak", ctl: () => onOff("streak", S.settings.streak) },
-  { group: "settings.look", name: "settings.background", ctl: () => seg(BGS.map((id) =>
-    choice("bg", id, t(BG_NAMES[id]), S.settings.bg === id))) },
-  { group: "settings.look", name: "settings.keyboard", ctl: () => onOff("kb", !S.kbHidden), show: () => !isTouch() },   // no keyboard on touch screens
+  { group: "settings.look", name: "settings.live", desc: "settings.liveDesc", ctl: () => onOff("live", S.settings.live) },
+  { group: "settings.look", name: "settings.size", desc: "settings.sizeDesc", ctl: () => pick("size", (v) => t("settings.size_" + v)) },
   { group: "settings.look", name: "settings.caret", ctl: () => seg(CARETS.map((id) =>
     choice("caret", id, `<i class="cs ${id}"></i>${t("settings." + id)}`, S.settings.caret === id))) },
+  { group: "settings.look", name: "settings.glide", desc: "settings.glideDesc", ctl: () => pick("glide", (v) => t("settings.glide_" + v)) },
+  { group: "settings.look", name: "settings.ws", desc: "settings.wsDesc", ctl: () => pick("ws", (v) => t("settings.ws_" + v)) },
+  { group: "settings.look", name: "settings.streak", desc: "settings.streakDesc", ctl: () => onOff("streak", S.settings.streak) },
+  { group: "settings.look", name: "settings.background", desc: "settings.backgroundDesc", ctl: () => seg(BGS.map((id) =>
+    choice("bg", id, t(BG_NAMES[id]), S.settings.bg === id))) },
   { group: "settings.look", name: "settings.theme", ctl: () => seg([
     choice("theme", "dark", t("settings.dark"), S.settings.theme === "dark"),
     choice("theme", "light", t("settings.light"), S.settings.theme === "light")]) },
-  { group: "settings.statsGroup", name: "settings.daily", ctl: () => seg(DAILY.map((m) =>
+  { group: "settings.typing", name: "settings.stop", desc: "settings.stopDesc", ctl: () => onOff("stop", S.settings.stop) },
+  { group: "settings.typing", name: "settings.sound", desc: "settings.soundDesc", ctl: () => pick("sound", (v) => t("settings.sound_" + v)) },
+  { group: "settings.typing", name: "settings.volume", ctl: () => pick("volume", (v) => v + "%"), show: () => S.settings.sound !== "off" },
+  { group: "settings.kbGroup", name: "settings.keyboard", desc: "settings.keyboardDesc", ctl: () => onOff("kb", !S.kbHidden), show: () => !isTouch() },   // no keyboard on touch screens
+  { group: "settings.kbGroup", name: "settings.nextKey", desc: "settings.nextKeyDesc", ctl: () => onOff("nextKey", S.settings.nextKey), show: () => !isTouch() },
+  { group: "settings.kbGroup", name: "settings.fingers", desc: "settings.fingersDesc", ctl: () => onOff("fingers", S.settings.fingers), show: () => !isTouch() },
+  { group: "settings.statsGroup", name: "settings.daily", desc: "settings.dailyDesc", ctl: () => seg(DAILY.map((m) =>
     choice("daily", String(m), m ? String(m) : t("settings.off"), S.settings.daily === m))) },
-  { group: "settings.statsGroup", name: "settings.goal", ctl: () => seg(GOALS.map((g) =>
+  { group: "settings.statsGroup", name: "settings.goal", desc: "settings.goalDesc", ctl: () => seg(GOALS.map((g) =>
     choice("goal", String(g), g ? String(g) : t("settings.off"), S.settings.goal === g))) },
-  { group: null, name: "settings.data", ctl: () => action("btn-export", "export", "data.save") + action("btn-import", "import", "data.load") },
-  { group: null, name: "settings.danger", danger: true, ctl: () => action("btn-reset", "trash", "data.reset", "btn danger") },
+  { group: "settings.statsGroup", name: "settings.rest", desc: "settings.restDesc", ctl: () => pick("rest", (v) => (v === "0" ? t("settings.off") : v)) },
+  { group: null, name: "settings.data", desc: "settings.dataDesc", ctl: () => action("btn-export", "export", "data.save") + action("btn-import", "import", "data.load") },
+  { group: null, name: "settings.danger", desc: "settings.dangerDesc", danger: true, ctl: () => action("btn-reset", "trash", "data.reset", "btn danger") },
 ];
 
 let cur = 0;        // the row the arrow keys are on (an index into the shown rows)
 let shown = [];     // the rows that match the search, in order
+const attr = (s) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;");   // text inside an attribute
 // The name with the searched part underlined
 function nameHTML(name, q) {
   const i = q ? name.toLowerCase().indexOf(q) : -1;
@@ -206,15 +265,27 @@ function render() {
     }
     group = r.group;
     const on = i === cur && !isTouch();   // no arrow keys on a phone: no highlight
-    html += `<div class="sw-row${on ? " on" : ""}" data-i="${i}"><span class="sw-name${r.danger ? " danger" : ""}">${nameHTML(t(r.name), q)}</span><span class="sw-ctl">${r.ctl()}</span></div>`;
+    const desc = r.desc ? ` data-tip-text="${attr(t(r.desc))}" aria-description="${attr(t(r.desc))}"` : "";
+    html += `<div class="sw-row${on ? " on" : ""}" data-i="${i}"><span class="sw-name${r.danger ? " danger" : ""}"${desc}>${nameHTML(t(r.name), q)}</span><span class="sw-ctl">${r.ctl()}</span></div>`;
   });
-  body.innerHTML = shown.length ? `<div class="sw-rows">${html}</div>` : `<p class="sw-empty">${t("settings.none")}</p>`;
+  body.innerHTML = previewHTML() +
+    (shown.length ? `<div class="sw-rows">${html}</div>` : `<p class="sw-empty">${t("settings.none")}</p>`);
+  startPreview();
 }
 search.addEventListener("input", () => { cur = 0; render(); });
 
 // A choice was clicked (or picked with the arrows): save it and apply it.
 function apply(key, value) {
-  if (key === "live") {
+  if (CHOICES[key]) {
+    S.settings[key] = value;
+    store.set(CHOICES[key].key, value);
+    if (key === "size") typingListener();
+    if (key === "sound" && value !== "off") soundListener(value);   // a sample, so you hear what you chose
+  } else if (SWITCHES[key]) {
+    S.settings[key] = value === "1";
+    store.set(SWITCHES[key].key, value === "1" ? "1" : "0");
+    if (key === "nextKey") typingListener();
+  } else if (key === "live") {
     S.settings.live = value === "1";
     store.set("tt.live", value === "1" ? "1" : "0");
   } else if (key === "streak") {
@@ -244,6 +315,45 @@ function apply(key, value) {
   applySettings();
   render();
 }
+// A sound was chosen: input.js plays one (sound.js), so you hear it.
+let soundListener = () => {};
+export function onSoundPick(fn) { soundListener = fn; }
+
+// ---------- the preview ----------
+// A short line on top of the window that types itself in the look chosen
+// below it (text size, caret, its glide, the space marks, the theme), so a
+// change shows at once without closing the window. A timer steps the
+// caret like a typist (it runs only while the window is open, never while
+// you type); the glide itself is the real caret's CSS transition.
+const PREVIEW_STEP_MS = 260;      // one "keypress" of the preview
+const PREVIEW_WRONG = 6;          // the letter it gets wrong (shown red), as typing does
+let previewTimer = 0;
+function previewHTML() {
+  const text = t("settings.sample");
+  const letters = [...text].map((c) => `<span${c === " " ? " data-sp" : ""}>${c}</span>`).join("");
+  return `<div class="sw-preview" aria-hidden="true"><div class="text pv-text">${letters}<i class="caret pv-caret"></i></div></div>`;
+}
+function startPreview() {
+  clearInterval(previewTimer);
+  const box = body.querySelector(".pv-text");
+  if (!box) return;
+  const spans = [...box.querySelectorAll("span")], caret = box.querySelector(".pv-caret");
+  let i = 0;
+  const step = () => {
+    if (!win.open || !box.isConnected) { clearInterval(previewTimer); return; }
+    if (i > spans.length + 3) {                         // a short rest at the end, then again
+      i = 0;
+      spans.forEach((sp) => (sp.className = ""));
+      caret.classList.add("jump");
+    } else caret.classList.remove("jump");
+    if (i > 0 && i <= spans.length) spans[i - 1].className = i - 1 === PREVIEW_WRONG ? "bad" : "ok";
+    caret.style.setProperty("--i", Math.min(i, spans.length));
+    i++;
+  };
+  step();
+  previewTimer = setInterval(step, PREVIEW_STEP_MS);
+}
+
 win.addEventListener("click", (e) => {
   if (e.target === win) { closeSettings(); return; }   // the dimmed page around it
   const b = e.target.closest("button[data-key]");
@@ -289,6 +399,7 @@ export const settingsOpen = () => win.open;
 let closeListener = () => {};
 export function onSettingsClose(fn) { closeListener = fn; }
 win.addEventListener("close", () => {
+  clearInterval(previewTimer);
   btn.setAttribute("aria-expanded", "false");
   closeListener();
 });

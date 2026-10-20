@@ -132,8 +132,9 @@ Details: `docs/ARCHITECTURE.md`.
   (`web/settings.js`) keeps what holds for the whole app: live numbers
   on/off, the streak badge on/off, the caret style, the theme, the
   keyboard, a personal speed goal (shown on the stats screen only, never
-  seen by the algorithm), a daily goal in minutes (the Learn panel) and the
-  data. Every round keeps its length, and
+  seen by the algorithm), a daily goal in minutes (the Learn panel), the
+  text size, the caret's movement, marks on spaces, stop on a mistake,
+  sounds, the next key lit, finger colours, a rest reminder and the data. Every round keeps its length, and
   rounds of different lengths or lists are never mixed in one chart or
   record.
 - **Where the work goes (owner, 2026-10-19).** Both modes are being built

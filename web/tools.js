@@ -18,6 +18,13 @@ export function showTip(node) {
   tipFor = node;
   const r = node.getBoundingClientRect();
   el.tooltip.textContent = node.dataset.tipText || t(node.dataset.tip); // tipText: ready text, tip: i18n key
+  el.tooltip.classList.toggle("wide", el.tooltip.textContent.length > 60);   // a sentence wraps
+  // inside an open window (the settings) the tooltip must be in the top
+  // layer to show above it: a popover, opened anew so it lands on top
+  if (node.closest("dialog[open]") && el.tooltip.showPopover) {
+    if (el.tooltip.matches(":popover-open")) el.tooltip.hidePopover();
+    el.tooltip.showPopover();
+  }
   // keep a long tooltip inside the window (measured on hover, never per keypress)
   const half = el.tooltip.offsetWidth / 2 + 8;
   el.tooltip.style.left = Math.min(innerWidth - half, Math.max(half, r.left + r.width / 2)) + "px";

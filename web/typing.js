@@ -32,6 +32,7 @@ import { renderPanel, roundNews, compareStats, refreshActivity } from "./learnpa
 import { learning, refreshFreeplay } from "./modes.js";
 import { renderModeBar } from "./modebar.js";
 import { lengthOf, firstRoundDone } from "./settings.js";
+import { keySound } from "./sound.js";
 
 // Typing state, used only by the typing code.
 let wrongScript = 0;       // presses in a row that came from another keyboard layout
@@ -228,6 +229,7 @@ function appendPortions(list) {
     sp.className = (focusMask[i] ? "fx" : "") + " later" + (endAt >= 0 && i >= endAt ? " beyond" : "");
     // a gold letter says why it is gold (tools.js shows it only while you are not typing)
     if (focusMask[i]) sp.dataset.tipText = t("tip.fx", { l: S.text[i] });
+    else if (S.text[i] === " ") sp.dataset.sp = "";   // a space: style.css can mark it (the setting body[data-ws])
     frag.appendChild(sp);
     spans.push(sp);
   }
@@ -473,6 +475,7 @@ export function roundFacts(end = lastTime) {
 const wordHasError = (start, end) =>
   state.subarray(start, end).some((s) => s >= 2) || (extras.get(end)?.length ?? 0) > 0;
 function mistake() {
+  keySound(false);
   if (wordClean) breakStreak();
   wordClean = false;
   flinchCaret();
@@ -573,6 +576,20 @@ export function handleChar(ch) {
   perSecond[sec] = (perSecond[sec] ?? 0) + 1;   // real keys only: skipped letters are not presses
   let roundOver = false;
 
+  // "Stop on a mistake" (a setting): a wrong key, a space inside a word or
+  // a letter where the space belongs leaves the caret where it is, red
+  // until the right key comes. The mistake is counted exactly as without
+  // the setting: one more wrong press at this position (record), and the
+  // time of the letter is the time to its first press.
+  if (S.settings.stop && ch !== expected) {
+    record(S.pos, true, now);
+    setState(S.pos, 2);
+    pulseKey(ch, false);
+    mistake();
+    lastTime = now; afterBackspace = false; afterPause = false;
+    return;
+  }
+
   if (expected === " " && ch !== " ") {
     // a letter where the space belongs: an "extra" letter, the cursor stays
     record(S.pos, true, now);
@@ -600,7 +617,7 @@ export function handleChar(ch) {
       const ok = ch === S.text[S.pos];
       record(S.pos, !ok, now);
       setState(S.pos, ok ? 1 : 2);
-      if (ok) { correctPresses++; kick = true; }
+      if (ok) { correctPresses++; kick = true; keySound(true); }
       else mistake();
       pulseKey(ch, ok);
       const space = S.text[S.pos] === " ";
@@ -981,6 +998,7 @@ async function finishRound(byLastKey = false) {
     await queue;                                       // portions still on their way
     streamId++;                                        // nothing more for this round
     if (!typed.length) { await loadExercise(); return; } // nothing typed: nothing to keep
+    restCheck((end - startTime) / 1000);
     if (S.mode === "climb") { await finishFree(wpm, accuracy, typed, fullSeconds(end)); return; }
     if (S.mode === "freetype") { await finishFreetype(wpm, accuracy, typed, fullSeconds(end)); return; }
     // keys: the whole round, kept by the server as its raw record (it learns only from samples)
@@ -1008,6 +1026,24 @@ async function finishRound(byLastKey = false) {
   } finally {
     el.textBox.classList.remove("ending");
     S.busy = false;
+  }
+}
+
+// The rest reminder (a setting, S.settings.rest minutes, "0" = off): after
+// that much typing with no break, one calm message suggests a rest. A gap
+// of REST_BREAK_MS between rounds is a break and starts the count again.
+// Called once per finished round, never per key.
+const REST_BREAK_MS = 5 * 60 * 1000;
+let restTyped = 0, restAt = 0;   // seconds typed since the last break; when the last round ended
+function restCheck(seconds) {
+  const now = Date.now();
+  if (now - restAt - seconds * 1000 > REST_BREAK_MS) restTyped = 0;
+  restAt = now;
+  restTyped += seconds;
+  const limit = Number(S.settings.rest);
+  if (limit && restTyped >= limit * 60) {
+    restTyped = 0;
+    FX.toast(t("toast.rest", { m: limit }));
   }
 }
 
