@@ -26,8 +26,9 @@ import { $, el, S, introOpen, isTouch, themeColor, reducedMotion } from "./state
 import { postJSON } from "./api.js";
 import { highlightNextKey, pulseKey, glowKey, requestFit } from "./keyboard.js";
 import { refreshStats } from "./stats.js";
-import { showResult, showLearnResult, compareStats } from "./result.js";
+import { showResult } from "./result.js";
 import { renderLetters, markNewLetter, markMastered } from "./letters.js";
+import { renderPanel, roundNews, compareStats, refreshActivity } from "./learnpanel.js";
 import { learning, refreshFreeplay } from "./modes.js";
 import { renderModeBar } from "./modebar.js";
 import { lengthOf, firstRoundDone } from "./settings.js";
@@ -225,6 +226,8 @@ function appendPortions(list) {
     sp.textContent = S.text[i];
     // words after the end of the round are never typed: not shown either
     sp.className = (focusMask[i] ? "fx" : "") + " later" + (endAt >= 0 && i >= endAt ? " beyond" : "");
+    // a gold letter says why it is gold (tools.js shows it only while you are not typing)
+    if (focusMask[i]) sp.dataset.tipText = t("tip.fx", { l: S.text[i] });
     frag.appendChild(sp);
     spans.push(sp);
   }
@@ -242,11 +245,17 @@ function reveal() {
   for (; revealAt < spans.length && wordOf[revealAt] < shownWords; revealAt++) spans[revealAt].classList.remove("later");
 }
 
-// The letters bar shows the focus of the portion with the caret.
+// The letters bar and the Learn panel show the focus of the portion with
+// the caret.
 function showPortion(i) {
   current = i;
   if (portions[i] && S.exercise) S.exercise.focus = portions[i].focus;
+  renderTop();
+}
+// Everything above the text that follows the letters: the row and the panel.
+function renderTop() {
   renderLetters();
+  renderPanel();
 }
 
 // The words of the round so far (the server avoids repeating them).
@@ -292,7 +301,7 @@ function portionDone(k) {
     await refreshStats();
     if (id !== streamId) return;
     if (res.newLetter) newLetter(res.newLetter);
-    renderLetters();
+    renderTop();
   }).catch((err) => { console.error(err); el.hint.textContent = t("err.server"); });
 }
 
@@ -324,7 +333,7 @@ export const roundStarted = () => startTime !== null;
 const timeUp = (now) => limit.kind === "time" && startTime !== null && now - startTime >= limit.n * 1000;
 
 // A letter opened: its chip pops with a soft ring (renderLetters, .chip.pop),
-// its key glows once, and the result of the round names it. Calm on purpose:
+// its key glows once, and the Learn panel names it after the round. Calm on purpose:
 // a new letter is good news, not a party.
 function newLetter(l) {
   roundNewLetter = l;
@@ -936,20 +945,24 @@ export function stopRound() {
 }
 
 // The round is over (the last letter of its last word, the end of the time,
-// or Esc): the numbers of the round go to the history, the result screen
-// shows what changed, then the next round starts. The time of the round
-// ends at its last keypress, so a stop with Esc does not lower the WPM.
+// or Esc): the numbers of the round go to the history, then the next round
+// starts: in Learn at once, with what changed on the Learn panel
+// (learnpanel.js; owner, 2026-10-20: no result screen in Learn), in Climb
+// and Freetype after their result screen. The time of the round ends at
+// its last keypress, so a stop with Esc does not lower the WPM.
 // byLastKey: it ended with its last letter; the finished text then stays
-// for FEEL.resultHoldMs (the last letter turns white, the caret arrives)
-// and fades out in its second half (class "ending", a CSS transition)
-// before the result comes. A plain wait before a screen change, not an
-// animation; S.busy keeps every key and the clock out of it. result.js
-// takes "ending" off when the result opens, the finally below otherwise.
+// for FEEL.resultHoldMs (the last letter turns white, the caret arrives).
+// Before a result screen it also fades out in its second half (class
+// "ending", a CSS transition), the keyboard and hands with it; Learn keeps
+// them, its next text simply fades in. A plain wait before a screen
+// change, not an animation; S.busy keeps every key and the clock out of
+// it. result.js takes "ending" off when the result opens, the finally
+// below otherwise.
 async function finishRound(byLastKey = false) {
   S.busy = true;
   const end = lastTime;
   if (byLastKey && FEEL.resultHoldMs > 0) {
-    el.textBox.classList.add("ending");
+    if (!learning()) el.textBox.classList.add("ending");
     await new Promise((r) => setTimeout(r, FEEL.resultHoldMs));
   }
   const wpm = Math.round(currentWpm(end) * 10) / 10;
@@ -979,14 +992,12 @@ async function finishRound(byLastKey = false) {
     if (res.newLetter) newLetter(res.newLetter);
 
     const r = compareStats(roundBefore, S.lastStats);
-    markMastered(r.mastered);
-    // no focus on the result: it was the letter of the round's last words,
-    // and the next round picks its own; shown here it read like a verdict
-    // on this round. showPortion sets it again when the next round starts.
-    if (S.exercise) S.exercise.focus = "";
-    renderLetters();        // the letters bar agrees with the result at once, not only after it closes
-    if (r.best) FX.burstFrom(el.wpm, 80);
-    await showLearnResult({ wpm, accuracy, newLetter: roundNewLetter, ...r });
+    markMastered(r.mastered);                 // their chips shine when the next round is drawn
+    const milestone = roundNews({ ...r, wpm, newLetter: roundNewLetter });
+    if (r.best || milestone) FX.burstFrom(el.wpm, 80);
+    refreshActivity();      // today's minutes on the panel (it draws itself when they come)
+    // the panel has the round's numbers now; the live line starts again at 0
+    el.live.classList.remove("final");
     await loadExercise();   // built from the UPDATED model
   } catch (err) {
     // said where the eyes are (it used to go only to the screen-reader
@@ -1014,6 +1025,7 @@ async function finishFree(wpm, accuracy, keys, perSecond) {
   const res = await postJSON("/freeplay/results", { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length, device: device(), level });
   firstRoundDone();
   S.climbLevel = res.place.level;                // the next round
+  refreshActivity();        // the daily goal counts every mode
   await refreshFreeplay();
   renderLetters();
   const best = before.length > 0 && wpm > Math.max(...before.map((x) => x.wpm));
@@ -1030,6 +1042,7 @@ async function finishFreetype(wpm, accuracy, keys, perSecond) {
   const before = S.freetype?.sessions ?? [];
   const res = await postJSON("/freetype/results", { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length, device: device(), list });
   firstRoundDone();
+  refreshActivity();        // the daily goal counts every mode
   await refreshFreeplay();
   const best = before.length > 0 && wpm > Math.max(...before.map((x) => x.wpm));
   if (best) FX.burstFrom(el.wpm, 80);

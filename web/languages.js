@@ -13,6 +13,7 @@ import { labelTips } from "./tools.js";
 import { drawKeyboard, applyKb } from "./keyboard.js";
 import { refreshStats, renderStats } from "./stats.js";
 import { loadExercise, hideWarn } from "./typing.js";
+import { refreshActivity } from "./learnpanel.js";
 import { drawIntroKeys } from "./intro.js";
 import { renderProfile } from "./profile.js";
 import { refreshFreeplay, restoreMode } from "./modes.js";
@@ -86,6 +87,7 @@ export async function loadLanguage(id) {
     applyKb();                              // re-translates "off"
     await refreshStats();
     await refreshFreeplay();
+    refreshActivity();                      // today's practice, for the daily goal (not waited for)
     restoreMode();                          // the mode of last time in this language
     await loadExercise();
     if (S.view === "stats") renderStats();

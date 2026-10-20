@@ -108,8 +108,10 @@ Details: `docs/ARCHITECTURE.md`.
 - **Three modes, all open to everyone (owner, 2026-10-19).** *Learn* is for
   beginners: the adaptive trainer, letters open one by one from the home
   row, with no difficulty switches (the algorithm decides what to practise).
-  It has no stats screen: its progress is the letters row and a short
-  result (what the round achieved and what comes next; no charts there).
+  It has no stats screen and no result screen (owner, 2026-10-20): its
+  progress is the letters row and the Learn panel above the text (the last
+  round against your average, an accuracy streak, a daily goal, the focus
+  letter and what it needs, the news of the round; no charts there).
   *Climb* is for people who can already type (`internal/freeplay`; owner,
   2026-10-20): ten levels of words only (no capitals, no punctuation),
   each the n most common words, 200 up to 25 000; a round is typed at one
@@ -130,7 +132,8 @@ Details: `docs/ARCHITECTURE.md`.
   (`web/settings.js`) keeps what holds for the whole app: live numbers
   on/off, the streak badge on/off, the caret style, the theme, the
   keyboard, a personal speed goal (shown on the stats screen only, never
-  seen by the algorithm) and the data. Every round keeps its length, and
+  seen by the algorithm), a daily goal in minutes (the Learn panel) and the
+  data. Every round keeps its length, and
   rounds of different lengths or lists are never mixed in one chart or
   record.
 - **Where the work goes (owner, 2026-10-19).** Both modes are being built

@@ -22,6 +22,7 @@ import { setMode, refreshFreeplay, renderNav, setFreetypeList } from "./modes.js
 import { onBarPick, renderModeBar } from "./modebar.js";
 import { renderLetters } from "./letters.js";
 import { buildAmbient } from "./ambient.js";
+import { renderPanel } from "./learnpanel.js";
 import "./share.js";   // the copy / image buttons of the stats screen: it wires them itself
 
 // the keyboard choice in the settings and Alt+K: keyboard and hands off, or
@@ -134,7 +135,10 @@ onBarPick(async (pick) => {
 onBgChange(buildAmbient);
 
 // a new personal goal: only the stats screen shows it
-onGoalChange(() => { if (S.view === "stats") { el.viewStats.classList.remove("grow"); renderStats(); } });
+onGoalChange(() => {
+  renderPanel();
+  if (S.view === "stats") { el.viewStats.classList.remove("grow"); renderStats(); }
+});
 
 // ---------- input ----------
 // The order of the checks matters: an open guide or card gets the key first,

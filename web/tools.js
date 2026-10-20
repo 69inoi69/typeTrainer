@@ -32,7 +32,10 @@ function hideTip() {
 }
 document.addEventListener("pointerover", (e) => {
   if (e.pointerType === "touch") return;            // no sticky tooltips on phones
-  const node = e.target.closest?.("[data-tip], [data-tip-text]");
+  let node = e.target.closest?.("[data-tip], [data-tip-text]");
+  // the gold letters of the text explain themselves, but never while you
+  // type: lines scrolling under a resting mouse would pop them up
+  if (node && document.body.classList.contains("typing-now") && el.text.contains(node)) node = null;
   if (node && node !== tipFor) showTip(node);
   else if (!node && tipFor) hideTip();
 });
