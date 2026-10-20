@@ -4,7 +4,7 @@
 //   bottom: state.js, i18n.js and feel.js import nothing, fx.js only
 //           i18n.js, api.js only state.js
 //   middle: keyboard, typing, letters, stats, intro, languages, tools,
-//           profile, result, modes, modebar, settings, share, ambient, tune import the bottom
+//           profile, result, modes, modebar, settings, share, ambient import the bottom
 //           and each other in one direction only (no cycles)
 //   top:    input.js and app.js may import anything; nothing imports them
 //           (app.js loads input.js)
@@ -64,7 +64,7 @@ export const S = {
   freetype: null,         // last /freetype/stats answer (Freetype: its lists, the chosen one's rounds)
   freetypeList: 0,        // Freetype: the chosen word list (its n most common words; 0 = not known yet)
   climbLevel: null,       // Climb: the level of the round being typed, 0..1 (typing.js)
-  settings: { length: "words-30", live: false, caret: "line", theme: "dark", streak: true, goal: 0 },   // settings.js
+  settings: { length: "words-30", live: false, caret: "line", theme: "dark", streak: false, bg: "keys", goal: 0 },   // settings.js
   kbHidden: false,        // keyboard and hands switched off
 };
 

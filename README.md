@@ -38,7 +38,7 @@ Lublin University of Technology (2027).
   letters): the best of every round length (and word list), the speed of
   every round, Climb's level, an activity calendar. Saved as a picture with
   one click. Climb and Freetype never change your Learn progress.
-- **Settings:** live speed, streak, caret style, dark or light theme,
+- **Settings:** live speed, the streak in Freetype, the background, caret style, dark or light theme,
   on-screen keyboard and hands, a personal speed goal, and your data
   (export, import, reset).
 - **A computer keyboard is needed for typing.** On a phone or tablet the

@@ -12,12 +12,8 @@
 // which the graphics card does without the page being painted again; no
 // glows or colour fades on every key.
 // To add a knob: a field in FEEL with its unit and what "more" does, then
-// either read FEEL.x in the JavaScript (at the moment it is used, not once at
-// load, so the tuning panel changes it live) or add a root.setProperty line
-// to applyFeel below and use var(--feel-x) in style.css. To make it tunable
-// on the page, add a row to KNOBS in tune.js.
-// The hidden tuning panel (tune.js, "?tune" in the address) changes these
-// values while you type, to pick them by eye.
+// either read FEEL.x in the JavaScript or add a root.setProperty line to
+// applyFeel below and use var(--feel-x) in style.css.
 
 export const FEEL = {
   // Everything that moves while you type: smooth, but it starts moving at
@@ -29,10 +25,10 @@ export const FEEL = {
   // settle curve at 80 and 55 ms ("it lags behind the letters"); then
   // monkeytype's "smooth caret: fast", 85 ms on its almost even in-out
   // curve (style.css --caret-curve): smooth, but still behind the typed
-  // letters (owner, 2026-10-18). Now that curve in 60 ms: 24 / 57 / 87 /
-  // 100% at 60 frames a second. A new key starts a new glide from where the
-  // caret is, so fast typing reads as one steady movement.
-  caretGlideMs: 60,         // the caret sliding to the next letter (0 = jumps)
+  // letters (owner, 2026-10-18). Then that curve in 60 ms; now 65 ms, the
+  // owner's own pick (2026-10-20). A new key starts a new glide
+  // from where the caret is, so fast typing reads as one steady movement.
+  caretGlideMs: 65,         // the caret sliding to the next letter (0 = jumps)
   // the shape of that glide (CSS timing function): monkeytype's inOut(1.25),
   // matched within 0.2%, almost even; also carries the streak badge
   caretCurve: "cubic-bezier(.31, .16, .69, .84)",
@@ -41,12 +37,12 @@ export const FEEL = {
   // before the result comes: the caret reaches the end and the last letter
   // turns white first (owner, 2026-10-19: "the result starts before the last
   // letter shows"). The round's time still ends at that key: this wait is
-  // not in the speed.
-  resultHoldMs: 250,
+  // not in the speed. 120 ms: the owner's pick (2026-10-20).
+  resultHoldMs: 120,
   // During that wait the finished text fades out (its last part, after the
   // caret has arrived), then the result comes in: it fades in while rising
   // a little (owner, 2026-10-19: a plain 200 ms fade read as no transition).
-  resultInMs: 320,          // the result coming in (0 = at once)
+  resultInMs: 120,          // the result coming in (0 = at once; owner's pick, 2026-10-20)
   resultRisePx: 12,         // how far it rises while it comes in (0 = only fades)
 
   // The key on the virtual keyboard answers a press: as its light goes
@@ -69,6 +65,11 @@ export const FEEL = {
   // was, that shrinks into it as it glides. Not on a new line or going back.
   caretTrailMs: 0,          // how long the trail lasts (0 = none; try 90)
   caretTrailAlpha: 0.45,    // its strength at the start (0..1)
+
+  // The streak number (Freetype, when on) hops on every clean word.
+  streakHopMs: 180,         // duration of the hop (0 = none)
+  streakHopPx: 4,           // how far up it starts
+  streakHopScale: 1.3,      // its size at the start (1 = none)
 
   // The caret flinches on a mistake: it shrinks, turns red and shakes for
   // an instant, then comes back; its glide to the next letter is not touched.
@@ -99,9 +100,8 @@ export const FEEL = {
   nextKeyLiftPx: 3,         // how far the next key rises above the others (0 = stays flat)
 };
 
-// The CSS custom properties: style.css uses var(--feel-...). Set at load and
-// again by the tuning panel after it changes FEEL.
-export function applyFeel() {
+// The CSS custom properties: style.css uses var(--feel-...). Set once, at load.
+function applyFeel() {
   const root = document.documentElement.style;
   root.setProperty("--feel-caret-ms", FEEL.caretGlideMs + "ms");
   root.setProperty("--caret-curve", FEEL.caretCurve);

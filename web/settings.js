@@ -1,6 +1,6 @@
 // The settings window (Esc or the gear in the navigation): what holds for
-// the whole app: the live numbers on or off, the streak badge on or off,
-// the look of the caret, the colour theme, a personal speed goal for the
+// the whole app: the live numbers on or off, the streak badge of Freetype
+// on or off, what falls in the background, the look of the caret, the colour theme, a personal speed goal for the
 // stats screen, the on-screen keyboard on or off, and exporting, importing
 // and resetting the progress (tools.js does those three). Settings change
 // HOW IT LOOKS, never WHAT is practised. How long a round is belongs to
@@ -64,6 +64,11 @@ const CARETS = ["line", "block", "underline", "outline"];
 // it, letters open at the trainer's own target as before (AGENTS.md: a
 // setting never changes what is practised).
 const GOALS = [0, 50, 75, 100, 125, 150, 200];
+// What falls in the background (ambient.js; owner, 2026-10-20), in the
+// order of the buttons; "keys" is the default.
+// To add one: its id here, what it shows in ambient.js and its name in i18n.js.
+const BGS = ["keys", "letters", "words", "off"];
+const BG_NAMES = { keys: "settings.bgKeys", letters: "settings.bgLetters", words: "settings.bgWords", off: "settings.off" };
 
 // "time-60" -> {kind: "time", n: 60}
 export function lengthOf(id) {
@@ -82,7 +87,12 @@ export function lengthLabel(id) {
 export function loadSettings() {
   S.settings.length = lengthFor(S.mode);               // modes.js sets it again for the mode restored
   S.settings.live = store.get("tt.live") === "1";      // never chosen: hidden (see firstRoundDone)
-  S.settings.streak = store.get("tt.streak") !== "0";  // the streak badge: on unless turned off
+  // the streak badge, in Freetype only, off unless turned on (owner,
+  // 2026-10-20: it says little, and every extra thing on the text slows
+  // typing). A new key: the old tt.streak was on by default.
+  S.settings.streak = store.get("tt.streak.free") === "1";
+  const bg = store.get("tt.bg");
+  S.settings.bg = BGS.includes(bg) ? bg : "keys";
   const caret = store.get("tt.caret");
   S.settings.caret = CARETS.includes(caret) ? caret : "line";
   S.settings.theme = store.get("tt.theme") === "light" ? "light" : "dark";
@@ -120,6 +130,9 @@ export function onKbToggle(fn) { kbListener = fn; }
 // A new goal: the stats screen draws itself again (input.js).
 let goalListener = () => {};
 export function onGoalChange(fn) { goalListener = fn; }
+// Another background: input.js draws it again (ambient.js).
+let bgListener = () => {};
+export function onBgChange(fn) { bgListener = fn; }
 
 // ---------- the window ----------
 // Esc or the gear opens it (input.js, the button below). Every setting is one
@@ -150,6 +163,8 @@ const action = (id, icon, label, cls = "btn") => `<button type="button" class="$
 const ROWS = [
   { group: "settings.look", name: "settings.live", ctl: () => onOff("live", S.settings.live) },
   { group: "settings.look", name: "settings.streak", ctl: () => onOff("streak", S.settings.streak) },
+  { group: "settings.look", name: "settings.background", ctl: () => seg(BGS.map((id) =>
+    choice("bg", id, t(BG_NAMES[id]), S.settings.bg === id))) },
   { group: "settings.look", name: "settings.keyboard", ctl: () => onOff("kb", !S.kbHidden), show: () => !isTouch() },   // no keyboard on touch screens
   { group: "settings.look", name: "settings.caret", ctl: () => seg(CARETS.map((id) =>
     choice("caret", id, `<i class="cs ${id}"></i>${t("settings." + id)}`, S.settings.caret === id))) },
@@ -193,7 +208,11 @@ function apply(key, value) {
     store.set("tt.live", value === "1" ? "1" : "0");
   } else if (key === "streak") {
     S.settings.streak = value === "1";
-    store.set("tt.streak", value === "1" ? "1" : "0");
+    store.set("tt.streak.free", value === "1" ? "1" : "0");
+  } else if (key === "bg") {
+    S.settings.bg = value;
+    store.set("tt.bg", value);
+    bgListener();
   } else if (key === "caret") {
     S.settings.caret = value;
     store.set("tt.caret", value);
