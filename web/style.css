@@ -1810,25 +1810,25 @@ body.live-off .live .metric.num { display: none; }
 .cs.outline { width: 8px; background: none; box-shadow: inset 0 0 0 1.5px currentColor; }
 
 /* ---------- the quiet background (ambient.js) ---------- */
-/* Outlines of keycaps drifting down in the empty fields, behind everything
+/* Outlines of keycaps moving slowly in the empty fields, behind everything
    (z-index -1: above the page colour, under the page), on every screen; so
-   slow it does not distract. */
+   slow it does not distract. The way they move is picked per page load
+   (data-kind); the movement itself is started in ambient.js. They keep
+   moving while you type. A running animation makes the browser update its
+   element's style on every frame it draws (one per key during a round), so
+   the moving <i> is a bare wrapper and the keycap's look sits on the <b>
+   inside (measured, 2026-10-20, docs/ARCHITECTURE.md). */
 .ambient { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; --boost: 1; }
-.ambient > i {
-  position: absolute; left: var(--x); top: -12vh; will-change: transform;
+.ambient > i { position: absolute; top: -12vh; will-change: transform; }
+.ambient[data-kind="rise"] > i { top: 104vh; }       /* from under the bottom edge up */
+.ambient[data-kind="float"] > i { top: var(--y); }   /* each at its own spot */
+.ambient > i > b {
   width: var(--size); height: var(--size); display: grid; place-items: center; border-radius: 22%;
   font-family: "Geist Mono Keys", var(--mono); font-style: normal; font-weight: 600; font-size: calc(var(--size) * .38);
   line-height: 1; color: var(--sub); text-transform: uppercase;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 55%, transparent), inset 0 calc(var(--size) * -.08) 0 color-mix(in srgb, var(--sub) 25%, transparent);
   opacity: calc(var(--o) * .34 * var(--boost));
-  animation: amb-fall var(--dur) linear var(--delay) infinite;
 }
-@keyframes amb-fall { to { transform: translate3d(var(--drift), 125vh, 0) rotate(var(--rot)); } }
-/* held still while you type: even on the graphics card a running animation
-   costs the browser a style update of its element on every frame, and the
-   keycaps were most of that work during a round (measured, 2026-10-20:
-   about a quarter less style work per frame with them held) */
-body.typing-now .ambient > i { animation-play-state: paused; }
 /* the screen saver: a minute with no key and no mouse (ambient.js) */
 body.afk .ambient { --boost: 1.7; }
 .top, .views, .bottom { transition: opacity 1.2s var(--ease); }
