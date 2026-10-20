@@ -90,7 +90,7 @@ sentences and ends with a full stop.
 | one typing run (10–50 words or 15–90 s) | round |
 | the learning mode, the main one | Learn |
 | the second mode, harder as you get better | Climb |
-| how hard Climb is now, 1 to 100 | level |
+| how hard Climb is now, 1 to 10 (which words) | level |
 | the third mode, plain typing | Freetype |
 | the n most common words Freetype draws from | word list ("200", "1k" ... "25k" on the buttons) |
 | the letter the trainer is drilling now | focus |

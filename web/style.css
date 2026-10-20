@@ -586,6 +586,7 @@ body:is([data-mode="climb"], [data-mode="freetype"]) .letter-row { visibility: h
 .mode-bar button { padding: 2px 8px; border: 0; border-radius: 6px; background: none; color: var(--sub); font: inherit; font-size: .9rem; cursor: pointer; transition: color .15s; }
 .mode-bar button:hover { color: var(--text); }
 .mode-bar button[aria-pressed="true"] { color: var(--accent-text); }
+.mb-lbl { color: var(--sub); font-size: .9rem; margin-right: 4px; }
 body.typing-now .mode-bar { opacity: 0; pointer-events: none; }
 .wl { padding: 2px 8px; border: 0; border-radius: 6px; background: none; color: var(--sub); font: inherit; font-size: .9rem; cursor: pointer; transition: color .15s, opacity .4s var(--ease); }
 .wl:hover { color: var(--text); }
@@ -1905,3 +1906,16 @@ body.afk .ambient { --boost: 1.7; }
 .top, .views, .bottom { transition: opacity 1.2s var(--ease); }
 body.afk :is(.top, .views, .bottom) { opacity: .45; }
 
+/* Climb: one dot per pass a level needs, filled when passed (letters.js
+   status line, result.js level). The sentence after the result row says
+   what the round counted for: green when it counted or moved up, red when
+   it was under the fail line, plain when it did not count. */
+.pips { display: inline-flex; gap: 5px; margin-left: 8px; vertical-align: middle; }
+.pips i { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--sub); }
+.pips i.on { background: var(--ok); border-color: var(--ok); }
+.r-num .pips { margin-left: 12px; gap: 7px; }
+.r-num .pips i { width: 13px; height: 13px; border-width: 2px; }
+.r-climb { margin: 0; font-size: 1.25rem; color: var(--text); }
+.r-climb.pass { color: var(--ok); }
+.r-climb.fail { color: var(--error); }
+.letters-caption .mode-note.slip { color: var(--error); }

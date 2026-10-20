@@ -114,13 +114,15 @@ the normal server, it shows yours.
     The words are real words, never one letter alone (`a`, `i`), and no
     word comes more than twice in a round.
   - **Climb** is for those who can already type: no letters to unlock, the
-    text simply gets harder as you get better. A level from 1 to 100 (shown
-    next to the numbers, with what it brings) goes up a little after every
-    line typed cleanly and steadily, and down when mistakes pile up. Higher
-    levels bring rarer words, then capitals (from level 35, Shift with the
-    other hand's little finger, the hands show it), then commas and full
-    stops (from level 55). The next round starts where the last one ended,
-    and the result shows the level and how far it moved. Climb also learns
+    text simply gets harder as you get better. It is words only, in lower
+    case. There are ten levels: level 1 draws from the 200 most common
+    words, then 500, 1 000, 2 000, 3 000, 5 000, 7 500, 10 000, 15 000 and
+    all 25 000 at level 10. A whole round is typed at one level. A round at
+    96% accuracy or more counts; three of them take you a level up. A round
+    under 92% starts the count again, two in a row take you a level down.
+    Speed does not count. The status line shows the level with one dot per
+    round counted, and the result says what the round counted for. The
+    round bar lets you pick any level (the count starts again). Climb also learns
     your **weak pairs**: the two-letter movements (`ck`, `ou`...) your
     last 20 Climb rounds were slowest or least accurate on. Half the words
     carry one of them, and the result names them. After the first round or

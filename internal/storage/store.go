@@ -48,9 +48,9 @@ type Session struct {
 	// Unlocked is how many letters were open after the round (learning
 	// only; 0 in free practice and in old history).
 	Unlocked int `json:"unlocked,omitempty"`
-	// Level is where Climb's difficulty stood at the end of the round, 0..1
-	// (freeplay.NextLevel); the next round goes on from it. 0 in learning
-	// and in old history.
+	// Level is the Climb level the round was typed at, 1..10 (a whole
+	// number; freeplay.Standing reads the next level from these). 0 in the
+	// other modes. Before 2026-10-20 it was 0..1 (migration 008).
 	Level float64 `json:"level,omitempty"`
 	// Group: the study group the round was typed in (learning only):
 	// "" = the adaptive trainer, GroupRandom = the control group.

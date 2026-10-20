@@ -63,7 +63,7 @@ export const S = {
   climb: null,            // last /freeplay/stats answer (Climb)
   freetype: null,         // last /freetype/stats answer (Freetype: its lists, the chosen one's rounds)
   freetypeList: 0,        // Freetype: the chosen word list (its n most common words; 0 = not known yet)
-  climbLevel: null,       // Climb: the level of the round being typed, 0..1 (typing.js)
+  climbLevel: null,       // Climb: the level of this round and the next, 1..10 (typing.js); null = not known yet in this language
   settings: { length: "words-30", live: false, caret: "line", theme: "dark", streak: false, bg: "keys", goal: 0 },   // settings.js
   kbHidden: false,        // keyboard and hands switched off
 };
@@ -76,9 +76,9 @@ export const store = { // localStorage can be blocked; the app must work without
 // Is guide A (intro.js) on screen? Here, not in intro.js, because typing.js
 // needs it too and must not import intro.js.
 export const introOpen = () => !el.intro.classList.contains("hidden") && !el.intro.classList.contains("closing");
-// Climb's level as people see it: 1..100 for the 0..1 of the server
-// (freeplay.NextLevel).
-export const levelNumber = (level) => Math.round(level * 99) + 1;
+// Climb: how many of the most common words level n draws from
+// (/freeplay/stats "levels"), as a number to read: "2,000".
+export const levelWords = (n) => (S.climb?.levels?.[n - 1] ?? 0).toLocaleString("en");
 // A Freetype word list by its size, as on monkeytype: 200, 1k, 5k, 25k.
 export const listLabel = (n) => n >= 1000 && n % 1000 === 0 ? `${n / 1000}k` : String(n);
 // A touch screen (phone, tablet): no physical keyboard, no hover.

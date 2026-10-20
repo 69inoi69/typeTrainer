@@ -27,7 +27,7 @@
 // To add a fact: another cell in the row in showResult, its text in i18n.js.
 
 import { t } from "./i18n.js";
-import { $, el, S, isTouch, reducedMotion, levelNumber, listLabel } from "./state.js";
+import { $, el, S, isTouch, reducedMotion, levelWords, listLabel } from "./state.js";
 import { FEEL } from "./feel.js";
 import { showTip } from "./tools.js";
 import { letterNeeds, letterProgress } from "./letters.js";
@@ -47,8 +47,10 @@ export const resultOpen = () => done !== null;
 // The full result, of Climb and Freetype (learning has its own short one,
 // showLearnResult).
 // r: { wpm, accuracy, consistency (null = too short), best,
-//      climb: {from, to, weak} in Climb (its level; weak: the weak letter
-//             pairs from POST /freeplay/results, [{pair, cost, count}]),
+//      climb: {level, verdict, place, weak} in Climb: the level of the
+//             round, and from POST /freeplay/results what it counted for
+//             (verdict), where the next round starts (place,
+//             freeplay.Standing) and the weak letter pairs ([{pair, cost, count}]),
 //      list: the word list in Freetype,
 //      words: [{letters: [{c, bad}], wpm}] (typing.js typedWords),
 //      chars: {correct, wrong, extra, missed}, seconds (typing.js roundFacts) }
@@ -91,20 +93,40 @@ export function showResult(r) {
       `${part(c.correct, "result.correct", "")}${part(c.wrong, "result.wrong", c.wrong ? " bad" : "")}` +
       `${part(c.extra, "result.extra", c.extra ? " bad" : "", "result.extraTip")}${part(c.missed, "result.missed", "", "result.missedTip")}</span></span>`);
   }
-  // Climb: the level the round ended at, and how far it moved
+  // Climb: the level of the next round, with its dots (as in the status
+  // line) or the arrow of a move; the sentence after the row says what
+  // this round counted for (climbNote)
+  let note = "";
   if (r.climb) {
-    const d = levelNumber(r.climb.to) - levelNumber(r.climb.from);
-    const move = d ? ` <span class="trend ${d > 0 ? "up" : "down"}">${d > 0 ? "↑" : "↓"} ${Math.abs(d)}</span>` : "";
-    row.push(`<span class="r-num mid" tabindex="0" data-tip-text="${t("tip.level")}"><span class="r-lbl">${t("climb.level")}</span><b>${levelNumber(r.climb.to)}${move}</b></span>`);
+    const p = r.climb.place, c = S.climb;
+    const move = p.moved ? ` <span class="trend ${p.moved > 0 ? "up" : "down"}">${p.moved > 0 ? "↑" : "↓"}</span>` : "";
+    const pips = p.moved || !c ? "" : `<span class="pips">${Array.from({ length: c.passesUp }, (_, i) => `<i${i < p.passes ? ' class="on"' : ""}></i>`).join("")}</span>`;
+    row.push(`<span class="r-num mid" tabindex="0" data-tip-text="${t("tip.level")}"><span class="r-lbl">${t("climb.level")}</span><b>${p.level}${move}${pips}</b></span>`);
     // what the next rounds practise; nothing while the history is too short
     if (r.climb.weak?.length) row.push(num(r.climb.weak.map((w) => w.pair).join(" "), "", "climb.weak", "mid", "climb.weakTip"));
+    if (c) note = `<p class="r-climb ${r.climb.verdict}">${climbNote(r.climb, c)}</p>`;
   }
   // Freetype: the word list of the round
   if (r.list) row.push(num(listLabel(r.list), "", "freetype.list", "mid", "freetype.listTip"));
 
   const body = `<div class="r-top${graph ? "" : " solo"}">${hero}${graph}</div>` +
-    (row.length ? `<div class="r-row">${row.join("")}</div>` : "") + list;
+    (row.length ? `<div class="r-row">${row.join("")}</div>` : "") + note + list;
   return open(body, "result.nextBtn");
+}
+
+// What a Climb round counted for, in one sentence: a level reached or
+// lost, a pass (how many of how many), a round that did not count and
+// why, a round under FailAccuracy and what one more would do.
+// cl: r.climb of showResult; c: the /freeplay/stats answer (the rule).
+function climbNote(cl, c) {
+  const p = cl.place, top = c.levels.length;
+  const v = { level: p.level, words: levelWords(p.level), up: c.passesUp, pass: c.passAccuracy, fail: c.failAccuracy,
+    next: cl.level + 1, prev: cl.level - 1, k: p.passes, left: c.passesUp - p.passes };
+  if (p.moved > 0) return t("climb.up", v);
+  if (p.moved < 0) return t("climb.down", v);
+  if (cl.verdict === "pass") return t(cl.level < top ? "climb.pass" : "climb.passTop", v);
+  if (cl.verdict === "hold") return t("climb.hold", v);
+  return t(cl.level > 1 && p.fails > 0 ? "climb.fail" : "climb.failCount", v);
 }
 
 // Learning's result is short on purpose (owner, 2026-10-19: the full

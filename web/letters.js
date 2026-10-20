@@ -9,15 +9,15 @@
 // look (touch typing is not looking down). The status line before the
 // first key says how many letters are open.
 // In Climb and Freetype there are no letters to learn: the bar is hidden
-// and every key is open; in Climb the status line shows the level and what
-// it brings. (Freetype's word lists are in the round bar, modebar.js.)
+// and every key is open; in Climb the status line shows the level, how far
+// the typist is on it, and which words it draws. (Freetype's word lists are in the round bar, modebar.js.)
 // Layer: middle. Imports the bottom layer and modes.js.
 // Called by: typing.js (renderLetters when a portion or round changes the
 // letters, or Climb's level; markNewLetter / markMastered just before),
 // result.js (letterProgress, letterNeeds, for the result of a learning round).
 
 import { t } from "./i18n.js";
-import { el, S, levelNumber } from "./state.js";
+import { el, S, levelWords } from "./state.js";
 import { learning } from "./modes.js";
 
 // One-time animations for the next render (set by typing.js)
@@ -139,18 +139,31 @@ const pill = (icon, cls, tip, label, value) =>
   `<span class="lbl">${label}</span>${value}</span>`;
 
 // Climb and Freetype: no letters to learn, every key is open. In Climb the
-// status line shows the level of the round and what it brings (the layers
-// of freeplay.Portion; their levels come with /freeplay/stats).
+// status line shows the level of the round with one dot per pass it needs
+// (filled: passed already), so the typist knows while typing what the
+// round is worth; before the first key also the words it draws or, after
+// a round under FailAccuracy, what one more would do. The rule comes with
+// /freeplay/stats (freeplay.Standing).
 function renderFreeLetters() {
   el.letters.replaceChildren();
   for (const key of Object.values(S.keyEls)) key.classList.remove("locked", "known");
   if (S.altgrEl) S.altgrEl.classList.remove("locked");
-  if (S.mode !== "climb" || S.climbLevel == null) { el.lettersCaption.innerHTML = ""; return; }
-  const level = S.climbLevel;
-  const brings = [t(level < 0.25 ? "climb.common" : level < 0.6 ? "climb.wider" : "climb.rare"),
-    ...[[S.climb?.capsFrom, "climb.caps"], [S.climb?.punctFrom, "climb.punct"]].filter(([from]) => from != null && level >= from).map(([, key]) => t(key))];
-  el.lettersCaption.innerHTML = pill("level", "focus", "tip.level", t("climb.level"), `<b>${levelNumber(level)}</b>`) +
-    `<span class="begin mode-note">${brings.join(" · ")}</span>`;
+  if (S.mode !== "climb" || S.climbLevel == null || !S.climb?.place) { el.lettersCaption.innerHTML = ""; return; }
+  const c = S.climb, level = S.climbLevel, top = c.levels.length;
+  // the counts belong to the level the user stands on; a level picked by
+  // hand starts from none
+  const own = level === c.place.level;
+  const passes = own ? c.place.passes : 0, fails = own ? c.place.fails : 0;
+  const pips = `<span class="pips" aria-hidden="true">${Array.from({ length: c.passesUp }, (_, i) => `<i${i < passes ? ' class="on"' : ""}></i>`).join("")}</span>`;
+  const rule = t(level < top ? "climb.ruleTip" : "climb.ruleTipTop", { up: c.passesUp, pass: c.passAccuracy, fail: c.failAccuracy, next: level + 1 });
+  // after a round under the fail line the warning takes the place of the
+  // words (both do not fit; the level's button in the round bar names them)
+  const slip = fails > 0 && level > 1;
+  const note = slip ? t("climb.slip", { fail: c.failAccuracy, prev: level - 1 }) : t("climb.words", { n: levelWords(level) });
+  el.lettersCaption.innerHTML =
+    `<span class="stat focus" data-tip-text="${rule}"><svg viewBox="0 0 24 24" aria-hidden="true">${STAT_ICONS.level}</svg>` +
+    `<span class="lbl">${t("climb.level")}</span><b>${level}</b>${pips}</span>` +
+    `<span class="begin mode-note${slip ? " slip" : ""}">${note}</span>`;
 }
 
 // ---------- one letter's progress ----------

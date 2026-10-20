@@ -896,76 +896,97 @@ documents every filtering step:
 
 Code: `internal/freeplay` (tests in `freeplay_test.go`); the routes in
 `internal/api/freeplay.go`. For people who can already type: no letters
-to unlock, one number, the **level** (0..1, shown as 1..100), says how hard
-the text is. The idea is the "flow channel" (Csikszentmihalyi): a task a
-little harder than your skill keeps you engaged and growing; much harder
-frustrates, much easier bores. So the level follows the typist like a
-thermostat.
+to unlock; one number, the **level** (1..10), says which words come. The
+idea is the "flow channel" (Csikszentmihalyi): a task a little harder than
+your skill keeps you engaged and growing; much harder frustrates, much
+easier bores. So the level follows the typist, but in steps they can feel:
+each level is a clear set of words, and a round is an exam at one level.
 
-**The thermostat** (`NextLevel`), after every portion of 6 words, from its
-accuracy (the share of its letters typed without a mistake), its speed and
-the pace of the round so far. Every portion counts, also once the round
-has all its words, and so does the shorter last one when it has at least
-3 words (`PartialMin`; 1-2 words are too few to judge). (Until 2026-10-19
-the level moved only when the browser asked for more words, so a round of
-10 words, built at once, never moved it.)
+**Words only** (owner, 2026-10-20): lower case, no capitals, no
+punctuation. Climb trains the words themselves, how the letters of a word
+follow each other; a comma or a capital in a list of random words is not a
+sentence, it only breaks the rhythm. (Until 2026-10-20 the upper levels
+added capitals and then commas and full stops.)
+
+**The levels** (`Params.Levels`, `MaxRank`). Level n draws evenly from the
+`Levels[n-1]` most common words of the long list (`free.txt`, section 14;
+a language without it uses `words.txt`, and a list shorter than a level
+caps it), without the words of one letter (`MinLetters = 2`, `Longer`:
+"a" and "i" are nothing to train; Freetype keeps them, as monkeytype does). A word used recently is rarer, the same word never comes twice
+in a row (the same draw as Freetype).
+
+| Level | Words | Average length (letters) | Examples | On monkeytype |
+|---|---|---|---|---|
+| 1 | 200 | 4.0 | every, through, left | English 200 |
+| 2 | 500 | 4.6 | food, outside, country | |
+| 3 | 1 000 | 5.1 | experience, planet | English 1k |
+| 4 | 2 000 | 5.6 | brilliant, curious | |
+| 5 | 3 000 | 5.9 | signature, monitor | |
+| 6 | 5 000 | 6.2 | teenager, literature | English 5k |
+| 7 | 7 500 | 6.5 | noticing, moreover | |
+| 8 | 10 000 | 6.7 | eyesight, capitalism | English 10k |
+| 9 | 15 000 | 7.0 | curriculum, dictated | |
+| 10 | 25 000 | 7.3 | poltergeist, evaporated | English 25k |
+
+The steps roughly double the words, not add the same number: word
+frequencies fall steeply (Zipf's law), so a straight line from 200 to
+25 000 would reach words nobody types ("pippin", "dubbing") by level 5,
+and half of the climb would be spent on them. Five levels are monkeytype's
+lists, so a typist can compare. (Until 2026-10-20 the level was a number
+0..1, shown as 1..100, that moved after every 6 words; within one round it
+could move 10 places, so the typist never knew what they had passed.)
+
+**The round** is typed at one level from start to end: the level of the
+round is sent with every request for words and stored with the round
+(`storage.Session.Level`). **The verdict** of a round (`Judge`), from its
+accuracy (the share of letters typed without a mistake):
 
 ```
-accuracy <  92 %                                  ->  level - 0.06
-accuracy >= 96 %  and  speed >= 0.85 * pace       ->  level + 0.03
-otherwise                                         ->  level stays
+accuracy >= 96 %   ->  pass
+accuracy <  92 %   ->  fail
+otherwise          ->  hold (counts for nothing)
 ```
 
-Clean and steady typing climbs; mistakes take it down, twice as fast as it
-climbs, so it settles where the typist makes a mistake in roughly every 12
-to 25 letters. Clean but clearly slower (the text got hard) holds the level:
-that is the zone. A new typist starts at 0.2; a round starts where the last
-one ended (stored with each round, `storage.Session.Level`).
+Speed never counts (owner, 2026-10-20): on rarer words everyone slows
+down, so a speed bar would either block the top levels or mean nothing on
+the first ones; the result and the stats show the speed for the typist to
+judge.
 
-**What the level does** (`Portion`), in layers:
-
-| Level | Words | Capitals | Punctuation |
-|---|---|---|---|
-| 0 | the 200 most common | none | none |
-| 0.2 (start) | ~525 | none | none |
-| 0.35 | ~1 100 | starts | none |
-| 0.5 | ~2 200 | 7 % of words | none |
-| 0.55 | ~2 850 | 9 % of words | starts |
-| 0.75 | ~7 500 | 18 % of words | 16 % of words |
-| 1 | the whole long list (25 000) | 30 % of words, and after every full stop | a comma or full stop after 35 % of words |
-
-The words come evenly from the `MaxRank(level)` most common ones (a word used
-recently is rarer, the same word never twice in a row), so a higher level
-means rarer and longer words on average. The list is the long one of
-Freetype (`free.txt`, section 14; a language without it uses `words.txt`),
-and the limit grows on a log scale:
+**Moving** (`Standing`), from the history: only the last run of rounds at
+one level counts, round by round:
 
 ```
-MaxRank = RankMin * (words in the list / RankMin)^level      = 200 * 125^level in English
+pass:  passes + 1, fails = 0     3 passes          ->  one level up
+fail:  passes = 0, fails + 1     2 fails in a row  ->  one level down
+hold:  fails = 0
 ```
 
-Every step of the level multiplies the limit by the same factor (+0.03 =
-about 15 % more words). Word frequencies fall steeply (Zipf's law): a
-straight line from 200 to 25 000 would pass rank 12 600 ("pippin",
-"dubbing") at level 0.5, so half of the climb would be spent on words
-nobody types. (Until 2026-10-20 Climb used `words.txt`, 2000 words, in a
-straight line: its top level was easier than Freetype's 5k list.) A capital is typed with Shift; the
-on-screen hands light the little finger of the other hand for it. The
-marks are those the layout has keys for (`,` and `.`).
+A move sets both counts to 0. The top level stays the top, level 1 stays
+level 1. The passes need not be in a row (a hold between them does not
+matter), but a fail between them starts them again: three clean rounds
+with no bad one between. Nothing is stored for the counts: every round
+keeps its level, and a run at another level (the level moved, or the
+typist picked one in the round bar) starts them again. A new typist
+starts at `LevelStart` = 1 and can pick any level before any round.
+
+**Old history** (rounds from before 2026-10-20, level 0..1) gets the new
+level the old one stands for, the old number divided by 10, rounded up
+(`LevelFromOld`: 1..10 -> 1, 44 -> 5, 91..100 -> 10): in PostgreSQL by
+migration `008`, in a file (and in the copy the GitHub Pages version keeps
+in IndexedDB) on import, when the file has no `climbLevels`. Those rounds
+count in `Standing` like any other.
 
 | Name | Value | Reason |
 |---|---|---|
-| `LevelStart` | 0.2 | common words only; a fluent typist climbs out in a round or two |
-| `LevelUp` / `LevelDown` | 0.03 / 0.06 | the whole way in about 27 good portions (5 rounds); a bad portion costs two good ones, so the level does not run away |
-| `UpAccuracy` / `DownAccuracy` | 96 / 92 | up: at most ~1 mistake in 25 letters; down: more than ~1 in 12 |
-| `SlowShare` | 0.85 | 15 % slower than the round so far is a real slowdown, not noise |
-| `PartialMin` | 3 | the end of a round counts from half a portion on; 1-2 words are noise |
-| `RankMin` | 200 | level 0 = monkeytype's "English 200"; level 1 = the whole long list, on a log scale |
-| `CapsFrom` / `CapsMax` | 0.35 / 0.3 | capitals come after the words got wider; at most every third word |
-| `PunctFrom` / `PunctMax` / `StopShare` | 0.55 / 0.35 / 0.4 | punctuation last; 2 of 5 marks are full stops |
+| `Levels` | 200 ... 25 000 | the table above |
+| `LevelStart` | 1 | the common words; anyone who types well picks a higher level or passes it in three rounds |
+| `PassAccuracy` / `FailAccuracy` | 96 / 92 | pass: at most ~1 mistake in 25 letters; fail: more than ~1 in 12 |
+| `PassesUp` | 3 | one clean round can be luck, three show the level is mastered |
+| `FailsDown` | 2 | one bad round is a slip, two in a row say the level is too hard |
+| `History` | 50 | `Standing` reads the last 50 rounds; a longer run at one level counts from those |
 
-All values are reasoned, not fitted; the stats screen (Climb's own) shows the
-level of every round, which is the data to tune them on.
+All values are reasoned, not fitted; the stats screen (Climb's own) shows
+every round with its level, which is the data to tune them on.
 
 ### 13.1 Weak pairs
 
@@ -1006,8 +1027,8 @@ little data), and then Climb is exactly as in section 13.
 drawn from the words that contain a weak pair, else from all words; both
 draws use the same level limit (`MaxRank`) and the same "do not repeat"
 weights. If the level allows fewer than `WeakMinWords = 10` words with a weak
-pair, there is no such draw (the same few words would repeat). Capitals
-and punctuation are added as usual. The result screen names the weak pairs,
+pair, there is no such draw (the same few words would repeat). The
+result screen names the weak pairs,
 so the typist sees what the next rounds practise.
 
 | Name | Value | Reason |

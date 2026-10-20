@@ -147,7 +147,7 @@ type resultsRequest struct {
 	// Device: what the round was typed on, storage.DeviceKeyboard or
 	// storage.DeviceTouch; "" = not sent (older pages). Recorded only.
 	Device string `json:"device"`
-	// Level: Climb only, the level the round ended at (freeplay.NextLevel).
+	// Level: Climb only, the level the round was typed at (1..10).
 	Level float64 `json:"level"`
 	// List: Freetype only, the word list of the round (its n most common
 	// words, one of Server.freetypeLists).

@@ -20,6 +20,7 @@ import { resultOpen, closeResult, settleResult } from "./result.js";
 import { settingsOpen, openSettings, onSettingsClose, onKbToggle, onGoalChange, onBgChange, setLength } from "./settings.js";
 import { setMode, refreshFreeplay, renderNav, setFreetypeList } from "./modes.js";
 import { onBarPick, renderModeBar } from "./modebar.js";
+import { renderLetters } from "./letters.js";
 import { buildAmbient } from "./ambient.js";
 import "./share.js";   // the copy / image buttons of the stats screen: it wires them itself
 
@@ -112,12 +113,13 @@ function chooseMode(m) {
 el.tabLearn.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("learn"); });
 el.tabClimb.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("climb"); });
 el.tabFreetype.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("freetype"); });
-// The round bar above the text (modebar.js): Freetype's word list or the
-// mode's round length. Either starts a new round, as a new mode does (a
+// The round bar above the text (modebar.js): Freetype's word list, Climb's
+// level or the mode's round length. Either starts a new round, as a new mode does (a
 // round already begun is dropped), and the stats follow.
 onBarPick(async (pick) => {
   if (S.busy && !resultOpen()) return;          // a round is being saved right now: a moment
   if (pick.list) await setFreetypeList(pick.list);
+  if (pick.level) { S.climbLevel = pick.level; renderLetters(); }
   if (pick.length) {
     setLength(S.mode, pick.length);
     await Promise.all([refreshStats(), refreshFreeplay()]);

@@ -103,22 +103,15 @@ func loadLanguage(info language.Language, cfg config.Config, seed int64) (*api.L
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(seed)), cfg.Engine)
 	gen.SetHome(lay.RestingKeys(), cfg.Engine)
 	gen.SetWordParams(cfg.Words)
-	// Climb's punctuation: the marks the layout has keys of their own for
-	var punct []string
-	for _, mark := range []string{",", "."} {
-		if lay.FingerFor(mark) != "" {
-			punct = append(punct, mark)
-		}
-	}
 	// The long list (tools/wordlists/free.py), for Climb and Freetype: Climb
-	// climbs from its 200 most common words to all of them (owner,
-	// 2026-10-20: words.txt, 2000 words, ended easier than Freetype's 5k
-	// list). A language without one uses words.txt for both.
+	// climbs from its 200 most common words to all of them in 10 levels
+	// (owner, 2026-10-20: words.txt, 2000 words, ended easier than
+	// Freetype's 5k list). A language without one uses words.txt for both.
 	long := words
 	if data, err := files.ReadFile("data/langs/" + info.ID + "/free.txt"); err == nil {
 		long = info.Words(string(data))
 	}
-	free := freeplay.NewPicker(long, punct, rand.New(rand.NewSource(seed+1)))
-	freetype := freeplay.NewPicker(long, nil, rand.New(rand.NewSource(seed+2)))
+	free := freeplay.NewPicker(freeplay.Longer(long, cfg.Freeplay.MinLetters), rand.New(rand.NewSource(seed+1)))
+	freetype := freeplay.NewPicker(long, rand.New(rand.NewSource(seed+2)))
 	return &api.Language{Info: info, Gen: gen, Free: free, Freetype: freetype, LayoutJSON: layoutJSON}, nil
 }

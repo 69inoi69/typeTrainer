@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"typingtrainer/internal/engine"
+	"typingtrainer/internal/freeplay"
 	"typingtrainer/internal/storage"
 )
 
@@ -37,6 +38,12 @@ type langExport struct {
 	// (files from when it was free practice may also carry "testPassed",
 	// the flag of the typing test that is gone: it is ignored)
 	Freeplay *freeplayExport `json:"freeplay,omitempty"`
+	// ClimbLevels: Climb's levels in this file are 1..ClimbLevels; absent
+	// (0) in files from before the ten levels (2026-10-20), whose levels
+	// are 0..1 and are turned into the new ones on import
+	// (freeplay.LevelFromOld). The copy on GitHub Pages (IndexedDB) is
+	// such a file too.
+	ClimbLevels int `json:"climbLevels,omitempty"`
 	// Freetype, the third mode: list ("1000") -> its history; absent in
 	// files from before it existed
 	Freetype map[string]freeplayExport `json:"freetype,omitempty"`
@@ -114,7 +121,7 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request, user strin
 	}
 	writeJSON(w, http.StatusOK, langExport{
 		Unlocked: unlocked, Keys: keys, Sessions: oldestFirst(newestFirst), Group: group,
-		Freeplay: &freeplayExport{Sessions: free}, Freetype: freetype,
+		Freeplay: &freeplayExport{Sessions: free}, ClimbLevels: len(s.cfg.Freeplay.Levels), Freetype: freetype,
 	})
 }
 
@@ -143,7 +150,7 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request, user strin
 		return
 	}
 	okList := func(n int) bool { return s.validList(l, n) }
-	if msg := validateImport(in, s.cfg.MaxImportSessions, s.cfg.MaxEvents, len(l.Gen.Order()), l.Info.Alphabet, s.validLength, okList); msg != "" {
+	if msg := validateImport(in, s.cfg.MaxImportSessions, s.cfg.MaxEvents, len(l.Gen.Order()), len(s.cfg.Freeplay.Levels), l.Info.Alphabet, s.validLength, okList); msg != "" {
 		badRequest(w, msg)
 		return
 	}
@@ -178,6 +185,11 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request, user strin
 	}
 	histories := map[string][]storage.Session{}
 	if in.Freeplay != nil {
+		if in.ClimbLevels == 0 { // an older file: levels 0..1
+			for i := range in.Freeplay.Sessions {
+				in.Freeplay.Sessions[i].Level = float64(freeplay.LevelFromOld(in.Freeplay.Sessions[i].Level))
+			}
+		}
 		histories[storage.ModeClimb] = in.Freeplay.Sessions
 	}
 	for list, f := range in.Freetype {

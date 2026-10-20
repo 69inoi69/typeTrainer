@@ -17,7 +17,7 @@
 // and a new round length; resetStatsPick when the stats open).
 
 import { i18nVars, t, applyI18n } from "./i18n.js";
-import { $, el, S, reducedMotion, levelNumber, listLabel } from "./state.js";
+import { $, el, S, reducedMotion, levelWords, listLabel } from "./state.js";
 import { getJSON } from "./api.js";
 import { LENGTHS, lengthLabel, lengthFor, firstRoundDone } from "./settings.js";
 
@@ -78,7 +78,7 @@ export function renderStats() {
   const sessions = [...s.sessions].reverse(); // oldest first
   // nothing to share before the first round of this length
   document.getElementById("btn-image").disabled = !s.sessionCount;
-  el.tiles.innerHTML = tiles(sessions, s.sessionCount, S.settings.goal, mode === "climb" ? s.level : null);
+  el.tiles.innerHTML = tiles(sessions, s.sessionCount, S.settings.goal, mode === "climb" ? s.place?.level : null);
   drawActivity();
   if (activityStale) loadActivity();
 
@@ -112,7 +112,7 @@ function tiles(sessions, count, goal, level) {
   const wpm = avg(last, (x) => x.wpm);
   const out = [
     // where the next round starts (1..100): the thermostat of Climb (null: Freetype has none)
-    level != null ? `<div class="tile level" data-tip="tile.levelTip"><b>${levelNumber(level)}</b><small>${t("tile.level")}</small><span class="meta">${t("tile.levelNote")}</span></div>` : "",
+    level != null ? `<div class="tile level" data-tip-text="${t("tile.levelTip", { words: levelWords(level) })}"><b>${level}</b><small>${t("tile.level")}</small><span class="meta">${t("tile.levelNote")}</span></div>` : "",
     tile(count, t("tile.exercises")),
     tile(num(wpm), t("tile.wpm"), last10((x) => x.wpm), " speed"),
     tile(num(avg(last, (x) => x.accuracy), "%"), t("tile.acc"), last10((x) => x.accuracy)),

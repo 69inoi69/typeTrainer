@@ -110,10 +110,12 @@ Details: `docs/ARCHITECTURE.md`.
   row, with no difficulty switches (the algorithm decides what to practise).
   It has no stats screen: its progress is the letters row and a short
   result (what the round achieved and what comes next; no charts there).
-  *Climb* is for people who can already type (`internal/freeplay`): one
-  level (1..100) follows the typist like a thermostat, up after portions
-  typed cleanly, down when mistakes pile up; it brings rarer words, then
-  capitals, then punctuation. It has its own history and the stats screen,
+  *Climb* is for people who can already type (`internal/freeplay`; owner,
+  2026-10-20): ten levels of words only (no capitals, no punctuation),
+  each the n most common words, 200 up to 25 000; a round is typed at one
+  level, three rounds at 96% accuracy or more take the typist up, two
+  under 92% in a row down; speed does not count; any level can be picked
+  in the round bar. It has its own history and the stats screen,
   and never feeds the letter model. *Freetype* is plain typing as on
   monkeytype: words drawn evenly from a list the typist picks (the 200 to
   25 000 most common words); nothing adapts, every list has its own

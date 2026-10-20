@@ -1,17 +1,19 @@
 // Package freeplay is the two modes outside learning. Mostly Climb, the
-// second mode: for people who can already type. There are no letters to unlock; one number, the level (0..1),
-// says how hard the text is, and it follows the typist like a thermostat:
-// after every portion typed well it goes up a little, after one typed
-// badly it goes down (NextLevel). So the text stays just outside the
-// comfort zone: hard enough to stretch, never so hard that it falls apart
-// (the "flow channel" of Csikszentmihalyi; docs/ALGORITHM.md section 13).
+// second mode: for people who can already type. There are no letters to
+// unlock; one number, the level (1..10), says which words come, and
+// nothing else: lower-case words only, no capitals, no punctuation (owner,
+// 2026-10-20: Climb trains the words themselves; a comma in a list of
+// random words only breaks the rhythm).
 //
-// What the level changes, in layers (Portion):
-//   - the words: from the most common ones at level 0 to the whole long
-//     list (free.txt, 25 000 words in English) at 1, on a log scale (MaxRank);
-//   - capitals: from CapsFrom on, on a growing share of the words;
-//   - punctuation: from PunctFrom on, commas and full stops, and the word
-//     after a full stop starts with a capital.
+// Level n draws from the Levels[n-1] most common words of a long list
+// (free.txt, 25 000 words in English): 200 at level 1 to all 25 000 at 10
+// (MaxRank). A round is typed at one level from start to end, so it is an
+// exam with a clear answer. After it (Standing): a round typed cleanly
+// (accuracy >= PassAccuracy) passes, one typed badly (< FailAccuracy)
+// fails; PassesUp passes take the typist one level up, FailsDown fails in
+// a row one level down. Speed never counts (owner, 2026-10-20). The
+// counts are not stored: they come from the history, where every round
+// keeps the level it was typed at (docs/ALGORITHM.md section 13).
 //
 // And one thing that is the typist's own: a share of the words carries one
 // of their weak letter pairs, the movements their last rounds were slowest
@@ -30,7 +32,6 @@ import (
 	"math/rand"
 	"slices"
 	"strings"
-	"unicode"
 	"unicode/utf8"
 )
 
@@ -43,22 +44,16 @@ type Params struct {
 	RecentWords   int     // RepeatPenalty counts uses in the last this many words
 	RepeatPenalty float64 // weight multiplier per recent use of a word: variety
 
-	// The thermostat (NextLevel).
-	LevelStart   float64 // where a new typist starts
-	LevelUp      float64 // a portion typed well: the level goes up this much
-	LevelDown    float64 // a portion typed badly: down this much
-	UpAccuracy   float64 // percent: at or above this, and not slowing down, the level goes up
-	DownAccuracy float64 // percent: below this it goes down
-	SlowShare    float64 // a portion slower than this share of the round's pace so far is "slowing down"
-	PartialMin   int     // the last, shorter portion of a round moves the level only with at least this many words
-
-	// What the level does to the text (Portion).
-	RankMin   int     // level 0: only the RankMin most common words; level 1: the whole list
-	CapsFrom  float64 // capitals start at this level...
-	CapsMax   float64 // ...and reach this share of the words at level 1
-	PunctFrom float64 // punctuation starts at this level...
-	PunctMax  float64 // ...and follows this share of the words at level 1
-	StopShare float64 // of the punctuation marks, this share are full stops, the rest commas
+	// The levels (MaxRank, Standing). To add a level: one more number in
+	// Levels (and its texts in web/i18n.js).
+	Levels       []int   // level n: the Levels[n-1] most common words, growing
+	LevelStart   int     // where a new typist starts
+	PassAccuracy float64 // percent: a round at or above this passes
+	FailAccuracy float64 // percent: a round below this fails
+	PassesUp     int     // this many passes on a level: one level up
+	FailsDown    int     // this many fails in a row: one level down
+	History      int     // Standing reads at most the last this many rounds
+	MinLetters   int     // Climb leaves out words shorter than this (Freetype keeps them; Longer)
 
 	// The typist's weak pairs (weak.go WeakPairs, Portion).
 	WeakRounds     int     // the pairs are counted over the last this many Climb rounds
@@ -74,77 +69,139 @@ type Params struct {
 	FreetypeLists []int
 }
 
-// NextLevel is the thermostat: the level after one portion was typed with
-// accuracy acc (percent) at wpm, while the round so far went at pace wpm
-// (0 = not known yet, the first portion).
-//
-//	acc <  DownAccuracy                     -> level - LevelDown
-//	acc >= UpAccuracy and wpm >= SlowShare * pace -> level + LevelUp
-//	otherwise                               -> level stays
-//
-// Mistakes take it down, clean and steady typing takes it up; clean but
-// slowing down (the text is getting hard) holds it where it is. The result
-// stays in [0, 1].
-func NextLevel(level, acc, wpm, pace float64, p Params) float64 {
+// Verdict is what one Climb round says about its level.
+type Verdict string
+
+const (
+	Pass Verdict = "pass" // typed cleanly: counts towards the next level
+	Hold Verdict = "hold" // neither: changes nothing
+	Fail Verdict = "fail" // typed badly: the passes start again
+)
+
+// Judge is the verdict of a round typed with accuracy acc (percent).
+func Judge(acc float64, p Params) Verdict {
 	switch {
-	case acc < p.DownAccuracy:
-		level -= p.LevelDown
-	case acc >= p.UpAccuracy && (pace <= 0 || wpm >= p.SlowShare*pace):
-		level += p.LevelUp
+	case acc >= p.PassAccuracy:
+		return Pass
+	case acc < p.FailAccuracy:
+		return Fail
 	}
-	return math.Max(0, math.Min(1, level))
+	return Hold
 }
 
-// layer is how strongly a layer is on at level: 0 below from, rising in a
-// straight line to max at level 1.
-func layer(level, from, most float64) float64 {
-	if level < from || from >= 1 {
-		return 0
-	}
-	return most * (level - from) / (1 - from)
+// Round is what Standing needs of one Climb round: its level and accuracy.
+type Round struct {
+	Level    int
+	Accuracy float64
 }
 
-// Picker draws the words of Climb or Freetype (one Picker per word list:
-// words.txt for Climb, free.txt for Freetype). Not safe for parallel use (its random
+// Place is where a typist stands in Climb: the level of their next round
+// and how far they are on it.
+type Place struct {
+	Level  int `json:"level"`  // the next round's level
+	Passes int `json:"passes"` // passes on it so far (0..PassesUp-1)
+	Fails  int `json:"fails"`  // fails in a row on it (0..FailsDown-1)
+	Moved  int `json:"moved"`  // +1 / -1: the last round moved the level; 0: it did not
+}
+
+// Standing is where the history leaves the typist. rounds: their Climb
+// rounds, oldest first. Only the last run of rounds at one level counts:
+// a round at another level (the level moved, or the typist picked one)
+// starts the counts again. Along the run, round by round:
+//
+//	pass: passes + 1, fails = 0; at PassesUp: one level up (not above the last)
+//	fail: passes = 0, fails + 1; at FailsDown: one level down (not below 1)
+//	hold: fails = 0 (they are no longer in a row)
+//
+// A move sets both counts to 0. When the run goes on at the same level
+// after a move (the typist picked it again, or the top or bottom level),
+// the counts start from 0. No rounds: LevelStart.
+func Standing(rounds []Round, p Params) Place {
+	top := max(len(p.Levels), 1)
+	if len(rounds) == 0 {
+		return Place{Level: clampLevel(p.LevelStart, top)}
+	}
+	level := clampLevel(rounds[len(rounds)-1].Level, top)
+	first := len(rounds) - 1
+	for first > 0 && clampLevel(rounds[first-1].Level, top) == level {
+		first--
+	}
+	var at Place
+	for _, r := range rounds[first:] {
+		at.Moved = 0
+		switch Judge(r.Accuracy, p) {
+		case Pass:
+			at.Passes, at.Fails = at.Passes+1, 0
+			if at.Passes >= p.PassesUp {
+				at.Passes = 0
+				if level < top {
+					at.Moved = 1
+				}
+			}
+		case Fail:
+			at.Passes, at.Fails = 0, at.Fails+1
+			if at.Fails >= p.FailsDown {
+				at.Fails = 0
+				if level > 1 {
+					at.Moved = -1
+				}
+			}
+		default:
+			at.Fails = 0
+		}
+	}
+	at.Level = level + at.Moved
+	return at
+}
+
+// clampLevel keeps a level within 1..top.
+func clampLevel(level, top int) int { return max(1, min(top, level)) }
+
+// LevelFromOld turns a level of the old Climb (0..1, shown as 1..100,
+// until 2026-10-20) into one of the 10 levels: the old number divided by
+// 10, rounded up (1-10 -> 1, 44 -> 5, 91-100 -> 10). Used once, when old
+// history is loaded (migration 008, import).
+func LevelFromOld(old float64) int {
+	shown := math.Round(math.Max(0, math.Min(1, old))*99) + 1
+	return int(math.Ceil(shown / 10))
+}
+
+// Picker draws the words of Climb or Freetype (one Picker per mode, both
+// on the long list, free.txt). Not safe for parallel use (its random
 // source is not), so the api package calls it under Server.genMu.
 type Picker struct {
 	words []string
-	punct []string // the marks the layout has keys for, of "," and "."
 	rng   *rand.Rand
 }
 
-// NewPicker keeps the word list of one language, most frequent first, and
-// the punctuation its layout can type without a modifier (layout data):
-// "," and "." where they have keys of their own; none = no punctuation layer.
-func NewPicker(words, punct []string, rng *rand.Rand) *Picker {
-	return &Picker{words: words, punct: punct, rng: rng}
+// NewPicker keeps the word list of one language, most frequent first.
+func NewPicker(words []string, rng *rand.Rand) *Picker {
+	return &Picker{words: words, rng: rng}
 }
 
-// Base turns a word as typed in Climb back into the word of the list:
-// lower case, without punctuation (for "do not repeat").
-func Base(w string) string {
-	return strings.ToLower(strings.TrimRight(w, ",."))
+// Longer returns the words with at least min letters, in their order: the
+// list of Climb (owner, 2026-10-20: "a" and "i" are not words worth
+// typing). Freetype keeps the whole list, as on monkeytype.
+func Longer(words []string, min int) []string {
+	out := make([]string, 0, len(words))
+	for _, w := range words {
+		if utf8.RuneCountInString(w) >= min {
+			out = append(out, w)
+		}
+	}
+	return out
 }
 
 // Portion returns n words for the level:
 //
 //	the word:   from the MaxRank(level) most common words (draw)
-//	a capital:  with the share layer(level, CapsFrom, CapsMax), and always
-//	            after a full stop
-//	after it:   a comma or a full stop with the share layer(level, PunctFrom, PunctMax)
-//
 //	weak:       with the share WeakShare, a word that contains one of the
 //	            weak pairs (WeakPairs), from the same MaxRank(level) words;
 //	            when the level allows fewer than WeakMinWords of them, none
 //
-// recent: the words already typed in this round, oldest first, as typed
-// (with their capitals and marks). weak: the typist's weak pairs (none =
-// the plain draw).
-func (pk *Picker) Portion(recent []string, n int, level float64, weak []string, p Params) []string {
-	punct := 0.0
-	if len(pk.punct) > 0 {
-		punct = layer(level, p.PunctFrom, p.PunctMax)
-	}
+// recent: the words already typed in this round, oldest first. weak: the
+// typist's weak pairs (none = the plain draw).
+func (pk *Picker) Portion(recent []string, n, level int, weak []string, p Params) []string {
 	size := pk.MaxRank(level, p)
 	var pool []int
 	if len(weak) > 0 && p.WeakShare > 0 {
@@ -157,14 +214,13 @@ func (pk *Picker) Portion(recent []string, n int, level float64, weak []string, 
 			pool = nil
 		}
 	}
-	return pk.draw(recent, n, size, pool, layer(level, p.CapsFrom, p.CapsMax), punct, p)
+	return pk.draw(recent, n, size, pool, p)
 }
 
 // Freetype returns n words for Freetype, the third mode: from the size most
-// common words, in lower case, without punctuation (draw). The typist
-// chose size; nothing adapts.
+// common words (draw). The typist chose size; nothing adapts.
 func (pk *Picker) Freetype(recent []string, n, size int, p Params) []string {
-	return pk.draw(recent, n, min(max(size, 1), len(pk.words)), nil, 0, 0, p)
+	return pk.draw(recent, n, min(max(size, 1), len(pk.words)), nil, p)
 }
 
 // Size is how many words the list has.
@@ -179,24 +235,19 @@ const tries = 32
 //
 //	P(word) ~ RepeatPenalty^(uses in the last RecentWords words)
 //
-// a capital on the share caps of the words (and always after a full stop)
-// and a mark after the share punct of them. The same word never comes
-// twice in a row (unless the list has only one word). pool (nil = none):
-// the places of the words with a weak pair; each word comes from it with
-// the chance WeakShare, by the same rule.
-func (pk *Picker) draw(recent []string, n, size int, pool []int, caps, punct float64, p Params) []string {
+// The same word never comes twice in a row (unless the list has only one
+// word). pool (nil = none): the places of the words with a weak pair; each
+// word comes from it with the chance WeakShare, by the same rule.
+func (pk *Picker) draw(recent []string, n, size int, pool []int, p Params) []string {
 	if len(pk.words) == 0 || n <= 0 {
 		return nil
 	}
 	keep := max(p.RecentWords, 0)
-	window := make([]string, 0, keep+n) // the bases of the last RecentWords words
-	for _, w := range recent[max(0, len(recent)-keep):] {
-		window = append(window, Base(w))
-	}
-	last, sentence := "", false
+	window := make([]string, 0, keep+n) // the last RecentWords words
+	window = append(window, recent[max(0, len(recent)-keep):]...)
+	last := ""
 	if len(recent) > 0 {
-		last = Base(recent[len(recent)-1])
-		sentence = strings.HasSuffix(recent[len(recent)-1], ".")
+		last = recent[len(recent)-1]
 	}
 	out := make([]string, 0, n)
 	for len(out) < n {
@@ -204,29 +255,13 @@ func (pk *Picker) draw(recent []string, n, size int, pool []int, caps, punct flo
 		if pool != nil && pk.rng.Float64() < p.WeakShare {
 			from = pool
 		}
-		base := pk.words[pk.drawWord(window, last, size, from, p)]
-		word := base
-		if sentence || (caps > 0 && pk.rng.Float64() < caps) {
-			word = capitalize(base)
-		}
-		sentence = false
-		if punct > 0 && pk.rng.Float64() < punct {
-			mark := pk.punct[0]
-			if len(pk.punct) > 1 { // both: full stops are StopShare of the marks
-				mark = ","
-				if pk.rng.Float64() < p.StopShare {
-					mark = "."
-				}
-			}
-			word += mark
-			sentence = mark == "."
-		}
+		word := pk.words[pk.drawWord(window, last, size, from, p)]
 		out = append(out, word)
-		window = append(window, base)
+		window = append(window, word)
 		if len(window) > keep {
 			window = window[len(window)-keep:]
 		}
-		last = base
+		last = word
 	}
 	return out
 }
@@ -285,28 +320,18 @@ func (pk *Picker) drawWord(window []string, last string, size int, from []int, p
 	return found
 }
 
-// MaxRank is how many of the most common words the level allows:
+// MaxRank is how many of the most common words the level allows: the
+// Levels[level-1] most common, or the whole list when it is shorter (the
+// hidden languages). A level out of 1..len(Levels) counts as the nearest
+// one.
 //
-//	MaxRank = RankMin * (words in the list / RankMin)^level
-//
-// RankMin at level 0, the whole list at level 1, and in between every step
-// of the level multiplies the limit by the same factor (a straight line on
-// a log scale). Why not a straight line: word frequencies fall steeply
-// (Zipf's law), so with 25 000 words a straight line would already reach
-// rank 12 600, words like "pippin", at level 0.5. With the log scale level
-// 0.5 is about the 2 200 most common words (docs/ALGORITHM.md section 13).
-func (pk *Picker) MaxRank(level float64, p Params) int {
-	n := len(pk.words)
-	lo := min(max(p.RankMin, 1), n)
-	level = math.Max(0, math.Min(1, level))
-	return min(n, max(lo, int(math.Round(float64(lo)*math.Pow(float64(n)/float64(lo), level)))))
-}
-
-// capitalize puts the first letter in upper case (Polish, Cyrillic too).
-func capitalize(w string) string {
-	r, size := utf8.DecodeRuneInString(w)
-	if r == utf8.RuneError {
-		return w
+// The steps (200, 500, 1 000, 2 000, ... 25 000 in config) roughly double
+// the words at each level, because word frequencies fall steeply (Zipf's
+// law): a straight line from 200 to 25 000 would reach words nobody types
+// ("pippin", "dubbing") by level 5 (docs/ALGORITHM.md section 13).
+func (pk *Picker) MaxRank(level int, p Params) int {
+	if len(p.Levels) == 0 {
+		return len(pk.words)
 	}
-	return string(unicode.ToUpper(r)) + w[size:]
+	return min(len(pk.words), max(1, p.Levels[clampLevel(level, len(p.Levels))-1]))
 }
