@@ -51,6 +51,12 @@ Typing never stops on a mistake (as on monkeytype, so the rhythm is kept):
 - letters typed where a space belongs are **extra** letters, shown in red
   after the word.
 
+With the setting **Stop on a mistake** (off by default) the cursor instead
+waits on a wrong key until the right one comes: there are no skips and no
+extra letters, and every wrong press there counts as one more `errors` of
+that position. The sample is the same as without the setting: one per
+position, its errors, and `ms` to the first press there.
+
 For every **position of the text that was typed** the browser sends one sample:
 
 ```

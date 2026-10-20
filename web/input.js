@@ -10,19 +10,20 @@
 // (the "views" and "modes" sections below are the pattern).
 
 import { $, el, S, introOpen, isTouch, focusText } from "./state.js";
-import { applyKb, requestFit } from "./keyboard.js";
+import { applyKb, requestFit, highlightNextKey } from "./keyboard.js";
 import { refreshStats, renderStats, resetStatsPick } from "./stats.js";
 import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, stopRound, loadExercise, roundStarted, pauseRound, checkLayout, checkCaps } from "./typing.js";
 import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
 import { resultOpen, closeResult, settleResult } from "./result.js";
-import { settingsOpen, openSettings, onSettingsClose, onKbToggle, onGoalChange, onBgChange, setLength } from "./settings.js";
+import { settingsOpen, openSettings, onSettingsClose, onKbToggle, onGoalChange, onBgChange, onTypingLook, onSoundPick, setLength } from "./settings.js";
 import { setMode, refreshFreeplay, renderNav, setFreetypeList } from "./modes.js";
 import { onBarPick, renderModeBar } from "./modebar.js";
 import { renderLetters } from "./letters.js";
 import { buildAmbient } from "./ambient.js";
 import { renderPanel } from "./learnpanel.js";
+import { keySound } from "./sound.js";
 import "./share.js";   // the copy / image buttons of the stats screen: it wires them itself
 
 // the keyboard choice in the settings and Alt+K: keyboard and hands off, or
@@ -133,6 +134,16 @@ onBarPick(async (pick) => {
 
 // another background in the settings: drawn again at once
 onBgChange(buildAmbient);
+// a new text size: the text and the keyboard fit the window again; the
+// next key lit or not
+onTypingLook(() => {
+  fitText();
+  requestFit();
+  placeCaret(true);
+  highlightNextKey();
+});
+// a sound was chosen: one of it, so you hear what you picked
+onSoundPick((mode) => keySound(mode !== "errors", mode));
 
 // a new personal goal: only the stats screen shows it
 onGoalChange(() => {

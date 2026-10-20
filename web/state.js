@@ -3,7 +3,7 @@
 // Import rule of the frontend (three layers, imports only go down):
 //   bottom: state.js, i18n.js and feel.js import nothing, fx.js only
 //           i18n.js, api.js only state.js
-//   middle: keyboard, typing, letters, learnpanel, stats, intro, languages, tools,
+//   middle: keyboard, typing, letters, learnpanel, sound, stats, intro, languages, tools,
 //           profile, result, modes, modebar, settings, share, ambient import the bottom
 //           and each other in one direction only (no cycles)
 //   top:    input.js and app.js may import anything; nothing imports them
@@ -64,7 +64,9 @@ export const S = {
   freetype: null,         // last /freetype/stats answer (Freetype: its lists, the chosen one's rounds)
   freetypeList: 0,        // Freetype: the chosen word list (its n most common words; 0 = not known yet)
   climbLevel: null,       // Climb: the level of this round and the next, 1..10 (typing.js); null = not known yet in this language
-  settings: { length: "words-30", live: false, caret: "line", theme: "dark", streak: false, bg: "keys", goal: 0, daily: 15 },   // settings.js
+  settings: { length: "words-30", live: false, caret: "line", theme: "dark", streak: false, bg: "keys", goal: 0, daily: 15,
+    glide: "smooth", size: "m", ws: "none", sound: "off", volume: "50", rest: "0",
+    stop: false, nextKey: true, fingers: true },   // settings.js
   kbHidden: false,        // keyboard and hands switched off
 };
 

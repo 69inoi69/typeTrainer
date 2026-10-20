@@ -267,6 +267,16 @@ dialog.settings-win:focus { outline: none; }
 .sw-row.on .sw-name::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: var(--accent); }
 .sw-ctl .btn.kb-on { box-shadow: inset 0 0 0 1px var(--accent); }
 .sw-empty { margin: 0; padding: 12px 8px; color: var(--sub); font-size: .84rem; }
+/* a name with an explanation (settings.js ROWS desc) shows it in a tooltip */
+.sw-name[data-tip-text] { cursor: help; }
+/* the preview on top: one line that types itself in the chosen look */
+/* it stays on top while the list scrolls, so a change far down still shows */
+.sw-preview { position: sticky; top: -10px; z-index: 1; padding: 10px 12px 14px; margin: -8px -10px 4px; background: var(--panel); border-bottom: 1px solid var(--line); overflow: hidden; }
+.sw-preview .pv-text { height: auto; overflow: visible; white-space: nowrap; }
+.sw-preview .pv-caret {
+  --i: 0; top: .25em; height: 1.2em;
+  translate: calc(var(--i) * (1ch + .02em)) 0;
+}
 .sw-foot { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 14px; border-top: 1px solid var(--line); color: var(--sub); font-size: .72rem; }
 .sw-foot kbd { background: var(--track); box-shadow: var(--ring); color: var(--text); border-radius: 4px; padding: 0 5px; margin-right: 3px; font-family: var(--mono); }
 /* desktop (owner, 2026-10-18: "too small"): the same window, about a
@@ -632,6 +642,29 @@ body.typing-now .lp-news { opacity: 0; pointer-events: none; }
 @media (min-width: 1000px) and (pointer: fine) {
   .learn-panel { font-size: .95rem; }
 }
+
+/* ---------- typing settings (settings.js CHOICES and SWITCHES) ---------- */
+/* text size: the size of the text on a computer screen (the phone layout
+   keeps its own) */
+:root { --text-size: 2.15rem; }
+body[data-size="s"] { --text-size: 1.75rem; }
+body[data-size="l"] { --text-size: 2.6rem; }
+/* the caret jumps instead of gliding: no transition, the streak badge
+   riding on it too */
+body[data-glide="jump"] { --feel-caret-ms: 0ms; }
+/* a mark on every space (typing.js gives space spans data-sp): a faint dot
+   in the middle or a short bar at the bottom, in the letter's own colour */
+body:is([data-ws="dot"], [data-ws="bar"]) .text span[data-sp] { position: relative; }
+body:is([data-ws="dot"], [data-ws="bar"]) .text span[data-sp]::after {
+  content: ""; position: absolute; left: 50%; pointer-events: none;
+  background: currentColor; opacity: .45; translate: -50% 0;
+}
+body[data-ws="dot"] .text span[data-sp]::after { top: 50%; width: .14em; height: .14em; border-radius: 50%; translate: -50% -50%; }
+body[data-ws="bar"] .text span[data-sp]::after { bottom: .32em; width: .55em; height: .06em; border-radius: 1px; }
+/* finger colours off: every key and finger in one calm grey, the next key
+   in the accent instead (the colours come inline from JS, so !important) */
+body.fingers-off :is(.key, .hand .finger) { --fc: #7d828c !important; }
+body.fingers-off .key.next { --fc: var(--accent) !important; }
 /* the round bar above the letters (modebar.js): plain words as on
    monkeytype's config bar, in groups split by a thin line, the chosen one
    in the accent colour. It steps back while you type. */
@@ -758,7 +791,7 @@ body.typing-now .mode-bar { opacity: 0; pointer-events: none; }
   .text-box, .text-box:focus-within, .text-box:focus { background: none; box-shadow: none; padding: 0 0 0 40px; }
   #view-type > .letters { margin-top: auto; }
   .text-box::before { left: 0; top: 38px; }   /* next to the first line: under the live line */
-  .text, .text-box::before { font-size: 2.15rem; }
+  .text, .text-box::before { font-size: var(--text-size); }
   #view-type:not([hidden]) { flex: 1; display: flex; flex-direction: column; margin-block: 0; --view-centred: 1; }
   #view-type::after { content: ""; margin-top: auto; }
 }
@@ -1341,6 +1374,11 @@ button:disabled:active { transform: none; }
   white-space: nowrap;
 }
 .tooltip.below { transform: translate(-50%, 10px); }
+/* a tooltip over an open window (the settings) is a popover, so it sits in
+   the top layer above the window; this undoes the browser's popover look */
+.tooltip[popover] { inset: auto; margin: 0; border: 0; overflow: visible; }
+/* a sentence or two (the settings explanations) wraps */
+.tooltip.wide { white-space: normal; max-width: 24rem; line-height: 1.5; background: var(--panel-2); }   /* opaque: readable over the rows */
 .tooltip.show { opacity: 1; }
 .tooltip span { color: var(--sub); }
 

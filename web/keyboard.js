@@ -110,18 +110,22 @@ export function highlightNextKey() {
   const base = ch === undefined ? ch : baseOf(ch);   // "ą" is typed on the "a" key, "A" too
   nextKeyEl = S.keyEls[base] || null;
   if (!nextKeyEl) { el.hint.innerHTML = "&nbsp;"; return; }
-  nextKeyEl.classList.add("next");
+  // "Next key" off (a setting): find it from memory; the sentence for
+  // screen readers still says it
+  const lit = S.settings.nextKey;
+  if (lit) nextKeyEl.classList.add("next");
   const fingerId = fingerOf[base];
   let ids = fingerId === "th" ? ["thl", "thr"] : [fingerId];
   if (ch !== ch.toLowerCase()) ids.push(fingerId.startsWith("l") ? "rp" : "lp");   // Shift: the other hand
   const vars = { key: ch === " " ? t("key.space") : ch, base, finger: t(`finger.${fingerId}`) };
   if (S.altBase[ch]) {
-    if (S.altgrEl) S.altgrEl.classList.add("next");
+    if (S.altgrEl && lit) S.altgrEl.classList.add("next");
     ids = [...ids, "thr"];
     el.hint.innerHTML = t("hint.alt", vars);
   } else {
     el.hint.innerHTML = t("hint.press", vars);
   }
+  if (!lit) return;
   for (const id of ids) {
     const f = handFingers[id];
     if (f) { f.classList.add("on"); litFingers.push(f); }
