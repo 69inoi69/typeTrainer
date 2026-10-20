@@ -21,7 +21,6 @@ import { showIntro } from "./intro.js";
 import { renderProfile, loadAccount } from "./profile.js";
 import { buildLangSwitch, initialLanguage, loadLanguage } from "./languages.js";
 import { loadSettings } from "./settings.js";
-import { startTune } from "./tune.js";
 import { buildAmbient } from "./ambient.js";
 
 import { startView } from "./input.js";   // keys and buttons: mostly event listeners
@@ -51,7 +50,6 @@ async function joinStudy() {
   renderProfile();
   const splash = Splash.start();
   loadSettings();   // round length, live numbers, caret (settings.js)
-  startTune();      // the hidden tuning panel, only with ?tune in the address (tune.js)
   restoreKb();   // keyboard on or off from last time (learning until the mode is known)
   labelTips();
   if (isTouch()) el.textBox.classList.add("blurred"); // phone: tap to open the keyboard

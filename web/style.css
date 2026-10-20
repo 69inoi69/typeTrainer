@@ -387,6 +387,7 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
   transition: translate var(--feel-caret-ms, 0ms) var(--caret-curve), color .4s var(--ease);
 }
 .streak.jump { transition: none; }
+#streak-n { display: inline-block; will-change: transform; }   /* it hops (typing.js hopStreak) */
 .streak .bolt { width: 13px; height: 13px; flex: none; fill: color-mix(in srgb, var(--sc) 35%, transparent); stroke: var(--sc); stroke-width: 2; stroke-linejoin: round; }
 /* the longer the streak, the warmer (owner, 2026-10-18): gold from the
    start (grey read as "nothing", and 3 clean words are already something),
@@ -1877,64 +1878,33 @@ body.live-off .live .metric.num { display: none; }
 .cs.outline { width: 8px; background: none; box-shadow: inset 0 0 0 1.5px currentColor; }
 
 /* ---------- the quiet background (ambient.js) ---------- */
-/* Outlines of keycaps moving slowly in the empty fields, behind everything
-   (z-index -1: above the page colour, under the page), on every screen; so
-   slow it does not distract. The way they move is picked per page load
-   (data-kind); the movement itself is started in ambient.js. They keep
+/* Things falling slowly in the empty fields, behind everything (z-index -1:
+   above the page colour, under the page), on every screen; so slow it does
+   not distract. What falls is a setting (data-kind: keys, letters, words;
+   "off" draws nothing); the fall itself is started in ambient.js. They keep
    moving while you type. A running animation makes the browser update its
    element's style on every frame it draws (one per key during a round), so
-   the moving <i> is a bare wrapper and the keycap's look sits on the <b>
-   inside (measured, 2026-10-20, docs/ARCHITECTURE.md). */
+   the moving <i> is a bare wrapper (as wide as its lane, the piece centred
+   in it) and the look sits on the <b> inside (measured, 2026-10-20,
+   docs/ARCHITECTURE.md). */
 .ambient { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; --boost: 1; }
-.ambient > i { position: absolute; top: -12vh; will-change: transform; }
-.ambient[data-kind="rise"] > i { top: 104vh; }       /* from under the bottom edge up */
-.ambient[data-kind="float"] > i { top: var(--y); }   /* each at its own spot */
+.ambient > i { position: absolute; top: -12vh; display: flex; justify-content: center; will-change: transform; }
 .ambient > i > b {
-  width: var(--size); height: var(--size); display: grid; place-items: center; border-radius: 22%;
-  font-family: "Geist Mono Keys", var(--mono); font-style: normal; font-weight: 600; font-size: calc(var(--size) * .38);
-  line-height: 1; color: var(--sub); text-transform: uppercase;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 55%, transparent), inset 0 calc(var(--size) * -.08) 0 color-mix(in srgb, var(--sub) 25%, transparent);
+  display: grid; place-items: center; white-space: nowrap;
+  font-family: "Geist Mono Keys", var(--mono); font-style: normal; font-weight: 600;
+  line-height: 1; color: var(--sub);
   opacity: calc(var(--o) * .34 * var(--boost));
 }
+.ambient[data-kind="keys"] > i > b {      /* the outline of a keycap with its letter */
+  width: var(--size); height: var(--size); border-radius: 22%; font-size: calc(var(--size) * .38); text-transform: uppercase;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 55%, transparent), inset 0 calc(var(--size) * -.08) 0 color-mix(in srgb, var(--sub) 25%, transparent);
+}
+.ambient[data-kind="letters"] > i > b { font-size: calc(var(--size) * .75); }   /* the letter alone, bigger */
+.ambient[data-kind="words"] > i > b { font-size: calc(var(--size) * .4); font-weight: 500; }   /* a short word */
 /* the screen saver: a minute with no key and no mouse (ambient.js) */
 body.afk .ambient { --boost: 1.7; }
 .top, .views, .bottom { transition: opacity 1.2s var(--ease); }
 body.afk :is(.top, .views, .bottom) { opacity: .45; }
-
-/* ---------- the hidden tuning panel (tune.js, "?tune" in the address) ----------
-   For the owner only: a small card in the top right corner over the page,
-   so the text and the keyboard stay in view while the values change. */
-.tune {
-  position: fixed; top: 12px; right: 12px; z-index: 50;
-  width: 340px; max-height: calc(100vh - 24px); overflow: auto;
-  padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px;
-  background: color-mix(in srgb, var(--panel) 94%, transparent);
-  box-shadow: 0 12px 32px -12px rgba(0, 0, 0, .5);
-  color: var(--sub); font: 12px/1.4 var(--ui);
-}
-.tune-title { margin: 0 0 4px; padding: 0; border: 0; background: none; color: var(--text); font: 600 13px var(--ui); cursor: pointer; }
-.tune-title::after { content: " ▾"; color: var(--sub); }
-.tune.min { width: auto; }
-.tune.min .tune-title { margin: 0; }
-.tune.min .tune-title::after { content: " ▸"; }
-.tune.min > :not(.tune-title) { display: none; }
-.tune-note { margin: 0 0 8px; }
-.tune-group { margin: 10px 0 4px; color: var(--text); font-size: 12px; }
-.tune-row { display: grid; grid-template-columns: 1fr 100px 58px; gap: 6px; align-items: center; margin: 3px 0; }
-.tune-row span { overflow: hidden; text-overflow: ellipsis; }
-.tune-row input[type="range"] { width: 100%; accent-color: var(--accent); }
-.tune input[type="number"], .tune input[type="text"], .tune select, .tune-out {
-  min-width: 0; padding: 2px 4px; border: 1px solid var(--line); border-radius: 4px;
-  background: var(--panel-2); color: var(--text); font: inherit;
-}
-.tune-curve { grid-column: 2 / 4; display: grid; gap: 4px; }
-.tune-out { display: block; width: 100%; box-sizing: border-box; margin-top: 10px; resize: vertical; }
-.tune-bar { display: flex; gap: 8px; margin-top: 8px; }
-.tune-btn {
-  padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px;
-  background: var(--panel-2); color: var(--text); font: inherit; cursor: pointer;
-}
-.tune-btn:hover { border-color: var(--accent); }
 
 /* Climb: one dot per pass a level needs, filled when passed (letters.js
    status line, result.js level). The sentence after the result row says
