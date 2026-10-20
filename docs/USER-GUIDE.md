@@ -147,8 +147,11 @@ the normal server, it shows yours.
     not see them until the first finished round (a beginner should not
     chase speed); then they appear and you can hide them again. The word
     counter always stays.
-  - **streak**: the bolt and number above the caret (clean words in a row) on
-    (default) or off.
+  - **streak in Freetype**: the bolt and number above the caret (clean
+    words in a row), on or off (default). Learn and Climb never show it.
+  - **background**: what falls slowly in the empty fields at the sides:
+    keycaps with the open letters (default), the letters alone, short words
+    of the text, or nothing (off).
   - **caret**: a thin line (default), a block over the letter, a bar under
     it (underline) or a frame around it (outline).
   - **theme**: dark (default) or light: a warm paper page with white cards,
@@ -191,10 +194,12 @@ the normal server, it shows yours.
   text, the numbers, the hands and the keyboard step back under a breathing
   pause sign and "Paused", the clock stops (a timed round does not run
   out), and any key goes on; the time away does not count.
-- From 3 clean words in a row (typed without a single mistake) a small
+- In Freetype, with the streak turned on in the settings: from 3 clean
+  words in a row (typed without a single mistake) a small
   **bolt and number** ride just above the caret and count them; the colour
   warms as the streak grows (gold, orange from 10, rose from 25, violet
-  from 50). At 10, 25, 50 and every 50 after, the badge gives a small bump.
+  from 50). Every clean word after that makes the number hop once; at 10,
+  25, 50 and every 50 after, the whole badge gives a small bump.
   A mistake ends the streak and the badge goes away. New
   records, mastered letters and new letters still get a small confetti.
 - **While you type** the feedback is where your eyes already are: the focus
@@ -204,7 +209,7 @@ the normal server, it shows yours.
   and shake for a tenth of a second. The lit key on the drawn keyboard dips
   a little as its light goes out, and the next key and finger light up. While you pause, the caret
   breathes (fades out and in) instead of blinking.
-- **The result** comes a quarter of a second after the last letter: the
+- **The result** comes about a tenth of a second after the last letter: the
   caret reaches the end, the finished text fades out (this wait is not in
   the speed), and the whole result fades in at once while rising a little.
   **The stats screen** opens with a short entrance: the tiles

@@ -17,7 +17,7 @@ import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
 import { resultOpen, closeResult, settleResult } from "./result.js";
-import { settingsOpen, openSettings, onSettingsClose, onKbToggle, onGoalChange, setLength } from "./settings.js";
+import { settingsOpen, openSettings, onSettingsClose, onKbToggle, onGoalChange, onBgChange, setLength } from "./settings.js";
 import { setMode, refreshFreeplay, renderNav, setFreetypeList } from "./modes.js";
 import { onBarPick, renderModeBar } from "./modebar.js";
 import { buildAmbient } from "./ambient.js";
@@ -128,6 +128,9 @@ onBarPick(async (pick) => {
   else loadExercise().catch(console.error);
 });
 
+// another background in the settings: drawn again at once
+onBgChange(buildAmbient);
+
 // a new personal goal: only the stats screen shows it
 onGoalChange(() => { if (S.view === "stats") { el.viewStats.classList.remove("grow"); renderStats(); } });
 
@@ -138,8 +141,7 @@ onGoalChange(() => { if (S.view === "stats") { el.viewStats.classList.remove("gr
 // from ALSO arriving through the hidden input (and space from scrolling).
 document.addEventListener("keydown", (e) => {
   // the settings window and the reset confirm window handle their own keys,
-  // and so do the fields of the hidden tuning panel (tune.js)
-  if (document.querySelector("dialog[open]") || e.target.closest?.(".tune")) return;
+  if (document.querySelector("dialog[open]")) return;
   if (introOpen()) { introKey(e); return; }
   // the profile card is open: keys go to its name field, Esc closes it
   if (profileOpen()) {
