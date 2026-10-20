@@ -80,8 +80,19 @@ func (g *Generator) SetWordParams(wp WordParams) {
 
 // NewGenerator computes the unlock order and the first lesson size once.
 // words must be ordered most frequent first (data/langs/<id>/words.txt is);
-// a word that appears twice keeps its first, better rank.
+// a word that appears twice keeps its first, better rank. Words shorter than
+// p.MinWordLetters are left out here, so they never count anywhere (unlock
+// order, first lesson, ranks).
 func NewGenerator(words []string, rng *rand.Rand, p Params) *Generator {
+	if p.MinWordLetters > 1 {
+		long := make([]string, 0, len(words))
+		for _, w := range words {
+			if utf8.RuneCountInString(w) >= p.MinWordLetters {
+				long = append(long, w)
+			}
+		}
+		words = long
+	}
 	g := &Generator{words: words, rng: rng, rank: map[string]int{}}
 	for i, w := range words {
 		if _, ok := g.rank[w]; !ok {
@@ -360,48 +371,48 @@ func (pl *pool) pickFocus(r float64) string { return pl.open[WeightedPick(pl.let
 
 // pickWord is step 2: a word that contains the focus letter, with
 // P(word) ~ exp(meanDifficulty / T) * RankWeight * RepeatPenalty^uses, where
-// RankWeight uses the letter's own limit (letterMaxRank). Words in `avoid`
-// (the neighbours of this slot) are never picked, so no word appears twice
-// in a row. Returns an index into pl.words.
+// RankWeight uses the letter's own limit (letterMaxRank). Two kinds of word
+// are never picked: the ones in `avoid` (the neighbours of this slot, so no
+// word appears twice in a row) and the ones already used MaxRepeats times.
+// When that leaves the focus letter no word (z and q have 10 each), the slot
+// takes any open word by the same weights with the pool's own limit; only a
+// dictionary too small for both rules relaxes them, the cap first.
+// Returns an index into pl.words.
 func (pl *pool) pickWord(focus string, uses []int, p Params, r float64, avoid ...int) int {
-	n := 0 // how many different words are avoided
-	for i, a := range avoid {
-		if a >= 0 && !contains(avoid[:i], a) {
-			n++
+	neighbour := func(idx int) bool { return contains(avoid, idx) }
+	capped := func(idx int) bool { return p.MaxRepeats > 0 && uses[idx] >= p.MaxRepeats }
+	all := make([]int, len(pl.words))
+	for i := range all {
+		all[i] = i
+	}
+	tries := []struct {
+		cands   []int
+		maxRank float64
+		banned  func(int) bool
+	}{
+		{pl.byLetter[focus], pl.letterMaxRank(focus), func(i int) bool { return neighbour(i) || capped(i) }},
+		{all, pl.maxRank, func(i int) bool { return neighbour(i) || capped(i) }},
+		{all, pl.maxRank, neighbour},                       // a tiny dictionary: drop the cap
+		{all, pl.maxRank, func(int) bool { return false }}, // one word: a repeat in a row
+	}
+	for _, try := range tries {
+		w := make([]float64, len(try.cands))
+		total := 0.0
+		for j, idx := range try.cands {
+			if try.banned(idx) {
+				continue
+			}
+			w[j] = pl.diffW[idx] * RankWeight(pl.rank[idx], try.maxRank, p)
+			for u := 0; u < uses[idx]; u++ {
+				w[j] *= p.RepeatPenalty
+			}
+			total += w[j]
+		}
+		if total > 0 {
+			return try.cands[WeightedPick(w, r)]
 		}
 	}
-	// (with nothing else left, a repeat is allowed: one-word dictionary)
-	banned := func(idx int) bool { return n < len(pl.words) && contains(avoid, idx) }
-	cands := pl.byLetter[focus]
-	maxRank := pl.letterMaxRank(focus)
-	if len(cands) == 0 { // a letter with no open word: pick from all words
-		cands = make([]int, len(pl.words))
-		for i := range pl.words {
-			cands[i] = i
-		}
-	}
-	w := make([]float64, len(cands))
-	for j, idx := range cands {
-		w[j] = pl.diffW[idx] * RankWeight(pl.rank[idx], maxRank, p)
-		for u := 0; u < uses[idx]; u++ {
-			w[j] *= p.RepeatPenalty
-		}
-		if banned(idx) {
-			w[j] = 0
-		}
-	}
-	if idx := cands[WeightedPick(w, r)]; !banned(idx) {
-		return idx
-	}
-	// every candidate was banned (the focus letter has only those words):
-	// the first allowed word from a random place in the list
-	start := int(r * float64(len(pl.words)))
-	for k := range pl.words {
-		if idx := (start + k) % len(pl.words); !banned(idx) {
-			return idx
-		}
-	}
-	return start
+	return 0 // not reached: newPool never makes a pool without words
 }
 
 // letters splits the unlock order into open and locked letters. Both are

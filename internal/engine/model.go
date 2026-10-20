@@ -64,13 +64,22 @@ type Params struct {
 	StartLetters  int     // first lesson has at least this many letters
 	MinWords      int     // ...and enough letters to build at least this many real words
 	RepeatPenalty float64 // weight multiplier for a word already used in the same exercise
-	ExerciseWords int     // words per exercise (Next: the whole text at once)
+	// MinWordLetters: shorter words never appear in learning (English "a"
+	// and "i", Russian "в": a lone letter is not a word to practise on).
+	// 0 or 1 = every word.
+	MinWordLetters int
+	// MaxRepeats: a word appears at most this many times in an exercise (Next)
+	// or in the last RecentWords words plus the portion being built
+	// (Portion). When the focus letter has no word left under the cap, the
+	// slot takes any open word. 0 = no cap.
+	MaxRepeats    int
+	ExerciseWords int // words per exercise (Next: the whole text at once)
 
 	// The stream (Portion): the text is built a few words at a time while the
 	// user types, always from the newest statistics.
 	PortionWords  int // words per portion; one focus letter per portion
 	AheadPortions int // portions waiting after the one being typed
-	RecentWords   int // RepeatPenalty counts uses in the last this many words
+	RecentWords   int // RepeatPenalty and MaxRepeats count uses in the last this many words
 	RetryWords    int // at most this many mistyped words come back in a portion
 	RoundPortions int // a round (one result in the history) is this many portions
 

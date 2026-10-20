@@ -118,11 +118,17 @@ func Default() Config {
 			StartLetters:  6,   // first lesson: at least 6 letters
 			MinWords:      30,  // ...and at least 30 real words to choose from
 			RepeatPenalty: 0.3, // each earlier use in the exercise multiplies weight by 0.3
-			ExerciseWords: 20,  // short exercises -> the model updates more often
+			// "a" and "i" are the most common words but nothing to practise:
+			// the owner found them filler (2026-10-20)
+			MinWordLetters: 2,
+			// a word at most twice in a round of 30: the penalty alone let a
+			// rare letter's 10 words come back 5-6 times (owner, 2026-10-20)
+			MaxRepeats:    2,
+			ExerciseWords: 20, // short exercises -> the model updates more often
 
 			PortionWords:  6,  // a portion is about one line: short enough to react fast
 			AheadPortions: 2,  // two portions (~12 words) are always ready on screen
-			RecentWords:   20, // "do not repeat" looks at the last 20 words, as one exercise did
+			RecentWords:   24, // "do not repeat" looks at the last 24 words: with the portion being built, a whole round of 30
 			RetryWords:    2,  // up to 2 words with a mistake are typed again
 			RoundPortions: 5,  // a round is 30 words: a clear end, then the result
 
@@ -134,7 +140,7 @@ func Default() Config {
 		// grows to the whole list (docs/ALGORITHM.md section 7).
 		Words: engine.WordParams{
 			// One portion has 6 words and "do not repeat" looks at the last
-			// 20: 10 words of the focus letter fill a portion without a repeat
+			// 24: 10 words of the focus letter fill a portion without a repeat
 			// and leave room for the next one. Only letters with few common
 			// words are affected (Russian "ф" has none in the top 200).
 			FloorWords: 10,
