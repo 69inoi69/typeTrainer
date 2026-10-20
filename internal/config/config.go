@@ -163,12 +163,22 @@ func Default() Config {
 			SlowShare:    0.85, // clean but 15% slower than the round so far: hold
 			PartialMin:   3,    // the end of a round: 3 words or more say something, 1-2 are noise
 
-			RankMin:   200,  // level 0: the 200 most common words (monkeytype "200"); level 1: all ~2000
+			RankMin:   200,  // level 0: the 200 most common words (monkeytype "200"); level 1: all 25 000 (log scale)
 			CapsFrom:  0.35, // capitals from level 35 of 100...
 			CapsMax:   0.3,  // ...up to every third word
 			PunctFrom: 0.55, // commas and full stops from level 55...
 			PunctMax:  0.35, // ...up to a mark after every third word
 			StopShare: 0.4,  // 2 of 5 marks are full stops (a sentence starts after each)
+
+			// The typist's weak letter pairs (freeplay/weak.go). 20 rounds of
+			// 30 words are ~3000 pair presses: a common pair gets 100+, so the
+			// cost is steady; 15 presses keep a pair seen once or twice out.
+			WeakRounds:     20,
+			WeakMinSamples: 15,
+			WeakMissMs:     1000, // a mistake costs as much as learning's slowest press (SlowMs)
+			WeakPairs:      3,    // a few at once: the text stays varied
+			WeakShare:      0.5,  // half the words: the practice is felt, the text is still plain typing
+			WeakMinWords:   10,   // fewer words with the pairs would repeat within a round
 
 			// Freetype: the lists of monkeytype's English (200, 1k, 5k, 10k,
 			// 25k most common words); data/langs/en/free.txt has 25 000.

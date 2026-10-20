@@ -47,8 +47,27 @@ func (s *Server) currentLevel(user string, l *Language) (float64, error) {
 	return last[0].Level, nil
 }
 
+// weakPairs: the user's weak letter pairs from the raw keys of their last
+// WeakRounds Climb rounds (freeplay.WeakPairs). Climb's own history only:
+// learning's rounds never count here.
+func (s *Server) weakPairs(user string, l *Language) ([]freeplay.Pair, error) {
+	rounds, err := s.store.RecentFreeplaySessions(user, l.Info.ID, storage.ModeClimb, "", s.cfg.Freeplay.WeakRounds)
+	if err != nil {
+		return nil, err
+	}
+	keys := make([][]freeplay.Key, len(rounds))
+	for i, r := range rounds {
+		keys[i] = make([]freeplay.Key, len(r.Keys))
+		for j, k := range r.Keys {
+			keys[i][j] = freeplay.Key{Char: k.Char, Errors: k.Errors, Ms: k.Ms}
+		}
+	}
+	return freeplay.WeakPairs(keys, s.cfg.Freeplay), nil
+}
+
 // POST /api/v1/freeplay/portion?lang= -> {"portions": [{"words": [...]}],
-// "round": 5, "level": 0.43}. A new round starts at the user's current
+// "round": 5, "level": 0.43}. Part of the words carry the user's weak
+// pairs (weakPairs; none while there is too little history). A new round starts at the user's current
 // level; later calls move the level by how the portion just typed went and
 // build the next words at the new level. Every portion typed is sent, also
 // when the round needs no more words ("last": the answer has no portions),
@@ -83,6 +102,17 @@ func (s *Server) handleFreeplayPortion(w http.ResponseWriter, r *http.Request, u
 	if req.Last {
 		count = 0
 	}
+	var weak []string
+	if count > 0 {
+		pairs, err := s.weakPairs(user, l)
+		if err != nil {
+			serverError(w, err)
+			return
+		}
+		for _, p := range pairs {
+			weak = append(weak, p.Pair)
+		}
+	}
 	type portion struct {
 		Words []string `json:"words"`
 	}
@@ -90,7 +120,7 @@ func (s *Server) handleFreeplayPortion(w http.ResponseWriter, r *http.Request, u
 	recent := append([]string{}, req.Recent...)
 	s.genMu.Lock()
 	for i := range out {
-		out[i].Words = l.Free.Portion(recent, p.PortionWords, level, p)
+		out[i].Words = l.Free.Portion(recent, p.PortionWords, level, weak, p)
 		recent = append(recent, out[i].Words...)
 	}
 	s.genMu.Unlock()
@@ -106,7 +136,9 @@ func climbAlphabet(alphabet string) string { return alphabet + strings.ToUpper(a
 
 // POST /api/v1/freeplay/results?lang= {wpm, accuracy, chars, perSecond, keys,
 // level} -> one entry in the Climb history, with the level it ended at.
-// {"consistency": 81.4 | null}.
+// {"consistency": 81.4 | null, "weak": [{"pair": "ck", "cost": 412, "count": 31}]}:
+// weak are the weak pairs with this round counted, for the result screen
+// (none while there is too little history).
 func (s *Server) handleFreeplayResults(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	var req resultsRequest
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&req); err != nil {
@@ -143,7 +175,15 @@ func (s *Server) handleFreeplayResults(w http.ResponseWriter, r *http.Request, u
 		serverError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"consistency": consistency})
+	weak, err := s.weakPairs(user, l)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	if weak == nil {
+		weak = []freeplay.Pair{}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"consistency": consistency, "weak": weak})
 }
 
 // GET /api/v1/freeplay/stats?lang=&length= -> {"level" (where the next

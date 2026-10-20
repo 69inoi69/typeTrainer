@@ -13,6 +13,10 @@
 //   - punctuation: from PunctFrom on, commas and full stops, and the word
 //     after a full stop starts with a capital.
 //
+// And one thing that is the typist's own: a share of the words carries one
+// of their weak letter pairs, the movements their last rounds were slowest
+// or least accurate on (weak.go).
+//
 // Freetype, the third mode, is the plain draw underneath (Picker.Freetype):
 // words from the N most common ones of a long list (free.txt), N chosen by
 // the typist, as on monkeytype; nothing adapts.
@@ -24,6 +28,7 @@ package freeplay
 import (
 	"math"
 	"math/rand"
+	"slices"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -54,6 +59,14 @@ type Params struct {
 	PunctFrom float64 // punctuation starts at this level...
 	PunctMax  float64 // ...and follows this share of the words at level 1
 	StopShare float64 // of the punctuation marks, this share are full stops, the rest commas
+
+	// The typist's weak pairs (weak.go WeakPairs, Portion).
+	WeakRounds     int     // the pairs are counted over the last this many Climb rounds
+	WeakMinSamples int     // a pair needs this many presses before it can be weak
+	WeakMissMs     float64 // a mistake on a pair counts as a press this slow (ms)
+	WeakPairs      int     // at most this many weak pairs are practised at once
+	WeakShare      float64 // this share of the words carry one of them (0 = off)
+	WeakMinWords   int     // ...but only when the level allows at least this many such words
 
 	// Freetype, the third mode (Picker.Freetype): the word lists it offers,
 	// as "the n most common words". A language offers the ones its list
@@ -120,21 +133,38 @@ func Base(w string) string {
 //	            after a full stop
 //	after it:   a comma or a full stop with the share layer(level, PunctFrom, PunctMax)
 //
+//	weak:       with the share WeakShare, a word that contains one of the
+//	            weak pairs (WeakPairs), from the same MaxRank(level) words;
+//	            when the level allows fewer than WeakMinWords of them, none
+//
 // recent: the words already typed in this round, oldest first, as typed
-// (with their capitals and marks).
-func (pk *Picker) Portion(recent []string, n int, level float64, p Params) []string {
+// (with their capitals and marks). weak: the typist's weak pairs (none =
+// the plain draw).
+func (pk *Picker) Portion(recent []string, n int, level float64, weak []string, p Params) []string {
 	punct := 0.0
 	if len(pk.punct) > 0 {
 		punct = layer(level, p.PunctFrom, p.PunctMax)
 	}
-	return pk.draw(recent, n, pk.MaxRank(level, p), layer(level, p.CapsFrom, p.CapsMax), punct, p)
+	size := pk.MaxRank(level, p)
+	var pool []int
+	if len(weak) > 0 && p.WeakShare > 0 {
+		for i, w := range pk.words[:size] {
+			if slices.ContainsFunc(weak, func(pair string) bool { return strings.Contains(w, pair) }) {
+				pool = append(pool, i)
+			}
+		}
+		if len(pool) < p.WeakMinWords {
+			pool = nil
+		}
+	}
+	return pk.draw(recent, n, size, pool, layer(level, p.CapsFrom, p.CapsMax), punct, p)
 }
 
 // Freetype returns n words for Freetype, the third mode: from the size most
 // common words, in lower case, without punctuation (draw). The typist
 // chose size; nothing adapts.
 func (pk *Picker) Freetype(recent []string, n, size int, p Params) []string {
-	return pk.draw(recent, n, min(max(size, 1), len(pk.words)), 0, 0, p)
+	return pk.draw(recent, n, min(max(size, 1), len(pk.words)), nil, 0, 0, p)
 }
 
 // Size is how many words the list has.
@@ -151,8 +181,10 @@ const tries = 32
 //
 // a capital on the share caps of the words (and always after a full stop)
 // and a mark after the share punct of them. The same word never comes
-// twice in a row (unless the list has only one word).
-func (pk *Picker) draw(recent []string, n, size int, caps, punct float64, p Params) []string {
+// twice in a row (unless the list has only one word). pool (nil = none):
+// the places of the words with a weak pair; each word comes from it with
+// the chance WeakShare, by the same rule.
+func (pk *Picker) draw(recent []string, n, size int, pool []int, caps, punct float64, p Params) []string {
 	if len(pk.words) == 0 || n <= 0 {
 		return nil
 	}
@@ -168,7 +200,11 @@ func (pk *Picker) draw(recent []string, n, size int, caps, punct float64, p Para
 	}
 	out := make([]string, 0, n)
 	for len(out) < n {
-		base := pk.words[pk.drawWord(window, last, size, p)]
+		from := []int(nil) // nil: any of the size most common
+		if pool != nil && pk.rng.Float64() < p.WeakShare {
+			from = pool
+		}
+		base := pk.words[pk.drawWord(window, last, size, from, p)]
 		word := base
 		if sentence || (caps > 0 && pk.rng.Float64() < caps) {
 			word = capitalize(base)
@@ -195,13 +231,20 @@ func (pk *Picker) draw(recent []string, n, size int, caps, punct float64, p Para
 	return out
 }
 
-// drawWord picks the index of one word of the first size, with the weight
-// RepeatPenalty^(uses in window), and 0 for last. First by rejection: a
-// random word is kept with the chance of its weight (at most 1), which
-// gives exactly those odds; most words are not recent, so this almost
-// always ends at once. After tries misses (a short list full of recent
-// words) it weighs every word instead, with the same odds.
-func (pk *Picker) drawWord(window []string, last string, size int, p Params) int {
+// drawWord picks the index of one word of the first size (or of from, the
+// indexes given, when not nil), with the weight RepeatPenalty^(uses in
+// window), and 0 for last. First by rejection: a random word is kept with
+// the chance of its weight (at most 1), which gives exactly those odds;
+// most words are not recent, so this almost always ends at once. After
+// tries misses (a short list full of recent words) it weighs every word
+// instead, with the same odds.
+func (pk *Picker) drawWord(window []string, last string, size int, from []int, p Params) int {
+	count := size
+	at := func(k int) int { return k } // the k-th candidate's index in words
+	if from != nil {
+		count = len(from)
+		at = func(k int) int { return from[k] }
+	}
 	uses := make(map[string]int, len(window))
 	for _, w := range window {
 		uses[w]++
@@ -213,25 +256,26 @@ func (pk *Picker) drawWord(window []string, last string, size int, p Params) int
 		return math.Pow(p.RepeatPenalty, float64(uses[w]))
 	}
 	for range tries {
-		i := pk.rng.Intn(size)
+		i := at(pk.rng.Intn(count))
 		if pk.rng.Float64() < weight(pk.words[i]) {
 			return i
 		}
 	}
-	// weigh the whole list: once for the total, once more to find where the
+	// weigh every candidate: once for the total, once more to find where the
 	// random point falls (no slice of weights: nothing allocated per call)
 	total := 0.0
-	for _, w := range pk.words[:size] {
-		total += weight(w)
+	for k := range count {
+		total += weight(pk.words[at(k)])
 	}
-	if total <= 0 { // every weight 0: any word
-		return pk.rng.Intn(size)
+	if total <= 0 { // every weight 0: any candidate
+		return at(pk.rng.Intn(count))
 	}
-	point, found := pk.rng.Float64()*total, size-1
-	for i, w := range pk.words[:size] {
-		x := weight(w)
+	point, found := pk.rng.Float64()*total, at(count-1)
+	for k := range count {
+		i := at(k)
+		x := weight(pk.words[i])
 		if x > 0 {
-			found = i // float rounding: the last word with a weight
+			found = i // float rounding: the last candidate with a weight
 		}
 		if point < x {
 			return i

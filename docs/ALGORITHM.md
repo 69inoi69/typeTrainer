@@ -907,6 +907,63 @@ marks are those the layout has keys for (`,` and `.`).
 All values are reasoned, not fitted; the stats screen (Climb's own) shows the
 level of every round, which is the data to tune them on.
 
+### 13.1 Weak pairs
+
+Code: `internal/freeplay/weak.go` (tests in `weak_test.go`), used by
+`Portion` and the routes. The level makes the text harder for everyone the
+same way; this part is the typist's own. Someone who can already type is
+rarely slow on a letter, they are slow on a **movement**: `th` flies, `ck`
+stumbles. So Climb counts **letter pairs** (bigrams): the press of the
+second letter, timed from the first, is the movement between the two keys.
+
+**The data** is the raw record every Climb round keeps (`keys`: letter,
+mistakes, ms since the previous press), from the last `WeakRounds = 20`
+rounds of Climb. Nothing new is stored, and learning's rounds never count
+(the modes stay apart). A pair is two lower-case letters typed one after
+the other: a space, a mark or a capital breaks it (Shift adds its own
+time). A press with no time (after a Backspace or a pause) counts only when
+it was a mistake.
+
+**The cost** of a pair is its average time per press, with a mistake
+counted as a press of `WeakMissMs = 1000` ms:
+
+```
+cost(pair) = (sum of clean timed ms + mistakes * 1000) / (clean timed presses + mistakes)
+```
+
+One number for speed and accuracy together, in a unit anyone can read
+("ck costs you 410 ms"). The same idea as monkeytype's "weak spot" mode,
+which scores letters with a 5000 ms penalty per mistake; here per pair, and
+with 1000 ms, learning's `SlowMs` ("as slow as it gets"), so that one slip
+in 15 presses does not outweigh a pair that is slow every time.
+
+**Weak** pairs are the `WeakPairs = 3` most costly ones that were pressed
+at least `WeakMinSamples = 15` times and cost more than the typist's
+average over all pairs. An even typist has none; so does a new one (too
+little data), and then Climb is exactly as in section 13.
+
+**The words.** Each word of a portion is, with the chance `WeakShare = 0.5`,
+drawn from the words that contain a weak pair, else from all words; both
+draws use the same level limit (`MaxRank`) and the same "do not repeat"
+weights. If the level allows fewer than `WeakMinWords = 10` words with a weak
+pair, there is no such draw (the same few words would repeat). Capitals
+and punctuation are added as usual. The result screen names the weak pairs,
+so the typist sees what the next rounds practise.
+
+| Name | Value | Reason |
+|---|---|---|
+| `WeakRounds` | 20 | ~3000 pair presses: a common pair gets 100+, its cost is steady; old rounds drop out as the typist improves |
+| `WeakMinSamples` | 15 | a pair seen once or twice is noise |
+| `WeakMissMs` | 1000 | a mistake = learning's slowest press; see above |
+| `WeakPairs` | 3 | a few at once, so the text stays varied |
+| `WeakShare` | 0.5 | half the words: the practice is felt, the text is still typing, not a drill |
+| `WeakMinWords` | 10 | fewer words would repeat within a round |
+
+Limits: the time of a press is the movement into it, so a pair's cost
+includes how fast the typist reads ahead, not only the fingers; whether
+practising a pair makes it faster, and how fast, is a question for real data
+(the raw keys of every round make it measurable later).
+
 
 ## 14. Freetype, the third mode
 

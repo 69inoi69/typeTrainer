@@ -47,7 +47,8 @@ export const resultOpen = () => done !== null;
 // The full result, of Climb and Freetype (learning has its own short one,
 // showLearnResult).
 // r: { wpm, accuracy, consistency (null = too short), best,
-//      climb: {from, to} in Climb (its level),
+//      climb: {from, to, weak} in Climb (its level; weak: the weak letter
+//             pairs from POST /freeplay/results, [{pair, cost, count}]),
 //      list: the word list in Freetype,
 //      words: [{letters: [{c, bad}], wpm}] (typing.js typedWords),
 //      chars: {correct, wrong, extra, missed}, seconds (typing.js roundFacts) }
@@ -95,6 +96,8 @@ export function showResult(r) {
     const d = levelNumber(r.climb.to) - levelNumber(r.climb.from);
     const move = d ? ` <span class="trend ${d > 0 ? "up" : "down"}">${d > 0 ? "↑" : "↓"} ${Math.abs(d)}</span>` : "";
     row.push(`<span class="r-num mid" tabindex="0" data-tip-text="${t("tip.level")}"><span class="r-lbl">${t("climb.level")}</span><b>${levelNumber(r.climb.to)}${move}</b></span>`);
+    // what the next rounds practise; nothing while the history is too short
+    if (r.climb.weak?.length) row.push(num(r.climb.weak.map((w) => w.pair).join(" "), "", "climb.weak", "mid", "climb.weakTip"));
   }
   // Freetype: the word list of the round
   if (r.list) row.push(num(listLabel(r.list), "", "freetype.list", "mid", "freetype.listTip"));
