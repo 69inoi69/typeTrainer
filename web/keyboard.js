@@ -190,6 +190,7 @@ export function applyKb(animate = false) {
 // The hands overlap the keyboard's top edge by FEEL.handOverlap keys
 // (style.css .hands, a negative margin), so that much less height is used.
 const HANDS_KB_PER_U = 1.68 * FEEL.handScale + 4.36 - FEEL.handOverlap;
+const KB_MIN_U = 26;       // px: a key smaller than this cannot be read at a glance
 let fitFrame = 0;
 // Asks for fitKeyboard in the next animation frame; several asks in one
 // frame give one measure.
@@ -216,7 +217,9 @@ function fitKeyboard() {
   const kbFrame = ["paddingTop", "paddingBottom", "borderTopWidth", "borderBottomWidth"].reduce((sum, p) => sum + parseFloat(kb[p]), 0);
   // the overlap of the hands grows with --u too (it is in HANDS_KB_PER_U):
   // add back what the view lost to it now
-  const overlap = -parseFloat(getComputedStyle(el.hands).marginBottom) || 0;
+  // (none while they are out of the way: then the view lost nothing)
+  const away = document.body.classList.contains("kb-nofit");
+  const overlap = away ? 0 : -parseFloat(getComputedStyle(el.hands).marginBottom) || 0;
   const rest = document.querySelector(".top").offsetHeight + el.viewType.offsetHeight
     - el.hands.offsetHeight - el.keyboard.offsetHeight + kbFrame + overlap
     // desktop (style.css --view-centred): the view takes all the height and
@@ -226,6 +229,10 @@ function fitKeyboard() {
     + (centred ? -2 * parseFloat(getComputedStyle(lettersBar).marginTop) : parseFloat(getComputedStyle(el.viewType).marginTop))
     + document.querySelector(".bottom").offsetHeight + 12    // 12 = bottom padding of .views
     + parseFloat(getComputedStyle(document.body).paddingBottom);   // the bottom navigation bar (narrow windows)
-  const fit = Math.max(24, Math.floor((innerHeight - rest - 4) / HANDS_KB_PER_U));
-  root.setProperty("--u-fit", fit + "px");
+  const fit = Math.floor((innerHeight - rest - 4) / HANDS_KB_PER_U);
+  // too small to be of use (a short window, or the page zoomed far in):
+  // keyboard and hands step aside and the text keeps the room, as on a
+  // phone; they come back when the window has room again
+  document.body.classList.toggle("kb-nofit", fit < KB_MIN_U);
+  root.setProperty("--u-fit", Math.max(KB_MIN_U, fit) + "px");
 }

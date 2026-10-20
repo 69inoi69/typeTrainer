@@ -934,6 +934,9 @@ body[data-caret="outline"] .caret {
 }
 :root[data-theme="light"] .keyboard { background: rgba(255, 255, 255, .55); box-shadow: var(--ring), 0 10px 30px -18px rgba(20, 24, 32, .25); }
 .keyboard.off { display: none; }
+/* a window too small for usable keys (fitKeyboard): keyboard and hands
+   step aside for the text, without changing the saved choice */
+body.kb-nofit :is(#keyboard, #hands) { display: none; }
 .kb-row { display: flex; gap: calc(var(--u) * .12); width: calc(var(--u) * 13.4); }
 .key {
   --fc: #888;                         /* finger color, set from JS */
@@ -1415,7 +1418,9 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
 .r-li b { font-weight: 600; color: var(--text); font-size: 1.2rem; }
 .r-li b.ok { color: var(--ok); letter-spacing: .12em; }
 .r-li b.next { color: var(--accent-text); }
-@media (max-width: 640px) { .r-lrow { grid-template-columns: 1fr; } }
+/* narrow: the label over its row, and a long line ("t opens when you
+   master a s l d e f r") wraps instead of running off the card */
+@media (max-width: 640px) { .r-lrow { grid-template-columns: 1fr; } .r-li { white-space: normal; flex-wrap: wrap; } }
 /* the words of the round in the text font, each coloured by its speed in
    this round (result.js speedBands): s1 slowest = red, through yellow, to
    s5 fastest = green; a mistyped letter is underlined in red. A long round
@@ -1499,8 +1504,10 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
 .r-next kbd { margin-left: 4px; background: var(--panel); }
 
 /* ---------- intro ---------- */
+/* "safe center" and the scroll: a window shorter than the card (a page
+   zoomed to 300-500 %) scrolls to its buttons instead of cutting them off */
 .intro {
-  position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 16px;
+  position: fixed; inset: 0; z-index: 10; display: grid; place-items: safe center; padding: 16px; overflow-y: auto;
   background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(6px);
   animation: fade .25s;
 }
@@ -1570,6 +1577,17 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 @media (max-width: 999px) {
   /* room for the bar, so nothing hides under it (fitKeyboard reads this) */
   body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+}
+/* a zoomed-in page on a computer (a mouse, a narrow and short window,
+   such as 300-500 % zoom): the bottom bar would cover a third of the
+   screen and the text under it, so it sits at the end of the page instead,
+   and the settings window starts near the top */
+@media (max-width: 999px) and (max-height: 560px) and (pointer: fine) {
+  .rail { position: static; }
+  body { padding-bottom: 0; }
+  dialog.settings-win { inset: 8px auto auto 50%; }
+  .sw-list { max-height: calc(100dvh - 80px); }
+  .sw-foot { display: none; }   /* the keys line: the rows need the room more */
 }
 @media (max-width: 760px) {
   .profile-name { max-width: 10ch; }    /* phone: the name stays, a long one is cut with "…" */
