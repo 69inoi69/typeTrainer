@@ -16,13 +16,12 @@
 // timer and typing a letter does not close it, so a round that ends in the
 // middle of a word never skips the result (owner, 2026-10-16). It does not care WHY typing stopped (the end
 // of the round, or Esc): the caller passes what to show.
-// Learning has a short result of its own (showLearnResult): what the round
-// achieved and what comes next. compareStats() works out what a learning
-// round changed, for it.
+// Learn has no result screen (owner, 2026-10-20): its rounds follow one
+// another, and the Learn panel (learnpanel.js) tells what each one did.
 // Display only: nothing here changes what is measured or sent.
-// Layer: middle. Imports the bottom layer (feel.js for the timings),
-// tools.js (tooltips) and letters.js (what a letter still needs).
-// Called by: typing.js (showResult, showLearnResult, compareStats at the end of a round),
+// Layer: middle. Imports the bottom layer (feel.js for the timings) and
+// tools.js (tooltips).
+// Called by: typing.js (showResult at the end of a Climb or Freetype round),
 // input.js (resultOpen, closeResult: Enter / Esc / Tab go on).
 // To add a fact: another cell in the row in showResult, its text in i18n.js.
 
@@ -30,7 +29,6 @@ import { t } from "./i18n.js";
 import { $, el, S, isTouch, reducedMotion, levelWords, listLabel } from "./state.js";
 import { FEEL } from "./feel.js";
 import { showTip } from "./tools.js";
-import { letterNeeds, letterProgress } from "./letters.js";
 
 
 const box = $("result");
@@ -44,8 +42,7 @@ let done = null;           // resolves the promise of the open result
 
 export const resultOpen = () => done !== null;
 
-// The full result, of Climb and Freetype (learning has its own short one,
-// showLearnResult).
+// The result of a Climb or Freetype round.
 // r: { wpm, accuracy, consistency (null = too short), best,
 //      climb: {level, verdict, place, weak} in Climb: the level of the
 //             round, and from POST /freeplay/results what it counted for
@@ -128,71 +125,6 @@ function climbNote(cl, c) {
   if (cl.verdict === "hold") return t("climb.hold", v);
   return t(cl.level > 1 && p.fails > 0 ? "climb.fail" : "climb.failCount", v);
 }
-
-// Learning's result is short on purpose (owner, 2026-10-19: the full
-// result was "heaped up"; a beginner needs only what the round achieved
-// and what comes next). No chart, no characters, no word list: those are
-// for Climb and Freetype. One card, centred (owner, 2026-10-20, mockup
-// v10: "like in games", the keys say it, not captions):
-//   the reward  the letter opened (a big gold key) and the letters mastered
-//               (keys with a green tick), only when the round earned them;
-//   the numbers speed and accuracy, the label on the left, and an arrow
-//               against the average of the last AVG_ROUNDS rounds;
-//   the road    a bar for every open letter not mastered yet, running into
-//               the locked key of the next letter; the green part of a bar
-//               is what this round added.
-// Every part explains itself in a tooltip (hover or focus), not in text.
-// r: { wpm, accuracy, newLetter, mastered: [chars],
-//      before: {char: progress}, avg: {wpm, accuracy, n} | null } (compareStats)
-export function showLearnResult(r) {
-  const info = Object.fromEntries((S.lastStats?.keys ?? []).map((k) => [k.char, k]));
-  const unlocked = S.exercise?.unlocked ?? [];
-  const next = S.exercise?.locked?.[0];
-  const pct = (v) => Math.round(v * 100);
-  const tip = (text) => ` tabindex="0" data-tip-text="${text}"`;
-
-  let reward = "";
-  if (r.newLetter || r.mastered?.length) {
-    const keys = r.newLetter ? [`<span class="r-key new"${tip(t("result.newTip", { l: r.newLetter }))}>${r.newLetter}</span>`] : [];
-    for (const c of r.mastered ?? []) keys.push(`<span class="r-key done"${tip(t("result.masteredTip", { l: c }))}>${c}</span>`);
-    reward = `<div class="r-reward">${keys.join("")}</div>`;
-  }
-
-  // the arrow: up or down by the rounded difference, none when it rounds to 0
-  const delta = (now, was, key) => {
-    if (was == null) return "";
-    const d = Math.round(now) - Math.round(was);
-    if (!d) return "";
-    return `<span class="r-delta ${d > 0 ? "up" : "down"}"${tip(t(key, { n: r.avg.n, avg: Math.round(was) }))}>${d > 0 ? "↑" : "↓"}${Math.abs(d)}</span>`;
-  };
-  const number = (label, value, unit, arrow) =>
-    `<span class="r-lnum"><span class="r-lbl">${t(label)}</span><b>${value}${unit ? `<small>${unit}</small>` : ""}</b>${arrow}</span>`;
-  const nums = `<div class="r-lnums">` +
-    number("result.wpm", Math.round(r.wpm), "", delta(r.wpm, r.avg?.wpm, "result.avgWpm")) +
-    number("result.acc", Math.round(r.accuracy), "%", delta(r.accuracy, r.avg?.accuracy, "result.avgAcc")) + `</div>`;
-
-  let road;
-  if (!next) road = `<p class="r-allopen">${t("result.allOpen")}</p>`;
-  else {
-    const waiting = unlocked.filter((c) => !info[c]?.mastered);
-    const bars = waiting.map((c) => {
-      const k = info[c], to = letterProgress(k), from = Math.min(to, r.before?.[c] ?? 0);
-      const gain = pct(to) - pct(from);
-      const text = !k?.count ? t("result.barNew", { l: c })
-        : t(gain > 0 ? "result.barTip" : "result.barFlat", { l: c, p: pct(to), gain, needs: letterNeeds(k).map((n) => t(n)).join(", ") });
-      return `<span class="r-bar"${tip(text)}><b>${c}</b><span class="r-track" style="--from:${from.toFixed(3)};--to:${to.toFixed(3)}"><i></i></span></span>`;
-    }).join("");
-    const nextTip = waiting.length ? t("result.nextTip", { l: next, list: waiting.join(" ") }) : t("result.nextSoon", { l: next });
-    road = `<div class="r-road">${bars ? `<span class="r-bars">${bars}</span><span class="r-arrow" aria-hidden="true">→</span>` : ""}` +
-      `<span class="r-key locked"${tip(nextTip)}>${next}${ICON_LOCK}</span></div>`;
-  }
-
-  const body = `<div class="r-learn${reward ? " win" : ""}">${reward}${nums}${road}</div>`;
-  return open(body, "result.nextBtn");
-}
-
-// The small lock on the next letter's key.
-const ICON_LOCK = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>`;
 
 // Splits the speeds of this round's words into SPEED_BANDS equal steps
 // between the slowest and the fastest word, as monkeytype does: the colour
@@ -318,23 +250,4 @@ function glideLetters(from) {
   if (Math.abs(dy) < 1) return;
   lettersRow.animate([{ translate: `0 ${dy}px` }, { translate: "0 0" }],
     { duration: FEEL.resultInMs, easing: "cubic-bezier(.2, .8, .2, 1)" });
-}
-
-// What one learning round changed: a new record, the letters mastered in
-// it, how close every letter was before it (the bars of the result start
-// there) and the average speed and accuracy of the last AVG_ROUNDS rounds
-// before it (null with fewer than AVG_MIN: an average of one or two rounds
-// says little). /stats gives only the rounds of the same length, so the
-// average never mixes lengths. Display only.
-const AVG_ROUNDS = 10, AVG_MIN = 3;
-export function compareStats(before, after) {
-  const prev = Object.fromEntries((before?.keys ?? []).map((k) => [k.char, k]));
-  const best = (before?.sessionCount ?? 0) > 0 &&
-    (after.sessions[0]?.wpm ?? 0) > Math.max(0, ...before.sessions.map((x) => x.wpm));   // /stats: newest first
-  const mastered = after.keys.filter((k) => k.mastered && !prev[k.char]?.mastered).map((k) => k.char);
-  const progress = Object.fromEntries(Object.entries(prev).map(([c, k]) => [c, letterProgress(k)]));
-  const last = (before?.sessions ?? []).slice(0, AVG_ROUNDS);
-  const mean = (f) => last.reduce((a, x) => a + f(x), 0) / last.length;
-  const avg = last.length >= AVG_MIN ? { wpm: mean((x) => x.wpm), accuracy: mean((x) => x.accuracy), n: last.length } : null;
-  return { best, mastered, before: progress, avg };
 }

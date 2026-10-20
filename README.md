@@ -23,8 +23,10 @@ Lublin University of Technology (2027).
   is noted; the text is built a few words at a time around the letters you
   miss or type slowly. A letter is mastered at few mistakes and 30 words
   per minute, and stays mastered unless it gets clearly worse. The row of
-  letters shows how close each one is and what it still needs; after a
-  round a short result says what you achieved and what comes next. Plain
+  letters shows how close each one is; the lines under it show your last
+  round against your average, today's practice against a daily goal, and
+  what the letter in focus still needs. Rounds follow one another with no
+  result screen. Plain
   statistics, no machine learning.
 - **Climb**, for those who can type. Ten levels of words only, from the
   200 most common to all 25 000: three clean rounds take you a level up,

@@ -57,9 +57,12 @@ the normal server, it shows yours.
   mistake still counts for the letter's statistics.
 - The row of letters right above the text shows your progress: open letters, the letter in
   **focus** (yellow: the next few words are built around it; it is picked
-  anew every few words, weaker letters more often), mastered letters (a small green tick), and
-  locked letters (outlined; the one that opens next has a gold dashed frame,
-  hover it for the rule). A letter is mastered when you have typed it at
+  anew every few words, weaker letters more often), mastered letters (green,
+  with a small tick), and locked letters (crossed out; the one that opens
+  next has a gold dashed frame, hover it for the rule). An open letter's
+  colour goes from red to green as it gets closer to mastered (a letter not
+  typed yet has no colour), and a thin bar under it says the same in
+  length. A letter is mastered when you have typed it at
   least 20 times, recently with under 5% mistakes and at 30 wpm or faster
   (the numbers come from the server's settings). Master every open letter
   and the next one opens.
@@ -68,8 +71,7 @@ the normal server, it shows yours.
   only the numbers (the focus and the next letter are in the row above).
   It never moves while you type: every number keeps the room of its widest
   value.
-  The result screen hides it: the next round picks its own
-  focus. Caps Lock and wrong layout warnings appear on top of that whole
+  Caps Lock and wrong layout warnings appear on top of that whole
   line, so nothing moves: a small card with what is wrong and, for the
   layout, the usual keys that switch it on your system (Windows Win + Space,
   macOS and ChromeOS Ctrl + Space, Linux Super + Space). In Chrome and Edge
@@ -213,9 +215,11 @@ the normal server, it shows yours.
   and shake for a tenth of a second. The lit key on the drawn keyboard dips
   a little as its light goes out, and the next key and finger light up. While you pause, the caret
   breathes (fades out and in) instead of blinking.
-- **The result** comes about a tenth of a second after the last letter: the
-  caret reaches the end, the finished text fades out (this wait is not in
-  the speed), and the whole result fades in at once while rising a little.
+- **The result** (Climb and Freetype) comes about a tenth of a second after
+  the last letter: the caret reaches the end, the finished text fades out
+  (this wait is not in the speed), and the whole result fades in at once
+  while rising a little. In Learn the last letter turns white, and the next
+  round's words fade in.
   **The stats screen** opens with a short entrance: the tiles
   rise one after another and the bars grow from the baseline, but only when
   there is something new since you last looked; switching back and forth
@@ -227,16 +231,27 @@ the normal server, it shows yours.
   under 5 seconds get none). Under them, smaller: Characters (right, wrong,
   extra and missed letters, for example `128/3/0/1`; hover for what each
   number is) and the Time of the round, from the first to the last press.
-  **Learn's result is short:** one card with no captions. On top, only
-  when the round earned them, the letter that opened (a big gold key) and
-  the letters mastered (keys with a green tick). Then speed and accuracy,
-  each with an arrow when it differs from your average of the last 10
-  rounds of the same length (from 3 rounds on). At the bottom a bar for
-  every open letter not mastered yet, running into the locked key of the
-  next letter; the green part of a bar is what this round added. Hover any
-  part for what it means. No chart or word list there: the row of letters above shows the
-  rest (the new letter pops in, mastered ones shine and get their tick, the
-  next letter to open has a gold dashed frame). Everything below is the
+  **Learn has no result screen** (owner, 2026-10-20): the next round
+  starts at once, and the **Learn panel**, two lines under the letters,
+  tells what the round did. The first line: the last round's speed and
+  accuracy, each with an arrow when it differs from your average of the
+  10 rounds before it (from 3 rounds on, the same round length only; hover
+  the arrow for the average); an accuracy streak ("4 rounds in a row at 97%
+  or better", the highest of 100, 98, 97, 95 and 90% reached two rounds in
+  a row or more); and **Today**, your typing time today in every mode
+  against the **daily goal** (15 minutes unless you change it in Settings;
+  Off hides it), with the days in a row you met it. The second line is the
+  letter in focus: how far it is on the way to mastered (the weakest of the
+  three parts of the rule, as on its chip) and what it still needs, with
+  the numbers ("It still needs fewer mistakes (8%, aim under 5%) and more
+  speed (23 of 30 wpm)"). Right after a round with news, the news takes
+  that line until you start typing: a new letter, the letters you
+  mastered, your fastest round of this length, and once per language
+  "Every letter is open" and "Learn is complete" (hover them for what comes
+  next: the words keep growing towards the 2000 most common, and Climb is
+  the harder road). The panel steps back while you type. Hovering a gold
+  letter in the text says why it is gold.
+  Everything below is the
   result of Climb and Freetype. In Climb the row of facts ends with the
   **Level** and how far it moved in this round, and the **Weak pairs** your
   next rounds practise. Then which letters got faster

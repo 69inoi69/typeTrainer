@@ -1,7 +1,8 @@
 // The settings window (Esc or the gear in the navigation): what holds for
 // the whole app: the live numbers on or off, the streak badge of Freetype
 // on or off, what falls in the background, the look of the caret, the colour theme, a personal speed goal for the
-// stats screen, the on-screen keyboard on or off, and exporting, importing
+// stats screen, a daily goal in minutes for the Learn panel, the on-screen
+// keyboard on or off, and exporting, importing
 // and resetting the progress (tools.js does those three). Settings change
 // HOW IT LOOKS, never WHAT is practised. How long a round is belongs to
 // each mode and is set in the round bar above the text (modebar.js); this
@@ -69,6 +70,11 @@ const GOALS = [0, 50, 75, 100, 125, 150, 200];
 // To add one: its id here, what it shows in ambient.js and its name in i18n.js.
 const BGS = ["keys", "letters", "words", "off"];
 const BG_NAMES = { keys: "settings.bgKeys", letters: "settings.bgLetters", words: "settings.bgWords", off: "settings.off" };
+// A daily goal, minutes of typing in any mode (0 = none; owner, 2026-10-20,
+// after keybr). The Learn panel shows today against it (learnpanel.js).
+// 15 by default: a beginner's honest daily dose; more is a choice.
+const DAILY = [0, 5, 10, 15, 20, 30, 45, 60];
+const DAILY_DEFAULT = 15;
 
 // "time-60" -> {kind: "time", n: 60}
 export function lengthOf(id) {
@@ -98,6 +104,8 @@ export function loadSettings() {
   S.settings.theme = store.get("tt.theme") === "light" ? "light" : "dark";
   const goal = Number(store.get("tt.goal"));
   S.settings.goal = GOALS.includes(goal) ? goal : 0;
+  const daily = store.get("tt.daily");
+  S.settings.daily = daily !== null && DAILY.includes(Number(daily)) ? Number(daily) : DAILY_DEFAULT;
   applySettings();
 }
 // The look: classes on <body> and data-theme on <html>, style.css does the
@@ -127,7 +135,8 @@ export function firstRoundDone() {
 // this module does not need the keyboard module.
 let kbListener = () => {};
 export function onKbToggle(fn) { kbListener = fn; }
-// A new goal: the stats screen draws itself again (input.js).
+// A new speed or daily goal: the stats screen and the Learn panel draw
+// themselves again (input.js).
 let goalListener = () => {};
 export function onGoalChange(fn) { goalListener = fn; }
 // Another background: input.js draws it again (ambient.js).
@@ -171,6 +180,8 @@ const ROWS = [
   { group: "settings.look", name: "settings.theme", ctl: () => seg([
     choice("theme", "dark", t("settings.dark"), S.settings.theme === "dark"),
     choice("theme", "light", t("settings.light"), S.settings.theme === "light")]) },
+  { group: "settings.statsGroup", name: "settings.daily", ctl: () => seg(DAILY.map((m) =>
+    choice("daily", String(m), m ? String(m) : t("settings.off"), S.settings.daily === m))) },
   { group: "settings.statsGroup", name: "settings.goal", ctl: () => seg(GOALS.map((g) =>
     choice("goal", String(g), g ? String(g) : t("settings.off"), S.settings.goal === g))) },
   { group: null, name: "settings.data", ctl: () => action("btn-export", "export", "data.save") + action("btn-import", "import", "data.load") },
@@ -222,6 +233,10 @@ function apply(key, value) {
   } else if (key === "goal") {
     S.settings.goal = Number(value);
     store.set("tt.goal", value);
+    goalListener();
+  } else if (key === "daily") {
+    S.settings.daily = Number(value);
+    store.set("tt.daily", value);
     goalListener();
   } else if (key === "kb") {
     if (S.kbHidden === (value === "1")) kbListener();   // only a real change

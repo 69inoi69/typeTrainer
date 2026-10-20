@@ -1,8 +1,10 @@
 // The letters bar above the text: learning's progress, made plain for a
 // beginner (owner, 2026-10-19: no stats in learning, but the user must see
 // what is mastered, what still needs work, and why). One chip per letter
-// of the language: open (with a thin bar of how close it is to mastered),
-// mastered (a tick), the focus of the portion being typed, still locked;
+// of the language: open (its colour goes from red to green as it gets
+// closer to mastered, as on keybr; owner, 2026-10-20), mastered (green,
+// with a tick), the focus of the portion being typed (gold), still locked
+// (crossed out);
 // each chip's tooltip says its numbers and what it still needs. On the
 // keyboard, the keys of locked letters are dimmed and the letters you have
 // mastered fade from their keys: the fingers know them, the eyes need not
@@ -14,7 +16,7 @@
 // Layer: middle. Imports the bottom layer and modes.js.
 // Called by: typing.js (renderLetters when a portion or round changes the
 // letters, or Climb's level; markNewLetter / markMastered just before),
-// result.js (letterProgress, letterNeeds, for the result of a learning round).
+// learnpanel.js (letterProgress, rule: the gold letter's line).
 
 import { t } from "./i18n.js";
 import { el, S, levelWords } from "./state.js";
@@ -98,6 +100,7 @@ export function renderLetters() {
     const k = info[c], chip = chipOf[c];
     if (!chip) continue;
     chip.style.setProperty("--p", k?.mastered ? 1 : letterProgress(k).toFixed(3));
+    chip.classList.toggle("fresh", !k?.count);   // not typed yet: no colour, nothing is known
     chip.dataset.tipText = letterTip(c, k);
     if (!k?.mastered) needs.push(c);
   }
@@ -171,7 +174,7 @@ function renderFreeLetters() {
 // mistakes, enough speed. A letter is as far as its weakest part: the bar
 // on its chip is the smallest of the three shares, so it fills up only when
 // all three are there. The numbers of the rule come with /stats.
-const rule = () => {
+export const rule = () => {
   const s = S.lastStats ?? {};
   return { min: s.masteryMin ?? 20, err: (s.masteryErr ?? 5) / 100, ms: 12000 / (s.targetWpm || 30) };
 };
