@@ -1,0 +1,8 @@
+# Python bytecode (tools/wordlists)
+__pycache__/
+*.pyc
+# browser performance traces, built binaries
+*.trace.json
+/typingtrainer
+/typingtrainer.exe
+*.wasm

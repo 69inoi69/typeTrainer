@@ -510,15 +510,20 @@ function flinchCaret() {
 }
 // While a round waits for the next key, the caret breathes (fades out and in)
 // after FEEL.caretBreathDelayMs of quiet; every key starts the wait again, so
-// it stays solid while you type. One Web Animation, restarted from
-// placeCaret (once per frame at most). It animates "filter", not "opacity":
-// a hidden caret (opacity 0, text not in focus) stays hidden. Outside a round
-// the CSS animation (style.css, .caret) does the same.
+// it stays solid while you type. One Web Animation for the whole round: a key
+// only rewinds it to its start (placeCaret, once per frame at most); making a
+// new one on every key cost the browser a new animation each time. It
+// animates "filter", not "opacity": a hidden caret (opacity 0, text not in
+// focus) stays hidden. Outside a round the CSS animation (style.css, .caret)
+// does the same.
 let breath = null;
 function breathe(on) {
-  breath?.cancel();
-  breath = null;
-  if (!on || !FEEL.caretBreathMs || !el.caret.animate || reducedMotion()) return;
+  if (!on || !FEEL.caretBreathMs || !el.caret.animate || reducedMotion()) {
+    breath?.cancel();
+    breath = null;
+    return;
+  }
+  if (breath) { breath.currentTime = 0; return; }
   breath = el.caret.animate([{ filter: "opacity(1)" }, { filter: "opacity(.3)" }, { filter: "opacity(1)" }],
     { duration: FEEL.caretBreathMs, delay: FEEL.caretBreathDelayMs, iterations: Infinity, easing: "ease-in-out" });
 }

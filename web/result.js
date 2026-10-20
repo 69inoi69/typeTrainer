@@ -157,7 +157,7 @@ export function showLearnResult(r) {
 // gets the middle colour and there is no legend.
 const SPEED_BANDS = 5;
 const MIN_SPREAD = 5;   // wpm; a smaller gap between the slowest and fastest word is noise
-export function speedBands(speeds) {
+function speedBands(speeds) {
   const lo = Math.min(...speeds), hi = Math.max(...speeds);
   if (!speeds.length || hi - lo < MIN_SPREAD) {
     return { level: () => Math.ceil(SPEED_BANDS / 2), labels: [] };

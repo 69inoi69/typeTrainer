@@ -31,13 +31,8 @@ export function markMastered(list) { justMastered = new Set(list); }
 
 const STAT_ICONS = {
   open: '<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>',
-  // focus: a crosshair, the trainer has "locked on" this letter
-  focus: '<circle cx="12" cy="12" r="6.5"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
-  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   // Climb's level: a mountain with a flag on top
   level: '<path d="M3 19l6.5-10 4 6 2.5-3.5L21 19z"/><path d="M9.5 9V4l3.5 1.4-3.5 1.4"/>',
-  // next: a key, the one that opens the next letter
-  key: '<circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M21 12v2.5"/>',
 };
 // Draws the bar, the status line and the dimmed keys from S.exercise (the
 // portion being typed) and S.lastStats. Runs on a portion change, never per
