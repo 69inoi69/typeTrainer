@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Builds data/langs/<lang>/free.txt, the long word list of Freetype.
 
-A one-off data tool like build.py (not part of the app). Learning and Climb
-use words.txt (build.py, the 2000 most common words); Freetype lets the
-typist choose how many of the most common words to draw from, up to
-FREE_MAX, so it needs a much longer list.
+A one-off data tool like build.py (not part of the app). Learning uses
+words.txt (build.py, the 2000 most common words); Freetype lets the typist
+choose how many of the most common words to draw from, up to FREE_MAX, and
+Climb climbs from the 200 most common to all of them, so both need a much
+longer list.
 
 Why a second filter: past the first few thousand words, the subtitle
 counts of FrequencyWords are full of names (vera, nikki, schneider),

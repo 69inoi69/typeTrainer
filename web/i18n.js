@@ -108,7 +108,7 @@ const I18N = {
     "fingerName.lp": "Left pinky", "fingerName.lr": "Left ring", "fingerName.lm": "Left middle", "fingerName.li": "Left index",
     "fingerName.ri": "Right index", "fingerName.rm": "Right middle", "fingerName.rr": "Right ring", "fingerName.rp": "Right pinky",
     "fingerName.th": "Thumb",
-    "profile.title": "Profile", "profile.name": "Name", "profile.picture": "Picture", "profile.soon": "No accounts on this site. Progress is lost when you close the tab: use Export in Settings to keep it.", "profile.guest": "Guest", "profile.upload": "Upload a picture", "profile.open": "Profile",
+    "profile.title": "Profile", "profile.name": "Name", "profile.picture": "Picture", "profile.soon": "No accounts on this site. Your progress stays in this browser; to move it to another one, use Export in Settings.", "profile.guest": "Guest", "profile.upload": "Upload a picture", "profile.open": "Profile",
     "profile.titleAccount": "Profile", "account.name": "Account name", "account.password": "Password", "account.login": "Log in", "account.signup": "Sign up", "account.logout": "Log out", "account.as": "Logged in as <b>{name}</b>", "account.rules": "Name: 3–20 of a–z, 0–9, _ and -. Password: at least 8 characters", "account.taken": "This name is taken", "account.wrong": "Wrong name or password", "account.slow": "Too many attempts, try again in a few minutes", "account.fail": "The server did not answer, try again", "account.note": "A new account starts from the first letters",
     "result.wpm": "WPM", "result.acc": "Accuracy", "result.cons": "Consistency",
     "result.nextBtn": "Next round",

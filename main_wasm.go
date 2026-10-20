@@ -14,7 +14,8 @@
 // is only used as a convenient in-memory request/response pair.
 //
 // Differences from the server, all decided in build_wasm.go: the memory
-// store only (data is gone when the tab closes), no accounts and no guest
+// store only (pages/wasm-shim.js copies it to IndexedDB after every round
+// and loads it back on the next visit), no accounts and no guest
 // cookies (there is only the one person in the tab). Anything that needs
 // files on disk or a long-running server cannot work here.
 package main

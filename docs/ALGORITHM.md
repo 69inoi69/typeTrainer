@@ -867,13 +867,29 @@ one ended (stored with each round, `storage.Session.Level`).
 | Level | Words | Capitals | Punctuation |
 |---|---|---|---|
 | 0 | the 200 most common | none | none |
-| 0.35 | ~800 | starts | none |
-| 0.55 | ~1200 | 9 % of words | starts |
-| 1 | the whole list (~2000) | 30 % of words, and after every full stop | a comma or full stop after 35 % of words |
+| 0.2 (start) | ~525 | none | none |
+| 0.35 | ~1 100 | starts | none |
+| 0.5 | ~2 200 | 7 % of words | none |
+| 0.55 | ~2 850 | 9 % of words | starts |
+| 0.75 | ~7 500 | 18 % of words | 16 % of words |
+| 1 | the whole long list (25 000) | 30 % of words, and after every full stop | a comma or full stop after 35 % of words |
 
 The words come evenly from the `MaxRank(level)` most common ones (a word used
 recently is rarer, the same word never twice in a row), so a higher level
-means rarer and longer words on average. A capital is typed with Shift; the
+means rarer and longer words on average. The list is the long one of
+Freetype (`free.txt`, section 14; a language without it uses `words.txt`),
+and the limit grows on a log scale:
+
+```
+MaxRank = RankMin * (words in the list / RankMin)^level      = 200 * 125^level in English
+```
+
+Every step of the level multiplies the limit by the same factor (+0.03 =
+about 15 % more words). Word frequencies fall steeply (Zipf's law): a
+straight line from 200 to 25 000 would pass rank 12 600 ("pippin",
+"dubbing") at level 0.5, so half of the climb would be spent on words
+nobody types. (Until 2026-10-20 Climb used `words.txt`, 2000 words, in a
+straight line: its top level was easier than Freetype's 5k list.) A capital is typed with Shift; the
 on-screen hands light the little finger of the other hand for it. The
 marks are those the layout has keys for (`,` and `.`).
 
@@ -884,7 +900,7 @@ marks are those the layout has keys for (`,` and `.`).
 | `UpAccuracy` / `DownAccuracy` | 96 / 92 | up: at most ~1 mistake in 25 letters; down: more than ~1 in 12 |
 | `SlowShare` | 0.85 | 15 % slower than the round so far is a real slowdown, not noise |
 | `PartialMin` | 3 | the end of a round counts from half a portion on; 1-2 words are noise |
-| `RankMin` | 200 | level 0 = monkeytype's "English 200" |
+| `RankMin` | 200 | level 0 = monkeytype's "English 200"; level 1 = the whole long list, on a log scale |
 | `CapsFrom` / `CapsMax` | 0.35 / 0.3 | capitals come after the words got wider; at most every third word |
 | `PunctFrom` / `PunctMax` / `StopShare` | 0.55 / 0.35 / 0.4 | punctuation last; 2 of 5 marks are full stops |
 

@@ -27,7 +27,7 @@ its own.
 | `setup.go` | Loads the embedded data files, creates the store, generator and API server (`newApp`). Shared by both entry points. |
 | `main.go` | Entry point for the normal server: calls `newApp` and starts HTTP. |
 | `main_wasm.go` | Entry point for the GitHub Pages build (see below). |
-| `pages/wasm-shim.js` | Pages only: routes `/api/v1/` requests from the frontend to the Go code in the browser. |
+| `pages/wasm-shim.js` | Pages only: routes `/api/v1/` requests from the frontend to the Go code in the browser, and keeps the progress in IndexedDB (the `/export` JSON per language, loaded back with `/import`). |
 | `.github/workflows/pages.yml` | On every push to `main`: test, build WebAssembly, publish to Pages. |
 | `.github/workflows/tests.yml` | On every pull request: gofmt, vet, tests, WebAssembly build. |
 | `build_server.go`, `build_wasm.go` | What differs between the normal server and GitHub Pages (picked by build tags): `accountsOn` (accounts only on the server) and `openStore` (PostgreSQL when `DATABASE_URL` is set, else memory; always memory on Pages). |
@@ -53,8 +53,8 @@ its own.
 | `internal/language` | Parses `languages.json`; `Allows(word)` checks a word against the alphabet. |
 | `data/languages.json` | The languages: id, name, label, layout, alphabet, OS layout name. |
 | `data/layouts/*.json` | Keys, rows, finger per key, AltGr letters, finger colors. |
-| `data/langs/<id>/words.txt` | Word list per language, most frequent first (learning and Climb). |
-| `data/langs/<id>/free.txt` | Freetype's long list (English only for now: 25 000 words, `tools/wordlists/free.py`). |
+| `data/langs/<id>/words.txt` | Word list per language, most frequent first (learning; Climb and Freetype too in a language without `free.txt`). |
+| `data/langs/<id>/free.txt` | The long list of Climb and Freetype (English only for now: 25 000 words, `tools/wordlists/free.py`). |
 | `internal/sim` | Simulation for the evaluation chapter: a made-up typist and three word-choice strategies (docs/ALGORITHM.md, section 11.1). Not used by the app. |
 | `tools/sim/` | `go run ./tools/sim`: runs the simulation on the real word lists and prints the table. |
 | `tools/wordlists/` | Python script + block lists that build the word lists (not part of the app). |
@@ -401,7 +401,7 @@ The same code runs in two places. Go build tags pick the entry point:
 | Build | `go run .` | `GOOS=js GOARCH=wasm go build -o app.wasm .` |
 | Where Go runs | on your computer | in the visitor's browser (WebAssembly) |
 | How the frontend reaches the API | HTTP to `localhost` | `pages/wasm-shim.js` replaces `fetch` for `/api/v1/` and calls `goApi(method, path, body)` |
-| Statistics | until the server stops | until the tab is closed or reloaded |
+| Statistics | until the server stops (in memory) or for good (PostgreSQL) | in the page's memory, copied to the browser's IndexedDB after every round and loaded back on the next visit (`pages/wasm-shim.js`) |
 | Accounts | yes | no (no cookies inside the page; `/auth/me` says `accounts: false`) |
 
 `main_wasm.go` does not listen on a port. It builds the same handler with

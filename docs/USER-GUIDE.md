@@ -160,8 +160,8 @@ the normal server, it shows yours.
     the trainer does not change, letters still open at its own speed.
   - **data**: **export** writes all languages and the full history
     to one `.json` file, **import** reads such a file back and **replaces** the
-    current data (use it to keep progress across server restarts or page
-    reloads on the website).
+    current data (use it to keep progress across server restarts, or to
+    move it from the website to another browser).
   - **danger zone**: **reset all progress** deletes everything: progress in all
     languages and the settings saved in your browser, as on the very first
     visit. A window asks first ("Reset all progress? This can't be undone.",
@@ -343,8 +343,12 @@ Polish uses the standard "Polish (Programmers)" layout: ą, ę, ł... with AltGr
 - **Local server without a database** (`go run .` alone): in the server's
   memory. Stopping the server forgets everything (accounts too), so save a
   file first (settings, **export**) and import it back after the restart.
-- **Website (GitHub Pages)**: in the open browser tab. Reloading the page
-  forgets it; **save** and **load** work the same way.
+- **Website (GitHub Pages)**: in this browser (IndexedDB), saved after every
+  round and when you switch to another tab. Closing the tab in the middle of a
+  round can lose the part of that round you typed. Another browser, a private
+  window or clearing the site data starts from zero; **export** and
+  **import** move the progress there. Two open tabs each keep their own
+  copy, and the one saved last wins.
 
 ## Keeping progress in PostgreSQL (Windows)
 
