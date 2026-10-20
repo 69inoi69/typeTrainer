@@ -110,46 +110,67 @@ export function showResult(r) {
 // Learning's result is short on purpose (owner, 2026-10-19: the full
 // result was "heaped up"; a beginner needs only what the round achieved
 // and what comes next). No chart, no characters, no word list: those are
-// for Climb and Freetype. Two rows under the speed and the accuracy:
-//   This round: a letter opened, letters mastered, and the letters whose
-//               progress (letterProgress, the bar on their chip) grew most;
-//   Next:       the letter that opens next, the letters it waits for, and
-//               the one with most to do, with what it needs.
-// r: { wpm, accuracy, newLetter, mastered: [chars], gained: [{c, from, to}] }
+// for Climb and Freetype. One card, centred (owner, 2026-10-20, mockup
+// v10: "like in games", the keys say it, not captions):
+//   the reward  the letter opened (a big gold key) and the letters mastered
+//               (keys with a green tick), only when the round earned them;
+//   the numbers speed and accuracy, the label on the left, and an arrow
+//               against the average of the last AVG_ROUNDS rounds;
+//   the road    a bar for every open letter not mastered yet, running into
+//               the locked key of the next letter; the green part of a bar
+//               is what this round added.
+// Every part explains itself in a tooltip (hover or focus), not in text.
+// r: { wpm, accuracy, newLetter, mastered: [chars],
+//      before: {char: progress}, avg: {wpm, accuracy, n} | null } (compareStats)
 export function showLearnResult(r) {
   const info = Object.fromEntries((S.lastStats?.keys ?? []).map((k) => [k.char, k]));
   const unlocked = S.exercise?.unlocked ?? [];
-  const pct = (v) => Math.round(v * 100);
-
-  const done = [];
-  if (r.newLetter) done.push(`<span class="r-li"><b class="next">${r.newLetter}</b>${t("result.opened")}</span>`);
-  if (r.mastered?.length) {
-    done.push(`<span class="r-li" tabindex="0" data-tip-text="${t("tip.mastered")}"><b class="ok">${r.mastered.join(" ")}</b>${t("result.masteredNow")}</span>`);
-  }
-  for (const g of r.gained ?? []) {
-    done.push(`<span class="r-li" tabindex="0" data-tip-text="${t("result.gainTip")}"><b>${g.c}</b>${pct(g.from)}% → ${pct(g.to)}%</span>`);
-  }
-  if (!done.length) done.push(`<span class="r-li quiet">${t("result.noChange")}</span>`);
-
-  const waiting = unlocked.filter((c) => !info[c]?.mastered);
   const next = S.exercise?.locked?.[0];
-  let ahead;
-  if (!next) ahead = `<span class="r-li quiet">${t("result.allOpen")}</span>`;
-  else if (!waiting.length) ahead = `<span class="r-li"><b class="next">${next}</b>${t("result.nextSoon")}</span>`;
-  else {
-    // the letter furthest from mastered is the one to work on
-    const worst = [...waiting].sort((a, b) => letterProgress(info[a]) - letterProgress(info[b]))[0];
-    const needs = letterNeeds(info[worst]).map((n) => t(n)).join(", ");
-    ahead = `<span class="r-li"><b class="next">${next}</b>${t("result.nextAfter", { list: waiting.join(" ") })}</span>` +
-      `<span class="r-li">${t("result.workOn")} <b>${worst}</b>${needs}</span>`;
+  const pct = (v) => Math.round(v * 100);
+  const tip = (text) => ` tabindex="0" data-tip-text="${text}"`;
+
+  let reward = "";
+  if (r.newLetter || r.mastered?.length) {
+    const keys = r.newLetter ? [`<span class="r-key new"${tip(t("result.newTip", { l: r.newLetter }))}>${r.newLetter}</span>`] : [];
+    for (const c of r.mastered ?? []) keys.push(`<span class="r-key done"${tip(t("result.masteredTip", { l: c }))}>${c}</span>`);
+    reward = `<div class="r-reward">${keys.join("")}</div>`;
   }
 
-  const row = (label, items) => `<div class="r-lrow"><span class="r-lbl">${label}</span><span class="r-lv">${items}</span></div>`;
-  const body = `<div class="r-learn">` +
-    `<div class="r-lnums">${num(Math.round(r.wpm), "", "result.wpm", "mid")}${num(Math.round(r.accuracy), "%", "result.acc", "mid")}</div>` +
-    row(t("result.thisRound"), done.join("")) + row(t("result.next"), ahead) + `</div>`;
+  // the arrow: up or down by the rounded difference, none when it rounds to 0
+  const delta = (now, was, key) => {
+    if (was == null) return "";
+    const d = Math.round(now) - Math.round(was);
+    if (!d) return "";
+    return `<span class="r-delta ${d > 0 ? "up" : "down"}"${tip(t(key, { n: r.avg.n, avg: Math.round(was) }))}>${d > 0 ? "↑" : "↓"}${Math.abs(d)}</span>`;
+  };
+  const number = (label, value, unit, arrow) =>
+    `<span class="r-lnum"><span class="r-lbl">${t(label)}</span><b>${value}${unit ? `<small>${unit}</small>` : ""}</b>${arrow}</span>`;
+  const nums = `<div class="r-lnums">` +
+    number("result.wpm", Math.round(r.wpm), "", delta(r.wpm, r.avg?.wpm, "result.avgWpm")) +
+    number("result.acc", Math.round(r.accuracy), "%", delta(r.accuracy, r.avg?.accuracy, "result.avgAcc")) + `</div>`;
+
+  let road;
+  if (!next) road = `<p class="r-allopen">${t("result.allOpen")}</p>`;
+  else {
+    const waiting = unlocked.filter((c) => !info[c]?.mastered);
+    const bars = waiting.map((c) => {
+      const k = info[c], to = letterProgress(k), from = Math.min(to, r.before?.[c] ?? 0);
+      const gain = pct(to) - pct(from);
+      const text = !k?.count ? t("result.barNew", { l: c })
+        : t(gain > 0 ? "result.barTip" : "result.barFlat", { l: c, p: pct(to), gain, needs: letterNeeds(k).map((n) => t(n)).join(", ") });
+      return `<span class="r-bar"${tip(text)}><b>${c}</b><span class="r-track" style="--from:${from.toFixed(3)};--to:${to.toFixed(3)}"><i></i></span></span>`;
+    }).join("");
+    const nextTip = waiting.length ? t("result.nextTip", { l: next, list: waiting.join(" ") }) : t("result.nextSoon", { l: next });
+    road = `<div class="r-road">${bars ? `<span class="r-bars">${bars}</span><span class="r-arrow" aria-hidden="true">→</span>` : ""}` +
+      `<span class="r-key locked"${tip(nextTip)}>${next}${ICON_LOCK}</span></div>`;
+  }
+
+  const body = `<div class="r-learn${reward ? " win" : ""}">${reward}${nums}${road}</div>`;
   return open(body, "result.nextBtn");
 }
+
+// The small lock on the next letter's key.
+const ICON_LOCK = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>`;
 
 // Splits the speeds of this round's words into SPEED_BANDS equal steps
 // between the slowest and the fastest word, as monkeytype does: the colour
@@ -278,17 +299,20 @@ function glideLetters(from) {
 }
 
 // What one learning round changed: a new record, the letters mastered in
-// it, and up to GAINED_MAX letters whose progress grew by GAINED_MIN or
-// more (most first). Display only.
-const GAINED_MIN = 0.05, GAINED_MAX = 3;
+// it, how close every letter was before it (the bars of the result start
+// there) and the average speed and accuracy of the last AVG_ROUNDS rounds
+// before it (null with fewer than AVG_MIN: an average of one or two rounds
+// says little). /stats gives only the rounds of the same length, so the
+// average never mixes lengths. Display only.
+const AVG_ROUNDS = 10, AVG_MIN = 3;
 export function compareStats(before, after) {
   const prev = Object.fromEntries((before?.keys ?? []).map((k) => [k.char, k]));
   const best = (before?.sessionCount ?? 0) > 0 &&
     (after.sessions[0]?.wpm ?? 0) > Math.max(0, ...before.sessions.map((x) => x.wpm));   // /stats: newest first
   const mastered = after.keys.filter((k) => k.mastered && !prev[k.char]?.mastered).map((k) => k.char);
-  const gained = after.keys.filter((k) => !k.mastered && k.count > 0)
-    .map((k) => ({ c: k.char, from: letterProgress(prev[k.char]), to: letterProgress(k) }))
-    .filter((g) => g.to - g.from >= GAINED_MIN)
-    .sort((a, b) => (b.to - b.from) - (a.to - a.from)).slice(0, GAINED_MAX);
-  return { best, mastered, gained };
+  const progress = Object.fromEntries(Object.entries(prev).map(([c, k]) => [c, letterProgress(k)]));
+  const last = (before?.sessions ?? []).slice(0, AVG_ROUNDS);
+  const mean = (f) => last.reduce((a, x) => a + f(x), 0) / last.length;
+  const avg = last.length >= AVG_MIN ? { wpm: mean((x) => x.wpm), accuracy: mean((x) => x.accuracy), n: last.length } : null;
+  return { best, mastered, before: progress, avg };
 }

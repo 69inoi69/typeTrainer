@@ -1434,23 +1434,79 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
 .r-cc.bad b { color: var(--error); }
 .r-cc[data-tip-text] { text-decoration: underline dotted color-mix(in srgb, var(--sub) 60%, transparent); text-underline-offset: 4px; }
 .r-num .trend { font-size: .5em; vertical-align: middle; margin-left: 6px; }
-/* learning's short result (result.js showLearnResult): speed and accuracy,
-   then two labelled rows, "this round" and "next", their labels in one
-   column so the eye reads down the left edge */
-.r-learn { display: grid; gap: 22px; font-size: 1.05rem; color: var(--sub); }
-.r-lnums { display: flex; gap: 40px; }
-.r-lrow { display: grid; grid-template-columns: 9rem 1fr; align-items: baseline; gap: 6px 16px; }
-.r-lrow > .r-lbl { font-size: .85rem; }
-.r-lv { display: flex; flex-wrap: wrap; gap: 6px 28px; }
-.r-li { display: inline-flex; align-items: baseline; gap: 8px; white-space: nowrap; outline: none; }
-.r-li[data-tip-text] { cursor: default; }
-.r-li.quiet { white-space: normal; }
-.r-li b { font-weight: 600; color: var(--text); font-size: 1.2rem; }
-.r-li b.ok { color: var(--ok); letter-spacing: .12em; }
-.r-li b.next { color: var(--accent-text); }
-/* narrow: the label over its row, and a long line ("t opens when you
-   master a s l d e f r") wraps instead of running off the card */
-@media (max-width: 640px) { .r-lrow { grid-template-columns: 1fr; } .r-li { white-space: normal; flex-wrap: wrap; } }
+/* learning's short result (result.js showLearnResult; owner, 2026-10-20,
+   mockup v10): one card in the middle, everything on one axis. The keys
+   say what happened without captions: gold = the letter opened (the same
+   gold as the new letter in the row above), a green tick = mastered (the
+   tick of the chips), grey with a lock = the next letter. Tooltips explain
+   each part. Sizes: 22px labels, 84px numbers, keys 96 / 72 / 64px. */
+.r-learn {
+  align-self: center; width: min(760px, 100%); display: flex; flex-direction: column; align-items: center; gap: 40px;
+  padding: 48px 56px; border-radius: 22px;
+  background: var(--panel); box-shadow: inset 0 0 0 1px var(--line);
+}
+/* a round that opened or mastered a letter: a soft gold light from the top */
+.r-learn.win {
+  background: radial-gradient(55% 50% at 50% 0%, color-mix(in srgb, var(--accent) 11%, transparent), transparent 70%), var(--panel);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 19%, var(--line));
+}
+.r-learn [data-tip-text] { outline: none; cursor: default; }
+.r-learn [data-tip-text]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 4px; }
+.r-key {
+  position: relative; display: grid; place-items: center; flex: none;
+  font-family: "Geist Mono Keys", var(--mono); font-weight: 600; line-height: 1;
+}
+.r-reward { display: flex; align-items: center; gap: 28px; }
+.r-key.new {
+  width: 96px; height: 96px; border-radius: 20px; font-size: 3.25rem; margin-right: 12px;
+  color: var(--on-accent); background: var(--accent-fill);
+  box-shadow: 0 7px 0 color-mix(in srgb, var(--accent-deep) 60%, #000), 0 0 0 8px color-mix(in srgb, var(--accent) 8%, transparent),
+    0 20px 60px -10px color-mix(in srgb, var(--accent) 65%, transparent);
+  animation: r-key-in 520ms cubic-bezier(.34, 1.56, .64, 1) 120ms both;   /* one springy pop as the result comes in */
+}
+@keyframes r-key-in { from { transform: scale(.55); opacity: 0; } }
+.r-key.done {
+  width: 72px; height: 72px; border-radius: 16px; font-size: 2.4rem; color: var(--text);
+  background: var(--panel-2);
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--panel-2) 40%, #000), inset 0 0 0 2px color-mix(in srgb, var(--ok) 40%, transparent);
+}
+.r-key.done::after {   /* the green tick in a round badge */
+  content: ""; position: absolute; top: -10px; right: -10px; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--ok) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2317130a' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 16px no-repeat;
+}
+/* the numbers: the label on the left, the arrow against the average at the top right */
+.r-lnums { display: flex; justify-content: center; align-items: center; gap: 64px; }
+.r-lnum { display: flex; align-items: center; gap: 18px; }
+.r-lnum .r-lbl { font-size: 1.375rem; font-weight: 500; color: color-mix(in srgb, var(--text) 70%, var(--sub)); }
+.r-lnum > b { font-size: 5.25rem; line-height: 1; font-weight: 500; color: var(--accent-text); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.r-lnum > b small { font-size: .43em; margin-left: 2px; color: color-mix(in srgb, var(--accent-text) 70%, var(--sub)); }
+.r-delta { align-self: flex-start; margin-top: 6px; padding: 4px 10px; border-radius: 999px; font-size: 1.125rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.r-delta.up { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
+.r-delta.down { color: var(--sub); background: color-mix(in srgb, var(--sub) 14%, transparent); }   /* information, not a scolding */
+/* the road to the next letter: every open letter not mastered has a bar,
+   the bars run into the locked key; the green part is what this round added */
+.r-road { display: flex; align-items: center; gap: 20px; }
+.r-bars { display: flex; flex-direction: column; gap: 6px; }
+.r-bar { display: flex; align-items: center; gap: 14px; padding: 4px 8px; border-radius: 10px; transition: background var(--fast); }
+.r-bar:hover, .r-bar:focus-visible { background: color-mix(in srgb, var(--text) 6%, transparent); }
+.r-bar b { width: 1ch; font-family: "Geist Mono Keys", var(--mono); font-size: 1.5rem; font-weight: 600; color: var(--text); }
+.r-track {
+  position: relative; width: 300px; height: 12px; border-radius: 999px; overflow: hidden;
+  background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line);
+}
+.r-track::before, .r-track i { content: ""; position: absolute; inset: 0 auto 0 0; border-radius: inherit; }
+.r-track::before { width: calc(var(--to) * 100%); background: var(--ok); }        /* up to now: the part this round added shows green */
+.r-track i { width: calc(var(--from) * 100%); background: var(--accent-fill); }   /* where the letter stood before the round */
+.r-arrow { font-size: 1.6rem; color: var(--sub); }
+.r-key.locked {
+  width: 64px; height: 64px; border-radius: 14px; font-size: 2rem; color: var(--sub);
+  background: var(--panel-2); box-shadow: inset 0 0 0 2px var(--line);
+}
+.r-key.locked svg {
+  position: absolute; right: -8px; bottom: -8px; width: 24px; height: 24px; padding: 4px; border-radius: 50%;
+  background: var(--bg); fill: none; stroke: var(--sub); stroke-width: 2;
+}
+.r-allopen { font-size: 1.375rem; color: var(--text); }
 /* the words of the round in the text font, each coloured by its speed in
    this round (result.js speedBands): s1 slowest = red, through yellow, to
    s5 fastest = green; a mistyped letter is underlined in red. A long round

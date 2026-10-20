@@ -377,6 +377,11 @@ const timeUp = (now) => limit.kind === "time" && startTime !== null && now - sta
 // a new letter is good news, not a party.
 function newLetter(l) {
   roundNewLetter = l;
+  // the round's last answer (/results) opens it but brings no portion, so
+  // S.exercise still had it locked: the letters row and the result showed
+  // it as the next letter after it had opened
+  const ex = S.exercise;
+  if (ex?.locked?.includes(l)) S.exercise = { ...ex, unlocked: [...ex.unlocked, l], locked: ex.locked.filter((c) => c !== l) };
   markNewLetter(l);
   glowKey(l);
 }
