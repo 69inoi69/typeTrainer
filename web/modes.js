@@ -26,7 +26,7 @@ import { restoreKb } from "./keyboard.js";
 import { lengthFor } from "./settings.js";
 import { renderModeBar } from "./modebar.js";
 
-export const MODES = ["learn", "climb", "freetype"];
+const MODES = ["learn", "climb", "freetype"];
 
 // Is the current mode learning (the adaptive trainer)?
 export const learning = () => S.mode === "learn";

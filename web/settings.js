@@ -11,7 +11,7 @@
 // is blocked, the defaults are used and the app works the same.
 // Layer: middle. Imports only the bottom layer.
 // Called by: app.js (loadSettings at start), input.js (settingsOpen,
-// openSettings, closeSettings, onSettingsClose, onKbToggle, setLength),
+// openSettings, onSettingsClose, onKbToggle, setLength),
 // modes.js (lengthFor), modebar.js, typing.js and stats.js (the lengths,
 // lengthOf, lengthLabel, firstRoundDone).
 // To add a setting: a default in S.settings (state.js), reading it in
@@ -31,7 +31,7 @@ import { $, S, store, isTouch } from "./state.js";
 // 60 words went. Rounds of 60 words already played keep their own button on
 // the stats screen.)
 export const LENGTHS = ["words-10", "words-20", "words-30", "words-40", "words-50", "time-15", "time-30", "time-60", "time-90"];
-export const DEFAULT_LENGTH = "words-30";   // the same as storage.DefaultLength
+const DEFAULT_LENGTH = "words-30";   // the same as storage.DefaultLength
 // Learning offers two only (owner, 2026-10-19): short and normal, nothing
 // to weigh up for a beginner, and no rounds on time (15 seconds at a
 // beginner's 10-15 wpm would be 3 words, too few to learn from).
@@ -63,7 +63,7 @@ const CARETS = ["line", "block", "underline", "outline"];
 // screen shows it (a tile, the line on the chart): the algorithm never sees
 // it, letters open at the trainer's own target as before (AGENTS.md: a
 // setting never changes what is practised).
-export const GOALS = [0, 50, 75, 100, 125, 150, 200];
+const GOALS = [0, 50, 75, 100, 125, 150, 200];
 
 // "time-60" -> {kind: "time", n: 60}
 export function lengthOf(id) {
@@ -258,7 +258,7 @@ win.addEventListener("close", () => {
   btn.setAttribute("aria-expanded", "false");
   closeListener();
 });
-export function closeSettings() { if (win.open) win.close(); }
+function closeSettings() { if (win.open) win.close(); }
 export function openSettings() {
   if (win.open) return;
   search.value = "";

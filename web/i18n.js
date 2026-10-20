@@ -14,8 +14,7 @@
 // docs/UI-TEXT.md (only English is shown for now, see AGENTS.md; the pl, uk and
 // ru blocks fall back to English and get redone when those languages return), then t("key") in the code or
 // data-i18n="key" in index.html. Never write interface text in another file
-// (the one exception is file-check.js). For a random choice, number the keys
-// ("x.0", "x.1", ...) and use tPick("x").
+// (the one exception is file-check.js).
 
 const I18N = {
   en: {
@@ -66,9 +65,7 @@ const I18N = {
     "phone.note": "Typing practice needs a computer keyboard. Here you can look at your stats.",
     "pause.title": "Paused", "pause.key": "any key", "pause.go": "to go on", "pause.away": "The time away does not count.",
     "key.space": "Space",
-    "stat.focus": "Focus", "stat.next": "Next letter",
     "stat.open": "Open", "stat.begin": "Type the text to begin",
-    "tip.focus": "The next few words are built around it. Weaker letters get picked more often",
     "tip.mastered": "Typed at least {min} times, under {err}% mistakes, at {target} wpm or faster",
     "tip.next": "Opens when every open letter is mastered",
     "tip.open": "Letters you practise now; the rest open one by one",
@@ -170,14 +167,13 @@ const I18N = {
   },
   pl: {
     "tip.new": "stop, pokaż wynik (Esc)",
-    "settings.title": "ustawienia", "settings.length": "długość rundy", "settings.words": "słowa", "settings.time": "sekundy",
-    "settings.live": "wpm i dokładność w trakcie pisania", "settings.show": "pokaż", "settings.hide": "ukryj",
+    "settings.title": "ustawienia", "settings.words": "słowa", "settings.time": "sekundy",
+    "settings.live": "wpm i dokładność w trakcie pisania",
     "settings.caret": "kursor", "settings.line": "kreska", "settings.block": "blok",
     "len.words": "{n} słów", "len.time": "{n} s",
     "toast.exported": "statystyki zapisane do pliku",
     "toast.imported": "statystyki wczytane · rundy: <b>{n}</b>",
     "toast.importFail": "nie udało się wczytać tego pliku",
-    "tip.type": "pisanie · Shift+Tab",
     "tip.stats": "statystyki · Shift+Tab",
     "tip.lang": "Alt + 1…4",
     "intro.kicker0": "2 / 4 · rząd główny",
@@ -204,9 +200,7 @@ const I18N = {
     "hint.new": "stop", "hint.kb": "klawiatura", "hint.view": "pisanie / statystyki", "hint.lang": "język",
     "focusHint": "dotknij tutaj, aby zacząć pisać",
     "key.space": "spacja",
-    "stat.focus": "ćwiczysz", "stat.next": "następna",
     "stat.open": "otwarte", "stat.begin": "zacznij pisać",
-    "tip.focus": "twoja najsłabsza litera: pojawia się częściej",
     "tip.mastered": "litery pisane z mniej niż 5% błędów przy {target} wpm",
     "tip.next": "otworzy się, gdy opanujesz wszystkie otwarte litery",
     "tip.open": "litery, które teraz ćwiczysz; reszta otwiera się po kolei",
@@ -237,7 +231,7 @@ const I18N = {
     "mode.learn": "nauka", "mode.free": "swobodnie",
     "tip.learn": "nauka: trener dobiera słowa pod twoje słabe litery",
     "tip.free": "swobodne pisanie: słowa z całej listy, osobna historia",
-    "nav.type": "pisanie", "nav.stats": "statystyki", "nav.settings": "ustawienia",
+    "nav.stats": "statystyki", "nav.settings": "ustawienia",
     "settings.theme": "motyw", "settings.dark": "ciemny", "settings.light": "jasny", "settings.keyboard": "klawiatura i dłonie",
     "settings.data": "twoje statystyki", "data.save": "zapisz", "data.load": "wczytaj", "data.reset": "wyzeruj",
     "intro.kickerWhat": "1 / 4 · pisanie bezwzrokowe",
@@ -248,14 +242,13 @@ const I18N = {
   },
   uk: {
     "tip.new": "стоп, показати результат (Esc)",
-    "settings.title": "налаштування", "settings.length": "довжина раунду", "settings.words": "слова", "settings.time": "секунди",
-    "settings.live": "wpm і точність під час друку", "settings.show": "показувати", "settings.hide": "сховати",
+    "settings.title": "налаштування", "settings.words": "слова", "settings.time": "секунди",
+    "settings.live": "wpm і точність під час друку",
     "settings.caret": "курсор", "settings.line": "риска", "settings.block": "блок",
     "len.words": "{n} слів", "len.time": "{n} с",
     "toast.exported": "статистику збережено у файл",
     "toast.imported": "статистику завантажено · раундів: <b>{n}</b>",
     "toast.importFail": "не вдалося завантажити цей файл",
-    "tip.type": "друк · Shift+Tab",
     "tip.stats": "статистика · Shift+Tab",
     "tip.lang": "Alt + 1…4",
     "intro.kicker0": "2 / 4 · основний ряд",
@@ -282,9 +275,7 @@ const I18N = {
     "hint.new": "стоп", "hint.kb": "клавіатура", "hint.view": "друк / статистика", "hint.lang": "мова",
     "focusHint": "торкнись тут, щоб почати друкувати",
     "key.space": "пробіл",
-    "stat.focus": "тренуєш", "stat.next": "наступна",
     "stat.open": "відкрито", "stat.begin": "почни друкувати",
-    "tip.focus": "твоя найслабша літера: трапляється частіше",
     "tip.mastered": "літери з менш ніж 5% помилок при {target} wpm",
     "tip.next": "відкриється, коли опануєш усі відкриті літери",
     "tip.open": "літери, які ти зараз тренуєш; решта відкриваються по черзі",
@@ -315,7 +306,7 @@ const I18N = {
     "mode.learn": "навчання", "mode.free": "вільний",
     "tip.learn": "навчання: тренажер підбирає слова під твої слабкі літери",
     "tip.free": "вільний режим: слова з усього списку, своя історія",
-    "nav.type": "друк", "nav.stats": "статистика", "nav.settings": "параметри",
+    "nav.stats": "статистика", "nav.settings": "параметри",
     "settings.theme": "тема", "settings.dark": "темна", "settings.light": "світла", "settings.keyboard": "клавіатура і руки",
     "settings.data": "твоя статистика", "data.save": "зберегти", "data.load": "завантажити", "data.reset": "скинути",
     "intro.kickerWhat": "1 / 4 · сліпий друк",
@@ -326,14 +317,13 @@ const I18N = {
   },
   ru: {
     "tip.new": "стоп, показать результат (Esc)",
-    "settings.title": "настройки", "settings.length": "длина раунда", "settings.words": "слова", "settings.time": "секунды",
-    "settings.live": "wpm и точность во время печати", "settings.show": "показывать", "settings.hide": "скрыть",
+    "settings.title": "настройки", "settings.words": "слова", "settings.time": "секунды",
+    "settings.live": "wpm и точность во время печати",
     "settings.caret": "курсор", "settings.line": "черта", "settings.block": "блок",
     "len.words": "{n} слов", "len.time": "{n} с",
     "toast.exported": "статистика сохранена в файл",
     "toast.imported": "статистика загружена · раундов: <b>{n}</b>",
     "toast.importFail": "не удалось загрузить этот файл",
-    "tip.type": "печать · Shift+Tab",
     "tip.stats": "статистика · Shift+Tab",
     "tip.lang": "Alt + 1…4",
     "intro.kicker0": "2 / 4 · основной ряд",
@@ -360,9 +350,7 @@ const I18N = {
     "hint.new": "стоп", "hint.kb": "клавиатура", "hint.view": "печать / статистика", "hint.lang": "язык",
     "focusHint": "нажми сюда, чтобы начать печатать",
     "key.space": "пробел",
-    "stat.focus": "тренируешь", "stat.next": "следующая",
     "stat.open": "открыто", "stat.begin": "начни печатать",
-    "tip.focus": "твоя самая слабая буква: попадается чаще",
     "tip.mastered": "буквы с менее чем 5% ошибок при {target} wpm",
     "tip.next": "откроется, когда освоишь все открытые буквы",
     "tip.open": "буквы, которые ты сейчас тренируешь; остальные открываются по очереди",
@@ -393,7 +381,7 @@ const I18N = {
     "mode.learn": "обучение", "mode.free": "свободный",
     "tip.learn": "обучение: тренажёр подбирает слова под твои слабые буквы",
     "tip.free": "свободный режим: слова из всего списка, своя история",
-    "nav.type": "печать", "nav.stats": "статистика", "nav.settings": "настройки",
+    "nav.stats": "статистика", "nav.settings": "настройки",
     "settings.theme": "тема", "settings.dark": "тёмная", "settings.light": "светлая", "settings.keyboard": "клавиатура и руки",
     "settings.data": "твоя статистика", "data.save": "сохранить", "data.load": "загрузить", "data.reset": "сбросить",
     "intro.kickerWhat": "1 / 4 · слепая печать",
@@ -418,23 +406,6 @@ export function t(key, vars = {}) {
   const text = I18N[uiLang]?.[key] ?? I18N.en[key] ?? key;
   return text.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? i18nVars[name] ?? ""));
 }
-
-// Pools of texts with numbered keys: "x.0", "x.1", ...
-// Every language has the same number of texts in a pool (the English pool is
-// counted). tPick() returns a random one, never the same one twice in a row.
-const lastPick = {};
-export const poolSize = (prefix) =>
-  Object.keys(I18N.en).filter((k) => k.startsWith(prefix + ".") && /^\d+$/.test(k.slice(prefix.length + 1))).length;
-export function tPick(prefix, vars) {
-  const n = poolSize(prefix);
-  let i = Math.floor(Math.random() * n);
-  if (n > 1 && i === lastPick[prefix]) i = (i + 1) % n;
-  lastPick[prefix] = i;
-  return t(`${prefix}.${i}`, vars);
-}
-// true if the current language has this text (for optional texts, like a
-// joke about one particular letter)
-export const hasText = (key) => key in (I18N[uiLang] ?? {});
 
 // Fills every element that has data-i18n="key" (texts are our own, so
 // innerHTML is safe; it lets texts contain <b> and <kbd>).

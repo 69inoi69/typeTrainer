@@ -206,12 +206,6 @@ button, .tooltip, .hints, .rail small, .intro p, .intro h2, .account-msg,
 .win-p b { color: var(--text); font-weight: 600; }
 .win kbd { background: var(--track); box-shadow: var(--ring); color: var(--text); font-family: var(--mono); }
 @media (pointer: coarse) { .keys-only { display: none; } }   /* no keyboard, no shortcuts */
-/* one option: name and a short note on the left, the control on the right */
-.opt { display: flex; align-items: center; justify-content: space-between; gap: 6px 14px; padding: 7px 0; flex-wrap: wrap; }
-.opt-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 140px; font-family: var(--ui); }
-.opt-text b { font-size: .84rem; font-weight: 500; color: var(--text); }
-.opt-text small { font-size: .72rem; color: var(--sub); line-height: 1.35; }
-.opt-ctl { display: flex; gap: 6px; flex: none; }
 /* a segmented choice */
 .seg {
   display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 2px; border-radius: var(--r-md);
@@ -458,7 +452,7 @@ body.one-lang .lang-switch, body.one-lang .lang-hint { display: none; }
 }
 .rail .switch button:hover, .rail-btn:hover { background: none; color: color-mix(in srgb, var(--text) 70%, var(--sub)); }
 .rail .switch button[aria-selected="true"], .rail-btn[aria-expanded="true"] { color: var(--text); }
-.rail .switch button svg, .rail-btn svg, .rail .ico {
+.rail .switch button svg, .rail-btn svg {
   width: 21px; height: 21px; flex: none; fill: none; stroke: currentColor;
   stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
 }
@@ -468,7 +462,11 @@ body.one-lang .lang-switch, body.one-lang .lang-hint { display: none; }
 .rail .switch-thumb::after { left: calc(50% - 9px); width: 18px; height: 2px; }
 /* Climb: no letters to learn, so their row takes no room and the text
    comes right under the header (the slot under it stays for warnings) */
-body:is([data-mode="climb"], [data-mode="freetype"]) .letter-row { display: none; }
+/* Climb and Freetype have no letters: the row is empty and invisible but
+   keeps its height, so the text, the keyboard and the hands sit at the same
+   place and size in every mode (fitKeyboard measures the room left; with
+   the row gone the keyboard was a few px per key bigger outside Learn) */
+body:is([data-mode="climb"], [data-mode="freetype"]) .letter-row { visibility: hidden; }
 
 .pop { position: relative; }
 
@@ -495,7 +493,7 @@ body:is([data-mode="climb"], [data-mode="freetype"]) .letter-row { display: none
   /* icons only (owner, 2026-10-16): the labels stay for screen readers,
      the tooltips name them */
   .rail .switch button, .rail-btn { flex-direction: row; width: auto; height: 44px; padding: 0 11px; }
-  .rail .switch button svg, .rail-btn svg, .rail .ico { width: 24px; height: 24px; }
+  .rail .switch button svg, .rail-btn svg { width: 24px; height: 24px; }
   .rail .switch button small, .rail-btn small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .lang-switch {
     position: fixed; right: 14px; top: 50%; translate: 0 -50%; height: auto;
@@ -624,15 +622,7 @@ body.typing-now .mode-bar { opacity: 0; pointer-events: none; }
   stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; color: var(--sub);
 }
 .stat b { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; font-size: .9rem; }
-/* a letter here looks like its key in the row above (a small square): a
-   bare lowercase letter sat lower and looked bigger than the digits */
-.stat .lt {
-  display: inline-grid; place-items: center; width: 1.5em; height: 1.5em; border-radius: 5px;
-  font-size: .8rem; line-height: 1; background: var(--track);
-}
-.stat.focus .lt { background: var(--accent-fill); color: var(--on-accent); box-shadow: var(--accent-glow); }
 .stat.focus svg { color: var(--accent-text); }
-.stat.next .lt { color: var(--text); background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 45%, transparent); }
 .letters-caption .begin { padding: 0; font-size: .8rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: left; }
 .text-box.typing .letters-caption .begin { display: none; }   /* "type the text to begin": you have begun */
 /* desktop: one bigger scale for the whole page instead of single parts
@@ -760,13 +750,10 @@ body.typing-now .mode-bar { opacity: 0; pointer-events: none; }
 #view-type:has(> .text-box.paused) > :is(.hands, .keyboard) { opacity: .3; }
 .text-box.paused :is(.caret, .focus-hint) { opacity: 0; }
 
-/* A typed letter turns white at the key press by default (FEEL.letterColourAt
-   = 0); it can wait for part of the caret's glide instead (--feel-colour-at:
-   0.5 = when the caret is half way). One change, no fade, nothing painted
-   per frame (a short warm glow on every typed letter was dropped for that:
-   it painted the whole text again on every frame). A mistake (red) and
-   Backspace always show at once. */
-.text span.ok { color: var(--text); transition: color 0s linear calc(var(--feel-caret-ms, 0ms) * var(--feel-colour-at, 0)); }
+/* A typed letter turns white at the key press: one change, no fade,
+   nothing painted per frame (a short warm glow on every typed letter was
+   dropped for that: it painted the whole text again on every frame). */
+.text span.ok { color: var(--text); }
 /* No highlight on the letter under the caret: the caret marks it already,
    and a lit next letter jumped ahead of the gliding caret (owner,
    2026-10-19: "why is the next letter lit? remove it"). */
@@ -902,7 +889,8 @@ body[data-caret="outline"] .caret {
    colour, so the one finger to use is the only bright thing in them (the
    light theme tints them more, below: there the colours have to be strong
    to show at all). No outlines, no shadow on the knuckle line. */
-.hand > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.hand > svg, .hand > .finger { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.hand .finger > svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .hand.right { scale: -1 1; }   /* the left hand mirrored */
 .hand .palm { fill: var(--skin); }
 .hand .finger {
@@ -910,7 +898,9 @@ body[data-caret="outline"] .caret {
   will-change: translate;      /* a layer of its own from the start: no repaint when it starts moving */
   transition: translate var(--med) var(--ease);
 }
-.hand .finger .skin { fill: var(--tint); transition: fill var(--fast); }
+/* the colour changes at once: a fade of "fill" cannot run on the graphics
+   card, so it painted the hands again on every frame of every key */
+.hand .finger .skin { fill: var(--tint); }
 /* the finger to use: fills with its full colour and lifts, no glow (owner,
    2026-10-18: a blurred edge looked like double vision). It is the main
    "which finger" signal; the key below is only hinted (.key.next).
@@ -1390,10 +1380,6 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
 /* a wide screen: one row, the characters wrap inside their own column
    if they must, so "Mastered" / "New letter" never drop to a line of their own */
 @media (min-width: 1000px) { .r-row { flex-wrap: nowrap; gap: 16px 32px; } .r-row > .r-num { flex: none; } .r-row > .r-num:has(.r-chars) { flex: 0 1 auto; min-width: 0; } }
-/* what happened: at the right end of the one row; on a phone, where the
-   row wraps, it starts its own line on the left like everything else */
-.r-row > .r-main { align-self: center; }
-@media (min-width: 1000px) { .r-row > .r-main { margin-left: auto; } }
 /* every number: the label on top, the value under it, on the left */
 .r-num { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .r-num.big > b { font-size: 2.6rem; line-height: 1; letter-spacing: -.03em; color: var(--text); }
@@ -1414,16 +1400,6 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
 .r-cc b { font-size: inherit; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
 .r-cc.bad b { color: var(--error); }
 .r-cc[data-tip-text] { text-decoration: underline dotted color-mix(in srgb, var(--sub) 60%, transparent); text-underline-offset: 4px; }
-.r-main { display: flex; align-items: center; justify-content: center; text-align: center; font-size: .9rem; color: var(--text); line-height: 1.5; }
-/* good news (a new letter, a record): in the accent colour, on a soft tint */
-.r-main.k-best {
-  display: flex; align-items: center; width: fit-content;   /* as wide as its text */
-  padding: 8px 12px; border-radius: 10px;
-  color: var(--accent-text); background: color-mix(in srgb, var(--accent) 12%, transparent);
-}
-.r-main b { color: var(--accent-text); font-weight: 500; }
-/* the test verdict at the row's right end, centred (owner, 2026-10-18) */
-.r-row > .r-main { text-align: center; }
 .r-num .trend { font-size: .5em; vertical-align: middle; margin-left: 6px; }
 /* learning's short result (result.js showLearnResult): speed and accuracy,
    then two labelled rows, "this round" and "next", their labels in one
@@ -1503,7 +1479,6 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
 .r-w { border-radius: 4px; padding: 1px 0; cursor: default; color: var(--sp, inherit); transition: background var(--fast); }
 .r-w:hover, .r-w:focus-visible { background: color-mix(in srgb, var(--text) 10%, transparent); outline: none; }
 .r-w i { font-style: normal; text-decoration: underline 2px var(--error); text-underline-offset: 4px; }
-.r-facts { font-size: .8rem; color: color-mix(in srgb, var(--text) 65%, var(--sub)); }
 .result .r-foot { display: flex; justify-content: center; margin-top: 26px; }   /* the only way on, with Enter / Esc / Tab */
 /* the one button here (owner, 2026-10-18: "more expressive", then without
    its glow, its fill, and then calmer: the gold frame pulled the eye away
@@ -1581,8 +1556,6 @@ button.primary kbd { background: rgba(0, 0, 0, .16); color: inherit; }
    one end left implicit, Chrome mixes the colours through odd neon shades */
 @keyframes demo-lift { 0%, 9% { translate: calc(var(--dx) * -6 * var(--hu)) calc(var(--dy) * -6 * var(--hu)); } 12%, 100% { translate: 0 0; } }
 @keyframes demo-fill { 0%, 9% { fill: var(--fc); } 12%, 100% { fill: var(--tint); } }
-button.inline { padding: 1px 8px; font-size: inherit; color: var(--accent-text); background: color-mix(in srgb, var(--accent) 10%, transparent); border-radius: 6px; }
-button.inline:hover { color: var(--accent-text); background: color-mix(in srgb, var(--accent) 20%, transparent); }
 .intro-choice { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
 .intro-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; }
 .dots { display: flex; gap: 6px; }
@@ -1655,7 +1628,6 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
   .text-box { padding: 14px 16px 14px 34px; }
   .text-box::before { left: 14px; top: 48px; }   /* 14 + 28 + 6 */
   .text, .text-box::before { font-size: clamp(1.1rem, 5.2vw, 1.4rem); }
-  .r-main { font-size: .85rem; }
   /* phone: the top stacks, the two big numbers side by side over the chart */
   .r-body { gap: 18px; }
   .r-top { grid-template-columns: 1fr; gap: 14px; }
@@ -1801,8 +1773,8 @@ body.live-off .live .metric.num { display: none; }
 
 /* ---------- the quiet background (ambient.js) ---------- */
 /* Outlines of keycaps drifting down in the empty fields, behind everything
-   (z-index -1: above the page colour, under the page), on every screen and
-   while typing too (owner, 2026-10-18: so slow it does not distract). */
+   (z-index -1: above the page colour, under the page), on every screen; so
+   slow it does not distract. */
 .ambient { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; --boost: 1; }
 .ambient > i {
   position: absolute; left: var(--x); top: -12vh; will-change: transform;
@@ -1814,6 +1786,11 @@ body.live-off .live .metric.num { display: none; }
   animation: amb-fall var(--dur) linear var(--delay) infinite;
 }
 @keyframes amb-fall { to { transform: translate3d(var(--drift), 125vh, 0) rotate(var(--rot)); } }
+/* held still while you type: even on the graphics card a running animation
+   costs the browser a style update of its element on every frame, and the
+   keycaps were most of that work during a round (measured, 2026-10-20:
+   about a quarter less style work per frame with them held) */
+body.typing-now .ambient > i { animation-play-state: paused; }
 /* the screen saver: a minute with no key and no mouse (ambient.js) */
 body.afk .ambient { --boost: 1.7; }
 .top, .views, .bottom { transition: opacity 1.2s var(--ease); }
