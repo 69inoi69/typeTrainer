@@ -118,7 +118,11 @@ the normal server, it shows yours.
     levels bring rarer words, then capitals (from level 35, Shift with the
     other hand's little finger, the hands show it), then commas and full
     stops (from level 55). The next round starts where the last one ended,
-    and the result shows the level and how far it moved.
+    and the result shows the level and how far it moved. Climb also learns
+    your **weak pairs**: the two-letter movements (`ck`, `ou`...) your
+    last 20 Climb rounds were slowest or least accurate on. Half the words
+    carry one of them, and the result names them. After the first round or
+    two there is not enough data yet, and the words are plain.
   - **Freetype** is just typing, as on monkeytype: nothing adapts. The row
     above the text picks the word list: **200**, **1k**, **5k**, **10k** or
     **25k**, the most common words of the language (a click starts a new
@@ -222,7 +226,8 @@ the normal server, it shows yours.
   rest (the new letter pops in, mastered ones shine and get their tick, the
   next letter to open has a gold dashed frame). Everything below is the
   result of Climb and Freetype. In Climb the row of facts ends with the
-  **Level** and how far it moved in this round. Then which letters got faster
+  **Level** and how far it moved in this round, and the **Weak pairs** your
+  next rounds practise. Then which letters got faster
   or slower, as the time per press before and now (for example
   `s 320→250ms`), Faster on the left and Slower on the right, then the
   words of the round as you typed them, a letter that had a mistake

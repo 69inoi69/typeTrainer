@@ -136,6 +136,7 @@ const I18N = {
     "tip.level": "Climb's level, 1 to 100: it goes up while you type cleanly and steadily, and down when mistakes pile up",
     "climb.common": "common words", "climb.wider": "less common words", "climb.rare": "rare words",
     "climb.caps": "capitals", "climb.punct": "punctuation",
+    "climb.weak": "Weak pairs", "climb.weakTip": "The letter pairs your recent Climb rounds were slowest or least accurate on. Half the words of your next rounds carry one of them",
     "tile.level": "Level", "tile.levelNote": "next round",
     "tile.levelTip": "Where Climb stands now. Type cleanly to go up: rarer words, then capitals, then punctuation",
     // what a letter still needs before it counts as mastered (letters.js, result.js)

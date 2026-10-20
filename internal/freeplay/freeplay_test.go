@@ -14,6 +14,7 @@ var testParams = Params{
 	PortionWords: 6, AheadPortions: 2, RoundPortions: 5, RecentWords: 20, RepeatPenalty: 0.3,
 	LevelStart: 0.2, LevelUp: 0.03, LevelDown: 0.06, UpAccuracy: 96, DownAccuracy: 92, SlowShare: 0.85, PartialMin: 3,
 	RankMin: 200, CapsFrom: 0.35, CapsMax: 0.3, PunctFrom: 0.55, PunctMax: 0.35, StopShare: 0.4,
+	WeakRounds: 20, WeakMinSamples: 15, WeakMissMs: 1000, WeakPairs: 3, WeakShare: 0.5, WeakMinWords: 10,
 }
 
 var marks = []string{",", "."}
@@ -35,7 +36,7 @@ func TestPortion_Uniform(t *testing.T) {
 	p.RecentWords = 0 // no repeat penalty: pure uniform draw
 	count := map[string]int{}
 	const n = 80000
-	for _, w := range pk.Portion(nil, n, 0, p) {
+	for _, w := range pk.Portion(nil, n, 0, nil, p) {
 		count[w]++
 	}
 	mean := float64(n) / float64(len(words))
@@ -74,7 +75,7 @@ func TestMaxRank(t *testing.T) {
 			idx[w] = i
 		}
 	}
-	for _, w := range pk.Portion(nil, 500, 0, plain()) {
+	for _, w := range pk.Portion(nil, 500, 0, nil, plain()) {
 		if idx[w] >= 200 {
 			t.Fatalf("level 0 gave %q at rank %d", w, idx[w])
 		}
@@ -87,7 +88,7 @@ func TestPortion_Layers(t *testing.T) {
 	words := []string{"one", "two", "three", "four", "five", "six", "seven", "eight"}
 	count := func(level float64) (caps, punct int, got []string) {
 		pk := NewPicker(words, marks, rand.New(rand.NewSource(5)))
-		got = pk.Portion(nil, 2000, level, testParams)
+		got = pk.Portion(nil, 2000, level, nil, testParams)
 		for _, w := range got {
 			if unicode.IsUpper([]rune(w)[0]) {
 				caps++
@@ -120,7 +121,7 @@ func TestPortion_Layers(t *testing.T) {
 	}
 	// a layout without the marks: capitals only
 	pk := NewPicker(words, nil, rand.New(rand.NewSource(5)))
-	for _, w := range pk.Portion(nil, 500, 1, testParams) {
+	for _, w := range pk.Portion(nil, 500, 1, nil, testParams) {
 		if strings.ContainsAny(w, ",.") {
 			t.Fatalf("no marks on the layout, but %q", w)
 		}
@@ -131,7 +132,7 @@ func TestPortion_Layers(t *testing.T) {
 // portion starts with a capital.
 func TestPortion_SentenceCarriesOver(t *testing.T) {
 	pk := NewPicker([]string{"one", "two", "three"}, marks, rand.New(rand.NewSource(6)))
-	got := pk.Portion([]string{"Two", "one."}, 1, 0, testParams)
+	got := pk.Portion([]string{"Two", "one."}, 1, 0, nil, testParams)
 	if got[0] != "Two" && got[0] != "Three" {
 		t.Fatalf("after a full stop: %q, want a capital (and not the last word again)", got[0])
 	}
@@ -141,7 +142,7 @@ func TestPortion_SentenceCarriesOver(t *testing.T) {
 // portion and whatever its capital or mark.
 func TestPortion_NeverTheSameWordTwiceInARow(t *testing.T) {
 	pk := NewPicker([]string{"ab", "ba"}, marks, rand.New(rand.NewSource(2)))
-	got := pk.Portion([]string{"Ab,"}, 50, 1, testParams)
+	got := pk.Portion([]string{"Ab,"}, 50, 1, nil, testParams)
 	prev := "ab"
 	for _, w := range got {
 		if Base(w) == prev {
@@ -158,7 +159,7 @@ func TestPortion_RecentWordsAreRarer(t *testing.T) {
 	recent := []string{"one", "One,", "one.", "two"} // "one" used 3 times, last word "two"
 	count := map[string]int{}
 	for i := 0; i < 3000; i++ {
-		count[Base(pk.Portion(recent, 1, 0, plain())[0])]++
+		count[Base(pk.Portion(recent, 1, 0, nil, plain())[0])]++
 	}
 	if count["two"] != 0 {
 		t.Fatalf("the last word came again: %v", count)
@@ -170,15 +171,15 @@ func TestPortion_RecentWordsAreRarer(t *testing.T) {
 
 // No words, zero words asked for, and a one-word list: no panic, no endless loop.
 func TestPortion_EdgeCases(t *testing.T) {
-	if got := NewPicker(nil, marks, rand.New(rand.NewSource(1))).Portion(nil, 6, 0.5, testParams); got != nil {
+	if got := NewPicker(nil, marks, rand.New(rand.NewSource(1))).Portion(nil, 6, 0.5, nil, testParams); got != nil {
 		t.Fatalf("no words: %v", got)
 	}
 	pk := NewPicker([]string{"aaa"}, marks, rand.New(rand.NewSource(1)))
-	if got := pk.Portion(nil, 0, 0.5, testParams); got != nil {
+	if got := pk.Portion(nil, 0, 0.5, nil, testParams); got != nil {
 		t.Fatalf("n = 0: %v", got)
 	}
 	// one word: a repeat is the only choice and must not hang
-	if got := pk.Portion([]string{"aaa"}, 6, 0.5, testParams); len(got) != 6 {
+	if got := pk.Portion([]string{"aaa"}, 6, 0.5, nil, testParams); len(got) != 6 {
 		t.Fatalf("one word: %v", got)
 	}
 }
@@ -189,7 +190,7 @@ func TestPortion_DoesNotChangeRecent(t *testing.T) {
 	recent[0], recent[1] = "one", "two"
 	spare := recent[:3]
 	spare[2] = "keep"
-	NewPicker([]string{"one", "two", "three"}, marks, rand.New(rand.NewSource(4))).Portion(recent, 6, 1, testParams)
+	NewPicker([]string{"one", "two", "three"}, marks, rand.New(rand.NewSource(4))).Portion(recent, 6, 1, nil, testParams)
 	if spare[2] != "keep" || recent[0] != "one" || recent[1] != "two" {
 		t.Fatalf("recent changed: %v", spare)
 	}

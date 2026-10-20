@@ -376,6 +376,49 @@ func TestApp_Climb(t *testing.T) {
 	}
 }
 
+// Climb's weak pairs: a round with a slow "ck" makes "ck" the first weak
+// pair in the result, and the next words carry it far more often than the
+// plain draw would.
+func TestApp_ClimbWeakPairs(t *testing.T) {
+	h, _, _ := newApp()
+	text := strings.Repeat("the quick brown fox jumps ", 20)
+	var keys []string
+	for i, r := range text {
+		ms := 150
+		if i > 0 && text[i-1:i+1] == "ck" {
+			ms = 450
+		}
+		keys = append(keys, fmt.Sprintf(`{"char":%q,"errors":0,"ms":%d}`, string(r), ms))
+	}
+	round := fmt.Sprintf(`{"wpm":60,"accuracy":100,"chars":%d,"level":0.5,"keys":[%s]}`, len(keys), strings.Join(keys, ","))
+	code, out := call(t, h, "POST", "/api/v1/freeplay/results?lang=en", round)
+	weak, _ := out["weak"].([]any)
+	if code != 200 || len(weak) == 0 || weak[0].(map[string]any)["pair"] != "ck" {
+		t.Fatalf("results: %d %v", code, out)
+	}
+	with, all := 0, 0
+	for range 10 {
+		_, next := call(t, h, "POST", "/api/v1/freeplay/portion?lang=en", `{"start":true}`)
+		for _, p := range next["portions"].([]any) {
+			for _, w := range p.(map[string]any)["words"].([]any) {
+				all++
+				if strings.Contains(strings.ToLower(w.(string)), "ck") {
+					with++
+				}
+			}
+		}
+	}
+	// the plain draw at level 0.5 has "ck" in about 1 word of 100
+	if share := float64(with) / float64(all); share < 0.3 {
+		t.Fatalf("words with the weak pair: %d of %d", with, all)
+	}
+	// a new user has no history: no weak pairs
+	h2, _, _ := newApp()
+	if _, out := call(t, h2, "POST", "/api/v1/freeplay/results?lang=en", `{"wpm":55,"accuracy":99,"chars":10,"level":0.5}`); len(out["weak"].([]any)) != 0 {
+		t.Fatalf("no history, still weak pairs: %v", out["weak"])
+	}
+}
+
 // Freetype, the third mode: words from the list the typist chose (the n
 // most common of free.txt), lower case, no level; every list has its own
 // history, apart from Climb and learning; export/import carry them.

@@ -1006,7 +1006,7 @@ async function finishFree(wpm, accuracy, keys, perSecond) {
   await refreshFreeplay();
   const best = before.length > 0 && wpm > Math.max(...before.map((x) => x.wpm));
   if (best) FX.burstFrom(el.wpm, 80);
-  await showResult({ wpm, accuracy, consistency: res.consistency, best, climb: { from: roundLevel, to: S.climbLevel ?? 0 }, words: typedWords(), ...roundFacts() });
+  await showResult({ wpm, accuracy, consistency: res.consistency, best, climb: { from: roundLevel, to: S.climbLevel ?? 0, weak: res.weak }, words: typedWords(), ...roundFacts() });
   await loadExercise();
 }
 
