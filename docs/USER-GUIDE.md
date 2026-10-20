@@ -218,11 +218,14 @@ the normal server, it shows yours.
   under 5 seconds get none). Under them, smaller: Characters (right, wrong,
   extra and missed letters, for example `128/3/0/1`; hover for what each
   number is) and the Time of the round, from the first to the last press.
-  **Learn's result is short:** speed and accuracy, then **This round** (a
-  letter that opened, the letters mastered, and up to three letters whose
-  bar grew most, as `d 40% → 65%`) and **Next** (the letter that opens next,
-  the letters it waits for, and the one with most to do with what it
-  needs). No chart or word list there: the row of letters above shows the
+  **Learn's result is short:** one card with no captions. On top, only
+  when the round earned them, the letter that opened (a big gold key) and
+  the letters mastered (keys with a green tick). Then speed and accuracy,
+  each with an arrow when it differs from your average of the last 10
+  rounds of the same length (from 3 rounds on). At the bottom a bar for
+  every open letter not mastered yet, running into the locked key of the
+  next letter; the green part of a bar is what this round added. Hover any
+  part for what it means. No chart or word list there: the row of letters above shows the
   rest (the new letter pops in, mastered ones shine and get their tick, the
   next letter to open has a gold dashed frame). Everything below is the
   result of Climb and Freetype. In Climb the row of facts ends with the
