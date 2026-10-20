@@ -4,10 +4,10 @@
 // sending the result when a round ends. The letters bar is in letters.js,
 // the result screen in result.js. The same screen serves all three modes
 // (modes.js): learning talks to /portion and /results, Climb to /freeplay/*
-// and sends with every portion how it went, so the server can move its
-// level (freeplay.NextLevel), Freetype to /freetype/* with its word list.
+// with the level of the round (the server judges the round at its end,
+// freeplay.Standing), Freetype to /freetype/* with its word list.
 // Layer: middle. Imports the bottom layer, keyboard.js, stats.js, result.js,
-// letters.js, modes.js and settings.js.
+// letters.js, modes.js, modebar.js and settings.js.
 // Called by: input.js (handleChar, backspace, restartRound, stopRound and the rest
 // on keys and clicks) and languages.js (loadExercise, hideWarn when the
 // language changes).
@@ -29,6 +29,7 @@ import { refreshStats } from "./stats.js";
 import { showResult, showLearnResult, compareStats } from "./result.js";
 import { renderLetters, markNewLetter, markMastered } from "./letters.js";
 import { learning, refreshFreeplay } from "./modes.js";
+import { renderModeBar } from "./modebar.js";
 import { lengthOf, firstRoundDone } from "./settings.js";
 
 // Typing state, used only by the typing code.
@@ -175,7 +176,6 @@ let endAt = -1;              // a words round: position of the space after its l
 let wordsTyped = 0;          // words finished in this round
 let roundBefore = null;      // the statistics when the round started (for the result)
 let roundNewLetter = "";     // a letter that opened during the round
-let roundLevel = 0;          // Climb: the level the round started at (the result shows the move)
 // Words appear one at a time: the portions come from the server as before,
 // but only the words up to SHOWN_AHEAD after the current one are visible;
 // finishing a word reveals exactly one more (it fades in). Hidden words keep
@@ -295,76 +295,25 @@ function portionDone(k) {
 }
 
 // Climb and Freetype: nothing is learned about letters. What is sent is
-// the words of the round (not to repeat them) and, in Climb, how portion k
-// went: its accuracy and speed, and the pace of the round so far; the
-// server moves the level by it and builds the next words at the new level.
-// Climb sends every portion, also once the round has all its words
-// ("last": only the level moves), so a short round moves the level too;
-// the end of the round goes with climbTail. Freetype sends its word list
-// instead, and only while the round needs more words.
+// the words of the round (not to repeat them) and its level (Climb) or
+// word list (Freetype), only while the round needs more words.
 function freePortionDone(k) {
   const por = portions[k];
   sentUpTo = por.end + 1;
   showPortion(k + 1);
-  const more = needMore();
-  if (!more && S.mode !== "climb") return;
-  const how = S.mode === "climb"
-    ? { level: S.climbLevel, ...portionFacts(por), pace: Math.round(currentWpm(lastTime)), last: !more }
-    : { list: S.freetypeList };
+  if (!needMore()) return;
+  const how = S.mode === "climb" ? { level: S.climbLevel } : { list: S.freetypeList };
   const id = streamId;
   queue = queue.then(async () => {
     if (id !== streamId) return;
     const res = await postJSON(portionRoute(), { recent: recentWords(), ...how });
     if (id !== streamId) return;
     appendPortions(res.portions);
-    if (S.mode === "climb") setClimbLevel(res.level);
   }).catch((err) => { console.error(err); el.hint.textContent = t("err.server"); });
 }
 
 // Where the words of the current mode come from.
 const portionRoute = () => ({ learn: "/portion", climb: "/freeplay/portion", freetype: "/freetype/portion" })[S.mode];
-
-// How one portion went: the share of its positions typed without a
-// mistake (percent) and its speed from the measured presses (wpm).
-function portionFacts(por) {
-  let typed = 0, clean = 0, ms = 0, timed = 0;
-  for (let i = por.start; i <= por.end; i++) {
-    const r = records[i];
-    if (!r) continue;
-    typed++;
-    if (!r.errors) clean++;
-    if (r.ms > 0) { ms += r.ms; timed++; }
-  }
-  return {
-    accuracy: typed ? Math.round((clean / typed) * 1000) / 10 : 100,
-    wpm: timed ? Math.min(400, Math.round(12000 / (ms / timed))) : 0,
-  };
-}
-
-// Climb: the end of the round, after the last portion that ended with a
-// space (the last word has none, and Esc or the clock can stop a round in
-// the middle of a portion). It moves the level like a portion; the server
-// ignores fewer than PartialMin words. A failure here only costs this one
-// step: the round is saved anyway.
-async function climbTail() {
-  const por = { start: sentUpTo, end: S.pos - 1 };
-  if (por.end < por.start || !records.slice(por.start, por.end + 1).some(Boolean)) return;
-  const words = S.text.slice(por.start, S.pos).split(" ").filter(Boolean).length;
-  sentUpTo = S.pos;
-  try {
-    const res = await postJSON("/freeplay/portion", {
-      recent: [], level: S.climbLevel, ...portionFacts(por), pace: Math.round(currentWpm(lastTime)), last: true, words,
-    });
-    setClimbLevel(res.level);
-  } catch (err) { console.error(err); }
-}
-
-// Climb's level changed (a new round or a portion): the status line shows it.
-function setClimbLevel(level) {
-  if (typeof level !== "number" || level === S.climbLevel) return;
-  S.climbLevel = level;
-  renderLetters();
-}
 
 // Has the user typed anything in this round yet?
 export const roundStarted = () => startTime !== null;
@@ -408,10 +357,12 @@ function resetStream() {
 export async function loadExercise() {
   resetStream();
   const id = streamId;
-  const res = await postJSON(portionRoute(), { start: true, recent: [], list: S.freetypeList });
+  // Climb: the level picked or reached (S.climbLevel), or where the user
+  // stands (0: the server knows, at the first round in this language)
+  const res = await postJSON(portionRoute(), { start: true, recent: [], list: S.freetypeList, level: S.climbLevel ?? 0 });
   if (id !== streamId) return;
   roundBefore = S.lastStats;
-  if (S.mode === "climb") { setClimbLevel(res.level); roundLevel = res.level; }   // where this round starts
+  if (S.mode === "climb" && res.level !== S.climbLevel) { S.climbLevel = res.level; renderModeBar(); renderLetters(); }
   limit = lengthOf(S.settings.length);
   roundWords = limit.kind === "words" ? limit.n : 0;
   appendPortions(res.portions);
@@ -997,7 +948,7 @@ async function finishRound(byLastKey = false) {
     await queue;                                       // portions still on their way
     streamId++;                                        // nothing more for this round
     if (!typed.length) { await loadExercise(); return; } // nothing typed: nothing to keep
-    if (S.mode === "climb") { await climbTail(); await finishFree(wpm, accuracy, typed, fullSeconds(end)); return; }
+    if (S.mode === "climb") { await finishFree(wpm, accuracy, typed, fullSeconds(end)); return; }
     if (S.mode === "freetype") { await finishFreetype(wpm, accuracy, typed, fullSeconds(end)); return; }
     // keys: the whole round, kept by the server as its raw record (it learns only from samples)
     const res = await postJSON("/results", {
@@ -1030,20 +981,24 @@ async function finishRound(byLastKey = false) {
 }
 
 // The end of a Climb round: it goes to Climb's history only (POST
-// /freeplay/results) with the level it ended at, never to the letter
-// statistics.
+// /freeplay/results) with the level it was typed at, never to the letter
+// statistics. The answer says what the round counted for and where the
+// next one starts (freeplay.Standing).
 // What the round is typed on, stored with it (recorded only, for the thesis:
 // phone rounds may later count differently, docs/ALGORITHM.md section 9)
 const device = () => (isTouch() ? "touch" : "keyboard");
 
 async function finishFree(wpm, accuracy, keys, perSecond) {
   const before = S.climb?.sessions ?? [];
-  const res = await postJSON("/freeplay/results", { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length, device: device(), level: S.climbLevel ?? 0 });
+  const level = S.climbLevel;
+  const res = await postJSON("/freeplay/results", { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length, device: device(), level });
   firstRoundDone();
+  S.climbLevel = res.place.level;                // the next round
   await refreshFreeplay();
+  renderLetters();
   const best = before.length > 0 && wpm > Math.max(...before.map((x) => x.wpm));
   if (best) FX.burstFrom(el.wpm, 80);
-  await showResult({ wpm, accuracy, consistency: res.consistency, best, climb: { from: roundLevel, to: S.climbLevel ?? 0, weak: res.weak }, words: typedWords(), ...roundFacts() });
+  await showResult({ wpm, accuracy, consistency: res.consistency, best, climb: { level, verdict: res.verdict, place: res.place, weak: res.weak }, words: typedWords(), ...roundFacts() });
   await loadExercise();
 }
 

@@ -126,7 +126,7 @@ func TestPortion_WeakShare(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		words[160+i] += "xq"
 	}
-	pk := NewPicker(words, marks, rand.New(rand.NewSource(3)))
+	pk := NewPicker(words, rand.New(rand.NewSource(3)))
 	p := plain()
 	with := func(got []string) int {
 		n := 0
@@ -137,12 +137,12 @@ func TestPortion_WeakShare(t *testing.T) {
 		}
 		return n
 	}
-	got := pk.Portion(nil, 4000, 0, []string{"xq"}, p)
+	got := pk.Portion(nil, 4000, 1, []string{"xq"}, p)
 	if share := float64(with(got)) / 4000; share < p.WeakShare || share > p.WeakShare+0.1 {
 		t.Fatalf("share of words with the weak pair: %.2f, want about %.2f", share, p.WeakShare)
 	}
 	p.WeakMinWords = 100 // only 15 words have it: too few, the draw stays plain
-	got = pk.Portion(nil, 4000, 0, []string{"xq"}, p)
+	got = pk.Portion(nil, 4000, 1, []string{"xq"}, p)
 	if share := float64(with(got)) / 4000; share > 0.15 {
 		t.Fatalf("too few words with the pair: share %.2f, want the plain ~0.08", share)
 	}

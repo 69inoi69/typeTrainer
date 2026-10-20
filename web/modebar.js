@@ -3,7 +3,8 @@
 // settings belong to each mode's screen, not to the settings window).
 //   learn    - short (15 words) or normal (30): two choices, nothing to
 //              weigh up for a beginner;
-//   climb    - words or time, and how many;
+//   climb    - the level (1..10; a pick starts the count on it from none),
+//              then words or time, and how many;
 //   freetype - the word list (the 200 to 25 000 most common words), then
 //              words or time, and how many.
 // Each mode remembers its own length (settings.js lengthFor). A click
@@ -16,7 +17,7 @@
 // in onBarPick's handler (input.js), its texts in i18n.js.
 
 import { t } from "./i18n.js";
-import { $, S, listLabel } from "./state.js";
+import { $, S, listLabel, levelWords } from "./state.js";
 import { LENGTHS, LEARN_LENGTHS, lengthOf, lengthLabel } from "./settings.js";
 
 const bar = $("mode-bar");
@@ -35,6 +36,12 @@ export function renderModeBar() {
     parts.push(group(t("bar.round"), LEARN_LENGTHS.map((id) =>
       btn(`data-length="${id}"`, t(id === LEARN_LENGTHS[0] ? "bar.short" : "bar.normal"), id === cur, lengthLabel(id)))));
   } else {
+    if (S.mode === "climb" && S.climb?.levels) {
+      const at = S.climbLevel ?? S.climb.place?.level;
+      // a visible name: "1 2 ... 10" next to the lengths "10 20 30" would read as one more length
+      parts.push(group(t("climb.level"), [`<span class="mb-lbl" aria-hidden="true">${t("climb.level")}</span>`,
+        ...S.climb.levels.map((_, i) => btn(`data-level="${i + 1}"`, String(i + 1), i + 1 === at, t("climb.levelTip", { words: levelWords(i + 1) })))]));
+    }
     if (S.mode === "freetype") {
       parts.push(group(t("freetype.list"), (S.freetype?.lists ?? []).map((n) =>
         btn(`data-list="${n}"`, listLabel(n), n === S.freetypeList, t("freetype.listN", { n })))));
@@ -49,7 +56,7 @@ export function renderModeBar() {
   bar.innerHTML = parts.join("");
 }
 
-// A pick: {list: n} or {length: id}. input.js does the rest.
+// A pick: {list: n}, {level: n} or {length: id}. input.js does the rest.
 let pickListener = () => {};
 export function onBarPick(fn) { pickListener = fn; }
 bar.addEventListener("click", (e) => {
@@ -58,5 +65,6 @@ bar.addEventListener("click", (e) => {
   b.blur();
   if (b.getAttribute("aria-pressed") === "true") return;    // already chosen
   if (b.dataset.list) pickListener({ list: Number(b.dataset.list) });
+  else if (b.dataset.level) pickListener({ level: Number(b.dataset.level) });
   else if (b.dataset.length) pickListener({ length: b.dataset.length });
 });

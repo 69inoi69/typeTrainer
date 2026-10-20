@@ -1,5 +1,5 @@
 // Climb routes, the second mode (internal/freeplay): its words, its own
-// history and its level. Open to everyone; nothing sent here changes the
+// history and its levels. Open to everyone; nothing sent here changes the
 // letter statistics of learning. (The routes keep the mode's first name,
 // /freeplay/, from when it was free practice.)
 
@@ -7,6 +7,7 @@ package api
 
 import (
 	"encoding/json"
+	"math"
 	"net/http"
 	"strings"
 	"time"
@@ -17,35 +18,33 @@ import (
 )
 
 // freeplayPortionRequest is the body of /freeplay/portion. Unlike learning,
-// it carries no samples: Climb learns nothing about letters. It carries how
-// the portion just typed went, for the thermostat (freeplay.NextLevel).
+// it carries no samples: Climb learns nothing about letters.
 type freeplayPortionRequest struct {
-	Recent []string `json:"recent"` // words already in the round, oldest first, as typed
+	Recent []string `json:"recent"` // words already in the round, oldest first
 	Start  bool     `json:"start"`  // a new round: AheadPortions + 1 portions, else 1
-	// Last: the round has all its words: only move the level, build none.
-	// Words: how many words the portion just typed had (0 = a whole
-	// portion); a shorter one, the end of a round, moves the level only
-	// with at least PartialMin words (freeplay.Params).
-	Last  bool `json:"last"`
-	Words int  `json:"words"`
-	// Level: the level of the round so far (the last answer's "level").
-	// Accuracy (percent) and WPM: the portion just typed; Pace: the WPM of
-	// the round so far (0 = not known yet). Not used at the start of a round.
-	Level    float64 `json:"level"`
-	Accuracy float64 `json:"accuracy"`
-	WPM      float64 `json:"wpm"`
-	Pace     float64 `json:"pace"`
+	// Level: the level of the round, 1..len(Levels); 0 = where the user
+	// stands (standing). The whole round is typed at one level.
+	Level int `json:"level"`
 }
 
-// currentLevel is where the user's next round of Climb starts: the level at
-// the end of their last round, LevelStart before the first one.
-func (s *Server) currentLevel(user string, l *Language) (float64, error) {
-	last, err := s.store.RecentFreeplaySessions(user, l.Info.ID, storage.ModeClimb, "", 1)
-	if err != nil || len(last) == 0 {
-		return s.cfg.Freeplay.LevelStart, err
+// standing is where the user stands in Climb (freeplay.Standing): the level
+// of their next round and how far they are on it, from their last History
+// rounds.
+func (s *Server) standing(user string, l *Language) (freeplay.Place, error) {
+	p := s.cfg.Freeplay
+	last, err := s.store.RecentFreeplaySessions(user, l.Info.ID, storage.ModeClimb, "", p.History)
+	if err != nil {
+		return freeplay.Place{}, err
 	}
-	return last[0].Level, nil
+	rounds := make([]freeplay.Round, len(last))
+	for i, r := range last { // newest first -> oldest first
+		rounds[len(last)-1-i] = freeplay.Round{Level: int(r.Level), Accuracy: r.Accuracy}
+	}
+	return freeplay.Standing(rounds, p), nil
 }
+
+// validLevel: a Climb level, 1..len(Levels).
+func (s *Server) validLevel(level int) bool { return level >= 1 && level <= len(s.cfg.Freeplay.Levels) }
 
 // weakPairs: the user's weak letter pairs from the raw keys of their last
 // WeakRounds Climb rounds (freeplay.WeakPairs). Climb's own history only:
@@ -66,52 +65,45 @@ func (s *Server) weakPairs(user string, l *Language) ([]freeplay.Pair, error) {
 }
 
 // POST /api/v1/freeplay/portion?lang= -> {"portions": [{"words": [...]}],
-// "round": 5, "level": 0.43}. Part of the words carry the user's weak
-// pairs (weakPairs; none while there is too little history). A new round starts at the user's current
-// level; later calls move the level by how the portion just typed went and
-// build the next words at the new level. Every portion typed is sent, also
-// when the round needs no more words ("last": the answer has no portions),
-// so the level moves in a round of 10 words too (it used to move only when
-// words were asked for: a 10-word round, built at once, never moved it).
+// "round": 5, "level": 4}: the next words of a round at its level (the
+// level sent, or where the user stands). Part of the words carry the
+// user's weak pairs (weakPairs; none while there is too little history).
 func (s *Server) handleFreeplayPortion(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	var req freeplayPortionRequest
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&req); err != nil {
 		badRequest(w, "invalid JSON")
 		return
 	}
-	if len(req.Recent) > s.cfg.MaxEvents || req.Words < 0 || req.Words > s.cfg.MaxEvents {
-		badRequest(w, "recent or words: out of range")
+	if len(req.Recent) > s.cfg.MaxEvents {
+		badRequest(w, "recent: out of range")
 		return
 	}
-	if !inRange(req.Level, 0, 1) || !inRange(req.Accuracy, 0, 100) || !inRange(req.WPM, 0, 400) || !inRange(req.Pace, 0, 400) {
-		badRequest(w, "level, accuracy, wpm or pace out of range")
+	if req.Level != 0 && !s.validLevel(req.Level) {
+		badRequest(w, "level: out of range")
 		return
 	}
 	p := s.cfg.Freeplay
-	count, level := 1, req.Level
-	if req.Start {
-		count = min(p.AheadPortions+1, p.RoundPortions)
-		var err error
-		if level, err = s.currentLevel(user, l); err != nil {
-			serverError(w, err)
-			return
-		}
-	} else if req.Words == 0 || req.Words >= p.PartialMin {
-		level = freeplay.NextLevel(req.Level, req.Accuracy, req.WPM, req.Pace, p)
-	}
-	if req.Last {
-		count = 0
-	}
-	var weak []string
-	if count > 0 {
-		pairs, err := s.weakPairs(user, l)
+	level := req.Level
+	if level == 0 {
+		at, err := s.standing(user, l)
 		if err != nil {
 			serverError(w, err)
 			return
 		}
-		for _, p := range pairs {
-			weak = append(weak, p.Pair)
-		}
+		level = at.Level
+	}
+	count := 1
+	if req.Start {
+		count = min(p.AheadPortions+1, p.RoundPortions)
+	}
+	pairs, err := s.weakPairs(user, l)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	var weak []string
+	for _, p := range pairs {
+		weak = append(weak, p.Pair)
 	}
 	type portion struct {
 		Words []string `json:"words"`
@@ -130,15 +122,18 @@ func (s *Server) handleFreeplayPortion(w http.ResponseWriter, r *http.Request, u
 // inRange: lo <= v <= hi (and not NaN).
 func inRange(v, lo, hi float64) bool { return v >= lo && v <= hi }
 
-// climbAlphabet is what may be typed in Climb: the letters of the language
-// in both cases, and the punctuation of the layer (freeplay.Portion).
+// climbAlphabet is what a Climb round may hold: the letters of the
+// language. Capitals and the marks "," and "." too, for the rounds typed
+// before 2026-10-20, when Climb had them (they are still imported).
 func climbAlphabet(alphabet string) string { return alphabet + strings.ToUpper(alphabet) + ",." }
 
 // POST /api/v1/freeplay/results?lang= {wpm, accuracy, chars, perSecond, keys,
-// level} -> one entry in the Climb history, with the level it ended at.
-// {"consistency": 81.4 | null, "weak": [{"pair": "ck", "cost": 412, "count": 31}]}:
-// weak are the weak pairs with this round counted, for the result screen
-// (none while there is too little history).
+// level} -> one entry in the Climb history, with the level it was typed at.
+// {"consistency": 81.4 | null, "weak": [{"pair": "ck", "cost": 412, "count": 31}],
+// "verdict": "pass" | "hold" | "fail", "place": {"level", "passes", "fails", "moved"}}:
+// weak are the weak pairs with this round counted (none while there is too
+// little history); verdict what the round said (freeplay.Judge), place
+// where it leaves the user (freeplay.Standing), for the result screen.
 func (s *Server) handleFreeplayResults(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	var req resultsRequest
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&req); err != nil {
@@ -154,8 +149,8 @@ func (s *Server) handleFreeplayResults(w http.ResponseWriter, r *http.Request, u
 		badRequest(w, "length: unknown round length")
 		return
 	}
-	if !inRange(req.Level, 0, 1) {
-		badRequest(w, "level: 0..1")
+	if req.Level != math.Trunc(req.Level) || !s.validLevel(int(req.Level)) {
+		badRequest(w, "level: a whole number, 1..10")
 		return
 	}
 	var consistency *float64
@@ -183,18 +178,26 @@ func (s *Server) handleFreeplayResults(w http.ResponseWriter, r *http.Request, u
 	if weak == nil {
 		weak = []freeplay.Pair{}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"consistency": consistency, "weak": weak})
+	at, err := s.standing(user, l)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"consistency": consistency, "weak": weak,
+		"verdict": freeplay.Judge(req.Accuracy, s.cfg.Freeplay), "place": at})
 }
 
-// GET /api/v1/freeplay/stats?lang=&length= -> {"level" (where the next
-// round starts), the history of that length (history), "capsFrom",
-// "punctFrom" (the levels where those layers start)}.
+// GET /api/v1/freeplay/stats?lang=&length= -> {"place" (where the user
+// stands: freeplay.Standing), the history of that length (history),
+// "levels" (the words of every level, freeplay.Params.Levels), "passesUp",
+// "failsDown", "passAccuracy", "failAccuracy" (the rule, for the texts that
+// explain it)}.
 func (s *Server) handleFreeplayStats(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	length, ok := s.lengthParam(w, r)
 	if !ok {
 		return
 	}
-	level, err := s.currentLevel(user, l)
+	at, err := s.standing(user, l)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -204,9 +207,13 @@ func (s *Server) handleFreeplayStats(w http.ResponseWriter, r *http.Request, use
 		serverError(w, err)
 		return
 	}
-	out["level"] = level
-	// the levels where capitals and punctuation start, for the texts that name them
-	out["capsFrom"], out["punctFrom"] = s.cfg.Freeplay.CapsFrom, s.cfg.Freeplay.PunctFrom
+	p := s.cfg.Freeplay
+	levels := make([]int, len(p.Levels)) // what each level really draws from (a short list caps it)
+	for i := range levels {
+		levels[i] = l.Free.MaxRank(i+1, p)
+	}
+	out["place"], out["levels"] = at, levels
+	out["passesUp"], out["failsDown"], out["passAccuracy"], out["failAccuracy"] = p.PassesUp, p.FailsDown, p.PassAccuracy, p.FailAccuracy
 	writeJSON(w, http.StatusOK, out)
 }
 

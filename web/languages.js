@@ -57,6 +57,7 @@ export async function loadLanguage(id) {
   S.busy = true;
   try {
     S.lang = id;
+    S.climbLevel = null;                  // Climb's level is per language: the server says where the user stands
     store.set("tt.lang", id);
     const info = S.languages.find((l) => l.id === id);
     S.alphabet = new Set(info.alphabet);

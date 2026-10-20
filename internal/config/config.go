@@ -150,25 +150,19 @@ func Default() Config {
 			RecentWords:   20,  // "do not repeat" looks at the last 20 words
 			RepeatPenalty: 0.3, // a word used recently is rarer, as in learning
 
-			// The thermostat. A new typist starts low (common words only) and
-			// climbs fast while it is easy: +0.03 per portion of 6 words typed
-			// well is the whole way in about 27 good portions, five rounds.
-			// A bad portion costs twice that, so the level settles where the
-			// typist makes a mistake in roughly every 12-25 letters.
-			LevelStart:   0.2,
-			LevelUp:      0.03,
-			LevelDown:    0.06,
-			UpAccuracy:   96,   // up: at most ~1 mistake in 25 letters...
-			DownAccuracy: 92,   // down: more than ~1 in 12
-			SlowShare:    0.85, // clean but 15% slower than the round so far: hold
-			PartialMin:   3,    // the end of a round: 3 words or more say something, 1-2 are noise
-
-			RankMin:   200,  // level 0: the 200 most common words (monkeytype "200"); level 1: all 25 000 (log scale)
-			CapsFrom:  0.35, // capitals from level 35 of 100...
-			CapsMax:   0.3,  // ...up to every third word
-			PunctFrom: 0.55, // commas and full stops from level 55...
-			PunctMax:  0.35, // ...up to a mark after every third word
-			StopShare: 0.4,  // 2 of 5 marks are full stops (a sentence starts after each)
+			// The levels (docs/ALGORITHM.md section 13; owner, 2026-10-20: ten
+			// levels, words only, speed never counts). Each level brings
+			// rarer, longer words: the average word grows from 4.0 letters
+			// (200) to 7.3 (25 000). Levels 1, 3, 6, 8 and 10 are monkeytype's
+			// lists (200, 1k, 5k, 10k, 25k), so a typist can compare.
+			Levels:       []int{200, 500, 1000, 2000, 3000, 5000, 7500, 10000, 15000, 25000},
+			LevelStart:   1,  // a new typist starts with the common words; the round bar offers any level
+			PassAccuracy: 96, // a pass: at most ~1 mistake in 25 letters...
+			FailAccuracy: 92, // a fail: more than ~1 in 12
+			PassesUp:     3,  // three passes prove the level, one could be luck
+			FailsDown:    2,  // one bad round is a slip, two in a row say the level is too hard
+			History:      50, // a run at one level longer than 50 rounds counts from its last 50
+			MinLetters:   2,  // no one-letter words ("a", "i"): nothing to train in them
 
 			// The typist's weak letter pairs (freeplay/weak.go). 20 rounds of
 			// 30 words are ~3000 pair presses: a common pair gets 100+, so the

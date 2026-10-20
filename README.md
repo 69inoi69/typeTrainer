@@ -26,9 +26,9 @@ Lublin University of Technology (2027).
   letters shows how close each one is and what it still needs; after a
   round a short result says what you achieved and what comes next. Plain
   statistics, no machine learning.
-- **Climb**, for those who can type. One level, 1 to 100, follows you like
-  a thermostat: up after lines typed cleanly, down when mistakes pile up.
-  Higher levels bring rarer words, then capitals, then punctuation.
+- **Climb**, for those who can type. Ten levels of words only, from the
+  200 most common to all 25 000: three clean rounds take you a level up,
+  two bad ones in a row a level down. Only accuracy counts.
 - **Freetype**, just typing. Words drawn evenly from the 200, 1k, 5k, 10k
   or 25k most common words, as you pick; nothing adapts.
 - **The round bar** above the text: Learn has short (15 words) or normal

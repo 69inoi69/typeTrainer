@@ -36,7 +36,7 @@ its own.
 | `internal/engine/model.go` | Per-letter statistics, EMA update, difficulty, mastery, softmax weight. |
 | `internal/engine/generator.go` | Unlock order, first lesson size, unlocking rule, word selection. |
 | `internal/engine/consistency.go` | Consistency of a round's speed (a measurement shown to the user; the model does not use it). |
-| `internal/freeplay` | The modes outside learning. Climb, the second mode: the level thermostat (`NextLevel`) and the words at a level, with its capitals and punctuation (`Picker.Portion`); the typist's weak letter pairs from Climb's raw keys (`weak.go`, `WeakPairs`). Freetype, the third: words drawn evenly from the n most common (`Picker.Freetype`). Imports nothing from the project; never touches the letter model. (The package keeps the second mode's first name, free practice.) |
+| `internal/freeplay` | The modes outside learning. Climb, the second mode: its ten levels, the verdict of a round and where the history leaves the typist (`Judge`, `Standing`), and the words at a level (`Picker.Portion`); the typist's weak letter pairs from Climb's raw keys (`weak.go`, `WeakPairs`). Freetype, the third: words drawn evenly from the n most common (`Picker.Freetype`). Imports nothing from the project; never touches the letter model. (The package keeps the second mode's first name, free practice.) |
 | `internal/storage/store.go` | The `Store` interface. |
 | `internal/storage/memory.go` | In-memory `Store` (lost on restart). |
 | `internal/storage/postgres.go` | PostgreSQL `Store` through the standard `database/sql`; the pgx driver is only registered. Applies `migrations/*.sql` at start. Not in the WebAssembly build. |
@@ -46,7 +46,7 @@ its own.
 | `internal/api/learning.go` | Learning routes: `/portion`, `/results`, `/stats`, `/activity`, `/progress`. |
 | `internal/api/data.go` | `/reset`, `/export`, `/import` (learning, Climb and Freetype data together). |
 | `internal/api/validate.go` | Request checks, so nothing impossible or foreign reaches the statistics. |
-| `internal/api/freeplay.go` | The `/api/v1/freeplay/*` routes: Climb's portions (with the thermostat), results and stats. |
+| `internal/api/freeplay.go` | The `/api/v1/freeplay/*` routes: Climb's portions, results (with the verdict) and stats. |
 | `internal/api/freetype.go` | The `/api/v1/freetype/*` routes: Freetype's portions, results and stats per word list. |
 | `internal/api/auth.go` | The `/api/v1/auth/*` routes (sign up, log in, log out, who am I) and `userOf`: which user a request belongs to. |
 | `internal/layout` | Parses and validates the keyboard layout JSON; `RestingKeys` (the home row keys under the fingers, first in the learning order). |
@@ -195,13 +195,13 @@ All responses are JSON. Every route except `/languages` and `/auth/*` takes `?la
 | POST | `/api/v1/progress` | `{unlockAll: true\|false}` | `{unlocked}`; for development only, the interface no longer calls it |
 | POST | `/api/v1/group` | `{group: "random"\|""}` | `{group}`; the study group of the language (hidden: only the study link `?group=random` / `?group=adaptive` calls it, `web/app.js`). `/stats` returns `group`, every learning round stores it |
 | POST | `/api/v1/reset` | | `{ok: true}`; deletes all data of the language (reset button, until there are user accounts) |
-| GET | `/api/v1/export` | | `{unlocked, keys: {char: {count, mistakes, errEma, timeEma, timedCount, held}}, sessions: [all, OLDEST first, each with its raw keys], freeplay: {sessions (each with its level)}, freetype: {"1000": {sessions}, ...}}`; everything stored for the language (`freeplay` and `freetype` are missing in older files) |
+| GET | `/api/v1/export` | | `{unlocked, keys: {char: {count, mistakes, errEma, timeEma, timedCount, held}}, sessions: [all, OLDEST first, each with its raw keys], freeplay: {sessions (each with its level)}, climbLevels: 10, freetype: {"1000": {sessions}, ...}}`; everything stored for the language (`freeplay` and `freetype` are missing in older files; without `climbLevels` Climb's levels are the old 0..1, turned into 1..10 on import) |
 | POST | `/api/v1/import` | the same JSON as `/export` | `{unlocked, sessions}`; REPLACES the language's data, or changes nothing if the data is invalid |
 | GET | `/api/v1/stats?length=` | | `{keys: [{char, count, errorRate, avgMs, difficulty, mastered, unlocked}], sessions: [last 50 of that length, newest first, without raw keys], sessionCount (of that length), lengths: [every length in the history], bests: {length: the fastest round of it}, targetWpm, masteryMin, masteryErr (the mastery rule: at least masteryMin presses, under masteryErr % mistakes, for the texts)}`; no `length` = every length |
 | GET | `/api/v1/activity?tz=` | | `{days: [{date, rounds, seconds, chars}]}`: every day with a finished round, every mode together, oldest first; `tz` = the browser's minutes from UTC (east positive), so days end at the user's midnight. `seconds` = right letters / 5 / WPM (`storage.RoundSeconds`). The stats screen builds the total time typing, the days in a row and the activity calendar from it |
-| POST | `/api/v1/freeplay/portion` | `{recent: [words as typed], start: bool, level, accuracy, wpm, pace, last, words}` | `{portions: [{words}], round, level}`; Climb: a new round starts at the user's level (the last round's, else `LevelStart`); later calls move the level by how the portion just typed went (`freeplay.NextLevel`: its accuracy and speed, the pace of the round) and build the next words at it. Every portion is sent: `last` = the round has all its words (only the level moves, no words come back); `words` = the size of a shorter, final portion (under `PartialMin` it does not move the level) |
-| POST | `/api/v1/freeplay/results` | `{chars, wpm, accuracy, perSecond, keys, length, level}` | `{consistency, weak: [{pair, cost, count}]}`; one entry in Climb's history with the level it ended at; its keys may be capitals and `,` `.` |
-| GET | `/api/v1/freeplay/stats?length=` | | `{level, sessions: [last 50 of that length, newest first, without raw keys, each with its level], sessionCount, lengths, bests (as in `/stats`), capsFrom, punctFrom}` |
+| POST | `/api/v1/freeplay/portion` | `{recent: [words of the round], start: bool, level}` | `{portions: [{words}], round, level}`; Climb: the next words at the level of the round (`level` 1..10, or 0 = where the user stands, `freeplay.Standing`) |
+| POST | `/api/v1/freeplay/results` | `{chars, wpm, accuracy, perSecond, keys, length, level}` | `{consistency, weak: [{pair, cost, count}], verdict: "pass" \| "hold" \| "fail", place: {level, passes, fails, moved}}`; one entry in Climb's history with the level it was typed at (a whole number 1..10); verdict and place say what it counted for and where the next round starts; its keys may be capitals and `,` `.` (rounds from before 2026-10-20 had them) |
+| GET | `/api/v1/freeplay/stats?length=` | | `{place: {level, passes, fails, moved} (freeplay.Standing), sessions: [last 50 of that length, newest first, without raw keys, each with its level], sessionCount, lengths, bests (as in `/stats`), levels (the words of each level), passesUp, failsDown, passAccuracy, failAccuracy}` |
 | POST | `/api/v1/freetype/portion` | `{recent: [words], start: bool, list}` | `{portions: [{words}], round}`; Freetype: words drawn evenly from the `list` most common ones (`freeplay.Picker.Freetype`); a list not offered is a 400 |
 | POST | `/api/v1/freetype/results` | `{chars, wpm, accuracy, perSecond, keys, length, list}` | `{consistency}`; one entry in the history of that list (`storage.FreetypeMode`) |
 | GET | `/api/v1/freetype/stats?list=&length=` | | `{lists (offered: those of `FreetypeLists` the language's long list has words for), list (no `list` = the first), sessions, sessionCount, lengths, bests}` of that list, as in `/freeplay/stats` without the level |
@@ -326,11 +326,11 @@ share no data: Climb and Freetype have their own routes and histories
   mastered letters fading from the keyboard) and a short result (what the
   round achieved, what comes next).
 - **Climb**, for people who can already type (`internal/freeplay`,
-  docs/ALGORITHM.md section 13): one level, 1 to 100, follows the typist
-  like a thermostat; each portion request carries how the last portion went,
-  and the answer is the next words at the new level (rarer words, then
-  capitals, then punctuation). Its history (`AddFreeplaySession`) keeps the
-  level of every round; the next round starts from the last one. The stats
+  docs/ALGORITHM.md section 13): ten levels of words only, each a set of
+  the n most common words; a round is typed at one level, and its accuracy
+  decides (`freeplay.Standing`): three passes take the typist up, two fails
+  in a row down. Its history (`AddFreeplaySession`) keeps the level of every
+  round; where the next round starts is worked out from it. The stats
   screen is Climb's and Freetype's. Nothing it sends reaches the letter
   model: `/freeplay/results` drops any samples.
 - **Freetype**, for just typing (`internal/freeplay`, docs/ALGORITHM.md

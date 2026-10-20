@@ -10,6 +10,7 @@
 package api
 
 import (
+	"math"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -96,8 +97,8 @@ func validateSamples(samples []engine.Sample, max int, alphabet string) string {
 
 // validateImport makes sure a loaded file cannot put impossible numbers or
 // foreign letters into the statistics. letters = how many letters the
-// language's unlock order has.
-func validateImport(in langExport, maxSessions, maxEvents, letters int, alphabet string, okLength func(string) bool, okList func(int) bool) string {
+// language's unlock order has, levels how many levels Climb has.
+func validateImport(in langExport, maxSessions, maxEvents, letters, levels int, alphabet string, okLength func(string) bool, okList func(int) bool) string {
 	if in.Unlocked < 0 || in.Unlocked > letters {
 		return "unlocked: out of range"
 	}
@@ -125,6 +126,14 @@ func validateImport(in langExport, maxSessions, maxEvents, letters int, alphabet
 	if in.Freeplay != nil {
 		if msg := validateSessions(in.Freeplay.Sessions, maxSessions, maxEvents, letters, climbAlphabet(alphabet), okLength); msg != "" {
 			return "freeplay " + msg
+		}
+		for _, sess := range in.Freeplay.Sessions {
+			// a file from before the ten levels (no climbLevels): 0..1,
+			// turned into a level by handleImport
+			old := in.ClimbLevels == 0 && inRange(sess.Level, 0, 1)
+			if !old && (sess.Level != math.Trunc(sess.Level) || !inRange(sess.Level, 1, float64(levels))) {
+				return "freeplay sessions: level out of range"
+			}
 		}
 	}
 	for list, f := range in.Freetype {
@@ -158,9 +167,6 @@ func validateSessions(sessions []storage.Session, max, maxEvents, letters int, a
 		}
 		if sess.Unlocked < 0 || sess.Unlocked > letters {
 			return "sessions: unlocked out of range"
-		}
-		if !inRange(sess.Level, 0, 1) {
-			return "sessions: level out of range"
 		}
 		if !okLength(sess.Length) {
 			return "sessions: unknown length " + sess.Length
