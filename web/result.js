@@ -219,7 +219,7 @@ function open(body, btn) {
 // letters row keep their final look, so coming back does not play their
 // entrance again (owner, 2026-10-18: the WPM counted up and the chart drew
 // itself again). A browser restarts a CSS animation on an element that is
-// shown again; .settled turns them off (style.css) until the next result.
+// shown again; .settled turns them off (screens.css) until the next result.
 export function settleResult() {
   if (done) el.viewType.classList.add("settled");
 }

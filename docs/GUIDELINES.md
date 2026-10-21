@@ -58,7 +58,7 @@ there is a reason not to).
 ## 3. Responsive design
 
 **Established**
-- Breakpoints in `web/style.css`: 1000 px (rail vs bottom bar), 860 px (stats
+- Breakpoints in `web/responsive.css` and `web/stats.css`: 1000 px (rail vs bottom bar), 860 px (stats
   columns), 640 px (phone), 380 px (very small phone).
 - Sizes follow the window: the keyboard key size `--u` and the text width
   `--tw` are computed from the viewport, not picked from presets.
@@ -78,7 +78,7 @@ there is a reason not to).
   Nothing may be clipped, overlap, scroll sideways or wrap into one word per
   line.
 - When a row does not fit, decide what wraps and how (see the length
-  filter in `style.css`), instead of letting the browser decide.
+  filter in `stats.css`), instead of letting the browser decide.
 
 ## 4. Visual hierarchy
 
@@ -128,7 +128,7 @@ consequences, the same word for the same thing. All text lives in
   (nothing that moves the layout). Colours for JavaScript animations come
   from the theme (`themeColor` in `state.js`), never hard-coded.
 - A screen that opens (the result, the stats) does it as one short
-  sequence of small rises (`rise` in `style.css`), not as scattered effects;
+  sequence of small rises (`rise` in `stats.css`), not as scattered effects;
   a redraw on resize does not replay it.
 - Selected states use `aria-pressed` / `aria-selected` and the accent fill.
 - A destructive action asks first in a confirm window (Reset all progress:

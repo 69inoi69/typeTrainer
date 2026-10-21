@@ -162,7 +162,7 @@ export const FX = (() => {
 // measure both positions, animate the difference) and the page slides in.
 export const Splash = (() => {
   // quicker (owner, 2026-10-18: "the animation is long")
-  const MIN_MS = 520;   // the icon, the typing (style.css, .splash-type) plus a short look
+  const MIN_MS = 520;   // the icon, the typing (screens.css, .splash-type) plus a short look
   const FLY_MS = 300;   // the logo flying into the header
   function start() {
     const root = document.getElementById("splash");

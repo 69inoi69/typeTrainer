@@ -1,0 +1,195 @@
+/* The stats screen (stats.js) and the Learn stats (learnstats.js).
+   Loads after typing.css (order: see base.css). */
+
+/* ---------- stats view ---------- */
+/* One screen, no scrolling at 1280x800 and up: a row of numbers, the chart,
+   then the keyboard and the letters side by side. Heights come from the
+   window (vh), so a taller screen gets a taller chart, not a scrollbar. */
+#view-stats { display: flex; flex-direction: column; gap: 14px; padding-top: 4px; }
+/* The stats open as one short sequence (input.js adds .grow when the screen
+   opens; a resize redraws without it): the tiles rise one after another,
+   the panels follow, the bars grow from the baseline left to right. */
+#view-stats.grow .tile, #view-stats.grow .panel { animation: rise 280ms var(--ease) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+#view-stats.grow .tile:nth-child(2) { animation-delay: 30ms; }
+#view-stats.grow .tile:nth-child(3) { animation-delay: 60ms; }
+#view-stats.grow .tile:nth-child(4) { animation-delay: 90ms; }
+#view-stats.grow .tile:nth-child(5) { animation-delay: 120ms; }
+#view-stats.grow .tile:nth-child(6) { animation-delay: 150ms; }
+#view-stats.grow .panel { animation-delay: 100ms; }
+#view-stats.grow .chart .bar {
+  transform-box: fill-box; transform-origin: 50% 100%;
+  animation: bar-grow 480ms cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(140ms + var(--i, 0) * 6ms);
+}
+@keyframes bar-grow { from { transform: scaleY(0); } }
+#view-stats[hidden] { display: none; }
+.btn.done { color: var(--ok); animation: done-hold 1.6s; }
+@keyframes done-hold { from { color: var(--ok); } to { color: var(--ok); } }
+.tiles { flex: 1; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; min-width: min(100%, 560px); }   /* five tiles, six with a goal: one row */
+/* a tile: the label on top, the number big under it, a small line under
+   that ("last 10" and the trend, or how far the goal is). The HTML has the
+   number first, for screen readers: value, then what it is. */
+.tile {
+  background: var(--panel); border-radius: var(--r-md); box-shadow: var(--lift); min-width: 0;
+  padding: 12px 14px 11px; display: flex; flex-direction: column; gap: 4px;
+}
+.tile small { order: -1; }
+.tile .meta { display: flex; align-items: center; gap: 6px; min-height: 1.2em; font-size: .72rem; color: var(--sub); white-space: nowrap; }
+.tile b { display: block; font-size: 1.75rem; font-weight: 500; letter-spacing: -.02em; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1.05; }
+.tile.speed b { color: var(--accent-text); }   /* the speeds: best and recent */
+.tile.level b { color: var(--accent-text); }   /* Climb's level: where the next round starts */
+.tile.level { cursor: default; }
+.tile b i { font-style: normal; font-size: .55em; color: var(--sub); }   /* the % after a number */
+.tile small { display: block; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* how a "last 10" number moved against the 10 rounds before */
+.trend { font-weight: 500; padding: 0 6px; border-radius: 999px; cursor: default; }
+.trend.up { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
+.trend.down { color: var(--error); background: color-mix(in srgb, var(--error) 12%, transparent); }
+/* the personal goal (settings): the goal, how much is left, a bar of the way */
+.tile.goal { position: relative; overflow: hidden; }
+.tile.goal.done .meta { color: var(--ok); }
+.goal-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: color-mix(in srgb, var(--text) 6%, transparent); }
+.goal-bar::after { content: ""; position: absolute; inset: 0; width: calc(var(--p) * 100%); background: var(--accent); border-radius: 0 2px 2px 0; }
+.tile.goal.done .goal-bar::after { background: var(--ok); }
+
+/* ---------- stats: the personal bests (stats.js renderLengthFilter) ---------- */
+/* as on monkeytype's account page: two cards, rounds of N words and rounds
+   of N seconds, a cell per length: the length small, the best WPM big, the
+   accuracy of that round under it. A cell is also the switch of the length
+   shown below: the picked one gets a gold bar and its number turns gold. */
+/* which history the screen shows (stats.js renderPick): the two modes as
+   words, the chosen one bright with a line under it, as the nav; Freetype's
+   lists after them */
+.stats-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; }
+.stats-modes { display: flex; gap: 4px; }
+.stats-modes button { padding: 4px 10px; border: 0; background: none; color: var(--sub); font: inherit; font-size: 1rem; cursor: pointer; box-shadow: inset 0 -2px 0 transparent; transition: color .15s, box-shadow .15s; }
+.stats-modes button:hover { color: var(--text); }
+.stats-modes button[aria-selected="true"] { color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+.stats-lists { display: flex; flex-wrap: wrap; gap: 2px; }
+.stats-lists .wl:is([aria-selected="true"], [aria-pressed="true"]) { color: var(--accent-text); }
+.pbs { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 4fr); gap: 14px; }
+.pb-group { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); padding: 6px; gap: 4px; }
+.pb {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 4px 14px;
+  border-radius: var(--r-md); background: none; color: var(--sub); font-variant-numeric: tabular-nums;
+  transition: background var(--fast);
+}
+.pb small { font-size: .74rem; }
+.pb b { font-size: 2.1rem; font-weight: 500; letter-spacing: -.02em; line-height: 1.1; color: var(--text); }
+.pb span { font-size: .85rem; }
+.pb:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+.pb[aria-selected="true"] { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.pb[aria-selected="true"] b { color: var(--accent-text); }
+.pb[aria-selected="true"]::after {
+  content: ""; position: absolute; left: 30%; right: 30%; bottom: 5px; height: 2px; border-radius: 2px; background: var(--accent);
+}
+@media (max-width: 860px) { .pbs { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 640px) { .pb b { font-size: 1.5rem; } .pb small { font-size: .68rem; } }
+/* the picked length, over its tiles and chart, with the picture button */
+.len-bar { display: flex; align-items: center; justify-content: space-between; margin: 8px 0 -4px; }
+.len-head { margin: 0; font-size: .9rem; font-weight: 500; color: var(--text); }
+
+/* ---------- stats: all time (stats.js drawActivity) ---------- */
+/* every round length and both modes together: four numbers and the legend
+   on top, the calendar of the last year under them (a cell = a day, a
+   column = a week, the month names above, Mon / Wed / Fri on the left) */
+.activity { display: flex; flex-direction: column; gap: 16px; padding: 16px 18px 18px; }
+.activity:empty { display: none; }
+.act-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 28px; flex-wrap: wrap; }
+.act-stats { display: flex; gap: 32px; flex-wrap: wrap; cursor: default; }
+.act-stat { display: flex; flex-direction: column-reverse; gap: 2px; }
+.act-stat b { font-size: 1.35rem; font-weight: 500; letter-spacing: -.01em; color: var(--text); font-variant-numeric: tabular-nums; }
+.act-stat small { font-size: .74rem; color: var(--sub); }
+.act-stat.hot b { color: var(--accent-text); }
+.act-stat.hot b::before { content: "🔥"; font-size: .85em; margin-right: 4px; }
+@media (max-width: 640px) { .act-stats { display: grid; grid-template-columns: repeat(2, auto); gap: 12px 28px; } }   /* phone: two by two */
+/* the period of the numbers over the legend of the calendar, on the right */
+.act-side { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.act-legend { display: inline-flex; align-items: center; gap: 4px; font-size: .74rem; color: var(--sub); }
+.act-legend i { width: 11px; height: 11px; border-radius: 2px; }
+.act-legend i:first-of-type { margin-left: 4px; }
+.act-legend i.l4 { margin-right: 4px; }
+.act-cal {
+  display: grid; grid-template-columns: 34px minmax(0, 1fr); grid-template-rows: auto auto; gap: 6px 0;
+  --gap: 3px;
+}
+.act-months, .act-grid { grid-column: 2; display: grid; grid-template-columns: repeat(var(--weeks), minmax(0, 1fr)); column-gap: var(--gap); }
+.act-months { font-size: .7rem; color: var(--sub); }
+.act-months span { white-space: nowrap; }
+.act-days { grid-column: 1; grid-row: 2; display: grid; grid-template-rows: repeat(7, minmax(0, 1fr)); row-gap: var(--gap); font-size: .68rem; color: var(--sub); align-items: center; }
+.act-grid { grid-row: 2; grid-template-rows: repeat(7, auto); grid-auto-flow: column; row-gap: var(--gap); }
+.act-grid i { aspect-ratio: 1; border-radius: 3px; }
+:is(.act-grid, .act-legend) i { background: color-mix(in srgb, var(--text) 6%, transparent); }
+:is(.act-grid, .act-legend) i.l1 { background: color-mix(in srgb, var(--accent) 30%, var(--panel)); }
+:is(.act-grid, .act-legend) i.l2 { background: color-mix(in srgb, var(--accent) 55%, var(--panel)); }
+:is(.act-grid, .act-legend) i.l3 { background: color-mix(in srgb, var(--accent) 78%, var(--panel)); }
+:is(.act-grid, .act-legend) i.l4 { background: var(--accent); }
+/* the daily goal was met that day: a ring in the colour of "done" */
+:is(.act-grid, .act-legend) i.met { box-shadow: inset 0 0 0 2px var(--ok); }
+.act-legend i.met { margin: 0 4px 0 10px; }
+.act-grid i:hover { outline: 1px solid var(--text); outline-offset: 1px; }
+/* the chart, the keyboard and the letters: one kind of card */
+.panel { background: var(--panel); border-radius: var(--r-lg); box-shadow: var(--lift); padding: 16px 18px; }
+.chart { height: clamp(180px, 32vh, 300px); }
+/* The stats screen scrolls like a page (owner, 2026-10-18: fitting it all
+   in one window was not worth it): the chart has a height of its own. */
+.chart:has(> .empty) { height: auto; }   /* no rounds yet: one line of text, not an empty half screen */
+/* the chart is the main thing below the tiles: it gets real height */
+.chart { height: clamp(200px, 50vh, 520px); }
+.panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin-bottom: 10px; }
+.panel h2 { font-size: .9rem; font-weight: 500; letter-spacing: -.01em; margin: 0; color: var(--text); }
+.empty { color: var(--sub); padding: 28px 0; text-align: center; }
+
+.chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
+:is(.chart, .ls-chart) .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 4; }
+/* a letter opened in this round (Learn): the letter over the bar and a thin line down to it */
+.chart text.opened { fill: var(--accent-text); font-size: 11px; font-family: var(--mono); font-weight: 600; }
+.chart line.opened { stroke: color-mix(in srgb, var(--accent) 45%, transparent); stroke-width: 1; stroke-dasharray: 2 2; }
+:is(.chart, .ls-chart) .target { stroke: var(--sub); stroke-width: 1; stroke-dasharray: 4 4; }
+.chart .avg { fill: none; stroke: var(--text); stroke-width: 1.5; stroke-linejoin: round; opacity: .55; pointer-events: none; }
+:is(.chart, .ls-chart) .axis { fill: var(--sub); font-size: 11px; font-family: var(--mono); }
+.chart .bar { fill: color-mix(in srgb, var(--accent) 55%, var(--panel)); transition: fill var(--fast); }
+.chart .bar.last { fill: var(--accent); }
+:root[data-theme="light"] .chart .bar.last { fill: #e8ad1f; }   /* the plain gold is too pale on white */
+.chart .hit { fill: transparent; cursor: default; }
+.chart .bar.hover { fill: var(--text); }
+
+/* ---------- the Learn stats (learnstats.js) ---------- */
+.learn-stats { display: flex; flex-direction: column; gap: 14px; }
+.learn-stats[hidden] { display: none; }
+.ls-panel { padding: 16px 18px 18px; }
+.ls-empty { margin: 0; color: var(--sub); font-size: .84rem; }
+/* every letter, round by round: the letter on the left (a button: it
+   picks the letter below), then a square per round in the colour of the
+   letters row (red far from mastered, green mastered, nothing while locked) */
+.ls-grid { display: grid; grid-template-columns: 22px 1fr; gap: var(--gap) 6px; align-items: center; }
+/* the letter and its row are the same height, so they line up however
+   small the squares get (a phone: 6px) */
+.ls-l {
+  width: 22px; height: max(12px, calc(var(--cell) + 2px)); padding: 0; border-radius: 4px; background: none;
+  color: var(--sub); font-family: var(--mono); font-size: min(.8rem, max(10px, calc(var(--cell) + 2px))); line-height: 1;
+}
+.ls-l:hover { color: var(--text); }
+.ls-l.on { color: var(--on-accent); background: var(--accent-fill); }
+.ls-row { display: flex; align-items: center; gap: var(--gap); height: max(12px, calc(var(--cell) + 2px)); }
+.ls-row i { flex: none; width: var(--cell); height: var(--cell); border-radius: 2px;
+  background: color-mix(in oklab, color-mix(in oklab, var(--ok) calc(var(--p, 0) * 100%), var(--error)) 70%, var(--panel)); }
+.ls-row i.fresh { background: color-mix(in srgb, var(--text) 12%, transparent); }
+.ls-row i.done { background: var(--ok); }
+.ls-row i.off { background: none; }
+/* one letter: the letter itself as a key, so l is never read as 1 */
+.ls-key { display: inline-grid; place-items: center; min-width: 1.6em; height: 1.6em; margin-left: 4px; border-radius: var(--r-sm);
+  background: var(--accent-fill); color: var(--on-accent); font-family: var(--mono); font-weight: 600; }
+.ls-facts { margin: 4px 0 8px; }
+.ls-needs { margin: 0 0 12px; font-size: .9rem; color: var(--text); }
+.ls-fc { margin: 14px 0 0; color: var(--sub); }
+.ls-fc b { color: var(--text); font-weight: 500; }
+.ls-chart-box svg { display: block; width: 100%; height: auto; }
+.ls-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+/* the keys you mix up */
+.ls-mix { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 22px; }
+.ls-mix li { display: flex; align-items: baseline; gap: 8px; font-size: .9rem; color: var(--sub); }
+.ls-mix b { display: inline-grid; place-items: center; min-width: 1.7em; height: 1.7em; border-radius: var(--r-sm);
+  background: var(--panel-2); box-shadow: var(--lift); color: var(--text); font-family: var(--mono); font-weight: 500; }
+.ls-mix b.bad { color: var(--error); }
+.ls-mix small { font-size: .8rem; }

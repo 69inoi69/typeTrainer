@@ -5,7 +5,7 @@
 // None of this changes what is measured or sent to the server.
 // Layer: bottom. Imports nothing.
 // Used by: keyboard.js (red tint, hand size), typing.js (caret kick, trail, flinch and
-// breath, line scroll), and style.css (caret glide, the lift and dip of the
+// breath, line scroll), and the stylesheets (caret glide, the lift and dip of the
 // next key, the lift of the finger) through the --feel-* properties.
 // Speed rule (owner, 2026-10-18, "as smooth as monkeytype"): what moves on
 // every key only moves (translate, transform, opacity of a whole element),
@@ -13,7 +13,7 @@
 // glows or colour fades on every key.
 // To add a knob: a field in FEEL with its unit and what "more" does, then
 // either read FEEL.x in the JavaScript or add a root.setProperty line to
-// applyFeel below and use var(--feel-x) in style.css.
+// applyFeel below and use var(--feel-x) in the stylesheets.
 
 export const FEEL = {
   // Everything that moves while you type: smooth, but it starts moving at
@@ -24,7 +24,7 @@ export const FEEL = {
   // frame rate); monkeytype's "medium", 100 ms even ("oily"); a step-and-
   // settle curve at 80 and 55 ms ("it lags behind the letters"); then
   // monkeytype's "smooth caret: fast", 85 ms on its almost even in-out
-  // curve (style.css --caret-curve): smooth, but still behind the typed
+  // curve (the CSS variable --caret-curve): smooth, but still behind the typed
   // letters (owner, 2026-10-18). Then that curve in 60 ms; now 65 ms, the
   // owner's own pick (2026-10-20). A new key starts a new glide
   // from where the caret is, so fast typing reads as one steady movement.
@@ -46,7 +46,7 @@ export const FEEL = {
   resultRisePx: 12,         // how far it rises while it comes in (0 = only fades)
 
   // The key on the virtual keyboard answers a press: as its light goes
-  // out it sinks a little, a short, soft dip (style.css .lit).
+  // out it sinks a little, a short, soft dip (typing.css .lit).
   keyPressMs: 90,           // duration of the dip
   keyPressScale: 0.96,      // how deep it dips (1 = no dip)
   // A wrong key: a quick red tint, a hint rather than an alarm.
@@ -81,7 +81,7 @@ export const FEEL = {
   caretBreathMs: 1100,      // one breath, out and in
   caretBreathDelayMs: 650,  // quiet time before it starts
 
-  // How the three kinds of mistake look (style.css .bad / .miss / .extra):
+  // How the three kinds of mistake look (typing.css .bad / .miss / .extra):
   // wrong = red letter; skipped = dim with a dotted underline;
   // extra = struck through. Thickness of those lines, px.
   markLine: 2,
@@ -100,7 +100,7 @@ export const FEEL = {
   nextKeyLiftPx: 3,         // how far the next key rises above the others (0 = stays flat)
 };
 
-// The CSS custom properties: style.css uses var(--feel-...). Set once, at load.
+// The CSS custom properties: the stylesheets use var(--feel-...). Set once, at load.
 function applyFeel() {
   const root = document.documentElement.style;
   root.setProperty("--feel-caret-ms", FEEL.caretGlideMs + "ms");
@@ -110,7 +110,7 @@ function applyFeel() {
   root.setProperty("--feel-result-rise", FEEL.resultRisePx + "px");
   root.setProperty("--feel-mark-line", FEEL.markLine + "px");
   root.setProperty("--feel-hand", String(FEEL.handScale));
-  root.setProperty("--feel-finger-lift", String(-FEEL.fingerLiftPx));   // in units of the hand drawing (style.css --hu)
+  root.setProperty("--feel-finger-lift", String(-FEEL.fingerLiftPx));   // in units of the hand drawing (typing.css --hu)
   root.setProperty("--feel-finger-glow", String(FEEL.fingerGlowPx));
   root.setProperty("--feel-next-lift", -FEEL.nextKeyLiftPx + "px");
   root.setProperty("--feel-key-press-ms", FEEL.keyPressMs + "ms");

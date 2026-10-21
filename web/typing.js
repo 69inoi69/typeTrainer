@@ -1,17 +1,20 @@
 // The typing screen: the text stream (portions of words added while you
-// type, in rounds of the length chosen in the settings), the caret, what
-// every keypress does, the clean-word streak, the live WPM / accuracy, and
-// sending the result when a round ends. The letters bar is in letters.js,
-// the result screen in result.js. The same screen serves all three modes
-// (modes.js): learning talks to /portion and /results, Climb to /freeplay/*
-// with the level of the round (the server judges the round at its end,
-// freeplay.Standing), Freetype to /freetype/* with its word list and kind
-// of text (your own text comes from customtext.js, not the server).
+// type, in rounds of the length chosen in the settings), where the caret
+// goes, what every keypress does, the live WPM / accuracy, and sending the
+// result when a round ends. Split off: the caret's own movements
+// (caret.js), the clean-word streak (streak.js), the Caps Lock and layout
+// warning (warn.js); the letters bar is in letters.js, the result screen in
+// result.js. The same screen serves all three modes (modes.js): learning
+// talks to /portion and /results, Climb to /freeplay/* with the level of the
+// round (the server judges the round at its end, freeplay.Standing),
+// Freetype to /freetype/* with its word list and kind of text (your own
+// text comes from customtext.js, not the server).
 // Layer: middle. Imports the bottom layer, keyboard.js, stats.js, result.js,
-// letters.js, modes.js, modebar.js, settings.js and customtext.js.
+// letters.js, learnpanel.js, modes.js, modebar.js, settings.js, sound.js,
+// customtext.js, caret.js, streak.js and warn.js.
 // Called by: input.js (handleChar, backspace, restartRound, stopRound and the rest
-// on keys and clicks) and languages.js (loadExercise, hideWarn when the
-// language changes).
+// on keys and clicks) and languages.js (loadExercise when the language
+// changes).
 //
 // Speed rule (AGENTS.md): this code runs on every keypress, so it must stay
 // light. A keypress only flips the classes of the 1-2 <span>s that changed;
@@ -23,7 +26,7 @@
 import { FEEL } from "./feel.js";
 import { t } from "./i18n.js";
 import { FX } from "./fx.js";
-import { $, el, S, introOpen, isTouch, themeColor, reducedMotion, roundList } from "./state.js";
+import { el, S, introOpen, isTouch, roundList } from "./state.js";
 import { postJSON } from "./api.js";
 import { highlightNextKey, pulseKey, glowKey, requestFit } from "./keyboard.js";
 import { refreshStats } from "./stats.js";
@@ -35,9 +38,11 @@ import { renderModeBar } from "./modebar.js";
 import { lengthOf, firstRoundDone } from "./settings.js";
 import { keySound } from "./sound.js";
 import { customPortions, customRoundDone } from "./customtext.js";
+import { flinchCaret, kickCaret, breathe, scrollText, stopScroll } from "./caret.js";
+import { STREAK_RISE, streakOn, cleanWord, breakStreak } from "./streak.js";
+import { showWarn, hideWarn, warnShowing, foreignKey, layoutCheck } from "./warn.js";
 
 // Typing state, used only by the typing code.
-let wrongScript = 0;       // presses in a row that came from another keyboard layout
 let spans = [];            // one <span> per character
 let focusMask = new Uint8Array(0); // 1 = this position is the focus letter (tinted until typed)
 // Typing never stops on a mistake (as on monkeytype): a wrong letter turns
@@ -55,16 +60,14 @@ let pausedAt = null;        // when the round was paused, or null
 let presses = 0, correctPresses = 0;
 let perSecond = [];        // keypresses in each second since startTime (for consistency)
 
-// Rewards (they change nothing in the statistics, they only feel nice)
-let streak = 0;            // words in a row typed without a single mistake
-let wordClean = true;      // no mistake in the current word so far
+let wordClean = true;      // no mistake in the current word so far (for the streak, streak.js)
 // One word back (Backspace at the start of a word): the start of the word
 // the caret went back into (-1: none), and the errors it had then. From
 // inside that word Backspace cannot go back another word.
 let backWord = -1, backErrors = 0;
 let fixedWords = new Set(); // starts of words that were gone back into and retyped without a mistake
 
-// The text window always shows TEXT_LINES lines at one font size (style.css,
+// The text window always shows TEXT_LINES lines at one font size (typing.css,
 // .text): it never changes size between rounds. A text that needs more
 // lines scrolls: the line you type stays the second one (as on monkeytype).
 // fitText runs on a new text and on resize, never on a keypress: it reads the
@@ -74,7 +77,7 @@ let lineH = 0;
 export function fitText() {
   if (S.view !== "type") return;
   lineH = parseFloat(getComputedStyle(el.text).lineHeight) || 0;
-  cancelAnimationFrame(scrollFrame);
+  stopScroll();
   el.text.scrollTop = 0;                     // a new text starts at the top at once
 }
 
@@ -135,25 +138,6 @@ function keepTextInView() {
   const r = el.textBox.getBoundingClientRect();
   if (r.top >= 0 && r.bottom <= innerHeight) return;
   scrollTo({ top: scrollY + r.top - 8 });
-}
-
-// Moves the text window to scrollTop = top in FEEL.lineScrollMs, fast at the
-// start, soft at the end. The browser's own smooth scroll cannot be timed and
-// takes ~400 ms, which felt like honey. scrollTop cannot be animated by CSS or
-// element.animate(), so this one is stepped once per animation frame (the
-// same frames the caret uses; no timers). A newer target replaces the old one.
-let scrollFrame = 0;
-function scrollText(top, jump) {
-  cancelAnimationFrame(scrollFrame);
-  const from = el.text.scrollTop, ms = jump ? 0 : FEEL.lineScrollMs;
-  if (!ms) { el.text.scrollTop = top; return; }
-  const start = performance.now();
-  const step = (now) => {
-    const k = Math.min(1, (now - start) / ms);
-    el.text.scrollTop = from + (top - from) * (1 - (1 - k) ** 3);   // ease-out
-    if (k < 1) scrollFrame = requestAnimationFrame(step);
-  };
-  scrollFrame = requestAnimationFrame(step);
 }
 
 // ---------- the stream ----------
@@ -232,7 +216,7 @@ function appendPortions(list) {
     sp.className = (focusMask[i] ? "fx" : "") + " later" + (endAt >= 0 && i >= endAt ? " beyond" : "");
     // a gold letter says why it is gold (tools.js shows it only while you are not typing)
     if (focusMask[i]) sp.dataset.tipText = t("tip.fx", { l: S.text[i] });
-    else if (S.text[i] === " ") sp.dataset.sp = "";   // a space: style.css can mark it (the setting body[data-ws])
+    else if (S.text[i] === " ") sp.dataset.sp = "";   // a space: typing.css can mark it (the setting body[data-ws])
     frag.appendChild(sp);
     spans.push(sp);
   }
@@ -493,68 +477,6 @@ function mistake() {
   wordClean = false;
   flinchCaret();
 }
-// The caret flinches for an instant on a mistake: it shrinks, turns red and
-// shakes (knobs: FEEL.caretFlinch*, FEEL.caretShakePx). It animates "scale"
-// and "transform" only, so the glide ("translate") is not touched.
-function flinchCaret() {
-  if (!FEEL.caretFlinchMs || !el.caret.animate || reducedMotion()) return;
-  // see-through, so the block caret (a setting) never hides its letter
-  const red = `color-mix(in srgb, ${themeColor("--error")} 75%, transparent)`, px = FEEL.caretShakePx;
-  el.caret.animate([
-    { scale: `1 ${FEEL.caretFlinchScale}`, transform: "none", backgroundColor: red },
-    { transform: `translateX(${-px}px)`, offset: .3 },
-    { transform: `translateX(${px}px)`, offset: .6 },
-    { scale: "1 1", transform: "none", backgroundColor: red },
-  ], { duration: FEEL.caretFlinchMs, easing: "ease-out" });
-}
-// A right key: the caret starts a little bigger and settles (FEEL.caretKick*),
-// and a short trail from where it was shrinks into it (FEEL.caretTrail*),
-// both in the same frame as the glide. dx: how far the caret moved, px;
-// sameLine: it stayed on its line (no trail across a line break or going
-// back). One Web Animation for each, kept for the whole page: a key only
-// gives the trail its new length and rewinds both (a new animation on every
-// key costs the browser more). Only "scale" and "opacity" move, on layers of
-// their own, so nothing is laid out or painted again.
-let kickAnim = null, trailAnim = null;
-function kickCaret(dx, sameLine) {
-  if (!el.caret.animate || reducedMotion()) return;
-  if (FEEL.caretKickMs && FEEL.caretKickScale !== 1) {
-    const k = FEEL.caretKickScale;
-    const frames = [{ scale: `${k} ${k}` }, { scale: "1 1" }];
-    kickAnim ??= el.caret.animate(frames, { duration: FEEL.caretKickMs, easing: "ease-out" });
-    kickAnim.effect.setKeyframes(frames);
-    kickAnim.effect.updateTiming({ duration: FEEL.caretKickMs });
-    kickAnim.currentTime = 0; kickAnim.play();
-  }
-  const trail = el.caret.firstElementChild;
-  if (!FEEL.caretTrailMs || !FEEL.caretTrailAlpha || !sameLine || dx <= 0 || !trail) return;
-  // the trail is drawn 100 px long (style.css .caret-trail) and scaled to dx
-  const frames = [{ scale: `${dx / 100} 1`, opacity: FEEL.caretTrailAlpha }, { scale: "0 1", opacity: 0 }];
-  trailAnim ??= trail.animate(frames, { duration: FEEL.caretTrailMs, easing: "ease-out" });
-  trailAnim.effect.setKeyframes(frames);
-  trailAnim.effect.updateTiming({ duration: FEEL.caretTrailMs });
-  trailAnim.currentTime = 0; trailAnim.play();
-}
-// While a round waits for the next key, the caret breathes (fades out and in)
-// after FEEL.caretBreathDelayMs of quiet; every key starts the wait again, so
-// it stays solid while you type. One Web Animation for the whole round: a key
-// only rewinds it to its start (placeCaret, once per frame at most); making a
-// new one on every key cost the browser a new animation each time. It
-// animates "filter", not "opacity": a hidden caret (opacity 0, text not in
-// focus) stays hidden. Outside a round the CSS animation (style.css, .caret)
-// does the same.
-let breath = null;
-function breathe(on) {
-  if (!on || !FEEL.caretBreathMs || !el.caret.animate || reducedMotion()) {
-    breath?.cancel();
-    breath = null;
-    return;
-  }
-  if (breath) { breath.currentTime = 0; return; }
-  breath = el.caret.animate([{ filter: "opacity(1)" }, { filter: "opacity(.3)" }, { filter: "opacity(1)" }],
-    { duration: FEEL.caretBreathMs, delay: FEEL.caretBreathDelayMs, iterations: Infinity, easing: "ease-in-out" });
-}
-
 export function handleChar(ch) {
   if (!canType()) return;
   if (pausedAt !== null) resumeRound(performance.now());
@@ -572,7 +494,7 @@ export function handleChar(ch) {
   if (ch !== expected && /\p{L}/u.test(ch)) {
     if (ch.toLowerCase() === expected) { showWarn("caps"); return; }
     if (!S.alphabet.has(ch.toLowerCase())) {
-      if (++wrongScript >= 2) showWarn("layout");
+      foreignKey();
       return;
     }
   }
@@ -583,7 +505,7 @@ export function handleChar(ch) {
   }
   el.textBox.classList.add("typing");
   setTyping(true);                         // does nothing if it is on already
-  if (ch === expected && (wrongScript || el.warn.classList.contains("show"))) hideWarn();
+  if (ch === expected && warnShowing()) hideWarn();
   presses++;
   const sec = Math.floor((now - startTime) / 1000);
   perSecond[sec] = (perSecond[sec] ?? 0) + 1;   // real keys only: skipped letters are not presses
@@ -704,35 +626,13 @@ function clearWord() {
   while (S.pos > start) setState(--S.pos, 0);
 }
 
-// ---------- streak: clean words in a row ----------
-// Freetype only, and only when turned on in the settings (owner, 2026-10-20:
-// it says little, and typing comes first); Learn and Climb never show it.
-// A bolt and the number riding on the caret, shown from 3 words (owner,
-// 2026-10-18: in the numbers line it covered the status line, and its
-// flicker, zapping bolt, shake and confetti were too loud). Its colour warms
-// at each tier (style.css .streak[data-tier]): gold from the start, since 3
-// clean words already deserve to feel good (owner, 2026-10-18: grey read as
-// "nothing"). At 10, 25, 50 and every 50 after, the badge gives one small
-// bump, no text (owner: the notes were too long). Every clean word after
-// that makes the number hop once (FEEL.streakHop*; owner, 2026-10-20: it
-// only changed, with nothing to see). Visual only, nothing is sent.
-const STREAK_SHOW = 3;
-const STREAK_TIERS = [10, 25, 50];   // clean words where the colour changes
-const streakTier = (n) => STREAK_TIERS.filter((x) => n >= x).length;
-const STREAK_RISE = 14;      // px: how far above the caret's top the badge sits: close over it, away from the line above (owner, 2026-10-18: twice "a little lower")
-const isMilestone = (n) => n === 10 || n === 25 || (n > 0 && n % 50 === 0);
-const streakOn = () => S.settings.streak && S.mode === "freetype";
+// ---------- the end of a word ----------
 function endWord() {
   wordsTyped++;
   reveal();                                  // one word finished: one more appears
   renderProgress();
   updateLive();                              // the numbers change once per word: calm, readable
-  if (wordClean) {
-    streak++;
-    renderStreak();
-    if (isMilestone(streak)) popStreak();
-    else if (streak > STREAK_SHOW) hopStreak();
-  }
+  if (wordClean) cleanWord();
   wordClean = true;
 }
 // A words round: words typed, out of the words in the round. A time round:
@@ -750,33 +650,6 @@ function renderProgress() {
     el.progress.textContent = Math.max(0, Math.ceil(limit.n - passed));
   }
 }
-function breakStreak() {
-  streak = 0;
-  renderStreak();
-}
-function renderStreak() {
-  el.streakN.textContent = streak;
-  el.streak.dataset.tier = streakTier(streak);
-  el.streak.classList.toggle("show", streakOn() && streak >= STREAK_SHOW);
-}
-// A milestone: the badge gives one small bump.
-function popStreak() {
-  if (!streakOn()) return;
-  FX.bump(el.streak, 1.2);
-}
-// One more clean word: the number hops up a little and settles. Once a word,
-// never per key; only "transform" of the number, so nothing is laid out or
-// painted again. One Web Animation, kept and rewound (as kickCaret).
-let hopAnim = null;
-function hopStreak() {
-  if (!streakOn() || !FEEL.streakHopMs || !el.streakN.animate || reducedMotion()) return;
-  const frames = [{ transform: `translateY(${-FEEL.streakHopPx}px) scale(${FEEL.streakHopScale})` }, { transform: "none" }];
-  hopAnim ??= el.streakN.animate(frames, { duration: FEEL.streakHopMs, easing: "cubic-bezier(.2,.8,.2,1)" });
-  hopAnim.effect.setKeyframes(frames);
-  hopAnim.effect.updateTiming({ duration: FEEL.streakHopMs });
-  hopAnim.currentTime = 0; hopAnim.play();
-}
-
 // ---------- Tab: start the round again ----------
 // As on monkeytype (owner, 2026-10-16, reversing the earlier "no restart"
 // rule): Tab drops the round being typed and starts a fresh one. The dropped
@@ -789,77 +662,13 @@ export function restartRound() {
   loadExercise().catch(console.error);
 }
 
-// The warning card: an icon, what is wrong and how to fix it. For a wrong
-// layout, the usual way to switch it on this system (owner, 2026-10-18: it
-// always said Windows); a phone or an unknown system gets no keys.
-const WARN_ICON = {
-  caps: '<path d="M12 4 5 11h4v5h6v-5h4z"/><path d="M9 20h6"/>',
-  layout: '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/>',
-};
-function switchKeys() {
-  const p = (navigator.userAgentData?.platform || navigator.platform || "").toLowerCase();
-  if (isTouch()) return "";
-  if (p.includes("win")) return t("warn.keys.win");
-  if (p.includes("mac")) return t("warn.keys.mac");
-  if (p.includes("cros") || p.includes("chrome os")) return t("warn.keys.cros");
-  if (p.includes("linux")) return t("warn.keys.linux");
-  return "";
-}
-function showWarn(kind) {
-  const info = S.languages.find((l) => l.id === S.lang);
-  const keys = kind === "layout" ? switchKeys() : "";
-  const text = kind === "caps" ? t("warn.caps") : t("warn.layout", { layout: info?.systemLayout ?? S.lang });
-  el.warn.innerHTML = `<span class="warn-icon"><svg viewBox="0 0 24 24" aria-hidden="true">${WARN_ICON[kind]}</svg></span>` +
-    `<span class="warn-text">${text}</span>${keys ? `<span class="warn-keys">${keys}</span>` : ""}`;
-  el.warn.dataset.kind = kind;
-  el.warn.classList.add("show");
-  el.live.classList.add("warning");   // the top line fades out under it
-}
-// Hides the Caps Lock / wrong system layout warning (also on a language change).
-export function hideWarn() {
-  wrongScript = 0;
-  capsOn = false;                     // asked again at the next key or mouse move
-  delete el.warn.dataset.kind;
-  el.warn.classList.remove("show");
-  el.live.classList.remove("warning");
-}
-
-// A wrong system layout before the first key (owner, 2026-10-18: "it should
-// show at once, not after I press keys"). Chromium browsers (Chrome, Edge)
-// can say what the home-row keys type in the current layout (the Keyboard
-// API); Firefox and Safari cannot, and some browsers hide it (Brave, against
-// fingerprinting), so there the first keys still tell (handleChar). Checked
-// once a second while no round is being typed, and when the window comes
-// back (input.js): a layout switched meanwhile shows or hides the warning.
-// Wrong = most home-row keys type letters that are not in this language's
-// alphabet (the same rule as for typed keys, so Colemak or AZERTY in the
-// same script are fine).
-const HOME_CODES = ["KeyA", "KeyS", "KeyD", "KeyF", "KeyJ", "KeyK", "KeyL"];
-export async function checkLayout() {
-  if (!navigator.keyboard?.getLayoutMap || !S.alphabet || startTime !== null) return;
-  let map;
-  try { map = await navigator.keyboard.getLayoutMap(); } catch { return; }   // not allowed here
-  const got = HOME_CODES.map((code) => map.get(code)).filter(Boolean);
-  if (got.length < 4) return;              // the browser does not say: the first key will tell
-  const foreign = got.filter((c) => /\p{L}/u.test(c) && !S.alphabet.has(c.toLowerCase())).length;
-  if (foreign > got.length / 2) { if (el.warn.dataset.kind !== "layout") showWarn("layout"); }
-  else if (el.warn.dataset.kind === "layout") hideWarn();
+// The Caps Lock / wrong layout warning lives in warn.js. Its check of the
+// system layout runs once a second, only while no round is being typed
+// (input.js also asks when the window comes back).
+export function checkLayout() {
+  if (startTime === null) layoutCheck();
 }
 setInterval(checkLayout, 1000);   // a clock, not an animation: one small question a second
-
-// Caps Lock before the first letter (owner, 2026-10-18: it showed only after
-// letters were typed). Every key and mouse event says whether Caps Lock is on
-// (getModifierState), so the warning comes with the first mouse move or any
-// key (Shift, the Caps Lock key itself) and goes as soon as it is off.
-// Called by input.js on keys and mouse moves; it acts only on a change.
-let capsOn = false;
-export function checkCaps(e) {
-  const on = e.getModifierState?.("CapsLock");
-  if (on === undefined || on === capsOn) return;
-  capsOn = on;
-  if (on) { if (!el.warn.dataset.kind) showWarn("caps"); }   // a wrong layout is said first
-  else if (el.warn.dataset.kind === "caps") hideWarn();
-}
 
 // WPM uses the standard definition: 5 characters = 1 word.
 // `end`: when the round ended (default: now).
@@ -895,7 +704,7 @@ function updateLive() {
 // A live number counts smoothly to its new value (owner, 2026-10-18: the
 // jump once per word looked choppy): the value is the CSS property --v,
 // registered as an integer, and a transition counts through the numbers in
-// between (style.css .metric > span::after). instant: no counting (a new
+// between (layout.css .metric > span::after). instant: no counting (a new
 // round starting from 0). A browser without @property shows the new number
 // at once.
 function setLive(node, n, instant = false) {
@@ -911,7 +720,7 @@ function setLive(node, n, instant = false) {
 // ---------- "typing now": the header steps back ----------
 // From the first keypress to the end of the round the body has the class
 // "typing-now": the logo turns grey, the languages, the account and the
-// navigation almost vanish (style.css).
+// navigation almost vanish (layout.css).
 let typingNow = false;
 export function setTyping(on) {
   if (on === typingNow) return;
@@ -939,7 +748,7 @@ setInterval(() => {
 // run out and the pause is not in the round's speed (owner, 2026-10-18).
 // Before the first key too (owner: "at the start it does not pause"):
 // then there is no clock yet, only the pause screen. The text blurs under a
-// "paused" note (style.css .text-box.paused). It is put on at once, with no
+// "paused" note (typing.css .text-box.paused). It is put on at once, with no
 // fade: a window out of sight draws nothing, so a fade would only start
 // when you come back (owner: "the text shows for a second, then blurs").
 // The letter model is safe either way (the engine ignores gaps over

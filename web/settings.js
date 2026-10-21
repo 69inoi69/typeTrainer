@@ -19,7 +19,7 @@
 // modes.js (lengthFor), modebar.js, typing.js and stats.js (the lengths,
 // lengthOf, lengthLabel, firstRoundDone).
 // To add a setting: a plain choice or an on/off switch is one entry in
-// CHOICES or SWITCHES (below) and one in ROWS, its look in style.css (the
+// CHOICES or SWITCHES (below) and one in ROWS, its look in the stylesheets (the
 // body data attribute or class it gets) and its texts in i18n.js; anything
 // else needs a default in S.settings (state.js), reading it in
 // loadSettings(), its look in applySettings(), an entry in ROWS, a branch
@@ -62,7 +62,7 @@ export function setLength(mode, id) {
   if (mode === S.mode) S.settings.length = id;
 }
 // The caret styles, in the order of the buttons ("line" is the default).
-// To add one: its id here, its look in style.css (body[data-caret="id"]
+// To add one: its id here, its look in typing.css (body[data-caret="id"]
 // .caret and a small picture .cs.id) and its name in i18n.js ("settings.id").
 const CARETS = ["line", "block", "underline", "outline"];
 // A personal speed goal, WPM (0 = none; owner, 2026-10-18). Only the stats
@@ -83,11 +83,11 @@ const DAILY_DEFAULT = 15;
 // Plain choices (owner, 2026-10-20, after keybr): S.settings[name] is one of
 // values (in the order of the buttons), def when nothing valid is saved,
 // kept in localStorage under key.
-// What each does: caret glide (style.css body[data-glide]), text size
+// What each does: caret glide (typing.css body[data-glide]), text size
 // (body[data-size]), a mark on every space (body[data-ws]), sounds
 // (sound.js), their volume, the rest reminder (typing.js restCheck,
 // minutes, "0" = off).
-// To add one: an entry here, a row in ROWS, its look in style.css (the
+// To add one: an entry here, a row in ROWS, its look in the stylesheets (the
 // body data attribute of the same name is set for every choice) or its
 // use in the code, and its texts in i18n.js.
 const CHOICES = {
@@ -101,7 +101,7 @@ const CHOICES = {
 // On/off switches: S.settings[name], the default, the localStorage key.
 // stop: the caret waits on a wrong key (typing.js handleChar); nextKey:
 // the next key and finger light up (keyboard.js); fingers: the keys in
-// finger colours (style.css body.fingers-off).
+// finger colours (typing.css body.fingers-off).
 const SWITCHES = {
   stop: { key: "tt.stop", on: false },
   nextKey: { key: "tt.nextKey", on: true },
@@ -148,13 +148,13 @@ export function loadSettings() {
   }
   applySettings();
 }
-// The look: classes on <body> and data-theme on <html>, style.css does the
+// The look: classes on <body> and data-theme on <html>, the CSS does the
 // rest. (index.html sets data-theme once more before the page is drawn, so a
 // light page never flashes dark first.)
 function applySettings() {
   document.body.classList.toggle("live-off", !S.settings.live);
-  document.body.classList.toggle("streak-off", !S.settings.streak);   // style.css hides the badge
-  document.body.dataset.caret = S.settings.caret;      // style.css: body[data-caret=...]
+  document.body.classList.toggle("streak-off", !S.settings.streak);   // layout.css hides the badge
+  document.body.dataset.caret = S.settings.caret;      // typing.css: body[data-caret=...]
   for (const name of Object.keys(CHOICES)) document.body.dataset[name] = S.settings[name];
   document.body.classList.toggle("fingers-off", !S.settings.fingers);
   document.documentElement.dataset.theme = S.settings.theme;

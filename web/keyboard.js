@@ -70,7 +70,7 @@ export function drawKeyboard() {
 }
 
 // The lit look of a key (the next key to press), drawn once, under the
-// key's own legend, in a layer of its own that stays invisible (style.css
+// key's own legend, in a layer of its own that stays invisible (typing.css
 // .keyboard .key > .lit). Lighting a key only turns that layer's opacity on:
 // the graphics card shows it, nothing is painted again. Before, the key
 // itself changed colour, glow and height on every keypress, which painted
@@ -134,7 +134,7 @@ export function highlightNextKey() {
 
 // A wrong key gets a quick red tint in the theme's --error (FEEL.keyMiss*,
 // Web Animations API). A right key needs nothing here: it was the lit one,
-// and its light sinks away as the next key lights up (style.css .lit,
+// and its light sinks away as the next key lights up (typing.css .lit,
 // FEEL.keyPress*). Before, every keypress started 5-7 animations (a dip of
 // the key, a tap and a bounce of the finger, lifts): they made the typed
 // letter show one or two frames later (measured, 2026-10-20).
@@ -201,7 +201,7 @@ export function applyKb(animate = false) {
 // the keyboard is switched on: never on a keypress.
 // hands 1.68 u * handScale (2 u wide, 100:84) + keyboard 4.36 u (4 rows, 3 gaps of .12 u)
 // The hands overlap the keyboard's top edge by FEEL.handOverlap keys
-// (style.css .hands, a negative margin), so that much less height is used.
+// (typing.css .hands, a negative margin), so that much less height is used.
 const HANDS_KB_PER_U = 1.68 * FEEL.handScale + 4.36 - FEEL.handOverlap;
 const KB_MIN_U = 26;       // px: a key smaller than this cannot be read at a glance
 let fitFrame = 0;
@@ -218,13 +218,13 @@ function fitKeyboard() {
   // the time, and the page may scroll there; no cap
   if (isTouch()) { root.removeProperty("--u-fit"); return; }
   if (S.kbHidden || S.view !== "type") return;
-  // the result hides the keyboard (style.css): measure again with the next text
+  // the result hides the keyboard (screens.css): measure again with the next text
   if (el.textBox.classList.contains("resulting")) return;
   // while the keyboard folds / unfolds its height and the margins of the hands
   // are half-way: a measure now would give a wrong (too big) size
   if (el.keyboard.getAnimations().length || el.hands.getAnimations().length) return;
   const centred = getComputedStyle(el.viewType).getPropertyValue("--view-centred").trim() === "1";
-  // the keyboard's panel (style.css .keyboard): its padding and border do
+  // the keyboard's panel (typing.css .keyboard): its padding and border do
   // not grow with --u, so they count as fixed room like everything else
   const kb = getComputedStyle(el.keyboard);
   const kbFrame = ["paddingTop", "paddingBottom", "borderTopWidth", "borderBottomWidth"].reduce((sum, p) => sum + parseFloat(kb[p]), 0);
@@ -235,7 +235,7 @@ function fitKeyboard() {
   const overlap = away ? 0 : -parseFloat(getComputedStyle(el.hands).marginBottom) || 0;
   const rest = document.querySelector(".top").offsetHeight + el.viewType.offsetHeight
     - el.hands.offsetHeight - el.keyboard.offsetHeight + kbFrame + overlap
-    // desktop (style.css --view-centred): the view takes all the height and
+    // desktop (typing.css --view-centred): the view takes all the height and
     // centres the letters and the text with two equal auto margins (above
     // the letters, at the end): that is free room. Otherwise the room above
     // the view (not in offsetHeight) is taken.

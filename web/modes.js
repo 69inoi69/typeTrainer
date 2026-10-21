@@ -109,5 +109,5 @@ export function renderNav() {
   const i = S.view === "stats" ? MODES.length : MODES.indexOf(S.mode);
   el.nav.style.setProperty("--i", i);
   [el.tabLearn, el.tabClimb, el.tabFreetype, el.tabStats].forEach((b, k) => b.setAttribute("aria-selected", String(k === i)));
-  document.body.dataset.mode = S.mode;        // style.css hides what a mode does not use
+  document.body.dataset.mode = S.mode;        // the CSS hides what a mode does not use
 }

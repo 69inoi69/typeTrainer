@@ -3,7 +3,7 @@
 // Import rule of the frontend (three layers, imports only go down):
 //   bottom: state.js, i18n.js and feel.js import nothing, fx.js only
 //           i18n.js, api.js only state.js
-//   middle: keyboard, typing, letters, learnpanel, learnstats, customtext, sound, stats, intro, languages, tools,
+//   middle: keyboard, typing, caret, streak, warn, letters, learnpanel, learnstats, customtext, sound, stats, intro, languages, tools,
 //           profile, result, modes, modebar, settings, share, ambient import the bottom
 //           and each other in one direction only (no cycles)
 //   top:    input.js and app.js may import anything; nothing imports them
@@ -92,7 +92,7 @@ export const listLabel = (n) => n >= 1000 && n % 1000 === 0 ? `${n / 1000}k` : S
 // A touch screen (phone, tablet): no physical keyboard, no hover.
 export const isTouch = () => matchMedia("(pointer: coarse)").matches;
 // "Reduce motion" in the OS: the small JavaScript animations are skipped too
-// (style.css turns off the CSS ones).
+// (responsive.css turns off the CSS ones).
 const motionQuery = matchMedia("(prefers-reduced-motion: reduce)");
 export const reducedMotion = () => motionQuery.matches;
 // A colour of the current theme (a CSS variable on :root, "--error"), for

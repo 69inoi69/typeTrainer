@@ -18,11 +18,11 @@
 // running animation's element on each frame it draws, and during a round it
 // draws one per key; so the animated <i> carries no look of its own and the
 // heavy look (shadows, colour mixes) sits on the <b> inside, which is left
-// alone (measured, 2026-10-20: see style.css).
+// alone (measured, 2026-10-20: see screens.css).
 //
 // To add something that falls: its id in S.settings.bg (settings.js BGS and
 // its name in i18n.js), what each piece shows in TEXTS below, and its look
-// in style.css (.ambient[data-kind=...] > i > b).
+// in screens.css (.ambient[data-kind=...] > i > b).
 
 import { reducedMotion, S } from "./state.js";
 
