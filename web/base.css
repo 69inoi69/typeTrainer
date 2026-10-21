@@ -1,0 +1,329 @@
+/* The base of the look: fonts, the theme variables, the two kinds of text
+   and the parts every screen shares (panels, windows, chips).
+   The stylesheets load in this order (index.html): base.css, layout.css,
+   typing.css, stats.css, screens.css, responsive.css. Later files win over
+   earlier ones on equal selectors, so the narrow-screen rules come last.
+   Almost every colour comes from a variable on :root, so a theme only
+   changes the variables (To add a theme: one :root[data-theme] block here).
+   For a change of look, JavaScript toggles a class (.ok, .bad,
+   body.typing-now, ...) or a data- attribute, and the rules do the rest.
+   Inline styles from JavaScript are only for what it alone knows: positions
+   (caret, tooltip, streak badge), the key unit (--u-fit) and the finger colours
+   of a layout (--fc). The feel of a keypress (durations, glow, dip) comes
+   from web/feel.js as --feel-* variables.
+   The look: graphite surfaces in three steps (page, card, element), one warm
+   gold, and the text to type as the brightest thing on the screen. Depth
+   comes from a hairline edge and a soft shadow, never a heavy one. Glass (a
+   blurred, see-through background) only for what floats over the page:
+   there is something behind it to blur. */
+
+/* The one font of the app: Geist Mono (Vercel, SIL Open Font License,
+   web/fonts/OFL.txt), served from web/fonts so it works offline and on
+   GitHub Pages. To change it: new files there and these two rules. */
+@font-face { font-family: "Geist Mono"; src: url("fonts/GeistMono-Regular.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Geist Mono"; src: url("fonts/GeistMono-Medium.woff2") format("woff2"); font-weight: 500 700; font-display: swap; }
+/* the key legends on the drawn keyboard only: a family of its own, so the
+   bold text elsewhere keeps Medium */
+@font-face { font-family: "Geist Mono Keys"; src: url("fonts/GeistMono-SemiBold.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+/* the logo only (owner, 2026-10-18: Sora SemiBold, picked from eight).
+   The file holds just the letters of "typeTrainer" (1.5 KB), cut by
+   Google Fonts' "text=" option: fonts.googleapis.com/css2?family=
+   Sora:wght@600&text=typeTrain. Another word in the logo needs a new cut.
+   License: fonts/Sora-OFL.txt. */
+@font-face { font-family: "Sora Logo"; src: url("fonts/Sora-SemiBold-logo.woff2") format("woff2"); font-weight: 600; font-display: block; }
+
+/* ---------- theme (all colors in one place) ---------- */
+:root {
+  color-scheme: dark;
+  --bg: #0e0f12;        /* the page */
+  --panel: #16171b;     /* cards one step above it */
+  --panel-2: #1c1e23;   /* small things on the page or in a card: chips, letters */
+  --key: #18191e;       /* base of a keyboard key, before its finger tint */
+  --line: #24262c;      /* hairlines, chart grid */
+  --sub: #6c717c;       /* text not typed yet, labels */
+  --text: #e8e9ec;      /* typed correctly */
+  --accent: #f2c230;    /* caret, highlights, fills */
+  --accent-deep: #e0a21a; /* the lower end of the gold fill */
+  --accent-text: var(--accent); /* accent as a text colour (darker in the light theme) */
+  /* a filled gold thing (the focus letter, a chosen option): a slight
+     top-to-bottom gradient and a soft glow, so it reads as lit, not painted */
+  --accent-fill: linear-gradient(180deg, #f6cf47 0%, #e8ad1f 100%);
+  --accent-glow: 0 0 0 1px rgba(242, 194, 48, .35), 0 6px 22px -6px rgba(242, 194, 48, .45);
+  --on-accent: #17130a; /* text on the accent color */
+  --on-band: var(--on-accent); /* text on the result's speed bands (.r-legend) */
+  --error: #e5484d;
+  --ok: #8fd17c;        /* mastered letter */
+  --mono: "Geist Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --ui: var(--mono);     /* labels and panels use the same font as everything (owner, 2026-10-16) */
+  --logo: "Sora Logo", var(--mono);   /* the word "typeTrainer" only */
+
+  /* one key unit: the keyboard size is not a setting, it is always the largest
+     that fits: never wider than the window allows, never taller than the room
+     left on the screen (--u-fit, set by fitKeyboard in keyboard.js). --u-max:
+     even on a huge screen the keys stop growing */
+  --u: min(calc((100vw - 32px - 2 * var(--side)) / 13.6), var(--u-fit, 56px), var(--u-max, 84px));
+  /* width of the text card (and of the header, so their edges line up): a
+     little wider than the on-screen keyboard (13.4 key units, + 1.2) and
+     growing with it, but never narrower than 760px, so the text keeps fitting
+     in its 3-line window (typing.js, fitText) */
+  --tw: min(100vw - 32px - 2 * var(--side), max(760px, calc(var(--u) * 14.6)));
+
+  /* motion: one place to tune how "snappy" the app feels */
+  --fast: 70ms;
+  --med: 180ms;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  /* --caret-curve, the caret's glide (and the streak badge riding on it), is
+     set by feel.js (FEEL.caretCurve), so the tuning panel can change it */
+
+  /* controls: the language switch and the profile button share one height */
+  --ctl: 38px;          /* outer height of every switch and button */
+  --track: color-mix(in srgb, var(--text) 5%, var(--panel));
+  --ring: inset 0 0 0 1px rgba(255, 255, 255, .055);
+  /* a card or chip on the page: a hairline of light on its top edge and a
+     short soft drop */
+  --lift: inset 0 1px 0 rgba(255, 255, 255, .04), 0 1px 2px rgba(0, 0, 0, .35);
+  --shadow: 0 24px 60px -12px rgba(0, 0, 0, .6), 0 0 0 1px rgba(255, 255, 255, .06);   /* under the cards that open over the page */
+  --shadow-sm: 0 10px 30px -8px rgba(0, 0, 0, .55);  /* tooltips, small floating things */
+  /* glass: only for what floats over the page (windows, tooltips, the
+     phone's bottom bar) */
+  --glass: rgba(24, 25, 30, .72);
+  --glass-blur: blur(18px) saturate(140%);
+  /* corners: 6 inner bits, 10 controls and tiles, 16 cards and windows */
+  --r-sm: 6px; --r-md: 10px; --r-lg: 16px;
+  --palm-shade: rgba(0, 0, 0, .5);             /* the knuckle line of the hands */
+  --side: 0px;          /* room for the side columns (wide screens, see .rail) */
+}
+/* The light theme (settings: theme). The same names, other values: every
+   rule below uses only these variables, so it follows by itself. To add a
+   theme: one more block like this one, and a button in settings.js. */
+/* Light is its own theme, not the dark one turned inside out: a cool
+   porcelain page (not cream: next to the gold it looked dirty), white cards
+   that lift with soft shadows (on a light page shadows carry depth,
+   highlights do not), the gold kept for fills, and text in the accent colour
+   a brighter amber. The text to type is large (about 34px), so 3:1 is the
+   contrast it needs: that leaves room for a cool slate and a vivid amber
+   instead of a dull grey and brown (owner, 2026-10-18: "too dull"). */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f1f2f4;
+  --panel: #ffffff;
+  --panel-2: #f7f8f9;
+  --key: #ffffff;
+  --line: #e3e5e9;
+  --sub: #6b7186;       /* untyped text: cool slate, 4.3:1 on the page */
+  --text: #1a1d24;
+  --accent: #f2c230;
+  --accent-text: #d49a00;  /* gold as text, for the big numbers and short labels: a clean amber (owner, 2026-10-18: #b97c00 looked dark and dull, #e0a800 began to melt into the page) */
+  --accent-glow: 0 0 0 1px rgba(200, 150, 20, .35), 0 6px 18px -6px rgba(220, 160, 20, .5);
+  --on-accent: #17130a;
+  --error: #d93a40;
+  --ok: #2f7d27;
+  --on-band: #ffffff;   /* the result's speed bands are dark here: white text */
+  --track: #eceef1;
+  --ring: inset 0 0 0 1px rgba(20, 24, 32, .08);
+  --lift: 0 0 0 1px rgba(20, 24, 32, .06), 0 1px 2px rgba(20, 24, 32, .06), 0 6px 14px -8px rgba(20, 24, 32, .12);
+  --shadow: 0 28px 60px -18px rgba(20, 24, 32, .28), 0 0 0 1px rgba(20, 24, 32, .07);
+  --shadow-sm: 0 10px 28px -10px rgba(20, 24, 32, .25);
+  --glass: rgba(255, 255, 255, .74);
+  --glass-blur: blur(18px) saturate(160%);
+  --palm-shade: rgba(60, 50, 30, .18);
+}
+:root[data-theme="light"] .text, :root[data-theme="light"] .text span { text-shadow: none !important; }
+:root[data-theme="light"] .text-box::before { text-shadow: none; }
+:root[data-theme="light"] .switch-thumb::after { box-shadow: none; }
+:root[data-theme="light"] .hand { --skin: color-mix(in srgb, var(--text) 16%, var(--bg)); }   /* 11% vanished on paper */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; } /* no blue flash on tap (phones) */
+html, body { min-height: 100%; }
+/* a big desktop window: the whole page bigger (every size in rem grows
+   together, so the same kind of text stays the same size everywhere). It
+   grows with the window's height, from 16px at 800px to 18px at 900px and
+   up, not in one jump at a fixed height: the jump made everything a step
+   bigger in windows just over the line (820-880px, a laptop at 100%), where
+   the taller text then left the keyboard too little height to be as wide as
+   the text (owner, 2026-10-18: "at 90% fine, at 100% not") */
+@media (min-width: 1000px) and (pointer: fine) { html { font-size: clamp(16px, calc(100vh / 50), 18px); } }
+/* no scrollbar: the typing screen always fits; the stats screen still scrolls with the wheel */
+html { scrollbar-width: none; }
+html::-webkit-scrollbar { display: none; }
+body {
+  margin: 0;
+  /* header on top, the typing view centred in the rest of the screen */
+  display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh;
+  background: var(--bg);          /* one flat colour everywhere */
+  color: var(--text);
+  font-family: var(--mono);
+  font-feature-settings: "zero";  /* a slashed zero: 0 and O never look alike in the numbers */
+}
+/* the page is one flat colour: a faint warm light behind the text read as a
+   patch of another colour (owner, 2026-10-18) */
+button, input { font: inherit; }
+/* Nothing is selected by dragging the mouse or a long press, anywhere: it
+   looks broken. Text fields stay selectable; the stats screen has its own
+   "copy" and "image" buttons (share.js) to take the numbers with you. */
+body { user-select: none; -webkit-user-select: none; }
+input, textarea { user-select: text; -webkit-user-select: text; }
+::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); color: var(--text); }
+
+/* ---------- two kinds of text ---------- */
+/* What changes (the words to type, letters, numbers, messages) is monospace
+   and bright: it is the content. What never changes (labels, menu items,
+   explanations) is the system's plain font, smaller and grey: it is the
+   frame around the content. So the eye tells them apart at a glance.
+   .lbl-ui is the look of a fixed label: small and grey, in sentence case
+   like every other text (all capitals read as template chrome and are
+   harder to read; owner, 2026-10-16: capitals only at the start). */
+.lbl-ui, .metric small, .stat .lbl, .tile small, .r-lbl,
+.panel-note, .profile-field small, .profile-label, .intro-kicker {
+  font-family: var(--ui); font-size: .75rem; font-weight: 500; color: var(--sub);
+}
+/* buttons, menus, tooltips and guides: the plain font, normal case */
+button, .tooltip, .hints, .rail small, .intro p, .intro h2, .account-msg,
+.account-as, .profile-soon, .focus-hint, .letters-caption .begin, .warn, .panel h2 {
+  font-family: var(--ui);
+}
+
+/* ---------- shared parts: one look everywhere ---------- */
+/* Every panel that opens over the page (settings, profile, the reset
+   confirm, the intro) is a .win: the same background, corners, edge and shadow, a
+   title, then sections with a small heading. Every choice is a .seg (a row
+   of buttons, the chosen one filled with the accent); every other button in
+   a panel is a .btn. Sizes of corners: 14px windows and the text card, 10px
+   tiles and panels, 8px buttons, 6px inner bits. */
+.win, .profile-card, .intro-card {
+  background: var(--panel); border-radius: var(--r-lg); box-shadow: var(--ring), var(--shadow);
+}
+/* the windows that open over a page are glass: the page shows through,
+   blurred (the intro covers a dimmed page: it stays solid) */
+.win, .profile-card {
+  background: var(--glass); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow);
+}
+.win-title, .profile-title {
+  margin: 0 0 4px; font-family: var(--ui); font-size: .95rem; font-weight: 600; color: var(--text);
+}
+.win-p { margin: 6px 0 0; font-family: var(--ui); font-size: .8rem; line-height: 1.5; color: color-mix(in srgb, var(--text) 82%, var(--sub)); }
+.win-p b { color: var(--text); font-weight: 600; }
+.win kbd { background: var(--track); box-shadow: var(--ring); color: var(--text); font-family: var(--mono); }
+@media (pointer: coarse) { .keys-only { display: none; } }   /* no keyboard, no shortcuts */
+/* a segmented choice */
+.seg {
+  display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 2px; border-radius: var(--r-md);
+  background: var(--panel); box-shadow: var(--ring);
+}
+.seg button {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px;
+  background: none; color: var(--sub); font-size: .78rem; min-width: 34px; justify-content: center;
+}
+.seg button:hover { background: none; color: var(--text); }
+.seg button[aria-pressed="true"] {
+  background: var(--accent-fill); color: var(--on-accent); box-shadow: 0 2px 10px -3px rgba(220, 160, 20, .55);
+}
+/* a plain button in a panel */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: var(--r-md);
+  background: none; color: color-mix(in srgb, var(--text) 80%, var(--sub)); box-shadow: var(--ring); font-size: .8rem;
+}
+.btn:hover { color: var(--text); background: var(--track); }
+.btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* a button that deletes: red from the start, filled red on hover */
+.btn.danger {
+  color: var(--error); background: color-mix(in srgb, var(--error) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--error) 45%, transparent);
+}
+.btn.danger:hover { color: #fff; background: var(--error); box-shadow: none; }
+/* the settings window (settings.js), Esc or the gear: a search line, the
+   rows (names in one column, their buttons in the next, as wide as the
+   longest row: no empty strip), the keys at the bottom. Centred near the
+   top on wide screens, above the bottom bar on narrow ones. */
+dialog.settings-win {
+  position: fixed; inset: 14vh auto auto 50%; translate: -50% 0; margin: 0;
+  border: 0; padding: 0; width: max-content; max-width: calc(100vw - 24px); color: var(--text);
+  font-family: var(--ui); overflow: hidden; animation: note-in .2s var(--ease);
+}
+dialog.settings-win::backdrop { background: color-mix(in srgb, var(--bg) 70%, transparent); backdrop-filter: blur(3px); }
+dialog.settings-win:focus { outline: none; }
+.sw-search { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-bottom: 1px solid var(--line); }
+.sw-prompt { color: var(--accent-text); font-weight: 600; }
+/* width 0 + flex: the field never makes the window wider than its rows */
+.sw-search input {
+  flex: 1; min-width: 0; width: 0; border: 0; outline: 0; padding: 0; background: none;
+  color: var(--text); font: inherit; font-size: .9rem; caret-color: var(--accent);
+}
+.sw-search input::placeholder { color: var(--sub); }
+.sw-search input:focus-visible { outline: none; }   /* the ❯ and the caret show where you type */
+.sw-list { padding: 4px 6px 6px; max-height: calc(100dvh - 14vh - 140px); overflow-y: auto; scrollbar-width: thin; }
+.sw-rows { display: grid; grid-template-columns: max-content 1fr; }
+.sw-group { grid-column: 1 / -1; color: var(--sub); font-size: .72rem; padding: 7px 8px 1px; }
+.sw-sep { grid-column: 1 / -1; height: 1px; background: var(--line); margin: 5px 8px; }
+.sw-row { display: contents; }
+.sw-row > span { display: flex; align-items: center; gap: 6px; min-height: 32px; padding: 2px 8px; }
+.sw-name { position: relative; font-size: .84rem; color: var(--text); border-radius: 8px 0 0 8px; }
+.sw-name.danger { color: color-mix(in srgb, var(--error) 75%, var(--sub)); }
+.sw-name em { font-style: normal; color: var(--accent-text); text-decoration: underline; text-underline-offset: 3px; }
+.sw-ctl { padding-left: 16px !important; border-radius: 0 8px 8px 0; }
+/* the row the arrow keys are on */
+.sw-row.on > span { background: var(--track); }
+.sw-row.on .sw-name::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: var(--accent); }
+.sw-ctl .btn.kb-on { box-shadow: inset 0 0 0 1px var(--accent); }
+.sw-empty { margin: 0; padding: 12px 8px; color: var(--sub); font-size: .84rem; }
+/* a name with an explanation (settings.js ROWS desc) shows it in a tooltip */
+.sw-name[data-tip-text] { cursor: help; }
+/* the preview on top: one line that types itself in the chosen look */
+/* it stays on top while the list scrolls, so a change far down still shows */
+.sw-preview { position: sticky; top: -10px; z-index: 1; padding: 10px 12px 14px; margin: -8px -10px 4px; background: var(--panel); border-bottom: 1px solid var(--line); overflow: hidden; }
+.sw-preview .pv-text { height: auto; overflow: visible; white-space: nowrap; }
+.sw-preview .pv-caret {
+  --i: 0; top: .25em; height: 1.2em;
+  translate: calc(var(--i) * (1ch + .02em)) 0;
+}
+.sw-foot { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 14px; border-top: 1px solid var(--line); color: var(--sub); font-size: .72rem; }
+.sw-foot kbd { background: var(--track); box-shadow: var(--ring); color: var(--text); border-radius: 4px; padding: 0 5px; margin-right: 3px; font-family: var(--mono); }
+/* desktop (owner, 2026-10-18: "too small"): the same window, about a
+   quarter bigger, with more room around every row */
+@media (min-width: 1000px) and (pointer: fine) {
+  dialog.settings-win { inset-block-start: 11vh; min-width: 34rem; }
+  .sw-search { padding: 15px 20px; }
+  .sw-search input { font-size: 1.05rem; }
+  .sw-list { padding: 8px 10px 10px; max-height: calc(100dvh - 11vh - 170px); }
+  .sw-group { font-size: .8rem; padding: 12px 12px 4px; }
+  .sw-row > span { min-height: 44px; padding: 3px 12px; }
+  .sw-name { font-size: 1rem; }
+  .sw-ctl { padding-left: 32px !important; }
+  .sw-ctl .seg button, .sw-ctl .btn { font-size: .9rem; padding: 6px 14px; }
+  .sw-ctl .btn svg { width: 17px; height: 17px; }
+  .sw-ctl .cs { height: 14px; }
+  .sw-foot { font-size: .8rem; padding: 11px 20px; gap: 4px 18px; }
+}
+@media (pointer: coarse) {
+  .sw-foot { display: none; }   /* no keyboard, no keys line */
+  /* fingers, not a mouse: every choice about 40px tall (GUIDELINES, section 8) */
+  .sw-row > span { min-height: 46px; }
+  .sw-ctl .seg button, .sw-ctl .btn { min-height: 38px; }
+}
+@media (max-width: 999px) {
+  dialog.settings-win { inset: auto auto calc(72px + env(safe-area-inset-bottom)) 50%; }
+  .sw-list { max-height: calc(100dvh - 200px); }
+  .sw-ctl { padding-left: 8px !important; }
+}
+/* a window that asks before something cannot be undone (tools.js): a native
+   <dialog> in the .win look, centred, the page behind it dimmed */
+dialog.confirm {
+  border: 0; padding: 16px 18px 14px; width: min(340px, calc(100vw - 32px)); color: var(--text);
+  animation: note-in .2s var(--ease);
+}
+dialog.confirm::backdrop { background: color-mix(in srgb, var(--bg) 70%, transparent); backdrop-filter: blur(2px); }
+dialog.confirm .win-p { margin: 0; }
+.confirm-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.confirm-btns .btn.danger { color: #fff; background: var(--error); box-shadow: none; }
+.confirm-btns .btn.danger:hover { filter: brightness(1.1); }
+/* your own text in Freetype (customtext.js): wide enough to read a paragraph */
+dialog.custom-win { width: min(560px, calc(100vw - 32px)); }
+dialog.custom-win .win-p { font-size: .9rem; margin-bottom: 10px; }
+dialog.custom-win .custom-count { margin: 6px 0 0; color: var(--sub); }
+#custom-area {
+  width: 100%; box-sizing: border-box; resize: vertical; padding: 10px 12px; border: 0; border-radius: var(--r-md);
+  background: var(--panel); box-shadow: var(--ring); color: var(--text); font: 1rem/1.5 var(--mono);
+}
+#custom-area:focus { outline: 2px solid var(--accent-text); outline-offset: 1px; }
+.confirm-btns .btn.primary { color: var(--on-accent); background: var(--accent-fill); box-shadow: none; }
+.confirm-btns .btn.primary:disabled { opacity: .45; cursor: default; }

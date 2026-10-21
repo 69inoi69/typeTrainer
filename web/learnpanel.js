@@ -12,7 +12,7 @@
 //           mastered, a record, every letter open, a new lap, the last lap
 //           done) the
 //           news takes this line until you start typing.
-// The panel steps back while you type (body.typing-now, style.css): the
+// The panel steps back while you type (body.typing-now, typing.css): the
 // news and the letter line sit in one grid cell and swap by opacity only,
 // so the first key changes no layout.
 // Display only: nothing here changes what is measured or sent.

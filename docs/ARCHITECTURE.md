@@ -60,7 +60,7 @@ its own.
 | `internal/sim` | Simulation: a made-up typist and three word-choice strategies (docs/ALGORITHM.md, section 10). Not used by the app. |
 | `tools/sim/` | `go run ./tools/sim`: runs the simulation on the real word lists and prints the table. |
 | `tools/wordlists/` | Python script + block lists that build the word lists (not part of the app). |
-| `web/` | Static frontend: `index.html`, `style.css` and the JavaScript modules (see "Frontend modules" below). The interface language always follows the practice language. |
+| `web/` | Static frontend: `index.html`, the stylesheets (`base.css` first, then `layout`, `typing`, `stats`, `screens`, `responsive`) and the JavaScript modules (see "Frontend modules" below). The interface language always follows the practice language. |
 | `webmodules_test.go` | Checks the import rule of the frontend modules. |
 
 The `web/` and `data/` folders are embedded into the binary (`//go:embed`), so
@@ -83,7 +83,10 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `keyboard.js` | On-screen keyboard and hands from the layout data, the next key and finger, the on / off button (remembered separately for learning and for Climb and Freetype), the automatic size that fits the window. |
 | middle | `stats.js` | The stats screen of Learn, Climb and Freetype (Learn adds its letters below, `learnstats.js`): the switch of the mode and Freetype's kind of text and list on top, the personal bests, time typed today, in 7 days or all time with the activity calendar from `/activity`, tiles with the level, trends, the accuracy streaks and the personal goal, the WPM chart with the 10-round average; and `refreshStats()` (the letters of learning, `S.lastStats`). |
 | middle | `share.js` | The "image" button of the stats screen: a PNG card drawn on a canvas from what the screen shows. |
-| middle | `typing.js` | The text stream (portions added while you type), the caret, `handleChar()` / `backspace()`, the streak (Freetype only), live WPM / accuracy, the "typing now" header mode, sending results. |
+| middle | `typing.js` | The text stream (portions added while you type), where the caret goes (`placeCaret`), `handleChar()` / `backspace()`, live WPM / accuracy, the "typing now" header mode, sending results. |
+| middle | `caret.js` | The caret's own movements: the flinch on a mistake, the kick and trail on a right key, the breathing while a round waits, the scroll of the text to the next line. |
+| middle | `streak.js` | The clean-word streak badge (Freetype only, a setting): its count, colour tiers, bump and hop. Visual only. |
+| middle | `warn.js` | The Caps Lock / wrong system layout warning over the text: shown on keys that do not fit, checked before a round with the Keyboard API, hidden on a right key or a language change. |
 | middle | `letters.js` | The letters bar above the text: learning's progress (each open letter coloured from red to green and with a bar by how close it is to mastered, locked ones crossed out, a tooltip of what each still needs, `letterProgress`, `letterNeeds`, `rule`), its status line (Climb: the level and what it brings; Climb and Freetype keep the row empty, at its height, so every mode has the same layout), locked keys dimmed and mastered letters fading from their keys on the keyboard. |
 | middle | `customtext.js` | Freetype's own text: the editor window, the cleaning of a pasted text (`cleanText`), the portions cut from it in order (`customPortions`, as `/freetype/portion` would give them) and where the next round starts (`customRoundDone`). The text stays in the browser. |
 | middle | `learnstats.js` | The Learn part of the stats screen, under the tiles and the chart: every letter round by round (a square per round in the letters row's colour), one letter's speed against the goal (a click on a letter picks it), the keys you mix up; from `/learn/history`. |
@@ -119,7 +122,7 @@ Its one sentence is the only interface text outside `i18n.js`.
 
 ### Screen layout
 
-Three fixed places, the same in every view (`index.html`, `style.css`):
+Three fixed places, the same in every view (`index.html`, `layout.css`):
 
 - **header**: the logo, the language switch and the account (`profile.js`);
 - **navigation** (`nav.rail`, wired in `input.js`): the three screens

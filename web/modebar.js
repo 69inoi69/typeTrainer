@@ -11,7 +11,7 @@
 //              or your own text), then words or time, and how many.
 // Each mode remembers its own length (settings.js lengthFor). A click
 // starts a new round (input.js onBarPick); while you type the bar steps
-// back (style.css).
+// back (typing.css).
 // Layer: middle. Imports the bottom layer, settings.js and customtext.js.
 // Called by: modes.js (renderModeBar on a mode change), input.js
 // (onBarPick, renderModeBar after a pick).

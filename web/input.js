@@ -12,7 +12,8 @@
 import { $, el, S, introOpen, isTouch, focusText } from "./state.js";
 import { applyKb, requestFit, highlightNextKey } from "./keyboard.js";
 import { refreshStats, renderStats, resetStatsPick } from "./stats.js";
-import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, stopRound, loadExercise, roundStarted, pauseRound, checkLayout, checkCaps } from "./typing.js";
+import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, stopRound, loadExercise, roundStarted, pauseRound, checkLayout } from "./typing.js";
+import { checkCaps } from "./warn.js";
 import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
@@ -48,7 +49,7 @@ window.addEventListener("resize", () => {
 // Phones and tablets (a touch screen, no mouse) get only the stats and the
 // account (owner, 2026-10-18): the trainer teaches ten-finger typing on a
 // real keyboard, and thumbs on glass would only skew the letter model. The
-// typing screen and the navigation are not shown there (style.css
+// typing screen and the navigation are not shown there (layout.css
 // body.stats-only), and every way to the typing screen lands on the stats.
 const statsOnly = isTouch();
 document.body.classList.toggle("stats-only", statsOnly);
@@ -57,7 +58,7 @@ document.body.classList.toggle("stats-only", statsOnly);
 export function startView() {
   if (statsOnly) setView("stats");
 }
-// The stats open with their animation (style.css #view-stats.grow) only
+// The stats open with their animation (stats.css #view-stats.grow) only
 // when they have something new since they were last shown (a round, another
 // mode or length); switching back and forth plays nothing again (owner,
 // 2026-10-18).
@@ -65,7 +66,7 @@ let statsSeen = "";
 function setView(name) {
   if (statsOnly) name = "stats";
   S.view = name;
-  document.body.dataset.view = name;          // style.css hides the typing shortcuts on stats
+  document.body.dataset.view = name;          // layout.css hides the typing shortcuts on stats
   const stats = name === "stats";
   renderNav();
   if (stats) settleResult();                   // a result left open keeps its final look

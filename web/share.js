@@ -2,7 +2,7 @@
 // and the speed of the last rounds of Climb or of a Freetype list. It takes
 // exactly what the screen shows (the mode, list and round length picked
 // there, stats.js shownStats). Nothing on the stats screen can be selected by dragging
-// (style.css): this button is the way to take the numbers with you. (A
+// (the CSS): this button is the way to take the numbers with you. (A
 // "copy as text" button was removed, owner, 2026-10-18: the picture is
 // enough.)
 // Layer: middle. Imports the bottom layer, stats.js and settings.js.

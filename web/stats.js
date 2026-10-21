@@ -86,7 +86,7 @@ export function renderStats() {
   drawActivity();
   if (activityStale) loadActivity();
 
-  // the chart last: it is drawn at the size of its box (style.css); the
+  // the chart last: it is drawn at the size of its box (stats.css); the
   // dashed line is your own goal, when you set one in the settings
   drawChart(sessions, S.settings.goal, s.sessionCount, mode === "learn" ? s.order : null);
   renderLearnStats(mode === "learn").catch(console.error);
@@ -97,7 +97,7 @@ export function renderStats() {
 // the length above, not here twice), each with how it
 // moved against the 10 rounds before (from 5 of them on), and the personal
 // goal when there is one. The value comes first in the HTML (screen readers:
-// value, then what it is); style.css puts the label on top.
+// value, then what it is); stats.css puts the label on top.
 function tiles(sessions, count, goal, level, streaks) {
   const avg = (arr, f) => arr.length ? arr.reduce((a, x) => a + f(x), 0) / arr.length : null;
   const last = sessions.slice(-10), before = sessions.slice(-20, -10);
@@ -365,7 +365,7 @@ function drawChart(sessions, target, total, order) {
     ? t(withAvg ? "chart.noteAvg" : "chart.note", { scope, target })
     : t(withAvg ? "chart.noteAvgNoGoal" : "chart.noteNoGoal", { scope });
 
-  // draw at the real pixel size of the box (style.css sizes it to fit the
+  // draw at the real pixel size of the box (stats.css sizes it to fit the
   // screen), so text stays 11px on a phone too. The "no rounds yet" line
   // goes first: while it is there the box is only as tall as that line.
   el.chart.replaceChildren();
@@ -387,7 +387,7 @@ function drawChart(sessions, target, total, order) {
     const bx = padL + i * slot + (slot - bw) / 2, top = y(x.wpm), base = y(0);
     const r = Math.min(4, bw / 2, base - top);           // rounded top, flat on the baseline
     const d = `M${bx},${base} V${top + r} Q${bx},${top} ${bx + r},${top} H${bx + bw - r} Q${bx + bw},${top} ${bx + bw},${top + r} V${base} Z`;
-    svg += `<path class="bar${i === sessions.length - 1 ? " last" : ""}" data-i="${i}" style="--i:${i}" d="${d}"/>`;   /* --i: its turn to grow (style.css) */
+    svg += `<path class="bar${i === sessions.length - 1 ? " last" : ""}" data-i="${i}" style="--i:${i}" d="${d}"/>`;   /* --i: its turn to grow (stats.css) */
   });
   // the letters each round opened (against the round before it on the chart)
   const opened = sessions.map((x, i) => order && i && x.unlocked > (sessions[i - 1].unlocked || x.unlocked)

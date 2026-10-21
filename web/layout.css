@@ -1,0 +1,321 @@
+/* The frame around every screen: the header, the top line of the text card,
+   the navigation and the language switch, the views, the buttons and the
+   shortcut line, the phone-only stats layout, tooltips, toasts and messages.
+   Loads after base.css (order: see base.css). */
+
+/* ---------- header ---------- */
+/* Only who and where: the logo on the left, the language switch and the
+   account on the right. Its edges line up with the text card (--tw). */
+.top {
+  width: var(--tw); margin: 0 auto; padding: 14px 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px 20px;
+  position: relative; z-index: 5;      /* the profile card opens over the page */
+}
+.top-side { display: flex; align-items: center; gap: 14px; min-width: 0; }
+/* While you type, everything around the text steps back (as on monkeytype):
+   the logo turns grey (it does not fade, owner, 2026-10-18), the controls
+   fade to a third, the letters bar (it changes only between rounds) and
+   the keys line at the bottom (help before a round) step back too. Moving
+   the mouse over a control brings it back. */
+.top .logo-name, .top .logo-name span, .top .logo-key { transition: color .4s var(--ease), filter .4s var(--ease); }
+.lang-switch, .profile, .rail, #letters .chip, .bottom { transition: opacity .4s var(--ease); }
+body.typing-now .top .logo-name, body.typing-now .top .logo-name span { color: var(--sub); }
+body.typing-now .top .logo-key { filter: grayscale(1) brightness(.7); }
+body.typing-now .lang-switch, body.typing-now .profile, body.typing-now .rail { opacity: .35; }
+/* the letters step back chip by chip, all but the focus letter: the one
+   being practised stays bright (owner, 2026-10-18: it went dim with the rest) */
+body.typing-now #letters .chip:not(.focus, .next) { opacity: .4; }   /* the next letter stays bright too (owner, 2026-10-18) */
+body.typing-now .bottom { opacity: .15; }
+body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.typing-now .rail:hover { opacity: 1; }
+.logo { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.logo-key { width: 34px; height: 34px; flex: none; }
+.logo-text { display: flex; flex-direction: column; line-height: 1; min-width: 0; }
+.logo-name { font-family: var(--logo); font-size: 1.75rem; font-weight: 600; letter-spacing: -.03em; color: var(--accent-text); white-space: nowrap; transition: color .4s var(--ease); }
+.logo-name span { color: var(--text); transition: color .4s var(--ease); }
+
+/* ---------- the top line of the text card ---------- */
+/* The live numbers and the status line. The numbers are small and
+   dim while you read, brighter while you type: you can glance at them, but
+   they do not pull the eye away from the text. Always one line of a fixed
+   height (on a phone two, the status line under the numbers): nothing in
+   it may push the text down while you type. */
+.live {
+  position: relative;              /* the warning and the messages sit on top of it */
+  display: flex; gap: 6px 18px; align-items: center; height: 28px; margin: 0 0 10px; min-width: 0;
+}
+/* the numbers are as bright before the first key as while typing: dim at
+   rest they looked switched off (owner, 2026-10-18) */
+.live > .metric { transition: opacity .4s var(--ease), transform var(--med) var(--ease); }
+.metric { display: flex; align-items: baseline; }
+.metric.raw span { color: color-mix(in srgb, var(--accent-text) 55%, var(--sub)); }   /* secondary number */
+.metric.raw { cursor: default; }
+.metric > span { font-size: 1.3rem; font-weight: 500; letter-spacing: -.01em; color: var(--accent-text); transition: color var(--med); font-variant-numeric: tabular-nums; }
+.metric small { margin-left: 6px; white-space: nowrap; }
+.metric > span.pct { font-size: .9rem; margin-left: 1px; }   /* "98%": the sign belongs to the number */
+/* wpm, raw, accuracy: the number is --v (typing.js setLive), drawn as a CSS
+   counter, so a new value counts up or down to it instead of jumping */
+@property --v { syntax: "<integer>"; inherits: false; initial-value: 0; }
+.metric > .live-n { counter-reset: v var(--v); transition: --v 450ms cubic-bezier(.2, .7, .3, 1), color var(--med); }
+.metric > .live-n::after { content: counter(v); }
+.metric > .live-n.snap { transition: none; }
+/* Each number keeps the room of its widest value ("188 wpm", "100% Acc",
+   "60/60 Words", measured in the browser), so nothing after it (the status
+   line) moves when a number gains or loses a digit while you type. The room
+   is on the whole number + label: the spare space falls after the label and
+   reads as part of the gap. Measured with the English labels; a longer label
+   only makes its number take its own width again. */
+.metric:has(#wpm), .metric.raw { min-width: 4rem; }
+.metric:has(#acc) { min-width: 4.6rem; }
+.metric:has(#progress) { min-width: 6.5rem; }
+.live.final .metric > span { color: var(--text); }   /* result of the last exercise */
+
+
+/* streak: a bolt and the number riding just above the caret (typing.js
+   placeCaret moves it with the caret's numbers and the same glide), only
+   while a round is being typed and from 3 clean words; at a milestone it
+   gives a small bump (popStreak). Over the text: it never catches the mouse. */
+.streak {
+  --sc: #f2c230; --glow: .3;
+  position: absolute; left: 0; top: 0; z-index: 3; display: none; align-items: center; gap: 3px; pointer-events: none;
+  font-size: .95rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; color: var(--sc);
+  text-shadow: 0 0 calc(var(--glow) * 14px) color-mix(in srgb, var(--sc) 70%, transparent);
+  transition: translate var(--feel-caret-ms, 0ms) var(--caret-curve), color .4s var(--ease);
+}
+.streak.jump { transition: none; }
+#streak-n { display: inline-block; will-change: transform; }   /* it hops (typing.js hopStreak) */
+.streak .bolt { width: 13px; height: 13px; flex: none; fill: color-mix(in srgb, var(--sc) 35%, transparent); stroke: var(--sc); stroke-width: 2; stroke-linejoin: round; }
+/* the longer the streak, the warmer (owner, 2026-10-18): gold from the
+   start (grey read as "nothing", and 3 clean words are already something),
+   then orange, rose, violet at 10 / 25 / 50 clean words (typing.js
+   STREAK_TIERS); a soft glow that grows with it, no flicker */
+.streak[data-tier="1"] { --sc: #f39a3d; --glow: .45; }
+.streak[data-tier="2"] { --sc: #f2607a; --glow: .6; }
+.streak[data-tier="3"] { --sc: #a98bff; --glow: .8; }
+:root[data-theme="light"] .streak { --sc: var(--accent-text); }
+:root[data-theme="light"] .streak[data-tier="1"] { --sc: #d9741a; }
+:root[data-theme="light"] .streak[data-tier="2"] { --sc: #d63a5a; }
+:root[data-theme="light"] .streak[data-tier="3"] { --sc: #7a5ae0; }
+.text-box.typing .streak.show { display: flex; animation: streak-in var(--med) var(--ease); }
+/* .show in the selector: weaker than the rule above, the badge stayed on the result screen */
+.text-box:is(.paused, .blurred, .resulting) .streak.show, body.streak-off .text-box .streak.show { display: none; }
+@keyframes streak-in { from { opacity: 0; } }
+
+/* ---------- switches: the navigation and the languages ---------- */
+/* One look for every switch: no track and no pill, grey labels, the chosen
+   one in the text colour with a short accent bar next to it. The bar is drawn
+   by ::after inside one sliding thumb, so it glides from option to option.
+   --n = how many options, --i = which one is chosen (0, 1, ...). */
+.switch { position: relative; display: grid; --n: 2; --i: 0; flex: none; }
+.switch button {
+  position: relative; z-index: 1; border: 0; background: none; cursor: pointer; white-space: nowrap;
+  color: var(--sub); border-radius: 10px; padding: 0;
+  font-size: .8rem; font-weight: 600; letter-spacing: 0; line-height: 1;
+  transition: color 180ms ease 60ms;
+}
+.switch button:hover { background: none; color: color-mix(in srgb, var(--text) 70%, var(--sub)); }
+.switch button[aria-selected="true"] { color: var(--text); }
+.switch-thumb { position: absolute; pointer-events: none; transition: transform 260ms cubic-bezier(.65, 0, .35, 1); }
+.switch-thumb::after {
+  content: ""; position: absolute; border-radius: 2px;
+  background: var(--accent); box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+/* the languages: a row in the header (narrow screens), a column at the right
+   edge of a wide screen; the bar under / beside the chosen language */
+.lang-switch { grid-auto-flow: column; grid-auto-columns: minmax(34px, auto); height: var(--ctl); }
+.lang-switch button { padding: 0 8px; font-weight: 500; }
+.lang-switch .switch-thumb { left: 0; bottom: 1px; height: 2px; width: calc(100% / var(--n)); transform: translateX(calc(var(--i) * 100%)); }
+/* one language only (languages.js, buildLangSwitch): nothing to switch */
+body.one-lang .lang-switch, body.one-lang .lang-hint { display: none; }
+.lang-switch .switch-thumb::after { left: calc(50% - 7px); width: 14px; height: 2px; }
+
+/* The navigation (index.html, nav.rail): groups of buttons, each an icon
+   with a small label under it. Narrow screens: a bar at the bottom (below).
+   Wide screens: a column at the left edge (the media query further down). */
+.rail {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 8;
+  display: flex; justify-content: center; gap: 22px; align-items: stretch;
+  padding: 4px 6px calc(4px + env(safe-area-inset-bottom));
+  background: var(--glass); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  box-shadow: 0 -1px 0 var(--line);
+}
+.rail-group { display: flex; }
+.rail .switch { grid-auto-flow: column; grid-auto-columns: 1fr; }
+.nav-switch { --n: 4; }
+.rail .switch button, .rail-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  width: 72px; height: 50px; padding: 0 2px; border-radius: 10px; background: none; color: var(--sub);
+}
+.rail .switch button:hover, .rail-btn:hover { background: none; color: color-mix(in srgb, var(--text) 70%, var(--sub)); }
+.rail .switch button[aria-selected="true"], .rail-btn[aria-expanded="true"] { color: var(--text); }
+.rail .switch button svg, .rail-btn svg {
+  width: 21px; height: 21px; flex: none; fill: none; stroke: currentColor;
+  stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+}
+.rail .switch button small, .rail-btn small { font-size: .68rem; font-weight: 500; line-height: 1.3; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+/* bottom bar: the thumb's bar sits on the top edge of the chosen button */
+.rail .switch-thumb { top: -4px; left: 0; height: 2px; width: calc(100% / var(--n)); transform: translateX(calc(var(--i) * 100%)); }
+.rail .switch-thumb::after { left: calc(50% - 9px); width: 18px; height: 2px; }
+/* Climb: no letters to learn, so their row takes no room and the text
+   comes right under the header (the slot under it stays for warnings) */
+/* Climb and Freetype have no letters: the row is empty and invisible but
+   keeps its height, so the text, the keyboard and the hands sit at the same
+   place and size in every mode (fitKeyboard measures the room left; with
+   the row gone the keyboard was a few px per key bigger outside Learn) */
+body:is([data-mode="climb"], [data-mode="freetype"]) .letter-row { visibility: hidden; }
+
+.pop { position: relative; }
+
+/* wide screens: the navigation is a column at the left edge, the languages a
+   column at the right edge, both in the middle of the height (--side is the
+   room they take, so the text and keyboard never go under them) */
+@media (min-width: 1000px) {
+  :root { --side: 96px; }
+  /* the navigation is a row in the header, between the logo and the
+     account (owner, 2026-10-16: the small column at the left edge looked
+     like it did not belong): icon and label side by side, big enough to
+     see; the accent bar slides under the chosen screen */
+  .rail {
+    /* right after the logo (about 14rem wide), on the header's line */
+    /* absolute, not fixed: it scrolls away with the header it sits in */
+    position: absolute; left: calc(50% - var(--tw) / 2 + 15rem); right: auto; top: 14px; bottom: auto; translate: none;
+    flex-direction: row; gap: 8px; padding: 0; background: none; backdrop-filter: none; box-shadow: none;
+  }
+  .rail-group { flex-direction: row; }
+  .rail .switch { grid-auto-flow: column; grid-auto-columns: 1fr; }
+  .rail-group + .rail-group { padding-left: 8px; border-left: 1px solid var(--line); }
+  .rail .switch-thumb { top: auto; bottom: -2px; left: 0; width: calc(100% / var(--n)); height: 2px; transform: translateX(calc(var(--i) * 100%)); }
+  .rail .switch-thumb::after { top: 0; left: calc(50% - 14px); width: 28px; height: 2px; }
+  /* icons only (owner, 2026-10-16): the labels stay for screen readers,
+     the tooltips name them */
+  .rail .switch button, .rail-btn { flex-direction: row; width: auto; height: 44px; padding: 0 11px; }
+  .rail .switch button svg, .rail-btn svg { width: 24px; height: 24px; }
+  .rail .switch button small, .rail-btn small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .lang-switch {
+    position: fixed; right: 14px; top: 50%; translate: 0 -50%; height: auto;
+    grid-auto-flow: row; grid-auto-rows: 40px; grid-auto-columns: auto;
+  }
+  .lang-switch button { padding: 0 14px; }
+  .lang-switch .switch-thumb { top: 0; bottom: auto; left: auto; right: -6px; width: 2px; height: calc(100% / var(--n)); transform: translateY(calc(var(--i) * 100%)); }
+  .lang-switch .switch-thumb::after { top: calc(50% - 7px); left: 0; width: 2px; height: 14px; }
+}
+
+/* ---------- views ---------- */
+.views {
+  /* as wide as the text card (--tw) plus the side padding, so every screen
+     lines up with the header */
+  flex: 1; width: 100%; max-width: calc(var(--tw) + 32px); margin: 0 auto; padding: 0 16px 12px;
+  display: flex; flex-direction: column;
+}
+/* The text starts at the same height on every tab, with or without the
+   keyboard under it: centring it moved the text whenever the keyboard
+   came or went (Learn has it, Climb hides it), and on a phone it left a
+   big hole under the header. */
+#view-type { margin-block: clamp(4px, 3vh, 32px) auto; }
+.view { animation: view-in var(--med) var(--ease); }
+@keyframes view-in { from { opacity: 0; transform: translateY(6px); } }
+
+/* ---------- buttons and the shortcut line ---------- */
+/* "stop" only where there is no Esc key (phones, tablets) */
+@media (pointer: fine) { .touch-only { display: none !important; } }
+/* the keyboard shortcuts under the keyboard (fitKeyboard measures this bar) */
+.bottom { display: flex; justify-content: center; padding: 4px 16px 12px; }
+.hints {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 22px;
+  color: color-mix(in srgb, var(--sub) 85%, transparent); font-size: .74rem;
+}
+.hints kbd { background: var(--panel); color: color-mix(in srgb, var(--text) 60%, var(--sub)); padding: 1px 6px; border-radius: 4px; }
+@media (pointer: coarse) { .bottom { display: none; } }
+/* Phones and tablets: only the stats and the account (input.js statsOnly).
+   No navigation (there is nothing to go to), a short line says why. */
+.stats-only-note { display: none; }
+body.stats-only .rail, body.stats-only #view-type { display: none; }
+body.stats-only { padding-bottom: env(safe-area-inset-bottom); }   /* no bar at the bottom to make room for */
+body.stats-only .stats-only-note {
+  display: block; margin: 0 0 14px; padding: 10px 14px; border-radius: var(--r-md);
+  background: var(--panel); box-shadow: var(--ring); color: var(--sub); font-size: .85rem; line-height: 1.45;
+}
+body[data-view="stats"] .hints .type-only { display: none; }   /* nothing to stop, no keyboard on stats */
+button {
+  color: var(--sub); background: var(--panel); border: 0;
+  padding: 8px 14px; border-radius: 8px; cursor: pointer;
+  transition: color var(--med), background var(--med), box-shadow var(--med), opacity var(--med), transform 90ms var(--ease);
+}
+button:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6%, var(--panel)); }
+button:active { transform: scale(.95); }
+kbd { font: inherit; font-size: .8em; padding: 1px 5px; border-radius: 4px; background: var(--bg); }
+button:disabled { opacity: .35; cursor: default; }
+button:disabled:hover { color: var(--sub); background: none; }
+button:disabled:active { transform: none; }
+
+/* "stop" under the card (touch screens): small, quiet, in the middle */
+.stop-btn {
+  display: flex; align-items: center; gap: 6px; margin: 12px auto 0; padding: 6px 14px 6px 10px;
+  border-radius: 999px; color: var(--sub); background: none; box-shadow: var(--ring); font-size: .78rem;
+}
+.stop-btn:hover, .stop-btn:active { color: var(--text); }
+.text-box.resulting + .stop-btn,
+.text-box:not(.typing) + .stop-btn { visibility: hidden; }   /* nothing to stop yet, or the round is over already (keeps its room: nothing jumps) */
+.stop-btn svg { width: 14px; height: 14px; fill: currentColor; stroke: none; }
+
+/* ---------- tooltip & toast ---------- */
+.tooltip {
+  position: fixed; z-index: 20; pointer-events: none; opacity: 0;
+  background: var(--glass); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  color: var(--text); font-size: .8rem; padding: 6px 10px;
+  border-radius: var(--r-md); box-shadow: var(--ring), var(--shadow-sm);
+  transform: translate(-50%, calc(-100% - 10px)); transition: opacity var(--fast);
+  white-space: nowrap;
+}
+.tooltip.below { transform: translate(-50%, 10px); }
+/* a tooltip over an open window (the settings) is a popover, so it sits in
+   the top layer above the window; this undoes the browser's popover look */
+.tooltip[popover] { inset: auto; margin: 0; border: 0; overflow: visible; }
+/* a sentence or two (the settings explanations) wraps */
+.tooltip.wide { white-space: normal; width: max-content; max-width: min(24rem, calc(100vw - 24px)); line-height: 1.5; background: var(--panel-2); }   /* opaque: readable over the rows */
+.tooltip.show { opacity: 1; }
+.tooltip span { color: var(--sub); }
+
+/* ---------- messages: on top of the top line of the text card ---------- */
+/* the numbers and the status line step aside while a message or the
+   warning is shown */
+.live:is(.warning, .noticing) > :is(.metric, .letters-caption) { opacity: 0; transform: translateY(4px); pointer-events: none; }
+.live.warning .notice { opacity: 0; }        /* the layout warning wins */
+.notice {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 1;
+  display: flex; justify-content: flex-start; pointer-events: none; transition: opacity var(--med);
+}
+.note {
+  --tc: var(--accent);                 /* color of this kind of message */
+  position: relative; overflow: hidden; pointer-events: auto; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px; max-width: 100%;
+  min-height: 26px; padding: 3px 14px 3px 4px; border-radius: 999px; font-size: .82rem;
+  /* the same look as the other pills on the page; the colour of the kind is
+     only in the time bar at the bottom */
+  color: var(--text); background: var(--panel-2); box-shadow: var(--lift);
+  animation: note-in .3s var(--ease);
+}
+.note.out { animation: note-out .22s ease-in forwards; }
+@keyframes note-in { from { opacity: 0; transform: translateY(-6px) scale(.96); } }
+@keyframes note-out { to { opacity: 0; transform: translateY(4px); } }
+.note b { color: var(--accent-text) !important; font-weight: 500; }
+.note-body { line-height: 1.35; }
+/* the round mark on the left: an icon, or the new letter itself */
+.note-mark {
+  width: 20px; height: 20px; flex: none; border-radius: 50%; display: grid; place-items: center;
+  color: color-mix(in srgb, var(--text) 75%, var(--sub)); background: color-mix(in srgb, var(--text) 7%, transparent);
+  font-size: .85rem; font-weight: 600; line-height: 1;
+}
+.note-mark svg {
+  width: 13px; height: 13px; fill: none; stroke: currentColor;
+  stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
+}
+/* time left: fills from left to right; full = the next message (or the status line) */
+.note-bar {
+  position: absolute; left: 14px; right: 14px; bottom: 0; height: 2px; border-radius: 2px;
+  background: var(--tc); box-shadow: 0 0 6px color-mix(in srgb, var(--tc) 60%, transparent);
+  transform-origin: left; transform: scaleX(0);
+  animation: note-bar var(--ms, 3500ms) linear forwards;
+}
+.note:hover .note-bar { animation-play-state: paused; }   /* reading: wait */
+@keyframes note-bar { to { transform: scaleX(1); } }
