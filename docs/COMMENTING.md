@@ -73,7 +73,7 @@ end.
 
 | What | Where |
 |---|---|
-| What the whole program does, how to run it | `README.md`, `docs/USER-GUIDE.md` |
+| What the whole program does, how to run it | `README.md`, `docs/USER-GUIDE.md`, `CONTRIBUTING.md` |
 | How the parts fit together, the API | `docs/ARCHITECTURE.md` |
 | The algorithm and its formulas | `docs/ALGORITHM.md` |
 | Rules for interface text | `docs/UI-TEXT.md` |
