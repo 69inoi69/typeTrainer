@@ -40,6 +40,10 @@ type Config struct {
 	// The accuracy streaks of the stats screen (history.AccuracyStreaks):
 	// the most rounds in a row at or above each of these accuracies, %.
 	StreakAccuracies []float64
+	// The mixed-up keys of the Learn stats (history.Confusions): a pair is
+	// shown once it happened ConfusionMin times, at most ConfusionShown pairs.
+	ConfusionMin   int
+	ConfusionShown int
 	// Accounts: whether /api/v1/auth/* works. Set by setup.go, not here:
 	// on GitHub Pages (WebAssembly) there are no cookies, so it is off.
 	Accounts bool
@@ -72,6 +76,8 @@ func Default() Config {
 		ConsistencyMinSeconds: 5, // under 5 full seconds there is too little to judge the pace
 		// keybr's three: 95 % is good typing, 97 % careful, 100 % no mistake at all
 		StreakAccuracies: []float64{95, 97, 100},
+		ConfusionMin:     3, // once or twice is a slip; three times is a habit worth a look
+		ConfusionShown:   6, // a short list to act on, not a table
 		Auth: auth.Params{
 			// PBKDF2-SHA256 rounds per password check: the OWASP recommendation
 			// (2023). About 0.3 s on a laptop: nothing for one login, very slow

@@ -88,6 +88,11 @@ func validateSamples(samples []engine.Sample, max int, alphabet string) string {
 		if utf8.RuneCountInString(smp.Char) != 1 || smp.Ms < 0 || smp.Errors < 0 {
 			return "samples: each needs exactly one char, errors >= 0 and ms >= 0"
 		}
+		// the wrong key: any one character (a capital or a mark is a real
+		// mistake too), and only where there was a mistake
+		if smp.Typed != "" && (utf8.RuneCountInString(smp.Typed) != 1 || smp.Errors == 0) {
+			return "samples: typed is one char, and only with errors"
+		}
 		if smp.Char != " " && !strings.Contains(alphabet, smp.Char) {
 			return "samples: " + smp.Char + " is not a letter of this language"
 		}

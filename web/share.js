@@ -55,7 +55,8 @@ function drawCard() {
   const tw = c.measureText("type").width;
   c.fillStyle = v("--text");
   c.fillText("Trainer", pad + tw, pad + 32);
-  const title = mode === "climb" ? `${t("mode.free")} · ${lengthLabel(length)}` : `${t("mode.freetype")} ${listLabel(list)} · ${lengthLabel(length)}`;
+  const title = mode === "learn" ? `${t("mode.learn")} · ${lengthLabel(length)}`
+    : mode === "climb" ? `${t("mode.free")} · ${lengthLabel(length)}` : `${t("mode.freetype")} ${listLabel(list)} · ${lengthLabel(length)}`;
   c.font = `600 15px ${ui}`;
   c.fillStyle = v("--sub");
   c.textAlign = "right";
