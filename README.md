@@ -74,13 +74,13 @@ code compiled to WebAssembly.
 
 - [docs/USER-GUIDE.md](docs/USER-GUIDE.md): running it on Windows, every screen, button and shortcut
 - [docs/ALGORITHM.md](docs/ALGORITHM.md): how the trainer picks letters and words, every formula and number
-- [docs/ALGORITHM-AUDIT.md](docs/ALGORITHM-AUDIT.md): an audit of the algorithm: what is measured, what is assumed, known weak points
+- [docs/thesis/ALGORITHM-AUDIT.md](docs/thesis/ALGORITHM-AUDIT.md): an audit of the algorithm: what is measured, what is assumed, known weak points
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the code is organised, the API
-- [docs/LITERATURE.md](docs/LITERATURE.md): research the algorithm builds on
+- [docs/thesis/LITERATURE.md](docs/thesis/LITERATURE.md): research the algorithm builds on
 - [docs/GUIDELINES.md](docs/GUIDELINES.md): principles for product, layout and interface work
 - [docs/UI-TEXT.md](docs/UI-TEXT.md): rules for every text in the interface
 - [docs/COMMENTING.md](docs/COMMENTING.md): rules for comments in the code
-- [docs/DEVELOPMENT-LOG.md](docs/DEVELOPMENT-LOG.md): how the project got here, change by change
+- [docs/thesis/DEVELOPMENT-LOG.md](docs/thesis/DEVELOPMENT-LOG.md): how the project got here, change by change
 
 ## Credits
 
@@ -94,5 +94,5 @@ code compiled to WebAssembly.
   [LDNOOBW](https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words)
   (**CC BY 4.0**) to leave out names and offensive words.
 
-How the lists were made: [docs/ALGORITHM.md](docs/ALGORITHM.md), sections 12
-and 14.
+How the lists were made: [docs/ALGORITHM.md](docs/ALGORITHM.md), sections 11
+and 13.

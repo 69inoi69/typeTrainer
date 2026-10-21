@@ -20,15 +20,8 @@ there is a reason not to).
 ## 1. Product decisions
 
 **Established**
-- typeTrainer teaches touch typing with real words. Three modes, all open:
-  Learn for beginners (letters from the home row, progress shown plainly,
-  no stats screen), Climb for those who can type (a level that follows
-  the typist) and Freetype for just typing (a word list you pick); the
-  stats screen is Climb's and Freetype's (`AGENTS.md`, "Three modes").
-- Settings change how much and how it looks, never what is practised. No
-  difficulty switches, no "open all letters". Tab starts a new round.
-- Visual rewards never change what is measured or sent to the server.
-- Not now: leaderboards, public profiles, more languages or themes.
+- The product principles are in `AGENTS.md` ("Product principles"); they
+  are not repeated here, so the two can never disagree.
 
 **Recommended**
 - Every feature answers "what does this help the user learn or understand?"
@@ -71,8 +64,8 @@ there is a reason not to).
   `--tw` are computed from the viewport, not picked from presets.
 - Phones and tablets (a touch screen, no mouse) show only the stats and the
   account: no typing screen, no navigation, a short line says that practice
-  needs a computer keyboard (owner, 2026-10-18; thumbs on glass would skew
-  the letter model). On a phone, check that the stats are not broken; the
+  needs a computer keyboard (thumbs on glass would skew the letter model).
+  On a phone, check that the stats are not broken; the
   typing screen is checked at desktop widths only.
 - Long names are cut with "…" instead of pushing other things away.
 
@@ -105,7 +98,7 @@ there is a reason not to).
 - One font: Geist Mono (`--mono`, `--ui`), served from `web/fonts`
   (SIL Open Font License, `web/fonts/OFL.txt`). The one exception is the
   logo, "typeTrainer" in the header, the start screen and the stats picture:
-  Sora SemiBold (`--logo`; owner, 2026-10-18), a file with only the
+  Sora SemiBold (`--logo`), a file with only the
   letters of the logo (`web/fonts/Sora-SemiBold-logo.woff2`, license
   `web/fonts/Sora-OFL.txt`).
 
@@ -223,7 +216,7 @@ consequences, the same word for the same thing. All text lives in
 ## 11. Scope
 
 **Established**
-- Change only what was asked (owner, 2026-10-16). Anything bigger than one
+- Change only what was asked. Anything bigger than one
   feature gets a short plan first (`AGENTS.md`).
 
 **Recommended**

@@ -1,7 +1,7 @@
 # How comments are written here
 
 Comments in this repository are written for **a newcomer who knows a little
-programming but not this project**: a new contributor, a thesis reviewer, or
+programming but not this project**: a new contributor, a reviewer, or
 the author a year from now. A comment should let that person understand a
 part of the code without reading everything around it, and change it safely.
 
@@ -55,7 +55,7 @@ end.
 
 7. **Point to the source of an idea.** A formula, an algorithm, a borrowed
    trick: name where it comes from (a section of `docs/ALGORITHM.md`, a
-   paper in `docs/LITERATURE.md`, a link).
+   paper in `docs/thesis/LITERATURE.md`, a link).
 
 8. **Keep comments true.** A wrong comment is worse than none. When the code
    changes, its comments change in the same commit. If a comment is hard to
@@ -75,7 +75,7 @@ end.
 |---|---|
 | What the whole program does, how to run it | `README.md`, `docs/USER-GUIDE.md` |
 | How the parts fit together, the API | `docs/ARCHITECTURE.md` |
-| The algorithm and its formulas (the thesis) | `docs/ALGORITHM.md` |
+| The algorithm and its formulas | `docs/ALGORITHM.md` |
 | Rules for interface text | `docs/UI-TEXT.md` |
 | Product, layout and interface principles | `docs/GUIDELINES.md` |
 | What a package or module is for | its package comment / the top of the file |

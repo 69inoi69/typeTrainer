@@ -232,7 +232,7 @@ func MeetsGoal(s KeyStat, p Params) bool {
 // one mistake (ErrEMA jumps by Alpha = 0.1, over the 0.05 goal) took a
 // mastered letter back for about 7 presses, and the next letter waited until
 // every open letter happened to be clean at the same moment (the audit,
-// docs/ALGORITHM-AUDIT.md section 3.1).
+// docs/thesis/ALGORITHM-AUDIT.md section 3.1).
 func keeps(s KeyStat, p Params) bool {
 	return s.ErrEMA <= max(p.KeepErrorRate, p.MasteryErrorRate) &&
 		s.TimedCount > 0 && s.TimeEMA <= p.TargetMs()*(1+max(0, p.KeepSlowdown))

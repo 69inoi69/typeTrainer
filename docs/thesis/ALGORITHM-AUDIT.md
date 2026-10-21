@@ -477,7 +477,7 @@ the engine and the simulator as they are, with its own copy of the
 simulated typist so the hidden values can be read.
 
 ```go
-// Audit experiments for docs/ALGORITHM-AUDIT.md (appendix A).
+// Audit experiments for docs/thesis/ALGORITHM-AUDIT.md (appendix A).
 // Run: go run ./tools/audittmp     (A, B, D)
 //
 //	go run ./tools/audittmp E   (E)

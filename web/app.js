@@ -26,7 +26,7 @@ import { buildAmbient } from "./ambient.js";
 import { startView } from "./input.js";   // keys and buttons: mostly event listeners
 
 // ---------- user study ----------
-// A hidden link for the evaluation chapter (docs/ALGORITHM.md section 11):
+// A hidden link for a user study (docs/thesis/EVALUATION.md):
 // "...?group=random" puts this browser (or account) into the control group
 // of a user study in every language: learning draws random open words
 // instead of using the algorithm. "?group=adaptive" goes back. Nothing in

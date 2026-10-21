@@ -5,7 +5,7 @@ package sim
 // as in the app; after every round the forecast for the next letter is
 // made exactly as history.NextForecast makes it (the slowest waiting
 // letter decides), and later compared with the rounds the next letter
-// really took to open. Results: docs/ALGORITHM.md 11.1 ("Forecast").
+// really took to open. Results: docs/ALGORITHM.md section 10 ("Forecast").
 
 import (
 	"sort"

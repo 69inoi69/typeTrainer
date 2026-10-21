@@ -57,7 +57,7 @@ its own.
 | `data/langs/<id>/words.txt` | Word list per language, most frequent first (learning; Climb and Freetype too in a language without `free.txt`). |
 | `data/langs/<id>/free.txt` | The long list of Climb and Freetype (English only for now: 25 000 words, `tools/wordlists/free.py`). |
 | `data/langs/<id>/sentences.txt` | Freetype's real sentences, one per line (English only for now; from Tatoeba, CC BY 2.0 FR, `tools/sentences/build.py`). |
-| `internal/sim` | Simulation for the evaluation chapter: a made-up typist and three word-choice strategies (docs/ALGORITHM.md, section 11.1). Not used by the app. |
+| `internal/sim` | Simulation: a made-up typist and three word-choice strategies (docs/ALGORITHM.md, section 10). Not used by the app. |
 | `tools/sim/` | `go run ./tools/sim`: runs the simulation on the real word lists and prints the table. |
 | `tools/wordlists/` | Python script + block lists that build the word lists (not part of the app). |
 | `web/` | Static frontend: `index.html`, `style.css` and the JavaScript modules (see "Frontend modules" below). The interface language always follows the practice language. |
@@ -248,7 +248,7 @@ mistakes and its time, exactly as the browser measured it (a skipped letter
 has no entry). Climb and Freetype rounds keep their keys too; they are never
 learned from. The letter model can be rebuilt from the keys by running
 `engine.Apply` over them round by round, so other parameter values can be
-tried on real data (ALGORITHM.md, section 11). A round with its keys is
+tried on real data (docs/thesis/EVALUATION.md). A round with its keys is
 5-7 KB of JSON; `MaxImportBytes` allows about 10 000 rounds in one import.
 History from before this has no keys (the field is missing). `device`
 says what the round was typed on (`keyboard` or `touch`; missing in older
@@ -333,7 +333,7 @@ share no data: Climb and Freetype have their own routes and histories
   (`web/learnpanel.js`); its rounds follow one another with no result
   screen.
 - **Climb**, for people who can already type (`internal/freeplay`,
-  docs/ALGORITHM.md section 13): ten levels of words only, each a set of
+  docs/ALGORITHM.md section 12): ten levels of words only, each a set of
   the n most common words; a round is typed at one level, and its accuracy
   decides (`freeplay.Standing`): three passes take the typist up, two fails
   in a row down. Its history (`AddFreeplaySession`) keeps the level of every
@@ -341,7 +341,7 @@ share no data: Climb and Freetype have their own routes and histories
   screen is Climb's and Freetype's. Nothing it sends reaches the letter
   model: `/freeplay/results` drops any samples.
 - **Freetype**, for just typing (`internal/freeplay`, docs/ALGORITHM.md
-  section 14): words drawn evenly from the n most common of the long list
+  section 13): words drawn evenly from the n most common of the long list
   (`free.txt`), n picked in the row above the text (200 to 25 000;
   remembered per language in `tt.list.<lang>`), plain or of a kind
   (long words, real sentences from `sentences.txt`, or your own text: `tt.variant.<lang>`;

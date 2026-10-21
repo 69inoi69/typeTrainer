@@ -61,7 +61,7 @@ type Session struct {
 	Group string `json:"group,omitempty"`
 	// Device: what the round was typed on, DeviceKeyboard or DeviceTouch;
 	// "" = not known (history from before it was kept). Only recorded for
-	// now: the letter model learns from both alike. Kept so the thesis can
+	// now: the letter model learns from both alike. Kept so we can later
 	// check whether phone rounds should count differently.
 	Device string `json:"device,omitempty"`
 }
@@ -152,7 +152,7 @@ const (
 )
 
 // GroupRandom is the control group of a user study (docs/ALGORITHM.md
-// section 11): learning works as usual, but the words of the open letters
+// learning works as usual, but the words of the open letters
 // are drawn at random instead of by the algorithm. "" = the normal app.
 const GroupRandom = "random"
 
