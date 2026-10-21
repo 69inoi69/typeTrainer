@@ -2,16 +2,19 @@
 
 ## What this is
 
-An adaptive touch-typing trainer: the practical part of my engineering thesis
-(Lublin University of Technology, due 2027). It should look and feel like
-Monkeytype, but teach: it tracks each letter's mistakes and speed and builds
-exercises from real words around the user's weak letters.
+typeTrainer is a touch-typing trainer that looks and feels like Monkeytype
+and teaches like keybr: it tracks every letter's mistakes and speed and
+builds the next words around your weak letters. Real words only. It aims to
+be a real alternative to both, not a demo.
+
+It started as an engineering thesis; the notes the thesis needs live in
+`docs/thesis/`. They record history and ideas, they do not limit what we
+build. If the code and a thesis note disagree, the code and `docs/` win.
 
 ## Who you are working with
 
-- I am not an experienced programmer. Explain what you changed and why, in
-  simple words, after every task. I must be able to defend every part of this
-  code in front of a thesis committee.
+- I am not an experienced programmer. After every task, explain in simple
+  words what you changed and why, so I understand every part of my code.
 - Talk to me in Russian. Code, comments, commit messages and docs: English.
 - Work in small steps. For anything bigger than one feature, show a short plan
   first and wait for my OK.
@@ -23,10 +26,9 @@ exercises from real words around the user's weak letters.
 ## Guidelines
 
 Before changing a feature or the interface, read `docs/GUIDELINES.md`
-(product, layout, responsive design, hierarchy, interaction, accessibility,
-implementation, testing, scope) and `docs/UI-TEXT.md` (every text the user
-sees). They are principles to apply with judgment; the rules in this file
-win where they differ.
+(layout, hierarchy, interaction, accessibility, implementation, testing,
+scope) and `docs/UI-TEXT.md` (every text the user sees). They are principles
+to apply with judgment; the rules in this file win where they differ.
 
 ## Stack (do not change without asking)
 
@@ -43,9 +45,9 @@ win where they differ.
   `internal/storage/migrations/`, never into an old one.
 - Four languages: English, Polish, Ukrainian, Russian. Language data lives in
   `data/` (`languages.json`, `layouts/`, `langs/<id>/words.txt`), not in code.
-  **For now only English is shown (2026-10-16):** Polish, Ukrainian and
-  Russian are `"hidden": true` in `languages.json` until the English version
-  is polished; their data stays and keeps passing the tests.
+  **Only English is shown for now:** Polish, Ukrainian and Russian are
+  `"hidden": true` in `languages.json` until the English version is
+  polished; their data stays and keeps passing the tests.
 - Development machine: Windows, PowerShell.
 
 ## Architecture rules
@@ -60,117 +62,80 @@ win where they differ.
 - Keep keypress handling in `web/typing.js` light: only flip classes on the 1-2
   letters that changed. The only layout read is the caret position, done once
   per animation frame (`requestAnimationFrame`). Animations use CSS transitions
-  or the Web Animations API (`element.animate`), never JS timers.
+  or the Web Animations API (`element.animate`), never JS timers. Typing
+  latency is the product: measure it after touching this path.
 - The frontend is native ES modules with a three-layer import rule (top of
   `web/state.js`, checked by `webmodules_test.go`): imports only go down, no
   cycles. State shared by several modules lives in the object `S`.
-
 - Every API route except `/languages` and `/auth/*` takes `?lang=`; every
   `Store` method takes the user id and the language id. Each user has their
   own progress in each language; a request without a login is this
-  browser's guest (cookie `tt_guest`, `storage.IsGuest`). Password and token handling lives in `internal/auth`
-  (standard library only); never store a password or a login token itself,
-  only its hash.
+  browser's guest (cookie `tt_guest`, `storage.IsGuest`). Password and token
+  handling lives in `internal/auth` (standard library only); never store a
+  password or a login token itself, only its hash.
 - Visual rewards (confetti, bumps, toasts) live in `web/fx.js` and must never
-  change what is measured or sent to the server. Tab starts a new round
-  (as on monkeytype; owner, 2026-10-16, reversing the earlier "no restart"):
-  the dropped round is not saved, its presses already sent stay learned.
-- Every text the user sees follows `docs/UI-TEXT.md` (every text earns its
-  place: nothing for the obvious, explain what is not, spell out
-  consequences, the same word for the same thing; decide this yourself for
-  every new feature) and lives in `web/i18n.js`.
-  While only English is shown, new and changed texts are written in English
-  only (the other blocks fall back to English); the pl/uk/ru blocks get
-  redone when those languages come back. Never hard-code interface text in the other `.js` files or
-  `index.html`; use `t("key")` or `data-i18n="key"`. The one exception is
-  `web/file-check.js` (the page opened from disk, where modules cannot load). Finger names there are in the form the
-  hint sentence needs (Polish/Ukrainian/Russian instrumental case).
+  change what is measured or sent to the server. Tab starts a new round, as
+  on Monkeytype: the dropped round is not saved, its presses already sent
+  stay learned.
+- Every text the user sees follows `docs/UI-TEXT.md` and lives in
+  `web/i18n.js`; decide yourself what text a new feature needs. While only
+  English is shown, new and changed texts are written in English only (the
+  other blocks fall back to English). Never hard-code interface text in the
+  other `.js` files or `index.html`; use `t("key")` or `data-i18n="key"`. The
+  one exception is `web/file-check.js` (the page opened from disk, where
+  modules cannot load). Finger names there are in the form the hint
+  sentence needs (Polish/Ukrainian/Russian instrumental case).
 - Word lists are generated by `tools/wordlists/build.py` (Python, a data tool,
   not part of the app), Freetype's long list (`free.txt`) by
-  `tools/wordlists/free.py`. Change the block lists and rerun it instead of editing
-  `words.txt` by hand, so the thesis can describe how the lists were made.
+  `tools/wordlists/free.py`, the sentences by `tools/sentences/build.py`.
+  Change the block lists and rerun the script instead of editing the lists
+  by hand: the next rerun would undo a hand edit.
 - The app runs in two ways from the same code: a normal server (`main.go`)
   and WebAssembly on GitHub Pages (`main_wasm.go`). Shared setup goes in
   `setup.go`. Do not add anything that only works with a real server (files on
   disk, background goroutines tied to HTTP) without telling me.
-
 - Comments follow `docs/COMMENTING.md`: why, not what; every file says what
   it is for and how it connects; extension points say "To add ...".
 
 Details: `docs/ARCHITECTURE.md`.
 
-## Product decisions (do not change without asking)
+## Product principles (ask before changing)
 
-- **Real words only.** No generated letter combinations like keybr.
-- **Phones and tablets show only the stats and the account (2026-10-18).**
-  Practice needs a computer keyboard; thumbs on glass would skew the letter
-  model. The phone layout of the typing screen is not maintained.
-- **Three modes, all open to everyone (owner, 2026-10-19).** *Learn* is for
-  beginners: the adaptive trainer, letters open one by one from the home
-  row, with no difficulty switches (the algorithm decides what to practise).
-  It has no result screen (owner, 2026-10-20): its progress while typing
-  is the letters row and the Learn panel above the text (the last round
-  against your average, an accuracy streak, a daily goal, the focus letter
-  and what it needs, about how many rounds to the next letter, the news
-  of the round; no charts there). After Learn complete the letters are
-  learned again in laps, the goal 5 wpm higher each, up to 60 (owner,
-  2026-10-21, after keybr). Its charts
-  live on the stats screen (owner, 2026-10-21, reversing "no stats screen"):
-  every letter round by round, one letter's speed against the goal, the
-  keys you mix up.
-  *Climb* is for people who can already type (`internal/freeplay`; owner,
-  2026-10-20): ten levels of words only (no capitals, no punctuation),
-  each the n most common words, 200 up to 25 000; a round is typed at one
-  level, three rounds at 96% accuracy or more take the typist up, two
-  under 92% in a row down; speed does not count; any level can be picked
-  in the round bar. It has its own history and the stats screen,
-  and never feeds the letter model. *Freetype* is plain typing as on
-  monkeytype: words drawn evenly from a list the typist picks (the 200 to
-  25 000 most common words), plain or only its long words, or real
-  sentences (Tatoeba, with capitals and punctuation), or a text the
-  typist pastes (owner, 2026-10-21); nothing
-  adapts, every list and kind of text has its own history, and the stats
-  screen shows it next to Climb. There is no entry
-  test.
-- **Settings change how much and how it looks, never what.** What a round
-  is belongs to each mode and sits in the round bar above the text
-  (`web/modebar.js`; owner, 2026-10-19): Learn offers short (15 words) or
-  normal (30); Climb words or time (10-50 words, 15-90 s); Freetype the
-  same plus its word list and kind of text (the point of that mode, not a
-  difficulty switch). Each mode remembers its own length. The settings window
-  (`web/settings.js`) keeps what holds for the whole app: live numbers
-  on/off, the streak badge on/off, the caret style, the theme, the
-  keyboard, a personal speed goal (shown on the stats screen only, never
-  seen by the algorithm), a daily goal in minutes (the Learn panel), the
-  text size, the caret's movement, marks on spaces, stop on a mistake,
-  sounds, the next key lit, finger colours, a rest reminder and the data. Every round keeps its length, and
-  rounds of different lengths or lists are never mixed in one chart or
-  record.
-- **Where the work goes (owner, 2026-10-19).** Both modes are being built
-  now, freely: try an idea, the owner tests it, keep or drop it; the old
-  schedule does not limit what we try. Keep the modes apart: nothing in
-  Climb or Freetype may touch learning data.
-- **A hidden control group for the thesis study.** `?group=random` makes
-  learning draw random open words instead of using the algorithm (every
-  round stores its group). It is never shown or offered in the interface.
-- **Everyone starts from the first letters** (in Learn), and the first
-  letters sit on the home row (the resting keys count 4 times as frequent
-  in the unlock order). No "open all letters" in the interface:
-  experienced typists unlock the rest quickly by typing well, or go to Climb.
-- **The math in `internal/engine/model.go` is the core of my thesis.** Do not
-  change formulas or parameter values on your own. If you think something
-  should change, explain it and ask.
-- If the algorithm's behaviour changes, update `docs/ALGORITHM.md` and the tests
-  in the same task. The docs must always describe what the code really does.
-
-Details: `docs/ALGORITHM.md`.
+- **Real words only.** No generated letter combinations like keybr's.
+- **A computer keyboard is needed to practise.** Phones and tablets show only
+  the stats and the account: thumbs on glass would skew the letter model.
+  The phone layout of the typing screen is not maintained.
+- **Three modes, open to everyone, kept apart.** *Learn* teaches from zero:
+  letters open one by one from the home row, and the algorithm alone decides
+  what to practise (no difficulty switches, no "open all letters").
+  *Climb* is for people who can already type: levels of ever rarer words,
+  judged by accuracy. *Freetype* is plain typing: nothing adapts. Climb and
+  Freetype never touch Learn's data, and every mode, list and round length
+  keeps its own history: rounds of different kinds are never mixed in one
+  chart or record. How each mode works: `docs/ALGORITHM.md`.
+- **Settings change how much and how it looks, never what is practised.**
+  What a round is belongs to each mode and sits in the round bar above the
+  text (`web/modebar.js`). The settings window (`web/settings.js`) holds
+  what applies to the whole app.
+- **The letter model is Learn's core.** Do not change the formulas in
+  `internal/engine/model.go` or their values in `config.go` on your own: a
+  silent change moves every user's progress. Explain the change, show it
+  in the simulation (`go run ./tools/sim`) and ask.
+- **A hidden A/B switch.** `?group=random` makes Learn draw random open words
+  instead of using the algorithm, so the algorithm can be compared against
+  it on real people (`docs/thesis/EVALUATION.md`). Every round stores its
+  group. It is never shown or offered in the interface.
+- **Try things freely.** Build an idea, I test it, we keep it or drop it.
+- If the algorithm's behaviour changes, update `docs/ALGORITHM.md` and the
+  tests in the same task. The docs always describe what the code really does.
 
 ## Not now
 
 Leaderboards, public profile pages, more languages, more themes (there are
 two: dark and light, as CSS variables in `web/style.css`), frameworks.
-(Accounts exist: sign up / log in / log out on the normal server, kept in
-PostgreSQL when it is configured.) Structure code so they can be added later, but do not build them.
+Accounts exist (sign up / log in / log out on the normal server, kept in
+PostgreSQL when it is configured). Structure code so these can be added
+later, but do not build them yet.
 
 ## Commands
 

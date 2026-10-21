@@ -6,7 +6,7 @@
 // from the press of the first, is the movement from one key to the other.
 // WeakPairs finds the pairs that cost the typist most in their last Climb
 // rounds, and Portion (freeplay.go) puts words with them into a share of
-// the text (docs/ALGORITHM.md section 13.1).
+// the text (docs/ALGORITHM.md section 12.1).
 //
 // The data is the raw record every Climb round already keeps
 // (storage.Session.Keys). Nothing is stored apart and nothing comes from

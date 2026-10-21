@@ -33,8 +33,8 @@ Filtering, in this order, keeping the frequency order of the source:
      (vincent, quinn, ґрегорі) and garbage.
 """
 # When to rerun: after a change to a block_<lang>.txt list or to a rule
-# below. Do not edit words.txt by hand, so the thesis can describe exactly
-# how the lists were made (AGENTS.md). An optional second argument changes
+# below. Do not edit words.txt by hand: the next rerun would undo the edit,
+# and the script is the record of how the lists were made (AGENTS.md). An optional second argument changes
 # N (the number of common words, default 2000). The script prints each
 # language, its word count and its first words; check them, then run
 # `go test ./...` (the lists are built into the program, setup.go go:embed,

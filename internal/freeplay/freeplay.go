@@ -13,7 +13,7 @@
 // fails; PassesUp passes take the typist one level up, FailsDown fails in
 // a row one level down. Speed never counts (owner, 2026-10-20). The
 // counts are not stored: they come from the history, where every round
-// keeps the level it was typed at (docs/ALGORITHM.md section 13).
+// keeps the level it was typed at (docs/ALGORITHM.md section 12).
 //
 // And one thing that is the typist's own: a share of the words carries one
 // of their weak letter pairs, the movements their last rounds were slowest
@@ -350,7 +350,7 @@ func (pk *Picker) drawWord(window []string, last string, size int, from []int, p
 // The steps (200, 500, 1 000, 2 000, ... 25 000 in config) roughly double
 // the words at each level, because word frequencies fall steeply (Zipf's
 // law): a straight line from 200 to 25 000 would reach words nobody types
-// ("pippin", "dubbing") by level 5 (docs/ALGORITHM.md section 13).
+// ("pippin", "dubbing") by level 5 (docs/ALGORITHM.md section 12).
 func (pk *Picker) MaxRank(level int, p Params) int {
 	if len(p.Levels) == 0 {
 		return len(pk.words)

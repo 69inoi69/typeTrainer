@@ -414,22 +414,6 @@ the normal server, it shows yours.
   The exact numbers are in tooltips: hover, tap, or move to a key or chip
   with `Tab`.
 
-## A user study (for the thesis)
-
-To compare the algorithm with random words on real people, give half of the
-participants this link (with your own address):
-
-```
-http://localhost:3000/?group=random
-```
-
-and the other half the normal address. In the "random" group the words are
-chosen at random from the open letters; everything else is the same, and
-nothing on the screen says which group it is. Every round remembers its
-group, and **Export** saves it, so you can compare the two groups later.
-`?group=adaptive` puts a browser back to normal. A reset clears the group:
-open the link again after one.
-
 ## Languages and layouts
 
 For now only English is offered. Polish, Ukrainian and Russian are in the data

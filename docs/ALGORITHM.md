@@ -1,8 +1,7 @@
 # The adaptive algorithm
 
-This document explains how the trainer decides what you type next, and why
-each part is built the way it is. It is written as raw material for the
-thesis: every formula here is exactly what the code does, and every number
+How the trainer decides what you type next, and why each part is built the
+way it is. Every formula here is exactly what the code does, and every number
 comes from `internal/config/config.go`.
 
 Code: `internal/engine/model.go` (the math) and `internal/engine/generator.go`
@@ -24,7 +23,7 @@ chosen at random, but with probabilities shaped by difficulty, so weak letters
 show up much more often and strong ones still appear sometimes. Learning has
 no settings: the model alone decides what to practise. (Climb, the second
 mode in `internal/freeplay`, for people who can already type, has its own
-rule, section 13, and never feeds this model; see docs/ARCHITECTURE.md,
+rule, section 12, and never feeds this model; see docs/ARCHITECTURE.md,
 "Modes".)
 
 ## 2. Design decisions
@@ -32,7 +31,7 @@ rule, section 13, and never feeds this model; see docs/ARCHITECTURE.md,
 | Decision | Alternative | Why this one |
 |---|---|---|
 | Real words only | Generated letter combinations (pseudo-words), as in keybr.com | Words are what people type in real life, they are easier to read and read faster, and they keep motivation up. Cost: early lessons have fewer possible texts. Handled by the unlock order and the `MinWords` rule (section 6). |
-| Statistics per letter | Per key pair (bigram), per word | Simplest unit that can be explained and shown on the keyboard. Bigrams are a natural extension (section 10). |
+| Statistics per letter | Per key pair (bigram), per word | Simplest unit that can be explained and shown on the keyboard. Climb already tracks pairs (section 12.1); pairs in Learn are an open idea (`docs/thesis/EVALUATION.md`). |
 | Smoothed recent statistics (EMA) | Lifetime totals | Skill changes. A lifetime error rate remembers mistakes from weeks ago forever. |
 | Probabilistic choice (softmax) | Always train the single worst letter | Always drilling one letter is boring and over-fits; probabilities give focus *and* variety. |
 | Gradual unlocking | All 26 letters from the start | A beginner cannot learn 26 finger positions at once. Experienced typists go through the same steps, only much faster. |
@@ -276,7 +275,7 @@ checked on the raw values (not on the shrunk difficulty) so it can be
 explained to a user in one sentence. The state is remembered per letter
 (`KeyStat.Held`, updated by every sample in `Update`).
 
-**Why the margin (owner, 2026-10-19; the audit, `docs/ALGORITHM-AUDIT.md`
+**Why the margin (owner, 2026-10-19; the audit, `docs/thesis/ALGORITHM-AUDIT.md`
 3.1).** Without it, one mistake (ErrEMA jumps by `Alpha` = 0.1, over the 0.05
 goal) took a mastered letter back for about 7 of its presses, and the next
 letter needed every open letter to be clean at the same moment. The wait for
@@ -365,7 +364,7 @@ by about `Alpha` = 0.1 at once (section 4). A line through the rounds would
 then point up, as if the letter got worse, and with several letters open
 one of them slipped in almost every round: the first version (a line
 through `ErrEMA`) gave no answer most of the time and erred by 4-6 rounds
-when it did (section 11.1). Counting the mistakes of the window and using
+when it did (section 10). Counting the mistakes of the window and using
 the EMA's own formula is calm about a single slip and still honest: if the
 recent mistakes are not under 5 %, the EMA cannot get there either.
 
@@ -439,7 +438,7 @@ letters are preferred.
 "1k", "2k" word lists, but without a switch: while the user learns the
 letters the text is made of the most common words, and rarer words come in
 step by step once the whole keyboard is known. The word lists are sorted by
-frequency (section 12), so a word's place in its list, its **rank**
+frequency (section 11), so a word's place in its list, its **rank**
 (0 = the most common word), says how common it is.
 
 ```
@@ -461,7 +460,7 @@ words or an hour at 30 WPM; then the penalty is gone. Choices behind this:
   from the rare end of the list (ranks 1000-2000), already in the first
   lesson. So a beginner types `sister`, `arrest`, `easier` as often as `is`,
   `at`, `see`. Common words are also short, so this rule makes the first
-  lessons shorter too (11.1).
+  lessons shorter too (section 10).
 - **Flat while learning, ramp after (owner's decision, issue #25).** Until
   October 2026 the limit grew with every unlocked letter (half of the letters
   open: rank ~1100). Then a learner meets two new things at once, a new
@@ -469,7 +468,7 @@ words or an hour at 30 WPM; then the penalty is gone. Choices behind this:
   hard to explain. Now there is one difficulty at a time: while letters open
   only the words change their letters, not their rarity; after the full
   alphabet only the rarity grows. What the flat phase costs is measured in
-  11.1.
+  section 10.
 - **The ramp counts typed letters, not rounds.** Rounds have different
   lengths (10 words to 60 seconds, section 7, "The round"), so "N rounds"
   would mean different amounts of practice. Typed letters do not depend on
@@ -502,7 +501,7 @@ words or an hour at 30 WPM; then the penalty is gone. Choices behind this:
   `ć` 295, `ł` 250, `ó` 239, `ą` 217; uk `ф` 1797, `щ` 447, `ї` 450, `є` 291,
   `ц` 223, `х` 209, `ш` 205; ru `ф` 1410, `ц` 845, `щ` 807, `ю` 280, `х` 237,
   `ш` 231, and `ъ`, which had a single word in the Russian list before step 9 of
-  section 12 added more.
+  section 11 added more.
   The penalty only shapes which words of the focus letter are taken: the
   focus letter itself (step 1) does not depend on it, so a rare letter is
   never trained less because its words are rare.
@@ -527,7 +526,7 @@ weak when a letter has few words. English `z` and `q` have 10 words each in
 the whole list, and a round focused on them showed only 10 different words in
 30 (`pizza` 6 times, `size` 5); common short words repeated 4 times too (`an`,
 `in`, `too`). With the cap a round on `z` or `q` has about 20 different words.
-The price is measured in 11.1: the focus letter gets fewer words when its
+The price is measured in section 10: the focus letter gets fewer words when its
 words run out, so reaching the goal takes a few percent more typing. Only a
 dictionary too small for both rules relaxes them (first the cap, then
 "not twice in a row").
@@ -538,7 +537,7 @@ out of learning when the generator is made (`NewGenerator`): English `a` and
 of every list, so they came up often, and a lone letter is not a word to
 practise (owner, 2026-10-20: "filler"). They are left out before anything is
 counted, so they take no part in the unlock order, the first lesson or the
-ranks. The word lists keep them (section 12): Climb and Freetype draw from
+ranks. The word lists keep them (section 11): Climb and Freetype draw from
 their own lists and are not affected.
 
 **Mistyped words come back.** Words the user typed with a mistake (a wrong or
@@ -590,7 +589,7 @@ never mixes lengths.
 **The earlier strategy** (`Generator.Next`, kept for the simulation): a whole
 exercise of `ExerciseWords = 20` words at once, a new focus letter for every
 word, the repeat penalty counted inside the exercise, statistics updated
-after the exercise. Section 11.1 compares the two.
+after the exercise. Section 10 compares the two.
 
 ## 8. Parameters
 
@@ -606,7 +605,7 @@ All in `internal/config/config.go`.
 | `ErrorWeight` / `SpeedWeight` | 0.6 / 0.4 | mix of the two parts | accuracy first, but speed matters |
 | `PriorDifficulty` | 0.7 | assumption about an unseen letter | new letters must get practised |
 | `PriorStrength` | 5 | how many samples the prior is worth | a few presses are not yet evidence |
-| `Temperature` | 0.1 | focus strength | chosen with the simulation (section 11.1): fastest learning at a small loss of variety; was 0.25 |
+| `Temperature` | 0.1 | focus strength | chosen with the simulation (section 10): fastest learning at a small loss of variety; was 0.25 |
 | `MasteryMinSamples` | 20 | evidence needed for mastery | ≈ one EMA memory length |
 | `MasteryErrorRate` | 0.05 | max mistakes for mastery | 95 % accuracy, a common minimum goal |
 | `KeepErrorRate` | 0.10 | a mastered letter stays mastered up to this error rate | twice the goal: one slip (+0.1 at most) is not enough to lose it, a real problem is (section 6) |
@@ -630,10 +629,10 @@ All in `internal/config/config.go`.
 | `ConsistencyMinSeconds` | 5 | shortest round that gets a consistency (section 3) | a standard deviation of 2-3 numbers says little; 5 s is a few words even for a beginner |
 | `RankPenalty` | 0.5 | weight multiplier per `RankStep` over the limit | halving is easy to explain; with `T = 0.1` one step equals about 0.07 of difficulty, so weak letters still decide first |
 | `Laps.StepWPM` / `Laps.MaxWPM` | 5 / 60 | after Learn complete the goal goes up 5 WPM a lap, up to 60 (section 6.1) | as keybr; past 60 WPM single letters are no longer the limit, Climb is for that |
-| `Forecast.Window` / `MinRounds` / `MaxRounds` | 10 / 3 / 50 | the forecast reads a letter's last 10 rounds, needs 3, says "50+" beyond 50 (section 6.2) | 10 rounds of a few presses are about what the EMA remembers (20 presses); with the simulation (section 11.1), 3 rounds answered more often than 5 at about the same error |
+| `Forecast.Window` / `MinRounds` / `MaxRounds` | 10 / 3 / 50 | the forecast reads a letter's last 10 rounds, needs 3, says "50+" beyond 50 (section 6.2) | 10 rounds of a few presses are about what the EMA remembers (20 presses); with the simulation (section 10), 3 rounds answered more often than 5 at about the same error |
 
-The values were chosen by reasoning, not fitted to data. Tuning them on real
-user data is a good subject for the evaluation chapter (section 11).
+The values were chosen by reasoning and the simulation (section 10), not
+fitted to real data; `docs/thesis/EVALUATION.md` says how they could be.
 
 ## 9. Known simplifications
 
@@ -651,7 +650,7 @@ user data is a good subject for the evaluation chapter (section 11).
   (`Session.Device`: `keyboard` or `touch`), so the history can show whether
   this matters before the model treats the two differently.
 - **Word lists from subtitles.** The 2000 most frequent words per language,
-  counted in film and TV subtitles (section 12). That is spoken, everyday
+  counted in film and TV subtitles (section 11). That is spoken, everyday
   language: good for typing practice, but some names or slang may remain after
   filtering. Rare letters (`q`, `j`, `x`, `z`, `ф`, `щ`) have few words.
 - **Simplified spelling.** Russian `ё` is typed as `е`, and Ukrainian words with
@@ -665,52 +664,7 @@ user data is a good subject for the evaluation chapter (section 11).
   (home row, then the top row, then the bottom row). A full plan would need
   words for every step; real words decide where a rare letter goes.
 
-## 10. Where your own model can go further
-
-These are directions, not things that are built:
-
-1. **Bigram statistics.** Keep the same `KeyStat` for pairs like `th`, `ng`, and
-   add their difficulty to `D(word)`. Directly targets the transition problem
-   from section 9.
-2. **Word-level choice in one step.** Instead of "letter, then word", a single
-   softmax over `D(word)` with a different aggregation (sum, max, mean).
-3. **Forgetting over time.** Skill fades between sessions. Half-life regression
-   (Settles & Meeder, 2016) models the probability of recall as a function of time
-   since last practice; the same idea can raise the difficulty of letters not seen
-   for days.
-4. **Fitting parameters.** With logged data, choose `Alpha`, `T` and the weights
-   that best predict the next mistake.
-
-## 11. How to show that it works (ideas for the evaluation chapter)
-
-- **Unit tests** already show the core properties: a weak letter appears at least
-  twice as often (`TestNext_WeakLetterGetsFocus`), old mistakes fade
-  (`TestUpdate_RecentDataWins`), one press is not evidence
-  (`TestDifficulty_ShrinkageNeedsEvidence`), only open letters are used.
-- **Simulation** (built, see section 11.1).
-- **Small user study.** Two groups (adaptive vs. random words), the same total
-  practice time, compare WPM and accuracy before and after. The control group
-  is built in and hidden: opening the site with `?group=random` puts that
-  browser (or account) into it in every language, `?group=adaptive` takes it
-  back (`web/app.js`, `POST /api/v1/group`). In the control group learning
-  works as usual (the same letter model, the same unlocking, the same rounds
-  and history) except the word choice: `Generator.RandomPortion` draws the
-  open words uniformly, never the same word twice in a row, with no focus
-  letter, no frequency penalty and no mistyped words coming back, like the
-  "random words" strategy of the simulation (11.1). Every learning round
-  stores its group (`Session.Group`, in `/export` too), so the two groups'
-  rounds can be told apart in the data. The interface does not show the
-  group, so participants do not know which one they are in; the letters bar
-  only shows no focus letter. A reset or a new browser drops the group: open
-  the link again.
-- **Raw data.** Every round in the history keeps its raw keypresses
-  (`keys`: letter, mistakes, time, in order; ARCHITECTURE.md, "Raw round
-  records"), and `/export` writes them to the file. Replaying them through
-  `engine.Apply` rebuilds the letter statistics, so the same real data can be
-  run with other values of `Alpha` or the weights (section 10, point 4), and
-  learning curves per letter can be drawn for the evaluation chapter.
-
-### 11.1 Simulation
+## 10. Simulation
 
 Code: `internal/sim` (tests in `internal/sim/sim_test.go`), run with
 `go run ./tools/sim` (or `-lang en`) from the repository root. All numbers are
@@ -989,7 +943,7 @@ simulation compares strategies under the same assumptions; it does not predict
 how fast a real person learns. The variety numbers are simple proxies; how
 boring an exercise feels can only be measured with real users.
 
-## 12. Languages, layouts and word lists
+## 11. Languages, layouts and word lists
 
 **Layouts** (`data/layouts/`): English QWERTY; Polish "Programmers" (the
 standard in Poland: QWERTY, Polish letters with AltGr, e.g. AltGr + a = ą);
@@ -1031,7 +985,7 @@ documents every filtering step:
    they occur only in loan words and names, and filling them brings in names
    (`vincent`, `quinn`, `ґрегорі`).
 
-## 13. Climb, the second mode
+## 12. Climb, the second mode
 
 Code: `internal/freeplay` (tests in `freeplay_test.go`); the routes in
 `internal/api/freeplay.go`. For people who can already type: no letters
@@ -1048,7 +1002,7 @@ sentence, it only breaks the rhythm. (Until 2026-10-20 the upper levels
 added capitals and then commas and full stops.)
 
 **The levels** (`Params.Levels`, `MaxRank`). Level n draws evenly from the
-`Levels[n-1]` most common words of the long list (`free.txt`, section 14;
+`Levels[n-1]` most common words of the long list (`free.txt`, section 13;
 a language without it uses `words.txt`, and a list shorter than a level
 caps it), without the words of one letter (`MinLetters = 2`, `Longer`:
 "a" and "i" are nothing to train; Freetype keeps them, as monkeytype does). A word used recently is rarer, the same word never comes twice
@@ -1127,7 +1081,7 @@ count in `Standing` like any other.
 All values are reasoned, not fitted; the stats screen (Climb's own) shows
 every round with its level, which is the data to tune them on.
 
-### 13.1 Weak pairs
+### 12.1 Weak pairs
 
 Code: `internal/freeplay/weak.go` (tests in `weak_test.go`), used by
 `Portion` and the routes. The level makes the text harder for everyone the
@@ -1160,7 +1114,7 @@ in 15 presses does not outweigh a pair that is slow every time.
 **Weak** pairs are the `WeakPairs = 3` most costly ones that were pressed
 at least `WeakMinSamples = 15` times and cost more than the typist's
 average over all pairs. An even typist has none; so does a new one (too
-little data), and then Climb is exactly as in section 13.
+little data), and then Climb is exactly as in section 12.
 
 **The words.** Each word of a portion is, with the chance `WeakShare = 0.5`,
 drawn from the words that contain a weak pair, else from all words; both
@@ -1185,7 +1139,7 @@ practising a pair makes it faster, and how fast, is a question for real data
 (the raw keys of every round make it measurable later).
 
 
-## 14. Freetype, the third mode
+## 13. Freetype, the third mode
 
 Freetype is for just typing, as on monkeytype: nothing adapts and nothing
 is learned. The typist picks a word list, "the n most common words" with n
@@ -1234,7 +1188,7 @@ never depends on which way was taken (`TestDraw_OddsAreTheWeights`).
 
 **The long list** (`data/langs/en/free.txt`, built by
 `tools/wordlists/free.py`). The 2000 words of learning come from subtitle
-counts with a hand-made block list (section 12). Past a few thousand words
+counts with a hand-made block list (section 11). Past a few thousand words
 those counts are full of names, slang and fragments, too many to block by
 hand, so the long list adds a spelling dictionary: a word is kept only if
 the Hunspell dictionary of the language (en_US, from SCOWL) accepts it in

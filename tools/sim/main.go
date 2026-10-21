@@ -1,5 +1,5 @@
 // Command sim runs the strategy simulation (internal/sim) on the real word
-// lists and prints a table for the thesis. Run it from the repository root:
+// lists and prints a table of the results. Run it from the repository root:
 //
 //	go run ./tools/sim              # all languages
 //	go run ./tools/sim -lang en     # one language
@@ -9,7 +9,7 @@
 // It is a research tool, not part of the app: it reads data/ from disk.
 // The numbers it uses come from internal/config (Engine, Words, Sim); the
 // flags only override them for an experiment. What the columns mean and
-// how to read the results is in docs/ALGORITHM.md, section 11.1.
+// how to read the results is in docs/ALGORITHM.md, section 10.
 //
 // To add a column (a new metric): compute it in internal/sim (Result or
 // Variety), add its title to both header lines in runLanguage, and print it

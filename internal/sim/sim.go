@@ -1,5 +1,5 @@
-// Package sim is a SIMULATION for the evaluation chapter of the thesis:
-// does the adaptive word choice really teach faster than simpler choices?
+// Package sim is a SIMULATION of made-up typists: does the adaptive word
+// choice really teach faster than simpler choices?
 //
 // A simulated typist has a hidden error probability and a hidden time for
 // every letter. Each time it types a letter, that letter gets a little better.
@@ -22,7 +22,7 @@
 // reported as assumptions; the simulation compares strategies under the
 // same assumptions, it does not predict real people.
 //
-// The method and the results are in docs/ALGORITHM.md, section 11.1.
+// The method and the results are in docs/ALGORITHM.md, section 10.
 // Only tools/sim (go run ./tools/sim) and the tests use this package; the
 // app never does. It imports only internal/engine, and drives it exactly as
 // internal/api does (engine.Apply, then Generator.NextUnlocked).

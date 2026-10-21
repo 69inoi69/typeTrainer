@@ -2,7 +2,7 @@
 // how many rounds a letter still needs to be mastered. It reads only the
 // letter's numbers after each of its last rounds: its pace of presses, its
 // recent mistakes, and a straight line through its speed (least squares).
-// It changes nothing in the model and the word choice never sees it. docs/ALGORITHM.md section 6.2; how good it is: section 11.1
+// It changes nothing in the model and the word choice never sees it. docs/ALGORITHM.md section 6.2; how good it is: section 10
 // ("Forecast").
 
 package engine

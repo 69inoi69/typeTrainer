@@ -87,7 +87,7 @@ func Default() Config {
 		// the last 20 presses, so 10 rounds of a few presses each are its
 		// recent trend), from 3 rounds on; beyond 50 rounds it only says
 		// "more than 50". Chosen with the simulation (tools/sim,
-		// docs/ALGORITHM.md 11.1): off by 1.2 rounds on average, and with
+		// docs/ALGORITHM.md section 10): off by 1.2 rounds on average, and with
 		// an answer more often than 6 rounds or a minimum of 5.
 		Forecast:       engine.ForecastParams{Window: 10, MinRounds: 3, MaxRounds: 50},
 		ConfusionShown: 6, // a short list to act on, not a table
@@ -180,7 +180,7 @@ func Default() Config {
 			RecentWords:   20,  // "do not repeat" looks at the last 20 words
 			RepeatPenalty: 0.3, // a word used recently is rarer, as in learning
 
-			// The levels (docs/ALGORITHM.md section 13; owner, 2026-10-20: ten
+			// The levels (docs/ALGORITHM.md section 12; owner, 2026-10-20: ten
 			// levels, words only, speed never counts). Each level brings
 			// rarer, longer words: the average word grows from 4.0 letters
 			// (200) to 7.3 (25 000). Levels 1, 3, 6, 8 and 10 are monkeytype's
@@ -217,7 +217,7 @@ func Default() Config {
 			SentenceTries: 20, // a sentence of the round comes again only on a very short list
 		},
 		// A made-up typist: assumptions of the simulation, not measured values.
-		// docs/ALGORITHM.md section 11 explains them.
+		// docs/ALGORITHM.md section 10 explains them.
 		Sim: sim.Params{
 			ErrMin: 0.03, ErrMax: 0.30, // some letters almost fine, some wrong every 3rd time
 			TimeMin: 350, TimeMax: 900, // from just above 30 WPM to hunting for the key

@@ -1065,7 +1065,7 @@ function restCheck(seconds) {
 // /freeplay/results) with the level it was typed at, never to the letter
 // statistics. The answer says what the round counted for and where the
 // next one starts (freeplay.Standing).
-// What the round is typed on, stored with it (recorded only, for the thesis:
+// What the round is typed on, stored with it (recorded only, for later:
 // phone rounds may later count differently, docs/ALGORITHM.md section 9)
 const device = () => (isTouch() ? "touch" : "keyboard");
 
