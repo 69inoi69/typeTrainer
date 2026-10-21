@@ -57,6 +57,7 @@ func roundPct(v float64) float64 {
 // shows (web/letters.js letterProgress turns them into its colour).
 type LetterState struct {
 	Count     int     `json:"count"`     // presses so far
+	Mistakes  int     `json:"mistakes"`  // presses with a mistake so far (for the forecast)
 	ErrorRate float64 `json:"errorRate"` // engine.KeyStat.ErrEMA, 0..1
 	AvgMs     float64 `json:"avgMs"`     // engine.KeyStat.TimeEMA, 0 = not measured yet
 	Mastered  bool    `json:"mastered"`  // engine.Mastered
@@ -70,6 +71,7 @@ type Round struct {
 	Accuracy float64        `json:"accuracy"`
 	Unlocked int            `json:"unlocked"`
 	Letters  []*LetterState `json:"letters"`
+	Lap      int            `json:"lap,omitempty"` // Learn's lap (storage.Session.Lap)
 }
 
 // LetterTimeline replays the letter model over the Learn rounds (oldest
@@ -81,22 +83,29 @@ type Round struct {
 // the last round can differ a little from the letters row.
 // A round from before the number of open letters was kept (Unlocked 0)
 // keeps the number of the round before (at least first, the first lesson).
-func LetterTimeline(sessions []storage.Session, order []string, first int, p engine.Params) []Round {
+// Each round is judged at the goal of its own lap (Session.Lap,
+// engine.Params.ForLap), and a new lap starts as the trainer starts it
+// (engine.StartLap).
+func LetterTimeline(sessions []storage.Session, order []string, first int, p engine.Params, lp engine.LapParams) []Round {
 	stats := map[string]engine.KeyStat{}
-	open := first
+	open, lap := first, 0
 	out := make([]Round, 0, len(sessions))
 	for _, s := range sessions {
+		if s.Lap > lap {
+			stats, lap = engine.StartLap(stats), s.Lap
+		}
+		p := p.ForLap(s.Lap, lp)
 		stats = engine.Apply(stats, s.Keys, p)
 		if s.Unlocked > 0 {
 			open = s.Unlocked
 		}
-		r := Round{WPM: s.WPM, Accuracy: s.Accuracy, Unlocked: open, Letters: make([]*LetterState, len(order))}
+		r := Round{WPM: s.WPM, Accuracy: s.Accuracy, Unlocked: open, Lap: s.Lap, Letters: make([]*LetterState, len(order))}
 		for i, c := range order {
 			if i >= open {
 				break
 			}
 			k := stats[c]
-			r.Letters[i] = &LetterState{Count: k.Count, ErrorRate: round3(k.ErrEMA), AvgMs: math.Round(k.TimeEMA), Mastered: engine.Mastered(k, p)}
+			r.Letters[i] = &LetterState{Count: k.Count, Mistakes: k.Mistakes, ErrorRate: round3(k.ErrEMA), AvgMs: math.Round(k.TimeEMA), Mastered: engine.Mastered(k, p)}
 		}
 		out = append(out, r)
 	}
@@ -104,6 +113,64 @@ func LetterTimeline(sessions []storage.Session, order []string, first int, p eng
 }
 
 func round3(v float64) float64 { return math.Round(v*1000) / 1000 }
+
+// Forecast is about how many rounds until the next letter opens (or, with
+// every letter open, until the lap is done): the rounds the slowest
+// waiting letter still needs (engine.RoundsToMastery), since the next
+// letter waits for all of them.
+//   - Known: there is an answer; Rounds is it, More: more than MaxRounds.
+//   - Not Known: Letter has no honest answer yet (Few: too few rounds of
+//     it, else it is not getting better).
+//   - Letter "" and not Known: no letter is waiting.
+type Forecast struct {
+	Known  bool   `json:"known"`
+	Rounds int    `json:"rounds,omitempty"`
+	More   bool   `json:"more,omitempty"`
+	Letter string `json:"letter,omitempty"`
+	Few    bool   `json:"few,omitempty"`
+}
+
+// NextForecast reads the rounds (LetterTimeline) for the open letters
+// (the first unlocked of order) that are not mastered now (stats: the
+// model as the trainer has it, at p, the goal of the current lap). Each
+// letter's points are its numbers after its rounds, the last one taken
+// from stats: the replay misses rounds dropped with Tab, the trainer
+// does not.
+func NextForecast(rounds []Round, order []string, stats map[string]engine.KeyStat, unlocked int, p engine.Params, fp engine.ForecastParams) Forecast {
+	out := Forecast{}
+	for i, c := range order[:min(unlocked, len(order))] {
+		now := stats[c]
+		if engine.Mastered(now, p) {
+			continue
+		}
+		var pts []engine.Point
+		for _, r := range rounds {
+			// a round before the letter's first press (or a round without
+			// raw keys) says nothing about its trend
+			if k := r.Letters[i]; k != nil && k.Count > 0 {
+				pts = append(pts, engine.Point{Count: k.Count, Mistakes: k.Mistakes, ErrEMA: k.ErrorRate, TimeEMA: k.AvgMs})
+			}
+		}
+		last := engine.Point{Count: now.Count, Mistakes: now.Mistakes, ErrEMA: now.ErrEMA, TimeEMA: now.TimeEMA}
+		if len(pts) > 0 {
+			pts[len(pts)-1] = last
+		} else {
+			pts = []engine.Point{last}
+		}
+		n, ok := engine.RoundsToMastery(pts, p, fp)
+		if !ok {
+			// no answer for one letter: none for the next letter either
+			return Forecast{Letter: c, Few: len(pts) < fp.MinRounds}
+		}
+		if out.Letter == "" || n > out.Rounds {
+			out = Forecast{Known: true, Rounds: n, Letter: c}
+		}
+	}
+	if out.Rounds > fp.MaxRounds {
+		out.Rounds, out.More = fp.MaxRounds, true
+	}
+	return out
+}
 
 // Confusion is a pair of keys mixed up: Want was expected, Typed pressed
 // instead, N times.

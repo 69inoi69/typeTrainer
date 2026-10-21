@@ -1064,3 +1064,98 @@ func TestApp_StatsBests(t *testing.T) {
 		t.Fatalf("bests %v, want words-10 at 60 wpm 98%% and time-30", bests)
 	}
 }
+
+// Learn's laps: when every letter is open and mastered, the next press
+// starts the next lap, whose goal is 5 wpm higher (docs/ALGORITHM.md 6.1);
+// /stats tells the lap and its goal, and the lap goes through export and
+// import. The last lap is the last: no lap above it.
+func TestApp_LearnLaps(t *testing.T) {
+	h, _, _ := newApp()
+	keys := []string{}
+	for _, c := range "abcdefghijklmnopqrstuvwxyz" {
+		// fast and clean enough for every goal up to 60 wpm (200 ms)
+		keys = append(keys, fmt.Sprintf(`"%c":{"count":50,"errEma":0.01,"timeEma":150,"timedCount":50}`, c))
+	}
+	file := `{"unlocked":26,"keys":{` + strings.Join(keys, ",") + `}}`
+	if code, out := call(t, h, "POST", "/api/v1/import?lang=en", file); code != 200 {
+		t.Fatalf("import: %d %v", code, out)
+	}
+	_, st := call(t, h, "GET", "/api/v1/stats?lang=en", "")
+	if st["lap"].(float64) != 0 || st["targetWpm"].(float64) != 30 || st["lastLap"].(float64) != 6 {
+		t.Fatalf("before: lap %v goal %v last %v", st["lap"], st["targetWpm"], st["lastLap"])
+	}
+	if st["forecast"].(map[string]any)["known"] != false {
+		t.Fatalf("no letter left to master, no forecast: %v", st["forecast"])
+	}
+	press := `{"samples":[{"char":"a","errors":0,"ms":150}]}`
+	for lap := 1; lap <= 6; lap++ {
+		_, out := call(t, h, "POST", "/api/v1/portion?lang=en", press)
+		if want := 30 + 5*float64(lap); out["newLap"] != want {
+			t.Fatalf("press %d: newLap %v, want %v", lap, out["newLap"], want)
+		}
+	}
+	_, out := call(t, h, "POST", "/api/v1/portion?lang=en", press)
+	if out["newLap"] != 0.0 {
+		t.Fatalf("after the last lap: newLap %v, want 0", out["newLap"])
+	}
+	call(t, h, "POST", "/api/v1/results?lang=en", `{"samples":[],"chars":30,"wpm":50,"accuracy":100}`)
+	_, st = call(t, h, "GET", "/api/v1/stats?lang=en", "")
+	if st["lap"].(float64) != 6 || st["targetWpm"].(float64) != 60 {
+		t.Fatalf("after: lap %v goal %v", st["lap"], st["targetWpm"])
+	}
+	if s := st["sessions"].([]any)[0].(map[string]any); s["lap"] != 6.0 {
+		t.Fatalf("the round keeps its lap: %v", s["lap"])
+	}
+
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, guestRequest("GET", "/api/v1/export?lang=en", ""))
+	exported := rec.Body.String()
+	if !strings.Contains(exported, `"lap":6`) {
+		t.Fatalf("export lost the lap: %s", exported)
+	}
+	call(t, h, "POST", "/api/v1/reset?lang=en", "")
+	call(t, h, "POST", "/api/v1/import?lang=en", exported)
+	if _, st = call(t, h, "GET", "/api/v1/stats?lang=en", ""); st["lap"].(float64) != 6 {
+		t.Fatalf("import lost the lap: %v", st["lap"])
+	}
+	for _, bad := range []string{`{"lap":7}`, `{"lap":-1}`, `{"sessions":[{"wpm":30,"accuracy":90,"lap":7}]}`} {
+		if code, _ := call(t, h, "POST", "/api/v1/import?lang=en", bad); code != 400 {
+			t.Errorf("%s: want 400, got %d", bad, code)
+		}
+	}
+}
+
+// /stats has the forecast of the Learn panel: after a few rounds in which
+// every open letter got faster it has a number of rounds.
+func TestApp_LearnForecast(t *testing.T) {
+	h, _, _ := newApp()
+	_, st := call(t, h, "GET", "/api/v1/stats?lang=en", "")
+	if f := st["forecast"].(map[string]any); f["known"] != false {
+		t.Fatalf("no rounds yet, no forecast: %v", f)
+	}
+	var open []string
+	for _, k := range st["keys"].([]any) {
+		if k := k.(map[string]any); k["unlocked"] == true {
+			open = append(open, k["char"].(string))
+		}
+	}
+	for i := range 8 {
+		ms := 900 - 60*i // every open letter gets faster round by round
+		var samples []string
+		for _, c := range open {
+			for range 3 {
+				samples = append(samples, fmt.Sprintf(`{"char":%q,"errors":0,"ms":%d}`, c, ms))
+			}
+		}
+		all := strings.Join(samples, ",")
+		body := `{"samples":[` + all + `],"keys":[` + all + `],"chars":30,"wpm":20,"accuracy":100}`
+		if code, out := call(t, h, "POST", "/api/v1/results?lang=en", body); code != 200 {
+			t.Fatalf("results: %d %v", code, out)
+		}
+	}
+	_, st = call(t, h, "GET", "/api/v1/stats?lang=en", "")
+	f := st["forecast"].(map[string]any)
+	if f["known"] != true || f["rounds"].(float64) < 1 {
+		t.Fatalf("forecast after 8 improving rounds of %v: %v", open, f)
+	}
+}

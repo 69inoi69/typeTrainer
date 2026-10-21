@@ -41,6 +41,7 @@ type key struct{ user, lang string }
 type langData struct {
 	stats    map[string]engine.KeyStat
 	unlocked int
+	lap      int
 	group    string // study group ("" or GroupRandom)
 	sessions []Session
 
@@ -98,6 +99,19 @@ func (m *MemoryStore) SetUnlocked(user, lang string, n int) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.data(user, lang).unlocked = n
+	return nil
+}
+
+func (m *MemoryStore) Lap(user, lang string) (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.data(user, lang).lap, nil
+}
+
+func (m *MemoryStore) SetLap(user, lang string, n int) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.data(user, lang).lap = n
 	return nil
 }
 

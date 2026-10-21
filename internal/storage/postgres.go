@@ -164,7 +164,7 @@ func (p *PostgresStore) SaveKeyStats(user, lang string, stats map[string]engine.
 	})
 }
 
-// ---------- progress: unlocked letters and the typing test ----------
+// ---------- progress: unlocked letters, the lap and the study group ----------
 
 func (p *PostgresStore) Unlocked(user, lang string) (int, error) {
 	var n int
@@ -179,6 +179,21 @@ func (p *PostgresStore) Unlocked(user, lang string) (int, error) {
 func (p *PostgresStore) SetUnlocked(user, lang string, n int) error {
 	_, err := p.db.Exec(`INSERT INTO progress (user_id, lang, unlocked) VALUES ($1, $2, $3)
 		ON CONFLICT (user_id, lang) DO UPDATE SET unlocked = EXCLUDED.unlocked`, user, lang, n)
+	return err
+}
+
+func (p *PostgresStore) Lap(user, lang string) (int, error) {
+	var n int
+	err := p.db.QueryRow(`SELECT lap FROM progress WHERE user_id = $1 AND lang = $2`, user, lang).Scan(&n)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, nil
+	}
+	return n, err
+}
+
+func (p *PostgresStore) SetLap(user, lang string, n int) error {
+	_, err := p.db.Exec(`INSERT INTO progress (user_id, lang, lap) VALUES ($1, $2, $3)
+		ON CONFLICT (user_id, lang) DO UPDATE SET lap = EXCLUDED.lap`, user, lang, n)
 	return err
 }
 
@@ -215,9 +230,9 @@ func (p *PostgresStore) addSession(user, lang, mode string, s Session) error {
 	}
 	s = s.WithLength()
 	_, err := p.db.Exec(`INSERT INTO sessions
-		(user_id, lang, mode, wpm, accuracy, chars, consistency, unlocked, keys, finished_at, length, study_group, device, level)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
-		user, lang, mode, s.WPM, s.Accuracy, s.Chars, s.Consistency, s.Unlocked, keys, s.FinishedAt, s.Length, s.Group, s.Device, s.Level)
+		(user_id, lang, mode, wpm, accuracy, chars, consistency, unlocked, keys, finished_at, length, study_group, device, level, lap)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+		user, lang, mode, s.WPM, s.Accuracy, s.Chars, s.Consistency, s.Unlocked, keys, s.FinishedAt, s.Length, s.Group, s.Device, s.Level, s.Lap)
 	return err
 }
 
@@ -225,7 +240,7 @@ func (p *PostgresStore) addSession(user, lang, mode string, s Session) error {
 // the order they were stored in). In this query and the two below, an empty
 // length means "every length".
 func (p *PostgresStore) recentSessions(user, lang, mode, length string, limit int) ([]Session, error) {
-	rows, err := p.db.Query(`SELECT wpm, accuracy, chars, consistency, unlocked, keys, finished_at, length, study_group, device, level
+	rows, err := p.db.Query(`SELECT wpm, accuracy, chars, consistency, unlocked, keys, finished_at, length, study_group, device, level, lap
 		FROM sessions WHERE user_id = $1 AND lang = $2 AND mode = $3 AND ($4 = '' OR length = $4)
 		ORDER BY id DESC LIMIT $5`, user, lang, mode, length, limit)
 	if err != nil {
@@ -237,7 +252,7 @@ func (p *PostgresStore) recentSessions(user, lang, mode, length string, limit in
 		var s Session
 		var consistency sql.NullFloat64
 		var keys []byte
-		if err := rows.Scan(&s.WPM, &s.Accuracy, &s.Chars, &consistency, &s.Unlocked, &keys, &s.FinishedAt, &s.Length, &s.Group, &s.Device, &s.Level); err != nil {
+		if err := rows.Scan(&s.WPM, &s.Accuracy, &s.Chars, &consistency, &s.Unlocked, &keys, &s.FinishedAt, &s.Length, &s.Group, &s.Device, &s.Level, &s.Lap); err != nil {
 			return nil, err
 		}
 		if consistency.Valid {
@@ -256,7 +271,7 @@ func (p *PostgresStore) recentSessions(user, lang, mode, length string, limit in
 // bestRounds: one row per length, the fastest (DISTINCT ON keeps the first
 // row of each length in this order; of equal WPM the earliest stored).
 func (p *PostgresStore) bestRounds(user, lang, mode string) (map[string]Session, error) {
-	rows, err := p.db.Query(`SELECT DISTINCT ON (length) wpm, accuracy, chars, consistency, unlocked, finished_at, length, study_group, device, level
+	rows, err := p.db.Query(`SELECT DISTINCT ON (length) wpm, accuracy, chars, consistency, unlocked, finished_at, length, study_group, device, level, lap
 		FROM sessions WHERE user_id = $1 AND lang = $2 AND mode = $3
 		ORDER BY length, wpm DESC, id`, user, lang, mode)
 	if err != nil {
@@ -267,7 +282,7 @@ func (p *PostgresStore) bestRounds(user, lang, mode string) (map[string]Session,
 	for rows.Next() {
 		var s Session
 		var consistency sql.NullFloat64
-		if err := rows.Scan(&s.WPM, &s.Accuracy, &s.Chars, &consistency, &s.Unlocked, &s.FinishedAt, &s.Length, &s.Group, &s.Device, &s.Level); err != nil {
+		if err := rows.Scan(&s.WPM, &s.Accuracy, &s.Chars, &consistency, &s.Unlocked, &s.FinishedAt, &s.Length, &s.Group, &s.Device, &s.Level, &s.Lap); err != nil {
 			return nil, err
 		}
 		if consistency.Valid {

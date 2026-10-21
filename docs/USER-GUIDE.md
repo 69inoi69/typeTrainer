@@ -275,7 +275,14 @@ the normal server, it shows yours.
   tells what the round did. The first line: the last round's speed and
   accuracy, each with an arrow when it differs from your average of the
   10 rounds before it (from 3 rounds on, the same round length only; hover
-  the arrow for the average); an accuracy streak ("4 rounds in a row at 97%
+  the arrow for the average); **Next letter ≈ 6 rounds**, a guess of how
+  many rounds the next letter is away (from the trend of your last 6 rounds
+  of each letter still to master; the slowest decides, since the next
+  letter waits for all of them; "50+" for a long way). It shows nothing
+  rather than a wild guess: while a letter has fewer than 3 rounds, or
+  is not getting better (its recent mistakes are not under 5%, or it is
+  not getting faster);
+  after Learn complete, the **Lap** ("2 of 7"); an accuracy streak ("4 rounds in a row at 97%
   or better", the highest of 100, 98, 97, 95 and 90% reached two rounds in
   a row or more); and **Today**, your typing time today in every mode
   against the **daily goal** (15 minutes unless you change it in Settings;
@@ -285,10 +292,15 @@ the normal server, it shows yours.
   the numbers ("It still needs fewer mistakes (8%, aim under 5%) and more
   speed (23 of 30 wpm)"). Right after a round with news, the news takes
   that line until you start typing: a new letter, the letters you
-  mastered, your fastest round of this length, and once per language
-  "Every letter is open" and "Learn is complete" (hover them for what comes
-  next: the words keep growing towards the 2000 most common, and Climb is
-  the harder road). The panel steps back while you type. Hovering a gold
+  mastered, your fastest round of this length, once per language
+  "Every letter is open", and a new lap. **Laps** (after keybr): when every
+  letter is mastered at 30 wpm, Learn is complete and the next lap starts
+  at once: the same letters, the goal 5 wpm higher (35, 40, ... up to 60
+  wpm, 7 laps in all). The letters that are already that fast turn green
+  again with their next press, the slow ones come up more until they catch
+  up; no letter closes. After the last lap the news says every lap is done
+  (hover it for what comes next: the words keep growing towards the 2000
+  most common, and Climb and Freetype are there). The panel steps back while you type. Hovering a gold
   letter in the text says why it is gold.
   Everything below is the
   result of Climb and Freetype. In Climb the row of facts ends with the
@@ -391,7 +403,9 @@ the normal server, it shows yours.
     for every pair that happened at least three times (counted from
     2026-10-21 on: older rounds did not keep which key was pressed). The
     letters are worked out again from your saved rounds, so rounds dropped
-    with Tab are not in the picture;
+    with Tab are not in the picture. Each round is judged at the goal of
+    its own lap. Under the grid: the lap (after Learn complete) and the
+    same forecast as on the Learn panel;
   - side by side (learning only): a **difficulty keyboard** (grey keys, from
     gold to red the harder the letter is for you, against your hardest
     letter; dashed = no data yet) and every letter as a small chip from

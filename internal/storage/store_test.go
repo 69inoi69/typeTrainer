@@ -34,6 +34,7 @@ var storeTests = map[string]func(*testing.T, Store){
 	"Lengths":                   testLengths,
 	"LettersTyped":              testLettersTyped,
 	"Group":                     testGroup,
+	"Lap":                       testLap,
 	"Device":                    testDevice,
 	"PracticeDays":              testPracticeDays,
 	"BestRounds":                testBestRounds,
@@ -388,6 +389,39 @@ func testLettersTyped(t *testing.T, m Store) {
 
 // The study group is kept per language, does not touch the rest of the
 // progress, is stored with each round, and Reset clears it.
+// Learn's lap: 0 for a new user, per language, beside the other progress
+// fields, kept with each round, and gone with a reset.
+func testLap(t *testing.T, m Store) {
+	if n, err := m.Lap(u, "en"); err != nil || n != 0 {
+		t.Fatalf("new user: lap %d, %v", n, err)
+	}
+	m.SetUnlocked(u, "en", 26)
+	m.SetGroup(u, "en", GroupRandom)
+	if err := m.SetLap(u, "en", 2); err != nil {
+		t.Fatal(err)
+	}
+	if n, _ := m.Lap(u, "en"); n != 2 {
+		t.Fatalf("lap = %d, want 2", n)
+	}
+	if n, _ := m.Unlocked(u, "en"); n != 26 {
+		t.Fatalf("the lap changed unlocked to %d", n)
+	}
+	if g, _ := m.Group(u, "en"); g != GroupRandom {
+		t.Fatalf("the lap changed the group to %q", g)
+	}
+	if n, _ := m.Lap(u, "pl"); n != 0 {
+		t.Fatalf("another language: lap %d", n)
+	}
+	m.AddSession(u, "en", Session{WPM: 40, Lap: 2})
+	if got, _ := m.RecentSessions(u, "en", "", 1); len(got) != 1 || got[0].Lap != 2 {
+		t.Fatalf("session lap lost: %+v", got)
+	}
+	m.Reset(u, "en")
+	if n, _ := m.Lap(u, "en"); n != 0 {
+		t.Fatalf("after reset: lap %d", n)
+	}
+}
+
 func testGroup(t *testing.T, m Store) {
 	if g, err := m.Group(u, "en"); err != nil || g != "" {
 		t.Fatalf("new user: %q, %v; want \"\"", g, err)

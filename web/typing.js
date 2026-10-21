@@ -182,6 +182,7 @@ let endAt = -1;              // a words round: position of the space after its l
 let wordsTyped = 0;          // words finished in this round
 let roundBefore = null;      // the statistics when the round started (for the result)
 let roundNewLetter = "";     // a letter that opened during the round
+let roundNewLap = 0;         // the goal (wpm) of a lap that started during the round
 // Words appear one at a time: the portions come from the server as before,
 // but only the words up to SHOWN_AHEAD after the current one are visible;
 // finishing a word reveals exactly one more (it fades in). Hidden words keep
@@ -305,6 +306,7 @@ function portionDone(k) {
     await refreshStats();
     if (id !== streamId) return;
     if (res.newLetter) newLetter(res.newLetter);
+    if (res.newLap) roundNewLap = res.newLap;
     renderTop();
   }).catch((err) => { console.error(err); el.hint.textContent = t("err.server"); });
 }
@@ -359,7 +361,7 @@ function resetStream() {
   queue = Promise.resolve();
   S.text = ""; S.pos = 0; wordClean = true; wordsTyped = 0;
   state = new Uint8Array(0); focusMask = new Uint8Array(0); records = []; spans = [];
-  portions = []; sentUpTo = 0; current = 0; roundNewLetter = ""; wordsLoaded = 0; endAt = -1;
+  portions = []; sentUpTo = 0; current = 0; roundNewLetter = ""; roundNewLap = 0; wordsLoaded = 0; endAt = -1;
   wordOf = new Int32Array(0); revealAt = 0; shownWords = 0;
   extras = new Map(); correctChars = 0; afterBackspace = false; afterPause = false;
   pausedAt = null; el.textBox.classList.remove("snap", "paused");
@@ -1019,10 +1021,11 @@ async function finishRound(byLastKey = false) {
     firstRoundDone();
     await refreshStats();
     if (res.newLetter) newLetter(res.newLetter);
+    if (res.newLap) roundNewLap = res.newLap;
 
     const r = compareStats(roundBefore, S.lastStats);
     markMastered(r.mastered);                 // their chips shine when the next round is drawn
-    const milestone = roundNews({ ...r, wpm, newLetter: roundNewLetter });
+    const milestone = roundNews({ ...r, wpm, newLetter: roundNewLetter, newLap: roundNewLap });
     if (r.best || milestone) FX.burstFrom(el.wpm, 80);
     refreshActivity();      // today's minutes on the panel (it draws itself when they come)
     // the panel has the round's numbers now; the live line starts again at 0

@@ -33,6 +33,7 @@ type langExport struct {
 	Keys     map[string]engine.KeyStat `json:"keys"`            // the raw statistics per letter
 	Sessions []storage.Session         `json:"sessions"`        // finished exercises, OLDEST first
 	Group    string                    `json:"group,omitempty"` // study group ("" = the normal app)
+	Lap      int                       `json:"lap,omitempty"`   // Learn's lap (0 = the first; absent in older files)
 	// Climb, the second mode: absent in files from before it existed
 	// (files from when it was free practice may also carry "testPassed",
 	// the flag of the typing test that is gone: it is ignored)
@@ -103,6 +104,11 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request, user strin
 		serverError(w, err)
 		return
 	}
+	lap, err := s.store.Lap(user, id)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
 	free, err := s.allFreeplay(user, id, storage.ModeClimb)
 	if err != nil {
 		serverError(w, err)
@@ -121,7 +127,7 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request, user strin
 		}
 	}
 	writeJSON(w, http.StatusOK, langExport{
-		Unlocked: unlocked, Keys: keys, Sessions: oldestFirst(newestFirst), Group: group,
+		Unlocked: unlocked, Keys: keys, Sessions: oldestFirst(newestFirst), Group: group, Lap: lap,
 		Freeplay: &freeplayExport{Sessions: free}, ClimbLevels: len(s.cfg.Freeplay.Levels), Freetype: freetype,
 	})
 }
@@ -154,7 +160,7 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request, user strin
 		n, v, ok := storage.ParseFreetypeKey(key)
 		return ok && s.validVariant(l, n, v)
 	}
-	if msg := validateImport(in, s.cfg.MaxImportSessions, s.cfg.MaxEvents, len(l.Gen.Order()), len(s.cfg.Freeplay.Levels), l.Info.Alphabet, s.validLength, okFreetype, s.freetypeAlphabet(l.Info.Alphabet)); msg != "" {
+	if msg := validateImport(in, s.cfg.MaxImportSessions, s.cfg.MaxEvents, len(l.Gen.Order()), len(s.cfg.Freeplay.Levels), s.cfg.Engine.LastLap(s.cfg.Laps), l.Info.Alphabet, s.validLength, okFreetype, s.freetypeAlphabet(l.Info.Alphabet)); msg != "" {
 		badRequest(w, msg)
 		return
 	}
@@ -174,6 +180,10 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request, user strin
 		return
 	}
 	if err := s.store.SetUnlocked(user, id, in.Unlocked); err != nil {
+		serverError(w, err)
+		return
+	}
+	if err := s.store.SetLap(user, id, in.Lap); err != nil {
 		serverError(w, err)
 		return
 	}

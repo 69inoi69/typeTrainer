@@ -52,6 +52,10 @@ type Session struct {
 	// number; freeplay.Standing reads the next level from these). 0 in the
 	// other modes. Before 2026-10-20 it was 0..1 (migration 008).
 	Level float64 `json:"level,omitempty"`
+	// Lap: Learn's lap the round was typed in (0 = the first; learning
+	// only): the goal speed of that round, so a replay of the letter model
+	// (history.LetterTimeline) judges each round by its own goal.
+	Lap int `json:"lap,omitempty"`
 	// Group: the study group the round was typed in (learning only):
 	// "" = the adaptive trainer, GroupRandom = the control group.
 	Group string `json:"group,omitempty"`
@@ -230,6 +234,10 @@ type Store interface {
 	// Unlocked is how many letters of the unlock order are open (0 = new user).
 	Unlocked(user, lang string) (int, error)
 	SetUnlocked(user, lang string, n int) error
+	// Lap is Learn's lap (0 = the first, at the configured goal speed; each
+	// lap after Learn complete raises the goal, internal/api lapParams).
+	Lap(user, lang string) (int, error)
+	SetLap(user, lang string, n int) error
 
 	// History of learning. length picks rounds of one length ("words-30");
 	// "" = all. A session without a length is stored as DefaultLength.

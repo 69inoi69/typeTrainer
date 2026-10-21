@@ -3,6 +3,7 @@ package sim_test
 import (
 	"math"
 	"math/rand"
+	"os"
 	"strings"
 	"testing"
 
@@ -260,3 +261,48 @@ func TestNewExpert_StartsNearTheGoal(t *testing.T) {
 }
 
 func near(a, b float64) bool { return math.Abs(a-b) < 1e-9 }
+
+// Summarize: errors in rounds, the share close enough, the hopeful ones,
+// "more than MaxRounds" kept apart; nothing to sum up gives zeros.
+func TestSummarize(t *testing.T) {
+	fp := engine.ForecastParams{Window: 6, MinRounds: 3, MaxRounds: 50}
+	if s := sim.Summarize(nil, fp); s.N != 0 || s.MeanAbs != 0 || s.Shown != 0 {
+		t.Fatalf("empty: %+v", s)
+	}
+	runs := []sim.ForecastRun{{
+		Checks: []sim.ForecastCheck{
+			{Said: 3, Actual: 3},   // right
+			{Said: 2, Actual: 5},   // 3 early: too hopeful, not within max(2, 1.25)
+			{Said: 14, Actual: 10}, // 4 late: more than max(2, 2.5)
+			{Said: 51, Actual: 60, More: true},
+		},
+		Rounds: 10, Answered: 4,
+	}}
+	s := sim.Summarize(runs, fp)
+	if s.N != 3 || s.More != 1 || s.MoreRight != 1 || s.Shown != 0.4 {
+		t.Fatalf("counts: %+v", s)
+	}
+	if math.Abs(s.MeanAbs-7.0/3) > 1e-9 || s.MedianAbs != 3 || math.Abs(s.Within-1.0/3) > 1e-9 || math.Abs(s.Early-1.0/3) > 1e-9 {
+		t.Fatalf("numbers: %+v", s)
+	}
+}
+
+// Forecasts on a real run: every check has a forecast of at least 1 round
+// and an actual wait of at least 1, and some rounds had an answer.
+func TestForecasts(t *testing.T) {
+	ep := cfg.Engine
+	list, err := os.ReadFile("../../data/langs/en/words.txt") // enough letters to open many
+	if err != nil {
+		t.Fatal(err)
+	}
+	gen := engine.NewGenerator(strings.Fields(string(list)), rand.New(rand.NewSource(1)), ep)
+	run := sim.Forecasts(gen, &sim.Stream{Gen: gen, EP: ep}, newTypist(gen.Order(), 1), ep, cfg.Forecast, 2000)
+	if run.Rounds == 0 || run.Answered == 0 || run.Answered > run.Rounds || len(run.Checks) == 0 {
+		t.Fatalf("run: %d rounds, %d answered, %d checks", run.Rounds, run.Answered, len(run.Checks))
+	}
+	for _, c := range run.Checks {
+		if c.Said < 1 || c.Actual < 1 {
+			t.Fatalf("check %+v", c)
+		}
+	}
+}
