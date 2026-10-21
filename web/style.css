@@ -1320,6 +1320,8 @@ button:disabled:active { transform: none; }
 .act-stat.hot b { color: var(--accent-text); }
 .act-stat.hot b::before { content: "🔥"; font-size: .85em; margin-right: 4px; }
 @media (max-width: 640px) { .act-stats { display: grid; grid-template-columns: repeat(2, auto); gap: 12px 28px; } }   /* phone: two by two */
+/* the period of the numbers over the legend of the calendar, on the right */
+.act-side { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
 .act-legend { display: inline-flex; align-items: center; gap: 4px; font-size: .74rem; color: var(--sub); }
 .act-legend i { width: 11px; height: 11px; border-radius: 2px; }
 .act-legend i:first-of-type { margin-left: 4px; }
@@ -1378,7 +1380,7 @@ button:disabled:active { transform: none; }
    the top layer above the window; this undoes the browser's popover look */
 .tooltip[popover] { inset: auto; margin: 0; border: 0; overflow: visible; }
 /* a sentence or two (the settings explanations) wraps */
-.tooltip.wide { white-space: normal; max-width: 24rem; line-height: 1.5; background: var(--panel-2); }   /* opaque: readable over the rows */
+.tooltip.wide { white-space: normal; width: max-content; max-width: min(24rem, calc(100vw - 24px)); line-height: 1.5; background: var(--panel-2); }   /* opaque: readable over the rows */
 .tooltip.show { opacity: 1; }
 .tooltip span { color: var(--sub); }
 

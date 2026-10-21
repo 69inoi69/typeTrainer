@@ -17,7 +17,7 @@
 // and a new round length; resetStatsPick when the stats open).
 
 import { i18nVars, t, applyI18n } from "./i18n.js";
-import { $, el, S, reducedMotion, levelWords, listLabel } from "./state.js";
+import { $, el, S, store, reducedMotion, levelWords, listLabel } from "./state.js";
 import { getJSON } from "./api.js";
 import { LENGTHS, lengthLabel, lengthFor, firstRoundDone } from "./settings.js";
 
@@ -78,7 +78,7 @@ export function renderStats() {
   const sessions = [...s.sessions].reverse(); // oldest first
   // nothing to share before the first round of this length
   document.getElementById("btn-image").disabled = !s.sessionCount;
-  el.tiles.innerHTML = tiles(sessions, s.sessionCount, S.settings.goal, mode === "climb" ? s.place?.level : null);
+  el.tiles.innerHTML = tiles(sessions, s.sessionCount, S.settings.goal, mode === "climb" ? s.place?.level : null, s.streaks ?? []);
   drawActivity();
   if (activityStale) loadActivity();
 
@@ -93,7 +93,7 @@ export function renderStats() {
 // moved against the 10 rounds before (from 5 of them on), and the personal
 // goal when there is one. The value comes first in the HTML (screen readers:
 // value, then what it is); style.css puts the label on top.
-function tiles(sessions, count, goal, level) {
+function tiles(sessions, count, goal, level, streaks) {
   const avg = (arr, f) => arr.length ? arr.reduce((a, x) => a + f(x), 0) / arr.length : null;
   const last = sessions.slice(-10), before = sessions.slice(-20, -10);
   const num = (v, unit = "") => v === null ? "—" : Math.round(v) + (unit && `<i>${unit}</i>`);
@@ -118,6 +118,17 @@ function tiles(sessions, count, goal, level) {
     tile(num(avg(last, (x) => x.accuracy), "%"), t("tile.acc"), last10((x) => x.accuracy)),
     tile(num(avg(last.filter((x) => x.consistency != null), (x) => x.consistency), "%"), t("tile.cons"), last10((x) => x.consistency)),
   ];
+  // the accuracy streaks (keybr's): the most rounds in a row at 95%+ in
+  // big, the stricter ones under it, the run going on now in the tooltip;
+  // they reward care, not speed
+  if (count && streaks.length) {
+    const [first, ...rest] = streaks;
+    const meta = rest.map((x) => t("tile.streakAt", { min: x.min, n: x.longest })).join(" · ");
+    const now = streaks.filter((x) => x.current).at(-1);   // the strictest one going on now
+    const tip = t("tile.streakTip", { min: first.min }) + " " +
+      (now ? t("tile.streakNow", { n: now.current, min: now.min }) : t("tile.streakNone"));
+    out.push(`<div class="tile" data-tip-text="${tip}"><b>${first.longest}</b><small>${t("tile.streak", { min: first.min })}</small><span class="meta">${meta}</span></div>`);
+  }
   if (goal) {
     // how far the recent average is from it, and a bar of the way there
     const left = wpm === null ? null : Math.max(0, Math.round(goal - wpm));
@@ -163,11 +174,20 @@ function dayStreak(byDate) {
   while (byDate.has(dayKey(d))) { n++; d.setDate(d.getDate() - 1); }
   return n;
 }
+// The numbers on top count today, the last 7 days (today among them) or
+// all time (keybr has All time and Today; a week shows growth a day cannot).
+// The choice is remembered (tt.actPeriod). Days in a row and the calendar
+// always look at every day.
+const PERIODS = { today: 1, week: 7, all: 0 };   // days counted, 0 = every one
+let period = PERIODS[store.get("tt.actPeriod")] !== undefined ? store.get("tt.actPeriod") : "all";
 function drawActivity() {
   const box = document.getElementById("activity");
   const days = activity ?? [];
   const byDate = new Map(days.map((x) => [x.date, x]));
-  const sum = (f) => days.reduce((a, x) => a + f(x), 0);
+  const from = new Date();
+  from.setDate(from.getDate() - PERIODS[period] + 1);
+  const counted = PERIODS[period] ? days.filter((x) => x.date >= dayKey(from)) : days;
+  const sum = (f) => counted.reduce((a, x) => a + f(x), 0);
   const streak = dayStreak(byDate);
   const stat = (value, label, cls = "") => `<div class="act-stat${cls}"><b>${value}</b><small>${t(label)}</small></div>`;
   // the calendar: columns are weeks (Monday on top), the last one is this
@@ -203,12 +223,14 @@ function drawActivity() {
   const dayName = new Intl.DateTimeFormat(lang, { weekday: "short" });
   const dayNames = [0, 2, 4].map((i) => `<span style="grid-row:${i + 1}">${dayName.format(new Date(2026, 9, 19 + i))}</span>`).join("");
   const legend = `<span class="act-legend">${t("act.less")}<i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i>${t("act.more")}</span>`;
-  box.innerHTML = `<div class="act-head"><div class="act-stats" data-tip="act.allTime">` +
+  const periods = `<div class="seg act-period" role="group" aria-label="${t("act.period")}">` +
+    Object.keys(PERIODS).map((p) => `<button type="button" data-period="${p}" aria-pressed="${p === period}">${t("act." + p)}</button>`).join("") + `</div>`;
+  box.innerHTML = `<div class="act-head"><div class="act-stats" data-tip="act.${period}Tip">` +
     stat(duration(sum((x) => x.seconds)), "act.time") +
     stat(sum((x) => x.rounds), "act.rounds") +
     stat(Math.round(sum((x) => x.chars) / 5), "act.words") +
     stat(`${streak}`, "act.streak", streak ? " hot" : "") +
-    `</div>${legend}</div>` +
+    `</div><div class="act-side">${periods}${legend}</div></div>` +
     `<div class="act-cal" style="--weeks:${weeks}"><div class="act-months">${months}</div>` +
     `<div class="act-days">${dayNames}</div><div class="act-grid">${cells}</div></div>`;
 }
@@ -262,6 +284,13 @@ function renderPick(mode, list) {
     (lists.length ? `<div class="stats-lists" role="tablist" aria-label="${t("freetype.list")}">` + lists.map((n) =>
       `<button type="button" role="tab" class="wl" data-list="${n}" aria-selected="${n === list}" data-tip-text="${t("freetype.listN", { n })}">${listLabel(n)}</button>`).join("") + `</div>` : "");
 }
+document.getElementById("activity").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-period]");
+  if (!b || b.dataset.period === period) return;
+  period = b.dataset.period;
+  store.set("tt.actPeriod", period);
+  drawActivity();
+});
 pickEl.addEventListener("click", (e) => {
   const b = e.target.closest("button");
   if (!b) return;

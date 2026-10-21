@@ -37,6 +37,9 @@ type Config struct {
 	MaxRoundSeconds int
 
 	ConsistencyMinSeconds int // a round shorter than this gets no consistency (engine.Consistency)
+	// The accuracy streaks of the stats screen (history.AccuracyStreaks):
+	// the most rounds in a row at or above each of these accuracies, %.
+	StreakAccuracies []float64
 	// Accounts: whether /api/v1/auth/* works. Set by setup.go, not here:
 	// on GitHub Pages (WebAssembly) there are no cookies, so it is off.
 	Accounts bool
@@ -67,6 +70,8 @@ func Default() Config {
 		MaxRoundSeconds: 600, // ...and 15 to 90 seconds
 
 		ConsistencyMinSeconds: 5, // under 5 full seconds there is too little to judge the pace
+		// keybr's three: 95 % is good typing, 97 % careful, 100 % no mistake at all
+		StreakAccuracies: []float64{95, 97, 100},
 		Auth: auth.Params{
 			// PBKDF2-SHA256 rounds per password check: the OWASP recommendation
 			// (2023). About 0.3 s on a laptop: nothing for one login, very slow
