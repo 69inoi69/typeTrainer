@@ -371,7 +371,7 @@ database would need a transaction around it instead (`SELECT ... FOR UPDATE`).
 `postgres://user:password@localhost:5432/typetrainer`), `openStore` in
 `build_server.go` opens `storage.PostgresStore` instead, and the log says
 `storage: PostgreSQL`. The address is not in the code, so no password ends up
-in git. How to install PostgreSQL on Windows: USER-GUIDE.md.
+in git. How to install PostgreSQL on Windows: CONTRIBUTING.md.
 
 - **One third-party module.** The code uses only the standard `database/sql`
   package; `github.com/jackc/pgx/v5/stdlib` is imported only to register the

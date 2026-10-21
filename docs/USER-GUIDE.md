@@ -1,28 +1,8 @@
 # User guide
 
 Everything the trainer does, screen by screen. For a quick overview see the
-[README](../README.md); for the math behind it see [ALGORITHM.md](ALGORITHM.md).
-
-## Running it on Windows (from zero)
-
-1. **Install Go** (once): download the Windows installer from
-   <https://go.dev/dl/> (1.25 or newer) and click Next until it finishes.
-2. **Check it works.** Open a *new* PowerShell window and run `go version`.
-3. **Go to the project folder**, for example
-   `cd C:\Users\YOUR_NAME\Desktop\typetrainer`.
-4. **Start the server:** `go run .`. After a few seconds it prints
-   `typeTrainer running. Open http://localhost:3000 in your browser`.
-   If Windows asks about the firewall, "Allow" is fine.
-5. **Open** <http://localhost:3000>. Always use this address: double-clicking
-   `web/index.html` opens the page without the server, with no words and no
-   statistics. If the port is taken, change `Addr` in
-   `internal/config/config.go`.
-6. **Stop** the server with `Ctrl + C`. Without a database (below) progress
-   is lost then: export it first (**Settings → Data → Export**) and import it
-   back next time.
-
-After `git pull` restart the server: the web files are built into the program.
-Optional: `go build -o typeTrainer.exe .` makes one `.exe` to double-click.
+[README](../README.md); for the math behind it see [ALGORITHM.md](ALGORITHM.md);
+to run it yourself see [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Phones and tablets
 
@@ -359,7 +339,7 @@ the normal server, it shows yours.
   browser is its own guest, remembered by a cookie: clearing the browser's
   cookies starts a new guest from zero. A new account starts from the
   first letters. Accounts survive a restart only with a database (see
-  "Keeping progress in PostgreSQL"). The picture (a colour, or your own image) is kept only in
+  CONTRIBUTING.md, "With PostgreSQL"). The picture (a colour, or your own image) is kept only in
   this browser. On the website (GitHub Pages) there are no accounts: you can
   set a name and a picture, kept only in this browser; "reset" forgets them.
 - **stats** in the navigation (or `Shift + Tab`) opens the statistics screen,
@@ -424,7 +404,7 @@ Polish uses the standard "Polish (Programmers)" layout: ą, ę, ł... with AltGr
 
 ## Where your progress is kept
 
-- **Local server with a database** (`DATABASE_URL` set, see below): in
+- **Local server with a database** (`DATABASE_URL` set, see CONTRIBUTING.md): in
   PostgreSQL, for the guest and every account. Nothing is lost when the
   server stops.
 - **Local server without a database** (`go run .` alone): in the server's
@@ -436,29 +416,3 @@ Polish uses the standard "Polish (Programmers)" layout: ą, ę, ł... with AltGr
   window or clearing the site data starts from zero; **export** and
   **import** move the progress there. Two open tabs each keep their own
   copy, and the one saved last wins.
-
-## Keeping progress in PostgreSQL (Windows)
-
-1. **Install PostgreSQL** (once): the installer from
-   <https://www.postgresql.org/download/windows/>. Keep the default port
-   5432 and remember the password you choose for the user `postgres`.
-2. **Create the database** (once): Start menu → *SQL Shell (psql)*, press
-   Enter on every question until it asks for the password, type it, then:
-   `CREATE DATABASE typetrainer;`
-3. **Start the trainer with it**, in PowerShell in the project folder:
-
-   ```
-   $env:DATABASE_URL = "postgres://postgres:YOUR_PASSWORD@localhost:5432/typetrainer"
-   go run .
-   ```
-
-   The log says `storage: PostgreSQL`. The variable lives only in this
-   PowerShell window; set it again in a new one. If the password has
-   characters like `@`, `:` or `/`, write them as `%40`, `%3A`, `%2F`.
-4. The tables are created on the first start. pgAdmin (installed with
-   PostgreSQL) shows them: `typetrainer` → Schemas → public → Tables.
-
-Optional, to run the database tests too: create a second database
-`typetrainer_test` (its tables are emptied by every test run), then
-`$env:TT_TEST_DATABASE_URL = "postgres://postgres:YOUR_PASSWORD@localhost:5432/typetrainer_test"`
-and `go test ./...`.
