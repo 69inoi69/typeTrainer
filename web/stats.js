@@ -131,7 +131,7 @@ function tiles(sessions, count, goal, level, streaks) {
     const meta = rest.map((x) => t("tile.streakAt", { min: x.min, n: x.longest })).join(", ");
     const now = streaks.filter((x) => x.current).at(-1);   // the strictest one going on now
     const tip = t("tile.streakTip", { min: first.min }) + " " +
-      (now ? t("tile.streakNow", { n: now.current, min: now.min }) : t("tile.streakNone"));
+      (now ? t("tile.streakNow", { n: now.current, min: now.min }) : t("tile.streakNone", { min: first.min }));
     out.push(`<div class="tile" data-tip-text="${tip}"><b>${first.longest}</b><small>${t("tile.streak", { min: first.min })}</small><span class="meta">${meta}</span></div>`);
   }
   if (goal) {
