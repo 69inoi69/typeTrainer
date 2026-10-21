@@ -1066,6 +1066,31 @@ list has its own history (`storage.FreetypeMode`): a round on 200 common
 words and one on 25 000 rare ones are not compared, like rounds of
 different lengths.
 
+**Kinds of text** (2026-10-21, after monkeytype and keybr). A round can
+be of one kind instead of plain words, and each kind has a history of its
+own (`storage.FreetypeVariants`), since a round of sentences is slower than
+one of plain words:
+
+- *Long words*: only the words of the chosen list with at least `LongMin`
+  (6) letters, drawn by the same rule (history per list: `1000-long`). A
+  list without any gives any word.
+- *Sentences* (`freeplay.Sentences`): real sentences with their capitals
+  and punctuation, from Tatoeba (`data/langs/<id>/sentences.txt`, built by
+  `tools/sentences/build.py`: only the language's letters, capitals and
+  `TextMarks`, 4 to 18 words, every word among the 25 000 most common, so
+  no names and no rare words). They have no word list. A portion is whole
+  sentences drawn evenly, at least `PortionWords` words; a sentence already
+  in the round is drawn again (up to `SentenceTries` times). The round
+  still ends after the words or the time chosen, so the last sentence may
+  be cut. (The owner chose real sentences over marks sprinkled on random
+  words, which read as nonsense: "Been doing only at did very up.")
+
+*Your own text* is the third kind: a text the typist pastes, typed word by
+word in its order, each round starting where the last one ended. It stays
+in the browser (`web/customtext.js`), never reaches the server, and has
+one history for every text (`freetype-custom`). Only the letters of the
+language, capitals and `TextMarks` (`. , ? ! ; : ' -`) are kept.
+
 **The draw** is the one Climb uses (`draw`): a word's weight is
 `RepeatPenalty^(uses in the last RecentWords words)`, and the word just
 typed is never next. On a list of 25 000 words, weighing every word for

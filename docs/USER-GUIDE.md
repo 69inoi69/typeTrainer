@@ -133,15 +133,24 @@ the normal server, it shows yours.
     above the text picks the word list: **200**, **1k**, **5k**, **10k** or
     **25k**, the most common words of the language (a click starts a new
     round on that list; it is remembered per language). The words are in
-    lower case, without punctuation. The result names the list.
-  **Stats** are Climb's and Freetype's: on top you pick which (and, for
-  Freetype, the word list); every list has its own rounds and bests.
+    lower case, without punctuation, unless you switch on a kind of text
+    before the lists (one at a time; a second click goes back to plain words):
+    - **long words**: only words of 6 letters or more from the list;
+    - **sentences**: real sentences with capitals, commas and full stops
+      (from Tatoeba); the word lists step aside;
+    - **your text**: paste a text (up to 5000 characters) and type it word
+      by word; each round starts where the last one ended. It stays in
+      your browser; **edit** changes it. The word lists step aside.
+    The result names the list and the kind of text.
+  **Stats** are Learn's, Climb's and Freetype's: on top you pick which (and,
+  for Freetype, the kind of text and the word list); every list and kind
+  has its own rounds and bests.
 - **The round bar** above the text says what a round of this mode is; a
   click starts a new round with it, and each mode remembers its own:
   - Learn: **short** (15 words) or **normal** (30 words);
   - Climb: **Words** or **Time**, then 10, 20, 30, 40 or 50 words or 15, 30,
     60 or 90 seconds (default 30 words);
-  - Freetype: the word list (200 to 25k), then the same as Climb.
+  - Freetype: the kind of text and the word list (200 to 25k), then the same as Climb.
   A words round ends with the last letter of its last word, a time round
   when the time is up; the counter in the text card shows the words or the
   seconds left. While you type the bar steps out of sight.

@@ -254,6 +254,18 @@
     </div>
   </dialog>
 
+  <!-- Freetype's own text (customtext.js): paste a text, type it. -->
+  <dialog class="win confirm custom-win" id="custom-dialog" aria-labelledby="custom-title">
+    <p class="win-title" id="custom-title" data-i18n="custom.title">Your text</p>
+    <p class="win-p" id="custom-help" data-i18n="custom.help"></p>
+    <textarea id="custom-area" rows="9" spellcheck="false" aria-describedby="custom-help custom-count"></textarea>
+    <p class="win-p custom-count" id="custom-count"></p>
+    <div class="confirm-btns">
+      <button type="button" class="btn" id="custom-cancel" data-i18n="data.cancel">Cancel</button>
+      <button type="button" class="btn primary" id="custom-save" data-i18n="custom.save">Save and type</button>
+    </div>
+  </dialog>
+
   <!-- The keyboard shortcuts: small and grey under the keyboard. Only where
        there is a real keyboard (style.css hides them on touch screens). -->
   <footer class="bottom">

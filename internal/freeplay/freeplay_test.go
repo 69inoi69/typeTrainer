@@ -15,6 +15,7 @@ var testParams = Params{
 	Levels: []int{200, 500, 1000, 2000, 3000, 5000, 7500, 10000, 15000, 25000}, LevelStart: 1,
 	PassAccuracy: 96, FailAccuracy: 92, PassesUp: 3, FailsDown: 2, History: 50, MinLetters: 2,
 	WeakRounds: 20, WeakMinSamples: 15, WeakMissMs: 1000, WeakPairs: 3, WeakShare: 0.5, WeakMinWords: 10,
+	LongMin: 6, TextMarks: ".,?!;:'-", SentenceTries: 20,
 }
 
 // plain: the defaults (kept as a name: the tests below read "a plain
@@ -209,23 +210,40 @@ func TestLevelFromOld(t *testing.T) {
 func TestFreetype_OnlyTheChosenWords(t *testing.T) {
 	words := []string{"the", "of", "and", "zebra", "quixotic"}
 	pk := NewPicker(words, rand.New(rand.NewSource(7)))
-	for _, w := range pk.Freetype(nil, 2000, 3, testParams) {
+	for _, w := range pk.Freetype(nil, 2000, 3, false, testParams) {
 		if w != "the" && w != "of" && w != "and" {
 			t.Fatalf("size 3: %q is not one of the 3 most common words", w)
 		}
 	}
 	seen := map[string]bool{}
-	for _, w := range pk.Freetype(nil, 2000, 1000, testParams) {
+	for _, w := range pk.Freetype(nil, 2000, 1000, false, testParams) {
 		seen[w] = true
 	}
 	if len(seen) != len(words) {
 		t.Errorf("size above the list: saw %d words, want all %d", len(seen), len(words))
 	}
-	if got := pk.Freetype([]string{"of"}, 5, 0, testParams); len(got) != 5 || got[0] != "the" {
+	if got := pk.Freetype([]string{"of"}, 5, 0, false, testParams); len(got) != 5 || got[0] != "the" {
 		t.Errorf("size 0 means the first word only: %v", got)
 	}
 	if got := pk.Size(); got != len(words) {
 		t.Errorf("Size %d, want %d", got, len(words))
+	}
+}
+
+// Long words: only words of LongMin letters or more (counted as letters,
+// "żółwik" is 6), from the chosen list; a list without any gives any word.
+func TestFreetype_Long(t *testing.T) {
+	words := []string{"the", "zebras", "of", "żółwik", "quixotic", "and"}
+	pk := NewPicker(words, rand.New(rand.NewSource(3)))
+	seen := map[string]bool{}
+	for _, w := range pk.Freetype(nil, 2000, 4, true, testParams) {
+		seen[w] = true
+	}
+	if len(seen) != 2 || !seen["zebras"] || !seen["żółwik"] {
+		t.Errorf("long words of the 4 most common: saw %v, want zebras and żółwik", seen)
+	}
+	if got := pk.Freetype(nil, 50, 1, true, testParams); len(got) != 50 || got[0] != "the" {
+		t.Errorf("no long word in the list: %v, want the list's words", got)
 	}
 }
 
@@ -241,7 +259,7 @@ func TestDraw_OddsAreTheWeights(t *testing.T) {
 	count := map[string]int{}
 	const n = 60000
 	for i := 0; i < n; i++ {
-		count[pk.Freetype(recent, 1, 4, p)[0]]++
+		count[pk.Freetype(recent, 1, 4, false, p)[0]]++
 	}
 	if count["b"] != 0 {
 		t.Fatalf("the last word came again: %v", count)
@@ -263,13 +281,13 @@ func TestDraw_FullWeighing(t *testing.T) {
 	p := plain()
 	recent := []string{"a", "a", "a", "a", "a", "a", "a", "a", "a", "b"} // a: 0.3^9, b: the last word
 	for i := 0; i < 200; i++ {
-		if got := pk.Freetype(recent, 1, 2, p)[0]; got != "a" {
+		if got := pk.Freetype(recent, 1, 2, false, p)[0]; got != "a" {
 			t.Fatalf("only %q is allowed, got %q", "a", got)
 		}
 	}
 	p.RepeatPenalty = 0 // a recent word weighs 0: with "b" last, every weight is 0
 	for i := 0; i < 50; i++ {
-		if got := pk.Freetype([]string{"a", "b"}, 1, 2, p)[0]; got != "a" && got != "b" {
+		if got := pk.Freetype([]string{"a", "b"}, 1, 2, false, p)[0]; got != "a" && got != "b" {
 			t.Fatalf("all weights 0: %q is not a word of the list", got)
 		}
 	}

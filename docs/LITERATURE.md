@@ -62,6 +62,9 @@ marked ★.
   Statistical Rescoring of Sentence Alignments in Large, Noisy Parallel
   Corpora.* LREC 2018. The corpus the word lists in `data/langs/` are counted
   from. Corpus: <https://opus.nlpl.eu/OpenSubtitles2018.php>
+- **Tatoeba**: a collaborative collection of example sentences in many
+  languages, the source of Freetype's real sentences
+  (`data/langs/<id>/sentences.txt`). License CC BY 2.0 FR. <https://tatoeba.org>
 - **FrequencyWords** (Hermit Dave): frequency lists computed from that corpus
   for many languages, the direct source of the word lists. Data license
   CC BY-SA 4.0. <https://github.com/hermitdave/FrequencyWords>

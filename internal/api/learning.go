@@ -154,6 +154,8 @@ type resultsRequest struct {
 	// List: Freetype only, the word list of the round (its n most common
 	// words, one of Server.freetypeLists).
 	List int `json:"list"`
+	// Variant: Freetype only, the kind of round (storage.FreetypeVariants).
+	Variant string `json:"variant"`
 }
 
 // POST /api/v1/results?lang= -> the round is over: stores it in the

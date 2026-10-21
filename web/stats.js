@@ -17,10 +17,11 @@
 // and a new round length; resetStatsPick when the stats open).
 
 import { i18nVars, t, applyI18n } from "./i18n.js";
-import { $, el, S, store, reducedMotion, levelWords, listLabel } from "./state.js";
+import { $, el, S, store, reducedMotion, levelWords, listLabel, listless } from "./state.js";
 import { getJSON } from "./api.js";
 import { LENGTHS, lengthLabel, lengthFor, firstRoundDone } from "./settings.js";
 import { renderLearnStats, learnStatsStale } from "./learnstats.js";
+import { freetypeUrl, toggledVariant } from "./modes.js";
 
 // S.lastStats: the letters and the rounds of the length chosen in the
 // settings (the typing screen compares a round with those).
@@ -44,25 +45,25 @@ export async function refreshStats() {
 // Draws the stats screen from the last answers (no server call, except
 // for another round length picked on this screen).
 // What the stats screen shows: a mode ("learn", "climb" or "freetype"),
-// Freetype's list and a round length. It starts as the typing
+// Freetype's list and kind of text, and a round length. It starts as the typing
 // screen's (resetStatsPick, when the stats open); the switches on this
 // screen change it.
-const pick = { mode: "climb", list: 0, length: "" };
+const pick = { mode: "climb", list: 0, variant: "", length: "" };
 export function resetStatsPick() {
   const mode = ["learn", "climb", "freetype"].includes(S.mode) ? S.mode : "climb";
-  Object.assign(pick, { mode, list: S.freetypeList, length: lengthFor(mode) });
+  Object.assign(pick, { mode, list: S.freetypeList, variant: S.freetypeVariant, length: lengthFor(mode) });
 }
 // The answer for the pick: the typing screen's own (S.climb, S.freetype,
 // modes.js) when it is the same, else one fetched for this screen (other).
 let other = null;   // {key, data}
-const keyOf = (p) => `${p.mode} ${p.list} ${p.length}`;
+const keyOf = (p) => `${p.mode} ${p.list} ${p.variant} ${p.length}`;
 function own(p) {
   if (p.length !== lengthFor(p.mode)) return null;
   if (p.mode === "learn") return S.lastStats;
   if (p.mode === "climb") return S.climb;
-  return p.list === S.freetypeList ? S.freetype : null;
+  return p.list === S.freetypeList && p.variant === S.freetypeVariant ? S.freetype : null;
 }
-const statsUrl = (p) => p.mode === "learn" ? `/stats?length=${p.length}` : p.mode === "climb" ? `/freeplay/stats?length=${p.length}` : `/freetype/stats?length=${p.length}&list=${p.list}`;
+const statsUrl = (p) => p.mode === "learn" ? `/stats?length=${p.length}` : p.mode === "climb" ? `/freeplay/stats?length=${p.length}` : freetypeUrl(p.length, p.list, p.variant);
 
 // What the stats screen shows right now: {s: the answer, mode, list,
 // length} (share.js copies and draws exactly that).
@@ -72,8 +73,8 @@ export function shownStats() {
   return { s, ...pick };
 }
 export function renderStats() {
-  const { s, length, mode, list } = shownStats();
-  renderPick(mode, list);
+  const { s, length, mode, list, variant } = shownStats();
+  renderPick(mode, list, variant);
   if (!s) return;
   // the bests are of every length, in whichever answer is shown
   renderLengthFilter(s.lengths ?? [], length, s.bests ?? {});
@@ -283,13 +284,18 @@ async function choose(change) {
   }
 }
 
-// The switch of the two modes, and for Freetype the row of its lists
-// (the lists offered come with every /freetype/stats answer).
+// The switch of the three modes, and for Freetype its kinds of text (the
+// same switches as in the round bar, modebar.js) and the row of its lists
+// (the lists offered come with every /freetype/stats answer; none for
+// your own text).
 const pickEl = $("stats-pick");
-function renderPick(mode, list) {
+function renderPick(mode, list, variant) {
   const tab = (m, key) => `<button type="button" role="tab" data-mode="${m}" aria-selected="${m === mode}">${t(key)}</button>`;
-  const lists = mode === "freetype" ? (S.freetype?.lists ?? []) : [];
+  const ft = mode === "freetype", lists = ft && !listless(variant) ? (S.freetype?.lists ?? []) : [];
+  const kinds = ["long", ...(S.freetype?.sentences ? ["sentences"] : []), "custom"];
+  const kind = (k, on) => `<button type="button" class="wl" data-toggle="${k}" aria-pressed="${on}" data-tip-text="${t(`ft.${k}Tip`)}">${t(`ft.${k}`)}</button>`;
   pickEl.innerHTML = `<div class="stats-modes" role="tablist" aria-label="${t("stats.modes")}">${tab("learn", "mode.learn")}${tab("climb", "mode.free")}${tab("freetype", "mode.freetype")}</div>` +
+    (ft ? `<div class="stats-lists" role="group" aria-label="${t("ft.kind")}">${kinds.map((k) => kind(k, variant === k)).join("")}</div>` : "") +
     (lists.length ? `<div class="stats-lists" role="tablist" aria-label="${t("freetype.list")}">` + lists.map((n) =>
       `<button type="button" role="tab" class="wl" data-list="${n}" aria-selected="${n === list}" data-tip-text="${t("freetype.listN", { n })}">${listLabel(n)}</button>`).join("") + `</div>` : "");
 }
@@ -306,6 +312,7 @@ pickEl.addEventListener("click", (e) => {
   b.blur();
   if (b.dataset.mode && b.dataset.mode !== pick.mode) choose({ mode: b.dataset.mode, list: pick.list || S.freetypeList, length: lengthFor(b.dataset.mode) }).catch(console.error);
   if (b.dataset.list && Number(b.dataset.list) !== pick.list) choose({ list: Number(b.dataset.list) }).catch(console.error);
+  if (b.dataset.toggle) choose({ variant: toggledVariant(pick.variant, b.dataset.toggle) }).catch(console.error);
 });
 
 // ---------- one round length at a time ----------

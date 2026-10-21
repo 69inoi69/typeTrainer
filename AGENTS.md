@@ -123,15 +123,18 @@ Details: `docs/ARCHITECTURE.md`.
   in the round bar. It has its own history and the stats screen,
   and never feeds the letter model. *Freetype* is plain typing as on
   monkeytype: words drawn evenly from a list the typist picks (the 200 to
-  25 000 most common words); nothing adapts, every list has its own
-  history, and the stats screen shows it next to Climb. There is no entry
+  25 000 most common words), plain or only its long words, or real
+  sentences (Tatoeba, with capitals and punctuation), or a text the
+  typist pastes (owner, 2026-10-21); nothing
+  adapts, every list and kind of text has its own history, and the stats
+  screen shows it next to Climb. There is no entry
   test.
 - **Settings change how much and how it looks, never what.** What a round
   is belongs to each mode and sits in the round bar above the text
   (`web/modebar.js`; owner, 2026-10-19): Learn offers short (15 words) or
   normal (30); Climb words or time (10-50 words, 15-90 s); Freetype the
-  same plus its word list (the point of that mode, not a difficulty
-  switch). Each mode remembers its own length. The settings window
+  same plus its word list and kind of text (the point of that mode, not a
+  difficulty switch). Each mode remembers its own length. The settings window
   (`web/settings.js`) keeps what holds for the whole app: live numbers
   on/off, the streak badge on/off, the caret style, the theme, the
   keyboard, a personal speed goal (shown on the stats screen only, never

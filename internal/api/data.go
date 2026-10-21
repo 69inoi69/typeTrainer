@@ -6,7 +6,6 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"typingtrainer/internal/engine"
 	"typingtrainer/internal/freeplay"
@@ -44,8 +43,9 @@ type langExport struct {
 	// (freeplay.LevelFromOld). The copy on GitHub Pages (IndexedDB) is
 	// such a file too.
 	ClimbLevels int `json:"climbLevels,omitempty"`
-	// Freetype, the third mode: list ("1000") -> its history; absent in
-	// files from before it existed
+	// Freetype, the third mode: list and variant (storage.FreetypeKey:
+	// "1000", "1000-punct", "custom") -> its history; absent in files from
+	// before it existed
 	Freetype map[string]freeplayExport `json:"freetype,omitempty"`
 }
 
@@ -109,14 +109,15 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request, user strin
 		return
 	}
 	freetype := map[string]freeplayExport{}
-	for _, n := range s.freetypeLists(l) {
-		h, err := s.allFreeplay(user, id, storage.FreetypeMode(n))
+	for _, key := range s.freetypeKeys(l) {
+		n, v, _ := storage.ParseFreetypeKey(key)
+		h, err := s.allFreeplay(user, id, storage.FreetypeMode(n, v))
 		if err != nil {
 			serverError(w, err)
 			return
 		}
 		if len(h) > 0 {
-			freetype[strconv.Itoa(n)] = freeplayExport{Sessions: h}
+			freetype[key] = freeplayExport{Sessions: h}
 		}
 	}
 	writeJSON(w, http.StatusOK, langExport{
@@ -149,8 +150,11 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request, user strin
 		badRequest(w, "invalid JSON")
 		return
 	}
-	okList := func(n int) bool { return s.validList(l, n) }
-	if msg := validateImport(in, s.cfg.MaxImportSessions, s.cfg.MaxEvents, len(l.Gen.Order()), len(s.cfg.Freeplay.Levels), l.Info.Alphabet, s.validLength, okList); msg != "" {
+	okFreetype := func(key string) bool {
+		n, v, ok := storage.ParseFreetypeKey(key)
+		return ok && s.validVariant(l, n, v)
+	}
+	if msg := validateImport(in, s.cfg.MaxImportSessions, s.cfg.MaxEvents, len(l.Gen.Order()), len(s.cfg.Freeplay.Levels), l.Info.Alphabet, s.validLength, okFreetype, s.freetypeAlphabet(l.Info.Alphabet)); msg != "" {
 		badRequest(w, msg)
 		return
 	}
@@ -193,8 +197,8 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request, user strin
 		histories[storage.ModeClimb] = in.Freeplay.Sessions
 	}
 	for list, f := range in.Freetype {
-		n, _ := strconv.Atoi(list) // checked by validateImport
-		histories[storage.FreetypeMode(n)] = f.Sessions
+		n, v, _ := storage.ParseFreetypeKey(list) // checked by validateImport
+		histories[storage.FreetypeMode(n, v)] = f.Sessions
 	}
 	for mode, sessions := range histories {
 		for _, sess := range sessions {

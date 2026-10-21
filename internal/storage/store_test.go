@@ -143,17 +143,27 @@ func testFreeplay(t *testing.T, m Store) {
 // Every Freetype word list is a history of its own, apart from Climb's;
 // all of them count as practice days, and Reset clears them all.
 func testFreetypeModes(t *testing.T, m Store) {
-	small, big := FreetypeMode(200), FreetypeMode(25000)
+	small, big := FreetypeMode(200, ""), FreetypeMode(25000, "")
 	if small != "freetype-200" {
 		t.Fatalf("FreetypeMode(200) = %q", small)
+	}
+	// the variants (2026-10-21): each its own history, apart from the plain list
+	long, sentences := FreetypeMode(200, VariantLong), FreetypeMode(0, VariantSentences)
+	if long != "freetype-200-long" || sentences != "freetype-sentences" {
+		t.Fatalf("variant modes = %q, %q", long, sentences)
 	}
 	at := time.Date(2026, 10, 19, 12, 0, 0, 0, time.UTC)
 	m.AddFreeplaySession(u, "en", small, Session{WPM: 80, Length: "words-30", FinishedAt: at})
 	m.AddFreeplaySession(u, "en", small, Session{WPM: 90, Length: "time-30", FinishedAt: at})
 	m.AddFreeplaySession(u, "en", big, Session{WPM: 50, Length: "words-30", FinishedAt: at})
 	m.AddFreeplaySession(u, "en", ModeClimb, Session{WPM: 60, FinishedAt: at})
+	for _, mode := range []string{long, sentences} {
+		if err := m.AddFreeplaySession(u, "en", mode, Session{WPM: 40, Length: "words-30", FinishedAt: at}); err != nil {
+			t.Fatalf("%s: %v", mode, err)
+		}
+	}
 
-	for mode, want := range map[string]int{small: 2, big: 1, ModeClimb: 1, FreetypeMode(1000): 0} {
+	for mode, want := range map[string]int{small: 2, big: 1, ModeClimb: 1, FreetypeMode(1000, ""): 0, long: 1, sentences: 1} {
 		if c, _ := m.FreeplaySessionCount(u, "en", mode, ""); c != want {
 			t.Errorf("%s: %d rounds, want %d", mode, c, want)
 		}
@@ -170,8 +180,8 @@ func testFreetypeModes(t *testing.T, m Store) {
 	if b, _ := m.BestFreeplayRounds(u, "en", big); b["words-30"].WPM != 50 {
 		t.Errorf("bests of %s = %+v, want its own 50", big, b)
 	}
-	if days, _ := m.PracticeDays(u, "en", 0); len(days) != 1 || days[0].Rounds != 4 {
-		t.Errorf("practice days = %+v, want one day with all 4 rounds", days)
+	if days, _ := m.PracticeDays(u, "en", 0); len(days) != 1 || days[0].Rounds != 6 {
+		t.Errorf("practice days = %+v, want one day with all 6 rounds", days)
 	}
 	m.Reset(u, "en")
 	if c, _ := m.FreeplaySessionCount(u, "en", small, ""); c != 0 {

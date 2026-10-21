@@ -41,7 +41,7 @@ its own.
 | `internal/storage/store.go` | The `Store` interface. |
 | `internal/storage/memory.go` | In-memory `Store` (lost on restart). |
 | `internal/storage/postgres.go` | PostgreSQL `Store` through the standard `database/sql`; the pgx driver is only registered. Applies `migrations/*.sql` at start. Not in the WebAssembly build. |
-| `internal/storage/migrations/` | The database tables, one numbered SQL file per change (`001_init.sql` ... `005_letter_held.sql` (a letter's mastery is remembered), `006_round_level.sql` (Climb's level per round), `007_freetype_modes.sql` (a history per Freetype list)). |
+| `internal/storage/migrations/` | The database tables, one numbered SQL file per change (`001_init.sql` ... `005_letter_held.sql` (a letter's mastery is remembered), `006_round_level.sql` (Climb's level per round), `007_freetype_modes.sql` (a history per Freetype list), `008_climb_ten_levels.sql`, `009_freetype_variants.sql` (a history per Freetype kind of text)). |
 | `internal/storage/store_test.go` | The tests every `Store` must pass; run on memory always and on PostgreSQL when `TT_TEST_DATABASE_URL` is set (`postgres_test.go`). |
 | `internal/api/handlers.go` | The `Server`, the route list (`Register`), `?lang=`, JSON helpers, locking around read-modify-write. |
 | `internal/api/learning.go` | Learning routes: `/portion`, `/results`, `/stats`, `/activity`, `/progress`. |
@@ -56,6 +56,7 @@ its own.
 | `data/layouts/*.json` | Keys, rows, finger per key, AltGr letters, finger colors. |
 | `data/langs/<id>/words.txt` | Word list per language, most frequent first (learning; Climb and Freetype too in a language without `free.txt`). |
 | `data/langs/<id>/free.txt` | The long list of Climb and Freetype (English only for now: 25 000 words, `tools/wordlists/free.py`). |
+| `data/langs/<id>/sentences.txt` | Freetype's real sentences, one per line (English only for now; from Tatoeba, CC BY 2.0 FR, `tools/sentences/build.py`). |
 | `internal/sim` | Simulation for the evaluation chapter: a made-up typist and three word-choice strategies (docs/ALGORITHM.md, section 11.1). Not used by the app. |
 | `tools/sim/` | `go run ./tools/sim`: runs the simulation on the real word lists and prints the table. |
 | `tools/wordlists/` | Python script + block lists that build the word lists (not part of the app). |
@@ -80,10 +81,11 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | bottom | `api.js` | `getJSON` / `postJSON` for `/api/v1/`, with `?lang=` added. |
 | middle | `tools.js` | Tooltips, and the data buttons of the settings window: export / import, reset (with its confirm window). |
 | middle | `keyboard.js` | On-screen keyboard and hands from the layout data, the next key and finger, the on / off button (remembered separately for learning and for Climb and Freetype), the automatic size that fits the window. |
-| middle | `stats.js` | The stats screen of Learn, Climb and Freetype (Learn adds its letters below, `learnstats.js`): the switch of the mode and Freetype's list on top, the personal bests, time typed today, in 7 days or all time with the activity calendar from `/activity`, tiles with the level, trends, the accuracy streaks and the personal goal, the WPM chart with the 10-round average; and `refreshStats()` (the letters of learning, `S.lastStats`). |
+| middle | `stats.js` | The stats screen of Learn, Climb and Freetype (Learn adds its letters below, `learnstats.js`): the switch of the mode and Freetype's kind of text and list on top, the personal bests, time typed today, in 7 days or all time with the activity calendar from `/activity`, tiles with the level, trends, the accuracy streaks and the personal goal, the WPM chart with the 10-round average; and `refreshStats()` (the letters of learning, `S.lastStats`). |
 | middle | `share.js` | The "image" button of the stats screen: a PNG card drawn on a canvas from what the screen shows. |
 | middle | `typing.js` | The text stream (portions added while you type), the caret, `handleChar()` / `backspace()`, the streak (Freetype only), live WPM / accuracy, the "typing now" header mode, sending results. |
 | middle | `letters.js` | The letters bar above the text: learning's progress (each open letter coloured from red to green and with a bar by how close it is to mastered, locked ones crossed out, a tooltip of what each still needs, `letterProgress`, `letterNeeds`, `rule`), its status line (Climb: the level and what it brings; Climb and Freetype keep the row empty, at its height, so every mode has the same layout), locked keys dimmed and mastered letters fading from their keys on the keyboard. |
+| middle | `customtext.js` | Freetype's own text: the editor window, the cleaning of a pasted text (`cleanText`), the portions cut from it in order (`customPortions`, as `/freetype/portion` would give them) and where the next round starts (`customRoundDone`). The text stays in the browser. |
 | middle | `learnstats.js` | The Learn part of the stats screen, under the tiles and the chart: every letter round by round (a square per round in the letters row's colour), one letter's speed against the goal (a click on a letter picks it), the keys you mix up; from `/learn/history`. |
 | middle | `learnpanel.js` | The Learn panel, two lines under the letters in place of a result screen: the last round (speed and accuracy, each against the average of the 10 rounds before it), an accuracy streak, today's typing time from `/activity` against the daily goal (and the days in a row it was met); then the focus letter, its progress and what it still needs, or the news of the round that just ended (a new letter, letters mastered, a record, every letter open, Learn complete; the two milestones once per language, `tt.milestone.<lang>`) until the next round is begun. `compareStats()` works out what a round changed. |
 | middle | `sound.js` | Key sounds (a setting): a click on every key and a low tone on a mistake, made by Web Audio on the spot (no sound files). |
@@ -198,7 +200,7 @@ All responses are JSON. Every route except `/languages` and `/auth/*` takes `?la
 | POST | `/api/v1/progress` | `{unlockAll: true\|false}` | `{unlocked}`; for development only, the interface no longer calls it |
 | POST | `/api/v1/group` | `{group: "random"\|""}` | `{group}`; the study group of the language (hidden: only the study link `?group=random` / `?group=adaptive` calls it, `web/app.js`). `/stats` returns `group`, every learning round stores it |
 | POST | `/api/v1/reset` | | `{ok: true}`; deletes all data of the language (reset button, until there are user accounts) |
-| GET | `/api/v1/export` | | `{unlocked, keys: {char: {count, mistakes, errEma, timeEma, timedCount, held}}, sessions: [all, OLDEST first, each with its raw keys], freeplay: {sessions (each with its level)}, climbLevels: 10, freetype: {"1000": {sessions}, ...}}`; everything stored for the language (`freeplay` and `freetype` are missing in older files; without `climbLevels` Climb's levels are the old 0..1, turned into 1..10 on import) |
+| GET | `/api/v1/export` | | `{unlocked, keys: {char: {count, mistakes, errEma, timeEma, timedCount, held}}, sessions: [all, OLDEST first, each with its raw keys], freeplay: {sessions (each with its level)}, climbLevels: 10, freetype: {"1000": {sessions}, "1000-long": ..., "sentences": ..., "custom": ...}}`; everything stored for the language (`freeplay` and `freetype` are missing in older files; without `climbLevels` Climb's levels are the old 0..1, turned into 1..10 on import) |
 | POST | `/api/v1/import` | the same JSON as `/export` | `{unlocked, sessions}`; REPLACES the language's data, or changes nothing if the data is invalid |
 | GET | `/api/v1/stats?length=` | | `{keys: [{char, count, errorRate, avgMs, difficulty, mastered, unlocked}], sessions: [last 50 of that length, newest first, without raw keys], order: [the unlock order, for the letters a round opened], streaks (as in `/freeplay/stats`), sessionCount (of that length), lengths: [every length in the history], bests: {length: the fastest round of it}, targetWpm, masteryMin, masteryErr (the mastery rule: at least masteryMin presses, under masteryErr % mistakes, for the texts)}`; no `length` = every length |
 | GET | `/api/v1/learn/history` | | `{order: [the letters in unlock order], rounds: [{wpm, accuracy, unlocked, letters: [{count, errorRate, avgMs, mastered} or null while locked, in order]}], confusions: [{want, typed, n}]}`: every Learn round oldest first, every length, with the letter model replayed over the rounds' raw keys (`history.LetterTimeline`); the pairs mixed up at least `ConfusionMin` times, at most `ConfusionShown` (`history.Confusions`) |
@@ -206,9 +208,9 @@ All responses are JSON. Every route except `/languages` and `/auth/*` takes `?la
 | POST | `/api/v1/freeplay/portion` | `{recent: [words of the round], start: bool, level}` | `{portions: [{words}], round, level}`; Climb: the next words at the level of the round (`level` 1..10, or 0 = where the user stands, `freeplay.Standing`) |
 | POST | `/api/v1/freeplay/results` | `{chars, wpm, accuracy, perSecond, keys, length, level}` | `{consistency, weak: [{pair, cost, count}], verdict: "pass" \| "hold" \| "fail", place: {level, passes, fails, moved}}`; one entry in Climb's history with the level it was typed at (a whole number 1..10); verdict and place say what it counted for and where the next round starts; its keys may be capitals and `,` `.` (rounds from before 2026-10-20 had them) |
 | GET | `/api/v1/freeplay/stats?length=` | | `{place: {level, passes, fails, moved} (freeplay.Standing), sessions: [last 50 of that length, newest first, without raw keys, each with its level], sessionCount, lengths, bests (as in `/stats`), streaks: [{min, longest, current}] (the accuracy streaks of that length at `StreakAccuracies`, history.AccuracyStreaks), levels (the words of each level), passesUp, failsDown, passAccuracy, failAccuracy}` |
-| POST | `/api/v1/freetype/portion` | `{recent: [words], start: bool, list}` | `{portions: [{words}], round}`; Freetype: words drawn evenly from the `list` most common ones (`freeplay.Picker.Freetype`); a list not offered is a 400 |
-| POST | `/api/v1/freetype/results` | `{chars, wpm, accuracy, perSecond, keys, length, list}` | `{consistency}`; one entry in the history of that list (`storage.FreetypeMode`) |
-| GET | `/api/v1/freetype/stats?list=&length=` | | `{lists (offered: those of `FreetypeLists` the language's long list has words for), list (no `list` = the first), sessions, sessionCount, lengths, bests, streaks}` of that list, as in `/freeplay/stats` without the level |
+| POST | `/api/v1/freetype/portion` | `{recent: [words], start: bool, list, variant}` (variant: "" or "long" with a list; "sentences" with none) | `{portions: [{words}], round}`; Freetype: words drawn evenly from the `list` most common ones (`freeplay.Picker.Freetype`); a list not offered is a 400 |
+| POST | `/api/v1/freetype/results` | `{chars, wpm, accuracy, perSecond, keys, length, list, variant}` (your own text: list 0, variant "custom") | `{consistency}`; one entry in the history of that list (`storage.FreetypeMode`) |
+| GET | `/api/v1/freetype/stats?list=&variant=&length=` | | `{lists (offered: those of `FreetypeLists` the language's long list has words for), list (no `list` = the first), sessions, sessionCount, lengths, bests, streaks}` of that list, as in `/freeplay/stats` without the level |
 
 Validation on `/portion` and `/results`: at most 5000 samples (zero is fine:
 nothing new to learn), each with exactly one character that is a letter of the
@@ -321,7 +323,7 @@ the page there, so there are no cookies, and the only guest is `local`. Each lan
 Three modes, all open to everyone (`web/modes.js`; owner, 2026-10-19). They
 share no data: Climb and Freetype have their own routes and histories
 (the `AddFreeplaySession` family of the store, with a mode: `ModeClimb`, or
-`FreetypeMode(n)` for each Freetype list).
+`FreetypeMode(n, variant)` for each Freetype list and kind of text).
 
 - **Learn**, for beginners, is the adaptive trainer described in
   docs/ALGORITHM.md: the `/portion` and `/results` routes, the letter model,
@@ -341,8 +343,11 @@ share no data: Climb and Freetype have their own routes and histories
 - **Freetype**, for just typing (`internal/freeplay`, docs/ALGORITHM.md
   section 14): words drawn evenly from the n most common of the long list
   (`free.txt`), n picked in the row above the text (200 to 25 000;
-  remembered per language in `tt.list.<lang>`). Nothing adapts; every list
-  has its own history and bests. `/freetype/results` drops any samples too.
+  remembered per language in `tt.list.<lang>`), plain or of a kind
+  (long words, real sentences from `sentences.txt`, or your own text: `tt.variant.<lang>`;
+  your text in `tt.custom.<lang>`, never sent, `web/customtext.js`).
+  Nothing adapts; every list and kind has its own history and bests.
+  `/freetype/results` drops any samples too.
 
 There used to be a third thing, a typing test that opened free practice
 early; it is gone (owner, 2026-10-19), and its column `progress.test_passed`
@@ -380,7 +385,8 @@ in git. How to install PostgreSQL on Windows: USER-GUIDE.md.
   `key_stats`
   (the letter model) and `sessions` (the history of every mode, `mode`
   column: `learning`, `freeplay` for Climb, `freetype-<n>` for each
-  Freetype list; the raw keys as `JSONB`). Every data table is keyed by user and
+  Freetype list, `freetype-<n>-long` for its long words,
+  `freetype-sentences` and `freetype-custom` (migration 009); the raw keys as `JSONB`). Every data table is keyed by user and
   language. `user_id` is text and not a foreign key, because guests
   (`g...`, `local`) have data but no row in `users`; an account's id is
   `u` + `users.id`.
