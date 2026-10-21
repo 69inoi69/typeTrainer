@@ -5,9 +5,10 @@
 // the result screen in result.js. The same screen serves all three modes
 // (modes.js): learning talks to /portion and /results, Climb to /freeplay/*
 // with the level of the round (the server judges the round at its end,
-// freeplay.Standing), Freetype to /freetype/* with its word list.
+// freeplay.Standing), Freetype to /freetype/* with its word list and kind
+// of text (your own text comes from customtext.js, not the server).
 // Layer: middle. Imports the bottom layer, keyboard.js, stats.js, result.js,
-// letters.js, modes.js, modebar.js and settings.js.
+// letters.js, modes.js, modebar.js, settings.js and customtext.js.
 // Called by: input.js (handleChar, backspace, restartRound, stopRound and the rest
 // on keys and clicks) and languages.js (loadExercise, hideWarn when the
 // language changes).
@@ -22,7 +23,7 @@
 import { FEEL } from "./feel.js";
 import { t } from "./i18n.js";
 import { FX } from "./fx.js";
-import { $, el, S, introOpen, isTouch, themeColor, reducedMotion } from "./state.js";
+import { $, el, S, introOpen, isTouch, themeColor, reducedMotion, roundList } from "./state.js";
 import { postJSON } from "./api.js";
 import { highlightNextKey, pulseKey, glowKey, requestFit } from "./keyboard.js";
 import { refreshStats } from "./stats.js";
@@ -33,6 +34,7 @@ import { learning, refreshFreeplay } from "./modes.js";
 import { renderModeBar } from "./modebar.js";
 import { lengthOf, firstRoundDone } from "./settings.js";
 import { keySound } from "./sound.js";
+import { customPortions, customRoundDone } from "./customtext.js";
 
 // Typing state, used only by the typing code.
 let wrongScript = 0;       // presses in a row that came from another keyboard layout
@@ -315,11 +317,11 @@ function freePortionDone(k) {
   sentUpTo = por.end + 1;
   showPortion(k + 1);
   if (!needMore()) return;
-  const how = S.mode === "climb" ? { level: S.climbLevel } : { list: S.freetypeList };
+  const how = S.mode === "climb" ? { level: S.climbLevel } : { list: roundList(), variant: S.freetypeVariant };
   const id = streamId;
   queue = queue.then(async () => {
     if (id !== streamId) return;
-    const res = await postJSON(portionRoute(), { recent: recentWords(), ...how });
+    const res = await getPortions({ recent: recentWords(), ...how });
     if (id !== streamId) return;
     appendPortions(res.portions);
   }).catch((err) => { console.error(err); el.hint.textContent = t("err.server"); });
@@ -327,6 +329,9 @@ function freePortionDone(k) {
 
 // Where the words of the current mode come from.
 const portionRoute = () => ({ learn: "/portion", climb: "/freeplay/portion", freetype: "/freetype/portion" })[S.mode];
+const ownText = () => S.mode === "freetype" && S.freetypeVariant === "custom";
+// The next portions of Climb or Freetype: from the server, or from your own text.
+const getPortions = (body) => ownText() ? Promise.resolve(customPortions(body.start)) : postJSON(portionRoute(), body);
 
 // Has the user typed anything in this round yet?
 export const roundStarted = () => startTime !== null;
@@ -372,7 +377,8 @@ export async function loadExercise() {
   const id = streamId;
   // Climb: the level picked or reached (S.climbLevel), or where the user
   // stands (0: the server knows, at the first round in this language)
-  const res = await postJSON(portionRoute(), { start: true, recent: [], list: S.freetypeList, level: S.climbLevel ?? 0 });
+  const body = { start: true, recent: [], list: roundList(), variant: S.freetypeVariant, level: S.climbLevel ?? 0 };
+  const res = await getPortions(body);
   if (id !== streamId) return;
   roundBefore = S.lastStats;
   if (S.mode === "climb" && res.level !== S.climbLevel) { S.climbLevel = res.level; renderModeBar(); renderLetters(); }
@@ -1075,18 +1081,19 @@ async function finishFree(wpm, accuracy, keys, perSecond) {
   await loadExercise();
 }
 
-// The end of a Freetype round: it goes to the history of its word list
-// (POST /freetype/results). A personal best is the fastest round of this
-// list and length.
+// The end of a Freetype round: it goes to the history of its word list and
+// kind of text (POST /freetype/results; your own text has no list). A
+// personal best is the fastest round of this history and length.
 async function finishFreetype(wpm, accuracy, keys, perSecond) {
-  const list = S.freetypeList;
+  const variant = S.freetypeVariant, list = roundList();
   const before = S.freetype?.sessions ?? [];
-  const res = await postJSON("/freetype/results", { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length, device: device(), list });
+  const res = await postJSON("/freetype/results", { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length, device: device(), list, variant });
+  if (variant === "custom") customRoundDone(wordsTyped);    // saved: the next round goes on from here
   firstRoundDone();
   refreshActivity();        // the daily goal counts every mode
   await refreshFreeplay();
   const best = before.length > 0 && wpm > Math.max(...before.map((x) => x.wpm));
   if (best) FX.burstFrom(el.wpm, 80);
-  await showResult({ wpm, accuracy, consistency: res.consistency, best, list, words: typedWords(), ...roundFacts() });
+  await showResult({ wpm, accuracy, consistency: res.consistency, best, list, variant, words: typedWords(), ...roundFacts() });
   await loadExercise();
 }

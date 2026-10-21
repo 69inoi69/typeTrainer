@@ -113,5 +113,11 @@ func loadLanguage(info language.Language, cfg config.Config, seed int64) (*api.L
 	}
 	free := freeplay.NewPicker(freeplay.Longer(long, cfg.Freeplay.MinLetters), rand.New(rand.NewSource(seed+1)))
 	freetype := freeplay.NewPicker(long, rand.New(rand.NewSource(seed+2)))
-	return &api.Language{Info: info, Gen: gen, Free: free, Freetype: freetype, LayoutJSON: layoutJSON}, nil
+	// Freetype's real sentences (tools/sentences/build.py); a language
+	// without the file has no "sentences" switch.
+	var sentences *freeplay.Sentences
+	if data, err := files.ReadFile("data/langs/" + info.ID + "/sentences.txt"); err == nil {
+		sentences = freeplay.NewSentences(freeplay.ParseSentences(string(data)), rand.New(rand.NewSource(seed+3)))
+	}
+	return &api.Language{Info: info, Gen: gen, Free: free, Freetype: freetype, Sentences: sentences, LayoutJSON: layoutJSON}, nil
 }

@@ -84,6 +84,8 @@ code compiled to WebAssembly.
 
 ## Credits
 
+- Freetype's sentences: [Tatoeba](https://tatoeba.org), **CC BY 2.0 FR**
+  (filtered by `tools/sentences/build.py`).
 - Word frequencies: [FrequencyWords](https://github.com/hermitdave/FrequencyWords)
   by Hermit Dave (OpenSubtitles 2018), **CC BY-SA 4.0**.
 - Freetype's long English list is also checked against the en_US

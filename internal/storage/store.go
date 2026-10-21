@@ -67,9 +67,57 @@ type Session struct {
 // rounds stored before are saved under it.
 const ModeClimb = "freeplay"
 
+// The kinds of Freetype round beside the plain list (2026-10-21). Each has
+// a history of its own, since rounds that are not alike are never mixed:
+// only the long words of a list, real sentences, or your own text. The
+// last two have no list (one history each: list does not count).
+const (
+	VariantLong      = "long"
+	VariantSentences = "sentences"
+	VariantCustom    = "custom"
+)
+
+// FreetypeVariants are the variants a round can have ("" = the plain list).
+var FreetypeVariants = []string{"", VariantLong, VariantSentences, VariantCustom}
+
+// Listless: does a round of this variant have no word list?
+func Listless(variant string) bool { return variant == VariantSentences || variant == VariantCustom }
+
+// FreetypeKey names one Freetype history in an export file and in the mode
+// column: "1000", "1000-long", "sentences", "custom". FreetypeMode is the mode.
+func FreetypeKey(n int, variant string) string {
+	switch {
+	case variant == "":
+		return strconv.Itoa(n)
+	case Listless(variant):
+		return variant
+	}
+	return strconv.Itoa(n) + "-" + variant
+}
+
 // FreetypeMode is the history of Freetype on the list of the n most
-// common words: "freetype-1000".
-func FreetypeMode(n int) string { return "freetype-" + strconv.Itoa(n) }
+// common words in a variant: "freetype-1000", "freetype-1000-long",
+// "freetype-sentences", "freetype-custom".
+func FreetypeMode(n int, variant string) string { return "freetype-" + FreetypeKey(n, variant) }
+
+// ParseFreetypeKey reads a FreetypeKey back: the list (0 for a variant
+// without one) and the variant; ok = false for anything else.
+func ParseFreetypeKey(key string) (n int, variant string, ok bool) {
+	if Listless(key) {
+		return 0, key, true
+	}
+	num, rest, dash := strings.Cut(key, "-")
+	n, err := strconv.Atoi(num)
+	if err != nil || n <= 0 || Listless(rest) || (dash && rest == "") {
+		return 0, "", false
+	}
+	for _, v := range FreetypeVariants {
+		if v == rest {
+			return n, v, true
+		}
+	}
+	return 0, "", false
+}
 
 // Day is the practice of one calendar day, learning and free practice
 // together: the stats screen builds its totals (time typing, rounds), the

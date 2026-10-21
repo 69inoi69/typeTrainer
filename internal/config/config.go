@@ -194,6 +194,14 @@ func Default() Config {
 			// Freetype: the lists of monkeytype's English (200, 1k, 5k, 10k,
 			// 25k most common words); data/langs/en/free.txt has 25 000.
 			FreetypeLists: []int{200, 1000, 5000, 10000, 25000},
+			// Freetype's kinds of text (owner, 2026-10-21, after keybr and
+			// monkeytype). Long words: 6+ letters, a quarter of the 1000
+			// most common English words and most of the rarer ones.
+			LongMin: 6,
+			// Real sentences and your own text: letters, capitals and these
+			// marks (tools/sentences/build.py keeps only such sentences).
+			TextMarks:     ".,?!;:'-",
+			SentenceTries: 20, // a sentence of the round comes again only on a very short list
 		},
 		// A made-up typist: assumptions of the simulation, not measured values.
 		// docs/ALGORITHM.md section 11 explains them.

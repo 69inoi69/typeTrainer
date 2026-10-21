@@ -103,7 +103,7 @@ func validateSamples(samples []engine.Sample, max int, alphabet string) string {
 // validateImport makes sure a loaded file cannot put impossible numbers or
 // foreign letters into the statistics. letters = how many letters the
 // language's unlock order has, levels how many levels Climb has.
-func validateImport(in langExport, maxSessions, maxEvents, letters, levels int, alphabet string, okLength func(string) bool, okList func(int) bool) string {
+func validateImport(in langExport, maxSessions, maxEvents, letters, levels int, alphabet string, okLength func(string) bool, okFreetype func(string) bool, freetypeAlphabet string) string {
 	if in.Unlocked < 0 || in.Unlocked > letters {
 		return "unlocked: out of range"
 	}
@@ -142,10 +142,10 @@ func validateImport(in langExport, maxSessions, maxEvents, letters, levels int, 
 		}
 	}
 	for list, f := range in.Freetype {
-		if n, err := strconv.Atoi(list); err != nil || !okList(n) {
+		if !okFreetype(list) {
 			return "freetype: unknown list " + list
 		}
-		if msg := validateSessions(f.Sessions, maxSessions, maxEvents, letters, alphabet, okLength); msg != "" {
+		if msg := validateSessions(f.Sessions, maxSessions, maxEvents, letters, freetypeAlphabet, okLength); msg != "" {
 			return "freetype " + msg
 		}
 		for _, sess := range f.Sessions {

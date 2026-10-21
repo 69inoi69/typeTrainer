@@ -67,6 +67,14 @@ type Params struct {
 	// as "the n most common words". A language offers the ones its list
 	// (free.txt) is long enough for.
 	FreetypeLists []int
+	// Freetype's kinds of text (2026-10-21). Long words: words of at least
+	// LongMin letters (Picker.Freetype). Sentences (Sentences.Portion):
+	// TextMarks are the marks a sentence (or your own text) may hold
+	// besides letters and capitals; a sentence already in the round is
+	// drawn again, up to SentenceTries times.
+	LongMin       int
+	TextMarks     string
+	SentenceTries int
 }
 
 // Verdict is what one Climb round says about its level.
@@ -214,13 +222,26 @@ func (pk *Picker) Portion(recent []string, n, level int, weak []string, p Params
 			pool = nil
 		}
 	}
-	return pk.draw(recent, n, size, pool, p)
+	return pk.drawFrom(recent, n, size, pool, p.WeakShare, p)
 }
 
 // Freetype returns n words for Freetype, the third mode: from the size most
-// common words (draw). The typist chose size; nothing adapts.
-func (pk *Picker) Freetype(recent []string, n, size int, p Params) []string {
-	return pk.draw(recent, n, min(max(size, 1), len(pk.words)), nil, p)
+// common words (draw). The typist chose size; nothing adapts. long: only
+// words of at least LongMin letters (the whole list if it has none).
+func (pk *Picker) Freetype(recent []string, n, size int, long bool, p Params) []string {
+	size = min(max(size, 1), len(pk.words))
+	var pool []int
+	if long {
+		for i, w := range pk.words[:size] {
+			if utf8.RuneCountInString(w) >= p.LongMin {
+				pool = append(pool, i)
+			}
+		}
+	}
+	if len(pool) == 0 {
+		pool = nil // no long words in the list: any word
+	}
+	return pk.drawFrom(recent, n, size, pool, 1, p)
 }
 
 // Size is how many words the list has.
@@ -236,9 +257,10 @@ const tries = 32
 //	P(word) ~ RepeatPenalty^(uses in the last RecentWords words)
 //
 // The same word never comes twice in a row (unless the list has only one
-// word). pool (nil = none): the places of the words with a weak pair; each
-// word comes from it with the chance WeakShare, by the same rule.
-func (pk *Picker) draw(recent []string, n, size int, pool []int, p Params) []string {
+// word). pool (nil = none): the places of some of the words (Climb: the
+// ones with a weak pair; Freetype: the long ones); each word comes from it
+// with the chance share, by the same rule.
+func (pk *Picker) drawFrom(recent []string, n, size int, pool []int, share float64, p Params) []string {
 	if len(pk.words) == 0 || n <= 0 {
 		return nil
 	}
@@ -252,7 +274,7 @@ func (pk *Picker) draw(recent []string, n, size int, pool []int, p Params) []str
 	out := make([]string, 0, n)
 	for len(out) < n {
 		from := []int(nil) // nil: any of the size most common
-		if pool != nil && pk.rng.Float64() < p.WeakShare {
+		if pool != nil && pk.rng.Float64() < share {
 			from = pool
 		}
 		word := pk.words[pk.drawWord(window, last, size, from, p)]

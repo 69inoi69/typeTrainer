@@ -18,7 +18,8 @@ import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
 import { resultOpen, closeResult, settleResult } from "./result.js";
 import { settingsOpen, openSettings, onSettingsClose, onKbToggle, onGoalChange, onBgChange, onTypingLook, onSoundPick, setLength } from "./settings.js";
-import { setMode, refreshFreeplay, renderNav, setFreetypeList } from "./modes.js";
+import { setMode, refreshFreeplay, renderNav, setFreetypeList, setFreetypeVariant, toggledVariant } from "./modes.js";
+import { openCustomText, hasCustomText } from "./customtext.js";
 import { onBarPick, renderModeBar } from "./modebar.js";
 import { renderLetters } from "./letters.js";
 import { buildAmbient } from "./ambient.js";
@@ -115,11 +116,19 @@ function chooseMode(m) {
 el.tabLearn.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("learn"); });
 el.tabClimb.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("climb"); });
 el.tabFreetype.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("freetype"); });
-// The round bar above the text (modebar.js): Freetype's word list, Climb's
-// level or the mode's round length. Either starts a new round, as a new mode does (a
-// round already begun is dropped), and the stats follow.
-onBarPick(async (pick) => {
+// The round bar above the text (modebar.js): Freetype's word list or kind
+// of text, Climb's level or the mode's round length. Either starts a new
+// round, as a new mode does (a round already begun is dropped), and the
+// stats follow. Your own text with nothing saved yet, or "edit": the
+// editor first, the round after a save.
+async function barPick(pick) {
   if (S.busy && !resultOpen()) return;          // a round is being saved right now: a moment
+  if (pick.edit || (pick.toggle === "custom" && S.freetypeVariant !== "custom" && !hasCustomText())) {
+    openCustomText(() => barPick({ variant: "custom" }).catch(console.error));
+    return;
+  }
+  if (pick.toggle) pick.variant = toggledVariant(S.freetypeVariant, pick.toggle);
+  if (pick.variant !== undefined) await setFreetypeVariant(pick.variant);
   if (pick.list) await setFreetypeList(pick.list);
   if (pick.level) { S.climbLevel = pick.level; renderLetters(); }
   if (pick.length) {
@@ -130,7 +139,9 @@ onBarPick(async (pick) => {
   el.live.classList.remove("final");
   if (resultOpen()) closeResult();              // the ending round loads the next text itself
   else loadExercise().catch(console.error);
-});
+}
+onBarPick(barPick);
+
 
 // another background in the settings: drawn again at once
 onBgChange(buildAmbient);

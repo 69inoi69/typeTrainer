@@ -25,7 +25,7 @@
 // input.js (resultOpen, closeResult: Enter / Esc / Tab go on).
 // To add a fact: another cell in the row in showResult, its text in i18n.js.
 
-import { t } from "./i18n.js";
+import { t, variantLabel } from "./i18n.js";
 import { $, el, S, isTouch, reducedMotion, levelWords, listLabel } from "./state.js";
 import { FEEL } from "./feel.js";
 import { showTip } from "./tools.js";
@@ -48,7 +48,8 @@ export const resultOpen = () => done !== null;
 //             round, and from POST /freeplay/results what it counted for
 //             (verdict), where the next round starts (place,
 //             freeplay.Standing) and the weak letter pairs ([{pair, cost, count}]),
-//      list: the word list in Freetype,
+//      list: the word list in Freetype (0 with your own text),
+//      variant: Freetype's kind of text ("" plain words, "long", "sentences", "custom"),
 //      words: [{letters: [{c, bad}], wpm}] (typing.js typedWords),
 //      chars: {correct, wrong, extra, missed}, seconds (typing.js roundFacts) }
 export function showResult(r) {
@@ -103,8 +104,9 @@ export function showResult(r) {
     if (r.climb.weak?.length) row.push(num(r.climb.weak.map((w) => w.pair).join(" "), "", "climb.weak", "mid", "climb.weakTip"));
     if (c) note = `<p class="r-climb ${r.climb.verdict}">${climbNote(r.climb, c)}</p>`;
   }
-  // Freetype: the word list of the round
+  // Freetype: the word list and the kind of text of the round
   if (r.list) row.push(num(listLabel(r.list), "", "freetype.list", "mid", "freetype.listTip"));
+  if (r.variant) row.push(num(variantLabel(r.variant), "", "ft.text", "mid", "ft.textTip"));
 
   const body = `<div class="r-top${graph ? "" : " solo"}">${hero}${graph}</div>` +
     (row.length ? `<div class="r-row">${row.join("")}</div>` : "") + note + list;

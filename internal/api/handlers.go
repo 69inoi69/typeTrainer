@@ -35,10 +35,11 @@ import (
 // Language is everything the server needs for one typing language.
 type Language struct {
 	Info       language.Language
-	Gen        *engine.Generator // learning: the adaptive word choice
-	Free       *freeplay.Picker  // Climb: words at the typist's level
-	Freetype   *freeplay.Picker  // Freetype: the long list (free.txt), drawn evenly
-	LayoutJSON []byte            // data/layouts/<layout>.json, sent to the browser as is
+	Gen        *engine.Generator   // learning: the adaptive word choice
+	Free       *freeplay.Picker    // Climb: words at the typist's level
+	Freetype   *freeplay.Picker    // Freetype: the long list (free.txt), drawn evenly
+	Sentences  *freeplay.Sentences // Freetype's real sentences (sentences.txt); nil: the language has none
+	LayoutJSON []byte              // data/layouts/<layout>.json, sent to the browser as is
 }
 
 // Server holds everything the handlers share: the settings, the store and

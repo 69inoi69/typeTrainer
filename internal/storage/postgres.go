@@ -201,7 +201,7 @@ func (p *PostgresStore) SetGroup(user, lang, group string) error {
 
 // Every mode shares the sessions table; the mode column keeps the
 // histories apart (every query below filters on it): modeLearning,
-// ModeClimb or FreetypeMode(n) (migration 007 allows them).
+// ModeClimb or FreetypeMode(n, variant) (migrations 007 and 009 allow them).
 const modeLearning = "learning"
 
 // addSession stores one round in the history of one mode.

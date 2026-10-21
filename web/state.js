@@ -3,7 +3,7 @@
 // Import rule of the frontend (three layers, imports only go down):
 //   bottom: state.js, i18n.js and feel.js import nothing, fx.js only
 //           i18n.js, api.js only state.js
-//   middle: keyboard, typing, letters, learnpanel, learnstats, sound, stats, intro, languages, tools,
+//   middle: keyboard, typing, letters, learnpanel, learnstats, customtext, sound, stats, intro, languages, tools,
 //           profile, result, modes, modebar, settings, share, ambient import the bottom
 //           and each other in one direction only (no cycles)
 //   top:    input.js and app.js may import anything; nothing imports them
@@ -63,6 +63,7 @@ export const S = {
   climb: null,            // last /freeplay/stats answer (Climb)
   freetype: null,         // last /freetype/stats answer (Freetype: its lists, the chosen one's rounds)
   freetypeList: 0,        // Freetype: the chosen word list (its n most common words; 0 = not known yet)
+  freetypeVariant: "",    // Freetype: the kind of text, "" (plain words), "long", "sentences" or "custom" (modes.js)
   climbLevel: null,       // Climb: the level of this round and the next, 1..10 (typing.js); null = not known yet in this language
   settings: { length: "words-30", live: false, caret: "line", theme: "dark", streak: false, bg: "keys", goal: 0, daily: 15,
     glide: "smooth", size: "m", ws: "none", sound: "off", volume: "50", rest: "0",
@@ -81,6 +82,11 @@ export const introOpen = () => !el.intro.classList.contains("hidden") && !el.int
 // Climb: how many of the most common words level n draws from
 // (/freeplay/stats "levels"), as a number to read: "2,000".
 export const levelWords = (n) => (S.climb?.levels?.[n - 1] ?? 0).toLocaleString("en");
+// Freetype's kinds of text without a word list: real sentences and your
+// own text (storage.Listless).
+export const listless = (v) => v === "sentences" || v === "custom";
+// The word list a Freetype round is typed on: none (0) for those kinds.
+export const roundList = () => listless(S.freetypeVariant) ? 0 : S.freetypeList;
 // A Freetype word list by its size, as on monkeytype: 200, 1k, 5k, 25k.
 export const listLabel = (n) => n >= 1000 && n % 1000 === 0 ? `${n / 1000}k` : String(n);
 // A touch screen (phone, tablet): no physical keyboard, no hover.

@@ -171,6 +171,16 @@ const I18N = {
     "bar.kind": "Round ends after", "bar.length": "Length",
     "freetype.listN": "The {n} most common words",
     "freetype.listTip": "The words of the round came from this many of the most common words",
+    // Freetype's kinds of text (modebar.js, stats.js, result.js; storage.FreetypeVariants)
+    "ft.kind": "Kind of text",
+    "ft.long": "long words", "ft.longTip": "Only words of 6 letters or more from the list. These rounds have their own history",
+    "ft.sentences": "sentences", "ft.sentencesTip": "Real sentences, with capitals, commas and full stops. These rounds have their own history",
+    "ft.custom": "your text", "ft.customTip": "Type a text you paste, word by word. These rounds have their own history",
+    "ft.edit": "edit", "ft.editTip": "Change your text",
+    "ft.text": "Text", "ft.textTip": "What the round's text was made of",
+    "custom.title": "Your text",
+    "custom.help": "Paste a text in the language you practise. Numbers and characters you can't type here are left out. It stays in this browser, and you type it in order: each round starts where the last one ended.",
+    "custom.count": "{n} words. Up to {max} characters", "custom.save": "Save and type",
     "stats.modes": "Mode",
     "ls.empty": "Your letters show up here after your first Learn round",
     "ls.grid": "Your letters, round by round",
@@ -493,6 +503,10 @@ export function t(key, vars = {}) {
   const text = I18N[uiLang]?.[key] ?? I18N.en[key] ?? key;
   return text.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? i18nVars[name] ?? ""));
 }
+
+// Freetype's kind of text in words (storage.FreetypeVariants): "long" ->
+// "long words"; "" (plain words) -> "".
+export const variantLabel = (v) => v ? t("ft." + v) : "";
 
 // Fills every element that has data-i18n="key" (texts are our own, so
 // innerHTML is safe; it lets texts contain <b> and <kbd>).

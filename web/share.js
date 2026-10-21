@@ -10,8 +10,8 @@
 // To add another way to share: a button next to it in index.html, its
 // texts in i18n.js and its click here.
 
-import { t } from "./i18n.js";
-import { $, S, listLabel } from "./state.js";
+import { t, variantLabel } from "./i18n.js";
+import { $, S, listLabel, listless } from "./state.js";
 import { shownStats, summary } from "./stats.js";
 import { lengthLabel } from "./settings.js";
 
@@ -35,7 +35,7 @@ function confirm(btn, key) {
 // the colours of the current theme. Read once per click, never per key.
 const W = 1200, H = 630;
 function drawCard() {
-  const { s, length, mode, list } = shownStats();
+  const { s, length, mode, list, variant } = shownStats();
   const css = getComputedStyle(document.documentElement);
   const v = (name) => css.getPropertyValue(name).trim();
   const mono = v("--mono"), ui = v("--ui"), logo = v("--logo");
@@ -56,7 +56,7 @@ function drawCard() {
   c.fillStyle = v("--text");
   c.fillText("Trainer", pad + tw, pad + 32);
   const title = mode === "learn" ? `${t("mode.learn")} · ${lengthLabel(length)}`
-    : mode === "climb" ? `${t("mode.free")} · ${lengthLabel(length)}` : `${t("mode.freetype")} ${listLabel(list)} · ${lengthLabel(length)}`;
+    : mode === "climb" ? `${t("mode.free")} · ${lengthLabel(length)}` : `${t("mode.freetype")} ${listless(variant) ? variantLabel(variant) : [listLabel(list), variantLabel(variant)].filter(Boolean).join(", ")} · ${lengthLabel(length)}`;
   c.font = `600 15px ${ui}`;
   c.fillStyle = v("--sub");
   c.textAlign = "right";
