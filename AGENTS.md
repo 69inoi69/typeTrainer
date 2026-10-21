@@ -108,10 +108,13 @@ Details: `docs/ARCHITECTURE.md`.
 - **Three modes, all open to everyone (owner, 2026-10-19).** *Learn* is for
   beginners: the adaptive trainer, letters open one by one from the home
   row, with no difficulty switches (the algorithm decides what to practise).
-  It has no stats screen and no result screen (owner, 2026-10-20): its
-  progress is the letters row and the Learn panel above the text (the last
-  round against your average, an accuracy streak, a daily goal, the focus
-  letter and what it needs, the news of the round; no charts there).
+  It has no result screen (owner, 2026-10-20): its progress while typing
+  is the letters row and the Learn panel above the text (the last round
+  against your average, an accuracy streak, a daily goal, the focus letter
+  and what it needs, the news of the round; no charts there). Its charts
+  live on the stats screen (owner, 2026-10-21, reversing "no stats screen"):
+  every letter round by round, one letter's speed against the goal, the
+  keys you mix up.
   *Climb* is for people who can already type (`internal/freeplay`; owner,
   2026-10-20): ten levels of words only (no capitals, no punctuation),
   each the n most common words, 200 up to 25 000; a round is typed at one

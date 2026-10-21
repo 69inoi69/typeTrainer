@@ -1,6 +1,6 @@
 // The stats screen, a page that scrolls (as monkeytype's account page):
-// Climb's and Freetype's (learning has no stats screen: its progress is
-// the letters row, owner 2026-10-19). On top the switch of the two modes
+// of Learn, Climb and Freetype (Learn has its own since 2026-10-21, with
+// three panels of letters below, learnstats.js). On top the switch of the modes
 // (and, for Freetype, of its word lists: every list is a history of its
 // own), then the personal best of every round length (the cells also pick
 // the length shown below), all time (time typing, rounds, words, days in a
@@ -11,7 +11,7 @@
 // typing screen. Rounds of different lengths (and lists) are never mixed:
 // the detail shows one at a time (the ones of the typing screen, or others
 // picked on this screen).
-// Layer: middle. Imports the bottom layer, tools.js (tooltips) and settings.js.
+// Layer: middle. Imports the bottom layer, settings.js and learnstats.js.
 // Called by: typing.js (refreshStats after every portion and round),
 // languages.js (on a language change), input.js (on the Stats tab, a resize
 // and a new round length; resetStatsPick when the stats open).
@@ -20,6 +20,7 @@ import { i18nVars, t, applyI18n } from "./i18n.js";
 import { $, el, S, store, reducedMotion, levelWords, listLabel } from "./state.js";
 import { getJSON } from "./api.js";
 import { LENGTHS, lengthLabel, lengthFor, firstRoundDone } from "./settings.js";
+import { renderLearnStats, learnStatsStale } from "./learnstats.js";
 
 // S.lastStats: the letters and the rounds of the length chosen in the
 // settings (the typing screen compares a round with those).
@@ -27,6 +28,7 @@ let introVars = "";
 export async function refreshStats() {
   S.lastStats = await getJSON(`/stats?length=${lengthFor("learn")}`);   // learning's own length
   activityStale = true;                             // a round may have been added: asked again when shown
+  learnStatsStale();
   if (S.lastStats.lengths.length) firstRoundDone(); // finished rounds before: the live numbers are earned
   const vars = [S.lastStats.targetWpm, S.lastStats.masteryMin, Math.round(S.lastStats.masteryErr)];
   // the intro's texts carry these numbers: fill them again only when they
@@ -41,13 +43,13 @@ export async function refreshStats() {
 
 // Draws the stats screen from the last answers (no server call, except
 // for another round length picked on this screen).
-// What the stats screen shows: a mode outside learning ("climb" or
-// "freetype"), Freetype's list and a round length. It starts as the typing
+// What the stats screen shows: a mode ("learn", "climb" or "freetype"),
+// Freetype's list and a round length. It starts as the typing
 // screen's (resetStatsPick, when the stats open); the switches on this
 // screen change it.
 const pick = { mode: "climb", list: 0, length: "" };
 export function resetStatsPick() {
-  const mode = S.mode === "freetype" ? "freetype" : "climb";
+  const mode = ["learn", "climb", "freetype"].includes(S.mode) ? S.mode : "climb";
   Object.assign(pick, { mode, list: S.freetypeList, length: lengthFor(mode) });
 }
 // The answer for the pick: the typing screen's own (S.climb, S.freetype,
@@ -56,10 +58,11 @@ let other = null;   // {key, data}
 const keyOf = (p) => `${p.mode} ${p.list} ${p.length}`;
 function own(p) {
   if (p.length !== lengthFor(p.mode)) return null;
+  if (p.mode === "learn") return S.lastStats;
   if (p.mode === "climb") return S.climb;
   return p.list === S.freetypeList ? S.freetype : null;
 }
-const statsUrl = (p) => p.mode === "climb" ? `/freeplay/stats?length=${p.length}` : `/freetype/stats?length=${p.length}&list=${p.list}`;
+const statsUrl = (p) => p.mode === "learn" ? `/stats?length=${p.length}` : p.mode === "climb" ? `/freeplay/stats?length=${p.length}` : `/freetype/stats?length=${p.length}&list=${p.list}`;
 
 // What the stats screen shows right now: {s: the answer, mode, list,
 // length} (share.js copies and draws exactly that).
@@ -84,7 +87,8 @@ export function renderStats() {
 
   // the chart last: it is drawn at the size of its box (style.css); the
   // dashed line is your own goal, when you set one in the settings
-  drawChart(sessions, S.settings.goal, s.sessionCount);
+  drawChart(sessions, S.settings.goal, s.sessionCount, mode === "learn" ? s.order : null);
+  renderLearnStats(mode === "learn").catch(console.error);
 }
 
 // ---------- the tiles ----------
@@ -123,7 +127,7 @@ function tiles(sessions, count, goal, level, streaks) {
   // they reward care, not speed
   if (count && streaks.length) {
     const [first, ...rest] = streaks;
-    const meta = rest.map((x) => t("tile.streakAt", { min: x.min, n: x.longest })).join(" · ");
+    const meta = rest.map((x) => t("tile.streakAt", { min: x.min, n: x.longest })).join(", ");
     const now = streaks.filter((x) => x.current).at(-1);   // the strictest one going on now
     const tip = t("tile.streakTip", { min: first.min }) + " " +
       (now ? t("tile.streakNow", { n: now.current, min: now.min }) : t("tile.streakNone"));
@@ -201,14 +205,18 @@ function drawActivity() {
   const shown = [];
   for (const d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) shown.push(dayKey(d));
   const most = Math.max(1, ...shown.map((k) => byDate.get(k)?.seconds ?? 0));
+  const goal = S.settings.daily;
   const lang = document.documentElement.lang || undefined;
   const fmt = new Intl.DateTimeFormat(lang, { weekday: "short", month: "short", day: "numeric" });
   const cells = shown.map((k) => {
     const x = byDate.get(k), date = fmt.format(new Date(k + "T12:00"));
     const level = x ? Math.max(1, Math.ceil((x.seconds / most) * 4)) : 0;
+    // a day that met the daily goal (the settings, minutes) gets a ring:
+    // the brightness says how long, the ring says "goal met"
+    const met = x && goal && x.seconds >= goal * 60;
     const tip = !x ? t("act.dayNone", { date })
-      : t(x.rounds === 1 ? "act.dayOne" : "act.day", { date, time: duration(x.seconds), n: x.rounds });
-    return `<i class="l${level}" data-tip-text="${tip}"></i>`;
+      : t(x.rounds === 1 ? "act.dayOne" : "act.day", { date, time: duration(x.seconds), n: x.rounds }) + (met ? ". " + t("act.goalMet") : "");
+    return `<i class="l${level}${met ? " met" : ""}" data-tip-text="${tip}"></i>`;
   }).join("");
   // the month names over the week where a month starts
   const monthName = new Intl.DateTimeFormat(lang, { month: "short" });
@@ -222,7 +230,8 @@ function drawActivity() {
   // Monday, Wednesday, Friday on the left (2026-10-19 was a Monday)
   const dayName = new Intl.DateTimeFormat(lang, { weekday: "short" });
   const dayNames = [0, 2, 4].map((i) => `<span style="grid-row:${i + 1}">${dayName.format(new Date(2026, 9, 19 + i))}</span>`).join("");
-  const legend = `<span class="act-legend">${t("act.less")}<i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i>${t("act.more")}</span>`;
+  const legend = `<span class="act-legend">${t("act.less")}<i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i>${t("act.more")}` +
+    (goal ? `<i class="l2 met"></i>${t("act.goalLegend")}` : "") + `</span>`;
   const periods = `<div class="seg act-period" role="group" aria-label="${t("act.period")}">` +
     Object.keys(PERIODS).map((p) => `<button type="button" data-period="${p}" aria-pressed="${p === period}">${t("act." + p)}</button>`).join("") + `</div>`;
   box.innerHTML = `<div class="act-head"><div class="act-stats" data-tip="act.${period}Tip">` +
@@ -280,7 +289,7 @@ const pickEl = $("stats-pick");
 function renderPick(mode, list) {
   const tab = (m, key) => `<button type="button" role="tab" data-mode="${m}" aria-selected="${m === mode}">${t(key)}</button>`;
   const lists = mode === "freetype" ? (S.freetype?.lists ?? []) : [];
-  pickEl.innerHTML = `<div class="stats-modes" role="tablist" aria-label="${t("stats.modes")}">${tab("climb", "mode.free")}${tab("freetype", "mode.freetype")}</div>` +
+  pickEl.innerHTML = `<div class="stats-modes" role="tablist" aria-label="${t("stats.modes")}">${tab("learn", "mode.learn")}${tab("climb", "mode.free")}${tab("freetype", "mode.freetype")}</div>` +
     (lists.length ? `<div class="stats-lists" role="tablist" aria-label="${t("freetype.list")}">` + lists.map((n) =>
       `<button type="button" role="tab" class="wl" data-list="${n}" aria-selected="${n === list}" data-tip-text="${t("freetype.listN", { n })}">${listLabel(n)}</button>`).join("") + `</div>` : "");
 }
@@ -332,7 +341,11 @@ el.lengthFilter.addEventListener("click", async (e) => {
 // Bar chart of WPM per round, drawn as SVG by hand (no chart library).
 // target: the goal line, the personal goal from the settings (0 = none);
 // total: all rounds of this length, so a bar can say "#41".
-function drawChart(sessions, target, total) {
+// order: Learn's unlock order (null in the other modes): a round that
+// opened a letter gets a mark with the letter over its bar, since the
+// speed drops after a new letter and climbs back (keybr shows the number
+// of keys as a third line; one mark says the same where it matters).
+function drawChart(sessions, target, total, order) {
   if (!sessions.length) {
     el.chart.innerHTML = `<div class="empty">${t("chart.empty")}</div>`;
     el.chartNote.textContent = "";
@@ -369,6 +382,15 @@ function drawChart(sessions, target, total) {
     const d = `M${bx},${base} V${top + r} Q${bx},${top} ${bx + r},${top} H${bx + bw - r} Q${bx + bw},${top} ${bx + bw},${top + r} V${base} Z`;
     svg += `<path class="bar${i === sessions.length - 1 ? " last" : ""}" data-i="${i}" style="--i:${i}" d="${d}"/>`;   /* --i: its turn to grow (style.css) */
   });
+  // the letters each round opened (against the round before it on the chart)
+  const opened = sessions.map((x, i) => order && i && x.unlocked > (sessions[i - 1].unlocked || x.unlocked)
+    ? order.slice(sessions[i - 1].unlocked, x.unlocked) : []);
+  opened.forEach((letters, i) => {
+    if (!letters.length) return;
+    const cx = padL + (i + 0.5) * slot;
+    svg += `<text class="opened" x="${cx}" y="${padT + 9}" text-anchor="middle">${letters.join("")}</text>` +
+      `<line class="opened" x1="${cx}" x2="${cx}" y1="${padT + 13}" y2="${y(sessions[i].wpm) - 3}"/>`;
+  });
   if (target) svg += `<line class="target" x1="${padL}" x2="${W - padR}" y1="${y(target)}" y2="${y(target)}"/>`;
   // the trend: the average of each round and the up to 9 before it, so one
   // good or bad round does not hide where you are going
@@ -398,7 +420,8 @@ function drawChart(sessions, target, total) {
     h.addEventListener("pointerleave", () => { bars[i].classList.remove("hover"); el.tooltip.classList.remove("show"); });
     h.addEventListener("pointermove", (e) => {
       const cons = x.consistency != null ? ` <span>·</span> ${t("chart.cons", { pct: Math.round(x.consistency) })}` : "";
-      el.tooltip.innerHTML = `<span>#${first + i}</span> ${Math.round(x.wpm)} wpm <span>·</span> ${Math.round(x.accuracy)}%${cons}`;
+      const news = opened[i].length ? ` <span>·</span> ${t("chart.opened", { l: opened[i].join(", ") })}` : "";
+      el.tooltip.innerHTML = `<span>#${first + i}</span> ${Math.round(x.wpm)} wpm <span>·</span> ${Math.round(x.accuracy)}%${cons}${news}`;
       el.tooltip.style.left = e.clientX + "px";
       el.tooltip.style.top = e.clientY + "px";
       el.tooltip.classList.remove("below");

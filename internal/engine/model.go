@@ -101,10 +101,14 @@ func (p Params) TargetMs() float64 { return 12000 / p.TargetWPM }
 //     with Backspace (0 = clean)
 //   - Ms:     time from the previous keypress to the first press here;
 //     0 = not measured (first press of the exercise, or right after a Backspace)
+//   - Typed:  the first wrong key pressed here ("" = none, or not recorded:
+//     history from before 2026-10-21). The model never reads it; the stats
+//     screen counts which keys get mixed up (history.Confusions).
 type Sample struct {
 	Char   string  `json:"char"`
 	Errors int     `json:"errors"`
 	Ms     float64 `json:"ms"`
+	Typed  string  `json:"typed,omitempty"`
 }
 
 // KeyStat is everything we remember about one letter. The storage keeps one

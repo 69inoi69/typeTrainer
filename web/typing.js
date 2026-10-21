@@ -424,7 +424,9 @@ function setState(i, s) {
 }
 // The sample of position i. Created at the first press there and never
 // deleted, so a mistake fixed with Backspace still counts for the letter.
-function record(i, wrong, now) {
+// typed: the key pressed; the first wrong one at a place is kept, so the
+// stats can show which keys you mix up (history.Confusions on the server)
+function record(i, wrong, now, typed) {
   let r = records[i];
   if (!r) {
     // not measured: the first press of the round, and a press right after a
@@ -432,7 +434,10 @@ function record(i, wrong, now) {
     const ms = lastTime === null || afterBackspace || afterPause ? 0 : Math.round(now - lastTime);
     r = records[i] = { char: S.text[i], errors: 0, ms };
   }
-  if (wrong) r.errors++;
+  if (wrong) {
+    r.errors++;
+    if (r.typed === undefined) r.typed = typed;
+  }
 }
 // The words of the round as typed, for the result screen (as on
 // monkeytype): each word, which of its letters had a mistake, and its own
@@ -582,7 +587,7 @@ export function handleChar(ch) {
   // the setting: one more wrong press at this position (record), and the
   // time of the letter is the time to its first press.
   if (S.settings.stop && ch !== expected) {
-    record(S.pos, true, now);
+    record(S.pos, true, now, ch);
     setState(S.pos, 2);
     pulseKey(ch, false);
     mistake();
@@ -592,7 +597,7 @@ export function handleChar(ch) {
 
   if (expected === " " && ch !== " ") {
     // a letter where the space belongs: an "extra" letter, the cursor stays
-    record(S.pos, true, now);
+    record(S.pos, true, now, ch);
     const list = extras.get(S.pos) ?? [];
     if (list.length < MAX_EXTRA) {
       const s = document.createElement("span");
@@ -615,7 +620,7 @@ export function handleChar(ch) {
     }
     if (S.pos < S.text.length) {
       const ok = ch === S.text[S.pos];
-      record(S.pos, !ok, now);
+      record(S.pos, !ok, now, ch);
       setState(S.pos, ok ? 1 : 2);
       if (ok) { correctPresses++; kick = true; keySound(true); }
       else mistake();

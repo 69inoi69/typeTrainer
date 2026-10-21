@@ -6,11 +6,13 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"slices"
 	"sort"
 	"strconv"
 	"time"
 
 	"typingtrainer/internal/engine"
+	"typingtrainer/internal/history"
 	"typingtrainer/internal/storage"
 )
 
@@ -299,11 +301,45 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, user string
 		serverError(w, err)
 		return
 	}
+	// the accuracy streaks look at every round of the length
+	all, err := s.store.RecentSessions(user, id, length, count)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	slices.Reverse(all) // oldest first
 	writeJSON(w, http.StatusOK, map[string]any{
-		"lang": id, "keys": keys, "sessions": summaries(sessions), "sessionCount": count, "targetWpm": p.TargetWPM,
+		"streaks": history.AccuracyStreaks(all, s.cfg.StreakAccuracies),
+		"order":   l.Gen.Order(), // the unlock order: the chart names the letters a round opened
+		"lang":    id, "keys": keys, "sessions": summaries(sessions), "sessionCount": count, "targetWpm": p.TargetWPM,
 		// the mastery rule, for the texts that explain it (engine.Mastered)
 		"masteryMin": p.MasteryMinSamples, "masteryErr": p.MasteryErrorRate * 100,
 		"lengths": lengths, "group": group, "bests": bests,
+	})
+}
+
+// GET /api/v1/learn/history?lang= -> {"order": the letters in the order
+// they open, "rounds": every Learn round oldest first with each open
+// letter's numbers after it (history.LetterTimeline), "confusions": the
+// keys mixed up most (history.Confusions)}: the Learn part of the stats
+// screen. Every length together: a letter learns in every round.
+func (s *Server) handleLearnHistory(w http.ResponseWriter, r *http.Request, user string, l *Language) {
+	id := l.Info.ID
+	count, err := s.store.SessionCount(user, id, "")
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	all, err := s.store.RecentSessions(user, id, "", count)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	slices.Reverse(all) // oldest first
+	writeJSON(w, http.StatusOK, map[string]any{
+		"order":      l.Gen.Order(),
+		"rounds":     history.LetterTimeline(all, l.Gen.Order(), l.Gen.Start(), s.cfg.Engine),
+		"confusions": history.Confusions(all, s.cfg.ConfusionMin, s.cfg.ConfusionShown),
 	})
 }
 

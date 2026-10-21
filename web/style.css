@@ -1325,7 +1325,7 @@ button:disabled:active { transform: none; }
 .act-legend { display: inline-flex; align-items: center; gap: 4px; font-size: .74rem; color: var(--sub); }
 .act-legend i { width: 11px; height: 11px; border-radius: 2px; }
 .act-legend i:first-of-type { margin-left: 4px; }
-.act-legend i:last-of-type { margin-right: 4px; }
+.act-legend i.l4 { margin-right: 4px; }
 .act-cal {
   display: grid; grid-template-columns: 34px minmax(0, 1fr); grid-template-rows: auto auto; gap: 6px 0;
   --gap: 3px;
@@ -1341,6 +1341,9 @@ button:disabled:active { transform: none; }
 :is(.act-grid, .act-legend) i.l2 { background: color-mix(in srgb, var(--accent) 55%, var(--panel)); }
 :is(.act-grid, .act-legend) i.l3 { background: color-mix(in srgb, var(--accent) 78%, var(--panel)); }
 :is(.act-grid, .act-legend) i.l4 { background: var(--accent); }
+/* the daily goal was met that day: a ring in the colour of "done" */
+:is(.act-grid, .act-legend) i.met { box-shadow: inset 0 0 0 2px var(--ok); }
+.act-legend i.met { margin: 0 4px 0 10px; }
 .act-grid i:hover { outline: 1px solid var(--text); outline-offset: 1px; }
 /* the chart, the keyboard and the letters: one kind of card */
 .panel { background: var(--panel); border-radius: var(--r-lg); box-shadow: var(--lift); padding: 16px 18px; }
@@ -1355,10 +1358,13 @@ button:disabled:active { transform: none; }
 .empty { color: var(--sub); padding: 28px 0; text-align: center; }
 
 .chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
-.chart .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 4; }
-.chart .target { stroke: var(--sub); stroke-width: 1; stroke-dasharray: 4 4; }
+:is(.chart, .ls-chart) .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 4; }
+/* a letter opened in this round (Learn): the letter over the bar and a thin line down to it */
+.chart text.opened { fill: var(--accent-text); font-size: 11px; font-family: var(--mono); font-weight: 600; }
+.chart line.opened { stroke: color-mix(in srgb, var(--accent) 45%, transparent); stroke-width: 1; stroke-dasharray: 2 2; }
+:is(.chart, .ls-chart) .target { stroke: var(--sub); stroke-width: 1; stroke-dasharray: 4 4; }
 .chart .avg { fill: none; stroke: var(--text); stroke-width: 1.5; stroke-linejoin: round; opacity: .55; pointer-events: none; }
-.chart .axis { fill: var(--sub); font-size: 11px; font-family: var(--mono); }
+:is(.chart, .ls-chart) .axis { fill: var(--sub); font-size: 11px; font-family: var(--mono); }
 .chart .bar { fill: color-mix(in srgb, var(--accent) 55%, var(--panel)); transition: fill var(--fast); }
 .chart .bar.last { fill: var(--accent); }
 :root[data-theme="light"] .chart .bar.last { fill: #e8ad1f; }   /* the plain gold is too pale on white */
@@ -1941,3 +1947,41 @@ body.afk :is(.top, .views, .bottom) { opacity: .45; }
 .r-climb.pass { color: var(--ok); }
 .r-climb.fail { color: var(--error); }
 .letters-caption .mode-note.slip { color: var(--error); }
+
+/* ---------- the Learn stats (learnstats.js) ---------- */
+.learn-stats { display: flex; flex-direction: column; gap: 14px; }
+.learn-stats[hidden] { display: none; }
+.ls-panel { padding: 16px 18px 18px; }
+.ls-empty { margin: 0; color: var(--sub); font-size: .84rem; }
+/* every letter, round by round: the letter on the left (a button: it
+   picks the letter below), then a square per round in the colour of the
+   letters row (red far from mastered, green mastered, nothing while locked) */
+.ls-grid { display: grid; grid-template-columns: 22px 1fr; gap: var(--gap) 6px; align-items: center; }
+/* the letter and its row are the same height, so they line up however
+   small the squares get (a phone: 6px) */
+.ls-l {
+  width: 22px; height: max(12px, calc(var(--cell) + 2px)); padding: 0; border-radius: 4px; background: none;
+  color: var(--sub); font-family: var(--mono); font-size: min(.8rem, max(10px, calc(var(--cell) + 2px))); line-height: 1;
+}
+.ls-l:hover { color: var(--text); }
+.ls-l.on { color: var(--on-accent); background: var(--accent-fill); }
+.ls-row { display: flex; align-items: center; gap: var(--gap); height: max(12px, calc(var(--cell) + 2px)); }
+.ls-row i { flex: none; width: var(--cell); height: var(--cell); border-radius: 2px;
+  background: color-mix(in oklab, color-mix(in oklab, var(--ok) calc(var(--p, 0) * 100%), var(--error)) 70%, var(--panel)); }
+.ls-row i.fresh { background: color-mix(in srgb, var(--text) 12%, transparent); }
+.ls-row i.done { background: var(--ok); }
+.ls-row i.off { background: none; }
+/* one letter: the letter itself as a key, so l is never read as 1 */
+.ls-key { display: inline-grid; place-items: center; min-width: 1.6em; height: 1.6em; margin-left: 4px; border-radius: var(--r-sm);
+  background: var(--accent-fill); color: var(--on-accent); font-family: var(--mono); font-weight: 600; }
+.ls-facts { margin: 4px 0 8px; }
+.ls-needs { margin: 0 0 12px; font-size: .9rem; color: var(--text); }
+.ls-chart-box svg { display: block; width: 100%; height: auto; }
+.ls-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+/* the keys you mix up */
+.ls-mix { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 22px; }
+.ls-mix li { display: flex; align-items: baseline; gap: 8px; font-size: .9rem; color: var(--sub); }
+.ls-mix b { display: inline-grid; place-items: center; min-width: 1.7em; height: 1.7em; border-radius: var(--r-sm);
+  background: var(--panel-2); box-shadow: var(--lift); color: var(--text); font-family: var(--mono); font-weight: 500; }
+.ls-mix b.bad { color: var(--error); }
+.ls-mix small { font-size: .8rem; }

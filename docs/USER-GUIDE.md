@@ -342,7 +342,8 @@ the normal server, it shows yours.
   this browser. On the website (GitHub Pages) there are no accounts: you can
   set a name and a picture, kept only in this browser; "reset" forgets them.
 - **stats** in the navigation (or `Shift + Tab`) opens the statistics screen,
-  a page that scrolls, built after monkeytype's account page:
+  a page that scrolls, built after monkeytype's account page, with a switch
+  of the mode on top (Learn, Climb, Freetype):
   - the **personal bests** on top: two cards, rounds of 10–50 words and of
     15–90 seconds (older 60-word rounds keep their own cell), the best wpm of
     every length big with the accuracy of that round under it ("—" before the
@@ -355,7 +356,8 @@ the normal server, it shows yours.
     it; a whole missed day does) and an **activity calendar** of the last
     year (fewer weeks on a narrow screen), a square a day, brighter the
     longer you typed, with the months above and Mon / Wed / Fri on the left
-    (hover a square for the day). Days end at your own midnight;
+    (hover a square for the day); a day on which you met your daily goal
+    has a green ring. Days end at your own midnight;
   - the picked length in detail: rounds, and the averages of the last 10
     rounds (wpm, accuracy, consistency), each with a small green or red
     arrow for how it moved against the 10 rounds before; the **accuracy
@@ -368,7 +370,19 @@ the normal server, it shows yours.
     speed); **image** saves these numbers as a picture;
   - the speed of every round (hover a bar for its numbers), with a line for
     the average of the last 10 rounds and a dashed line for the goal (yours,
-    or else the trainer's);
+    or else the trainer's); in Learn the letter a round opened stands over
+    its bar, because the speed drops when a new letter comes and climbs back;
+  - for **Learn** only, three panels under the chart: **your letters,
+    round by round**, a row per letter and a square per round, coloured as
+    the letters row colours it (red far from mastered, green mastered), so
+    you see when each letter opened and how long it took to turn green;
+    **one letter** (click a letter of the grid; the weakest is shown first):
+    its speed after every round against the dashed goal line, and its
+    numbers now; and the **keys you mix up**: "r, you press t, 12 times",
+    for every pair that happened at least three times (counted from
+    2026-10-21 on: older rounds did not keep which key was pressed). The
+    letters are worked out again from your saved rounds, so rounds dropped
+    with Tab are not in the picture;
   - side by side (learning only): a **difficulty keyboard** (grey keys, from
     gold to red the harder the letter is for you, against your hardest
     letter; dashed = no data yet) and every letter as a small chip from

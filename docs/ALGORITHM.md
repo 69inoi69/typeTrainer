@@ -74,6 +74,9 @@ For every **position of the text that was typed** the browser sends one sample:
 - `ms` – time from the previous keypress to the **first** press at this
   position, measured with `keydown` and `performance.now()` (sub-millisecond
   resolution).
+- `typed` – the first wrong key pressed at this position (only when
+  `errors` > 0; missing in rounds from before 2026-10-21). The model never
+  reads it: the stats screen counts which keys you mix up with it.
 - **Skipped** letters were never typed, so they send no sample: a skip says
   nothing about how well the user types that letter. They still lower the
   accuracy (each skipped letter counts as one wrong press).
