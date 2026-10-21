@@ -55,9 +55,11 @@ type Config struct {
 	BehindProxy bool
 	Auth        auth.Params // accounts: passwords, login cookies, name rules
 	Engine      engine.Params
-	Words       engine.WordParams // how far down the frequency list learning words may come from
-	Freeplay    freeplay.Params   // Climb (its words and its level) and Freetype (its word lists)
-	Sim         sim.Params        // only for the simulation tool (go run ./tools/sim)
+	Laps        engine.LapParams      // Learn's laps after Learn complete: a higher goal speed each
+	Forecast    engine.ForecastParams // the Learn panel's "about N rounds to the next letter"
+	Words       engine.WordParams     // how far down the frequency list learning words may come from
+	Freeplay    freeplay.Params       // Climb (its words and its level) and Freetype (its word lists)
+	Sim         sim.Params            // only for the simulation tool (go run ./tools/sim)
 }
 
 // Default returns the values the program runs with. Tests that must not
@@ -77,7 +79,18 @@ func Default() Config {
 		// keybr's three: 95 % is good typing, 97 % careful, 100 % no mistake at all
 		StreakAccuracies: []float64{95, 97, 100},
 		ConfusionMin:     3, // once or twice is a slip; three times is a habit worth a look
-		ConfusionShown:   6, // a short list to act on, not a table
+		// After Learn complete the goal speed goes up 5 wpm a lap, as
+		// keybr's: 30 -> 35 -> ... -> 60 (6 more laps). Past 60 the work
+		// is no longer about single letters: Climb is for that.
+		Laps: engine.LapParams{StepWPM: 5, MaxWPM: 60},
+		// The forecast: a letter's last 10 rounds (its EMAs follow about
+		// the last 20 presses, so 10 rounds of a few presses each are its
+		// recent trend), from 3 rounds on; beyond 50 rounds it only says
+		// "more than 50". Chosen with the simulation (tools/sim,
+		// docs/ALGORITHM.md 11.1): off by 1.2 rounds on average, and with
+		// an answer more often than 6 rounds or a minimum of 5.
+		Forecast:       engine.ForecastParams{Window: 10, MinRounds: 3, MaxRounds: 50},
+		ConfusionShown: 6, // a short list to act on, not a table
 		Auth: auth.Params{
 			// PBKDF2-SHA256 rounds per password check: the OWASP recommendation
 			// (2023). About 0.3 s on a laptop: nothing for one login, very slow

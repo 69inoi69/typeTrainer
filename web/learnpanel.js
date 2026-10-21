@@ -3,12 +3,14 @@
 // needed"; the model is keybr's lines above its text). A Learn round ends
 // and the next one starts at once; what the round did is read here:
 //   line 1: the last round (speed and accuracy, each with its difference
-//           from your recent average), an accuracy streak (rounds in a row
+//           from your recent average), about how many rounds to the next
+//           letter (the forecast), the lap after Learn complete, an accuracy streak (rounds in a row
 //           at 95% or better) and today's practice against the daily goal;
 //   line 2: the gold letter (the focus of the words being typed): how far
 //           it is on the way to mastered and what it still needs, in plain
 //           words. Right after a round with news (a new letter, letters
-//           mastered, a record, every letter open, Learn complete) the
+//           mastered, a record, every letter open, a new lap, the last lap
+//           done) the
 //           news takes this line until you start typing.
 // The panel steps back while you type (body.typing-now, style.css): the
 // news and the letter line sit in one grid cell and swap by opacity only,
@@ -25,7 +27,7 @@
 import { t } from "./i18n.js";
 import { $, S, store } from "./state.js";
 import { getJSON } from "./api.js";
-import { letterProgress, rule } from "./letters.js";
+import { letterProgress, rule, forecastText } from "./letters.js";
 import { learning } from "./modes.js";
 
 const box = $("learn-panel");
@@ -65,7 +67,9 @@ export function compareStats(before, after) {
 // What the round that just ended brought, most important first; shown on
 // line 2 until the next round is begun. The two milestones of Learn are
 // told once per language (tt.milestone.<lang>: "open", then "complete").
-// r: { best, wpm, newLetter, mastered: [chars] } (compareStats and the round)
+// A new lap (r.newLap, its goal in wpm) is a milestone every time; the end
+// of the last lap is told once ("final").
+// r: { best, wpm, newLetter, newLap, mastered: [chars] } (compareStats and the round)
 // Returns true for a milestone (typing.js gives it confetti).
 let news = null;              // {text, tip, big, lang} or null
 export function roundNews(r) {
@@ -75,9 +79,14 @@ export function roundNews(r) {
   const flag = store.get(`tt.milestone.${S.lang}`) || "";
   const allOpen = ex.locked.length === 0;
   const waiting = keys.filter((k) => ex.unlocked.includes(k.char) && !k.mastered).map((k) => k.char);
-  if (allOpen && !waiting.length && flag !== "complete") {
+  const s = S.lastStats ?? {};
+  if (r.newLap) {
     store.set(`tt.milestone.${S.lang}`, "complete");
-    news = { text: t("news.complete"), tip: t("news.completeTip"), big: true };
+    const was = s.lap > 1 ? "news.lap" : "news.lapFirst";
+    news = { text: t(was, { n: s.lap + 1, w: r.newLap }), tip: t("news.lapTip", { last: s.lastLap + 1 }), big: true };
+  } else if (allOpen && !waiting.length && s.lap >= s.lastLap && flag !== "final") {
+    store.set(`tt.milestone.${S.lang}`, "final");
+    news = { text: t("news.complete", { w: s.targetWpm }), tip: t("news.completeTip"), big: true };
   } else if (allOpen && !flag) {
     store.set(`tt.milestone.${S.lang}`, "open");
     news = { text: t("news.allOpen"), tip: t("news.allOpenTip", { list: waiting.join(" ") }), big: true };
@@ -107,7 +116,7 @@ export function renderPanel() {
   box.hidden = !show;
   if (!show) { drawn = ""; return; }
   if (news && news.lang !== S.lang) news = null;   // the news of another language
-  const top = [lastRound(), accStreak(), dailyGoal()].join("");
+  const top = [lastRound(), forecast(), lap(), accStreak(), dailyGoal()].join("");
   const letter = letterLine();
   const html = `<div class="lp-row">${top}</div>` +
     `<div class="lp-row lp-stack${news ? " has-news" : ""}">` +
@@ -140,6 +149,21 @@ function lastRound() {
   return item("lp-last", t("lp.last"),
     `<b>${Math.round(last.wpm)}</b><small>wpm</small>${delta(last.wpm, avg?.wpm, "", "lp.faster", "lp.slower")}` +
     `<b class="lp-gap">${Math.round(last.accuracy)}%</b>${delta(last.accuracy, avg?.acc, "%", "lp.accUp", "lp.accDown")}`);
+}
+
+// "Next letter ≈ 6 rounds": the forecast (letters.js forecastText).
+function forecast() {
+  const f = forecastText(S.lastStats.forecast, S.exercise.locked.length === 0);
+  if (!f) return "";
+  return `<span class="lp-item lp-fc" tabindex="0" data-tip-text="${f.tip}"><span class="lp-lbl">${f.label}</span><b>${f.value}</b></span>`;
+}
+
+// "Lap 2 of 7": after Learn complete the letters are learned again at a
+// higher goal (docs/ALGORITHM.md 6.1); nothing on the first lap.
+function lap() {
+  const s = S.lastStats;
+  if (!s.lap) return "";
+  return item("lp-lap", t("lp.lap"), `<b tabindex="0" data-tip-text="${t("lp.lapTip", { w: s.targetWpm })}">${t("lp.lapOf", { n: s.lap + 1, all: s.lastLap + 1 })}</b>`);
 }
 
 // "4 rounds in a row at 97% or better": the highest level that the newest

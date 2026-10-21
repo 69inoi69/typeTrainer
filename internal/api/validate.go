@@ -102,13 +102,17 @@ func validateSamples(samples []engine.Sample, max int, alphabet string) string {
 
 // validateImport makes sure a loaded file cannot put impossible numbers or
 // foreign letters into the statistics. letters = how many letters the
-// language's unlock order has, levels how many levels Climb has.
-func validateImport(in langExport, maxSessions, maxEvents, letters, levels int, alphabet string, okLength func(string) bool, okFreetype func(string) bool, freetypeAlphabet string) string {
+// language's unlock order has, levels how many levels Climb has, laps the
+// last lap of Learn.
+func validateImport(in langExport, maxSessions, maxEvents, letters, levels, laps int, alphabet string, okLength func(string) bool, okFreetype func(string) bool, freetypeAlphabet string) string {
 	if in.Unlocked < 0 || in.Unlocked > letters {
 		return "unlocked: out of range"
 	}
 	if !validGroup(in.Group) {
 		return "group: unknown"
+	}
+	if in.Lap < 0 || in.Lap > laps {
+		return "lap: out of range"
 	}
 	for ch, k := range in.Keys {
 		if utf8.RuneCountInString(ch) != 1 || (ch != " " && !strings.Contains(alphabet, ch)) {
@@ -120,7 +124,7 @@ func validateImport(in langExport, maxSessions, maxEvents, letters, levels int, 
 			return "keys: impossible numbers for " + ch
 		}
 	}
-	if msg := validateSessions(in.Sessions, maxSessions, maxEvents, letters, alphabet, okLength); msg != "" {
+	if msg := validateSessions(in.Sessions, maxSessions, maxEvents, letters, laps, alphabet, okLength); msg != "" {
 		return msg
 	}
 	for _, sess := range in.Sessions {
@@ -129,7 +133,7 @@ func validateImport(in langExport, maxSessions, maxEvents, letters, levels int, 
 		}
 	}
 	if in.Freeplay != nil {
-		if msg := validateSessions(in.Freeplay.Sessions, maxSessions, maxEvents, letters, climbAlphabet(alphabet), okLength); msg != "" {
+		if msg := validateSessions(in.Freeplay.Sessions, maxSessions, maxEvents, letters, 0, climbAlphabet(alphabet), okLength); msg != "" {
 			return "freeplay " + msg
 		}
 		for _, sess := range in.Freeplay.Sessions {
@@ -145,7 +149,7 @@ func validateImport(in langExport, maxSessions, maxEvents, letters, levels int, 
 		if !okFreetype(list) {
 			return "freetype: unknown list " + list
 		}
-		if msg := validateSessions(f.Sessions, maxSessions, maxEvents, letters, freetypeAlphabet, okLength); msg != "" {
+		if msg := validateSessions(f.Sessions, maxSessions, maxEvents, letters, 0, freetypeAlphabet, okLength); msg != "" {
 			return "freetype " + msg
 		}
 		for _, sess := range f.Sessions {
@@ -159,7 +163,8 @@ func validateImport(in langExport, maxSessions, maxEvents, letters, levels int, 
 
 // validateSessions accepts at most max entries, every number in its range,
 // raw keys as in validateSamples (at most maxEvents per session).
-func validateSessions(sessions []storage.Session, max, maxEvents, letters int, alphabet string, okLength func(string) bool) string {
+// laps: the last lap a round may have (0 outside Learn).
+func validateSessions(sessions []storage.Session, max, maxEvents, letters, laps int, alphabet string, okLength func(string) bool) string {
 	if len(sessions) > max {
 		return "sessions: too many"
 	}
@@ -172,6 +177,9 @@ func validateSessions(sessions []storage.Session, max, maxEvents, letters int, a
 		}
 		if sess.Unlocked < 0 || sess.Unlocked > letters {
 			return "sessions: unlocked out of range"
+		}
+		if sess.Lap < 0 || sess.Lap > laps {
+			return "sessions: lap out of range"
 		}
 		if !okLength(sess.Length) {
 			return "sessions: unknown length " + sess.Length

@@ -39,7 +39,6 @@ func (s *Server) handlePortion(w http.ResponseWriter, r *http.Request, user stri
 		badRequest(w, "invalid JSON")
 		return
 	}
-	p := s.cfg.Engine
 	if msg := validateSamples(req.Samples, s.cfg.MaxEvents, l.Info.Alphabet); msg != "" {
 		badRequest(w, msg)
 		return
@@ -53,11 +52,13 @@ func (s *Server) handlePortion(w http.ResponseWriter, r *http.Request, user stri
 	// step, so two quick calls cannot both start from the old numbers
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	stats, unlocked, newLetter, err := s.learn(user, l, req.Samples)
+	done, err := s.learn(user, l, req.Samples)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
+	stats, unlocked := done.stats, done.unlocked
+	p := s.cfg.Engine.ForLap(done.lapAfter, s.cfg.Laps) // the words of the next portions practise for the new goal
 	group, err := s.store.Group(user, l.Info.ID)
 	if err != nil {
 		serverError(w, err)
@@ -95,15 +96,42 @@ func (s *Server) handlePortion(w http.ResponseWriter, r *http.Request, user stri
 		req.Retry = nil // mistyped words come back once, in the first portion
 	}
 	s.genMu.Unlock()
-	writeJSON(w, http.StatusOK, map[string]any{"portions": out, "newLetter": newLetter, "round": p.RoundPortions})
+	writeJSON(w, http.StatusOK, map[string]any{"portions": out, "newLetter": done.newLetter, "round": p.RoundPortions, "newLap": newLap(done, p)})
+}
+
+// lapParams are the model's parameters at the user's lap in language
+// lang (engine.Params.ForLap: the goal speed of that lap), and the lap.
+func (s *Server) lapParams(user, lang string) (engine.Params, int, error) {
+	lap, err := s.store.Lap(user, lang)
+	if err != nil {
+		return engine.Params{}, 0, err
+	}
+	lap = min(max(lap, 0), s.cfg.Engine.LastLap(s.cfg.Laps))
+	return s.cfg.Engine.ForLap(lap, s.cfg.Laps), lap, nil
+}
+
+// learned is what learn did: the statistics after it, the letters open,
+// the letter it opened ("" = none), the lap the samples were typed in and
+// the lap after them (one more when they finished a lap).
+type learned struct {
+	stats         map[string]engine.KeyStat
+	unlocked      int
+	newLetter     string
+	lap, lapAfter int
 }
 
 // learn applies samples to the statistics of the language and opens the next
-// letter if every open letter is mastered. The caller holds writeMu.
-// newLetter is "" if nothing opened.
-func (s *Server) learn(user string, l *Language, samples []engine.Sample) (stats map[string]engine.KeyStat, unlocked int, newLetter string, err error) {
+// letter if every open letter is mastered; with every letter open and
+// mastered it starts the next lap (engine.LapDone, StartLap), unless this
+// was the last. The caller holds writeMu.
+func (s *Server) learn(user string, l *Language, samples []engine.Sample) (out learned, err error) {
 	id := l.Info.ID
-	if stats, err = s.store.KeyStats(user, id); err != nil {
+	p, lap, err := s.lapParams(user, id)
+	if err != nil {
+		return
+	}
+	out.lap, out.lapAfter = lap, lap
+	if out.stats, err = s.store.KeyStats(user, id); err != nil {
 		return
 	}
 	before, err := s.store.Unlocked(user, id)
@@ -111,21 +139,35 @@ func (s *Server) learn(user string, l *Language, samples []engine.Sample) (stats
 		return
 	}
 	before = l.Gen.Clamp(before)
+	out.unlocked = before
 	if len(samples) == 0 {
-		return stats, before, "", nil
-	}
-	stats = engine.Apply(stats, samples, s.cfg.Engine)
-	if err = s.store.SaveKeyStats(user, id, stats); err != nil {
 		return
 	}
-	unlocked = l.Gen.NextUnlocked(stats, before, s.cfg.Engine)
-	if err = s.store.SetUnlocked(user, id, unlocked); err != nil {
+	out.stats = engine.Apply(out.stats, samples, p)
+	out.unlocked = l.Gen.NextUnlocked(out.stats, before, p)
+	if out.unlocked > before {
+		out.newLetter = l.Gen.Order()[out.unlocked-1]
+	}
+	if lap < s.cfg.Engine.LastLap(s.cfg.Laps) && engine.LapDone(out.stats, l.Gen.Order(), out.unlocked, p) {
+		out.stats, out.lapAfter = engine.StartLap(out.stats), lap+1
+		if err = s.store.SetLap(user, id, out.lapAfter); err != nil {
+			return
+		}
+	}
+	if err = s.store.SaveKeyStats(user, id, out.stats); err != nil {
 		return
 	}
-	if unlocked > before {
-		newLetter = l.Gen.Order()[unlocked-1]
-	}
+	err = s.store.SetUnlocked(user, id, out.unlocked)
 	return
+}
+
+// newLap is the goal speed of the lap learn just started (0 = none
+// started): the browser tells the typist (learnpanel.js).
+func newLap(done learned, p engine.Params) float64 {
+	if done.lapAfter > done.lap {
+		return p.TargetWPM
+	}
+	return 0
 }
 
 // resultsRequest is the body of /results, and (without Samples) of
@@ -184,7 +226,7 @@ func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, user stri
 
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	_, unlocked, newLetter, err := s.learn(user, l, req.Samples)
+	done, err := s.learn(user, l, req.Samples)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -200,13 +242,15 @@ func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, user stri
 	}
 	err = s.store.AddSession(user, l.Info.ID, storage.Session{
 		WPM: req.WPM, Accuracy: req.Accuracy, Chars: req.Chars, Consistency: consistency, FinishedAt: time.Now(),
-		Keys: req.Keys, Unlocked: unlocked, Length: req.Length, Group: group, Device: req.Device,
+		Keys: req.Keys, Unlocked: done.unlocked, Length: req.Length, Group: group, Device: req.Device,
+		Lap: done.lap, // the lap the round was typed in, even when its last keys finished it
 	})
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"unlocked": unlocked, "newLetter": newLetter, "consistency": consistency})
+	writeJSON(w, http.StatusOK, map[string]any{"unlocked": done.unlocked, "newLetter": done.newLetter, "consistency": consistency,
+		"newLap": newLap(done, s.cfg.Engine.ForLap(done.lapAfter, s.cfg.Laps))})
 }
 
 // POST /api/v1/progress?lang= {"unlockAll": true} -> opens every letter;
@@ -267,7 +311,11 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, user string
 		return
 	}
 	unlocked = l.Gen.Clamp(unlocked)
-	p := s.cfg.Engine
+	p, lap, err := s.lapParams(user, id)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
 	keys := []keyInfo{}
 	for i, c := range l.Gen.Order() {
 		st := stats[c]
@@ -310,7 +358,17 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, user string
 		return
 	}
 	slices.Reverse(all) // oldest first
+	// the forecast reads every round, of every length: a letter learns in all
+	every, err := s.allLearning(user, id)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	rounds := history.LetterTimeline(every, l.Gen.Order(), l.Gen.Start(), s.cfg.Engine, s.cfg.Laps)
 	writeJSON(w, http.StatusOK, map[string]any{
+		"forecast": history.NextForecast(rounds, l.Gen.Order(), stats, unlocked, p, s.cfg.Forecast),
+		// Learn's lap (0 = the first) and the last one there is; targetWpm is the lap's goal
+		"lap": lap, "lastLap": s.cfg.Engine.LastLap(s.cfg.Laps),
 		"streaks": history.AccuracyStreaks(all, s.cfg.StreakAccuracies),
 		"order":   l.Gen.Order(), // the unlock order: the chart names the letters a round opened
 		"lang":    id, "keys": keys, "sessions": summaries(sessions), "sessionCount": count, "targetWpm": p.TargetWPM,
@@ -320,27 +378,31 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, user string
 	})
 }
 
+// allLearning is every Learn round of every length, oldest first.
+func (s *Server) allLearning(user, lang string) ([]storage.Session, error) {
+	count, err := s.store.SessionCount(user, lang, "")
+	if err != nil {
+		return nil, err
+	}
+	all, err := s.store.RecentSessions(user, lang, "", count)
+	slices.Reverse(all)
+	return all, err
+}
+
 // GET /api/v1/learn/history?lang= -> {"order": the letters in the order
 // they open, "rounds": every Learn round oldest first with each open
 // letter's numbers after it (history.LetterTimeline), "confusions": the
 // keys mixed up most (history.Confusions)}: the Learn part of the stats
 // screen. Every length together: a letter learns in every round.
 func (s *Server) handleLearnHistory(w http.ResponseWriter, r *http.Request, user string, l *Language) {
-	id := l.Info.ID
-	count, err := s.store.SessionCount(user, id, "")
+	all, err := s.allLearning(user, l.Info.ID)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	all, err := s.store.RecentSessions(user, id, "", count)
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-	slices.Reverse(all) // oldest first
 	writeJSON(w, http.StatusOK, map[string]any{
 		"order":      l.Gen.Order(),
-		"rounds":     history.LetterTimeline(all, l.Gen.Order(), l.Gen.Start(), s.cfg.Engine),
+		"rounds":     history.LetterTimeline(all, l.Gen.Order(), l.Gen.Start(), s.cfg.Engine, s.cfg.Laps),
 		"confusions": history.Confusions(all, s.cfg.ConfusionMin, s.cfg.ConfusionShown),
 	})
 }

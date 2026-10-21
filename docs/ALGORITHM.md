@@ -296,6 +296,96 @@ all letters" choice, a decision of the owner): typing well, they master the
 open letters quickly and unlock the rest in a short time. Once every letter is
 open the engine works only through focus.
 
+### 6.1 Laps after Learn complete
+
+**Owner, 2026-10-21, after keybr.** Once every letter is open and mastered
+(Learn complete), 30 WPM is no longer a goal: the typist reached it. So the
+goal goes up and the letters are learned again at it, a lap at a time
+(`engine.LapParams`, `lap.go`):
+
+```
+goal of lap n = min(TargetWPM + n * StepWPM, MaxWPM)
+              = 30, 35, 40, 45, 50, 55, 60 wpm   (lap 0 .. 6; LastLap = 6)
+```
+
+- **When.** After the presses of a portion (or of the round's end) are
+  applied, if every letter is open and mastered at the lap's goal
+  (`LapDone`) and the lap is not the last, the next lap starts. The server
+  keeps the lap per user and language (`Store.Lap`, `progress.lap`,
+  migration 010) and every Learn round keeps the lap it was typed in
+  (`sessions.lap`).
+- **What changes.** Only `TargetWPM` (`Params.ForLap`): every formula of
+  sections 4-7 stays and simply gets the higher goal, so the difficulty of a
+  letter, its mastery and the word choice all follow it. `StartLap` turns
+  `Held` off for every letter: each has to *reach* the new goal, not only
+  *keep* the old one (the margin of section 6 would otherwise keep a 30 WPM
+  letter "mastered" at 35). The EMAs are kept, so a letter already fast
+  enough counts as mastered again at its next press and the slow ones become
+  the focus. No letter is closed again.
+- **Why to 60.** keybr raises its goal in the same way. Past about 60 WPM
+  the limit is no longer single letters but words and their rhythm, which
+  is what Climb trains.
+- **What stays separate.** The personal speed goal of the settings is a
+  line on the stats screen only; the algorithm never sees it.
+- **The stats screen** judges every round at the goal of its own lap
+  (`history.LetterTimeline`), and starts a new lap there as the trainer did.
+
+### 6.2 The forecast: rounds to the next letter
+
+**Owner, 2026-10-21, after keybr.** The Learn panel says about how many
+rounds the next letter is away ("Next letter ≈ 6 rounds"; with every letter
+open, "Lap done in ≈ 6 rounds"). It only reads the numbers; nothing in the
+model or the word choice sees it (`engine.RoundsToMastery`,
+`history.NextForecast`).
+
+For each open letter that is not mastered, its numbers after each of its
+last `Window = 10` rounds (presses `n`, presses with a mistake `m`,
+`ErrEMA`, `TimeEMA`; the rounds are the replay of the stats screen, the
+last point the model as it is now). Each of the three parts of the mastery
+rule gets its own estimate, and the slowest decides:
+
+```
+per round = presses in the window / rounds in the window
+presses:  (20 - n) / per round
+mistakes: q = mistakes / presses in the window   (the recent mistake rate)
+          ErrEMA moves towards q by Alpha a press: E_k = q + (E - q)(1 - Alpha)^k,
+          so it is under 0.05 after k = ln((0.05 - q) / (E - q)) / ln(1 - Alpha) presses;
+          rounds = k / per round
+speed:    (TimeEMA - TargetMs) / (fall of the least-squares line through TimeEMA, per round)
+
+rounds for the letter = ceil(max of the parts not met yet), at least 1
+rounds to the next letter = max over the letters still waiting
+```
+
+The least-squares slope over the points `(i, y_i)` is
+`sum((i - mean i)(y_i - mean y)) / sum((i - mean i)^2)`.
+
+**Why mistakes are counted, not drawn as a line.** One slip lifts `ErrEMA`
+by about `Alpha` = 0.1 at once (section 4). A line through the rounds would
+then point up, as if the letter got worse, and with several letters open
+one of them slipped in almost every round: the first version (a line
+through `ErrEMA`) gave no answer most of the time and erred by 4-6 rounds
+when it did (section 11.1). Counting the mistakes of the window and using
+the EMA's own formula is calm about a single slip and still honest: if the
+recent mistakes are not under 5 %, the EMA cannot get there either.
+
+**No answer** rather than a wrong one: a letter with fewer than
+`MinRounds = 3` rounds (a line through two points is noise), with no timed
+press yet, not typed in the window, with recent mistakes at 5 % or more,
+or whose time line does not fall (not getting faster). One letter without
+an answer means no answer for the next letter either, since it waits for
+all of them; the panel then shows nothing (the letter line already says
+what the gold letter needs). More than `MaxRounds = 50` is shown as "50+".
+
+**Why the slowest letter.** A letter opens only when every open letter is
+mastered (section 6), so the next letter is as far away as the letter
+furthest from its goal.
+
+**Why a straight line for the speed.** It is explainable in one sentence
+and needs no model of learning. Its weakness: how fast a letter improves
+changes (it gets more presses once it becomes the focus, and slows down
+near its limit), and a straight line sees that late.
+
 ## 7. Choosing the words
 
 The text is a **stream**: it is not built in advance but a few words at a
@@ -539,6 +629,8 @@ All in `internal/config/config.go`.
 | `RampLetters` | 10 000 | letters typed after the full alphabet until every word comes freely | about 1700-1900 words (5.2-5.9 letters per word), ~60 rounds of 30 words, an hour at 30 WPM: the list grows by ~200 words every 6 minutes of typing |
 | `ConsistencyMinSeconds` | 5 | shortest round that gets a consistency (section 3) | a standard deviation of 2-3 numbers says little; 5 s is a few words even for a beginner |
 | `RankPenalty` | 0.5 | weight multiplier per `RankStep` over the limit | halving is easy to explain; with `T = 0.1` one step equals about 0.07 of difficulty, so weak letters still decide first |
+| `Laps.StepWPM` / `Laps.MaxWPM` | 5 / 60 | after Learn complete the goal goes up 5 WPM a lap, up to 60 (section 6.1) | as keybr; past 60 WPM single letters are no longer the limit, Climb is for that |
+| `Forecast.Window` / `MinRounds` / `MaxRounds` | 10 / 3 / 50 | the forecast reads a letter's last 10 rounds, needs 3, says "50+" beyond 50 (section 6.2) | 10 rounds of a few presses are about what the EMA remembers (20 presses); with the simulation (section 11.1), 3 rounds answered more often than 5 at about the same error |
 
 The values were chosen by reasoning, not fitted to data. Tuning them on real
 user data is a good subject for the evaluation chapter (section 11).
@@ -852,6 +944,44 @@ with only the first of them (cap off) to tell the two apart:
   ~20 different words in 30, and no word comes more than twice (counted with
   the configured generator, every letter mastered but the newest).
 - The expert is unchanged within the spread.
+
+**Forecast (2026-10-21).** How good is "Next letter ≈ N rounds" (section
+6.2)? `sim.Forecasts` lets each of the 20 beginners practise with the
+stream, in rounds of 30 words, until every letter is open. After every
+round it makes the forecast exactly as the panel does, and when the next
+letter opens it compares each forecast made since the last letter with the
+rounds it really took. `go run ./tools/sim` prints the line under each
+language's table. English, the first version (mistakes as a line through
+`ErrEMA`) and the configured one (mistakes counted, section 6.2), each with
+a few windows (`Window` / `MinRounds`):
+
+| Mistakes | Window / min | Rounds with a forecast | Forecasts | Error, mean / median (rounds) | Within max(2, 25 %) | Too hopeful | Real wait, mean |
+|---|---|---|---|---|---|---|---|
+| line | 10 / 5 | 5 % | 66 | 6.0 / 2 | 52 % | 21 % | 2.0 |
+| line | 6 / 3 | 8 % | 121 | 3.7 / 1 | 69 % | 31 % | 2.2 |
+| counted | 10 / 5 | 9 % | 133 | 1.0 / 1 | 90 % | 23 % | 1.8 |
+| **counted** | **10 / 3 (configured)** | 12 % | 178 | 1.2 / 1 | 87 % | 31 % | 2.1 |
+| counted | 6 / 3 | 10 % | 137 | 1.2 / 1 | 87 % | 31 % | 1.9 |
+| counted | 4 / 2 | 9 % | 126 | 1.2 / 1 | 88 % | 40 % | 2.1 |
+
+- **Counting the mistakes is what made it work:** the mean error fell from
+  4-6 rounds to about 1, and it answers about twice as often. A line
+  through `ErrEMA` read every slip as "getting worse" (section 6.2).
+- **The window matters little once mistakes are counted.** 3 rounds as the
+  minimum answers in more rounds than 5 at about the same error; a window
+  of 10 is configured because it is about what the EMA remembers.
+- **It errs more often on the long side** (about two out of three misses
+  are too long): it under-promises. The likely reason is the focus
+  (section 7): the letter furthest from its goal gets more presses per
+  round once the portions are built around it, so it improves faster than
+  its past rounds say.
+- **It is rarely shown in the simulation, and that is expected.** The
+  simulated beginner opens a letter about every 2 rounds, so the new letter
+  seldom has 3 rounds behind it before the next one opens: the forecast
+  answers only when a letter takes longer, which is when a typist wants to
+  know. How it does on real people (who learn more slowly and less evenly)
+  can only be measured with real users: every round's numbers are in the
+  history, so the same check could be run on them.
 
 Limits: the typist is invented. Letters do not influence each other, there is
 no forgetting, and learning is the same exponential curve for every letter. The

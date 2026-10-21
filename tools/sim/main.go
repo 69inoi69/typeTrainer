@@ -202,6 +202,29 @@ func runLanguage(id string, words, home []string, cfg config.Config, temps []flo
 		}
 		fmt.Println(row(name, res, vs))
 	}
+	forecast(words, home, cfg)
+}
+
+// forecast prints how good the forecast of the Learn panel is for this
+// language (sim.Forecasts): the stream with the configured numbers, p.Runs
+// beginners, every forecast against the rounds the next letter really took.
+func forecast(words, home []string, cfg config.Config) {
+	p, ep, fp := cfg.Sim, cfg.Engine, cfg.Forecast
+	var runs []sim.ForecastRun
+	for run := 0; run < p.Runs; run++ {
+		seed := int64(run + 1)
+		gen := engine.NewGenerator(words, rand.New(rand.NewSource(seed)), ep)
+		gen.SetHome(home, ep)
+		gen.SetWordParams(cfg.Words)
+		typist := sim.NewTypist(gen.Order(), p, rand.New(rand.NewSource(seed))).
+			Clone(rand.New(rand.NewSource(seed + 1000)))
+		rounds := p.MaxExercises * ep.ExerciseWords / (ep.PortionWords * ep.RoundPortions)
+		runs = append(runs, sim.Forecasts(gen, &sim.Stream{Gen: gen, EP: ep}, typist, ep, fp, rounds))
+	}
+	s := sim.Summarize(runs, fp)
+	fmt.Printf("forecast \"rounds to the next letter\": shown in %.0f%% of rounds; %d forecasts, error mean %.1f, median %.1f rounds\n"+
+		"  (mean wait %.1f); within max(2, 25%%) %.0f%%, too hopeful %.0f%%; \"more than %d\": %d, right %d\n",
+		s.Shown*100, s.N, s.MeanAbs, s.MedianAbs, s.MeanActual, s.Within*100, s.Early*100, fp.MaxRounds, s.More, s.MoreRight)
 }
 
 // row summarises the runs of one strategy. Runs that gave up count as

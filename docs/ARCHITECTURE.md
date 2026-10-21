@@ -41,7 +41,7 @@ its own.
 | `internal/storage/store.go` | The `Store` interface. |
 | `internal/storage/memory.go` | In-memory `Store` (lost on restart). |
 | `internal/storage/postgres.go` | PostgreSQL `Store` through the standard `database/sql`; the pgx driver is only registered. Applies `migrations/*.sql` at start. Not in the WebAssembly build. |
-| `internal/storage/migrations/` | The database tables, one numbered SQL file per change (`001_init.sql` ... `005_letter_held.sql` (a letter's mastery is remembered), `006_round_level.sql` (Climb's level per round), `007_freetype_modes.sql` (a history per Freetype list), `008_climb_ten_levels.sql`, `009_freetype_variants.sql` (a history per Freetype kind of text)). |
+| `internal/storage/migrations/` | The database tables, one numbered SQL file per change (`001_init.sql` ... `005_letter_held.sql` (a letter's mastery is remembered), `006_round_level.sql` (Climb's level per round), `007_freetype_modes.sql` (a history per Freetype list), `008_climb_ten_levels.sql`, `009_freetype_variants.sql` (a history per Freetype kind of text), `010_learn_laps.sql` (Learn's lap per user and per round)). |
 | `internal/storage/store_test.go` | The tests every `Store` must pass; run on memory always and on PostgreSQL when `TT_TEST_DATABASE_URL` is set (`postgres_test.go`). |
 | `internal/api/handlers.go` | The `Server`, the route list (`Register`), `?lang=`, JSON helpers, locking around read-modify-write. |
 | `internal/api/learning.go` | Learning routes: `/portion`, `/results`, `/stats`, `/activity`, `/progress`. |
@@ -195,15 +195,15 @@ All responses are JSON. Every route except `/languages` and `/auth/*` takes `?la
 | POST | `/api/v1/auth/logout` | | `{ok: true}`; ends this login and deletes the cookie |
 | GET | `/api/v1/auth/me` | | `{accounts, name}`; `name` is null for a guest, `accounts` false where they cannot work (GitHub Pages) |
 | GET | `/api/v1/layout` | | layout JSON |
-| POST | `/api/v1/portion` | `{samples: [{char, errors, ms, typed?}], recent: [words], retry: [words], start: bool, last: bool}` | `{portions: [{words, focus, weakest, unlocked, locked}], newLetter, round}`; one portion, `AheadPortions + 1` with `start`, none with `last` |
-| POST | `/api/v1/results` | `{samples: [{char, errors, ms}], keys: [the same shape, the whole round], chars, wpm, accuracy, perSecond: [keypresses in each full second], length}` | `{unlocked, newLetter, consistency}` (`consistency` 0–100, `null` for a round under `ConsistencyMinSeconds`); the round is over: one history entry |
+| POST | `/api/v1/portion` | `{samples: [{char, errors, ms, typed?}], recent: [words], retry: [words], start: bool, last: bool}` | `{portions: [{words, focus, weakest, unlocked, locked}], newLetter, newLap, round}` (`newLap`: the goal in WPM of a lap these presses started, 0 = none; ALGORITHM.md 6.1); one portion, `AheadPortions + 1` with `start`, none with `last` |
+| POST | `/api/v1/results` | `{samples: [{char, errors, ms}], keys: [the same shape, the whole round], chars, wpm, accuracy, perSecond: [keypresses in each full second], length}` | `{unlocked, newLetter, newLap, consistency}` (`consistency` 0–100, `null` for a round under `ConsistencyMinSeconds`); the round is over: one history entry |
 | POST | `/api/v1/progress` | `{unlockAll: true\|false}` | `{unlocked}`; for development only, the interface no longer calls it |
 | POST | `/api/v1/group` | `{group: "random"\|""}` | `{group}`; the study group of the language (hidden: only the study link `?group=random` / `?group=adaptive` calls it, `web/app.js`). `/stats` returns `group`, every learning round stores it |
 | POST | `/api/v1/reset` | | `{ok: true}`; deletes all data of the language (reset button, until there are user accounts) |
-| GET | `/api/v1/export` | | `{unlocked, keys: {char: {count, mistakes, errEma, timeEma, timedCount, held}}, sessions: [all, OLDEST first, each with its raw keys], freeplay: {sessions (each with its level)}, climbLevels: 10, freetype: {"1000": {sessions}, "1000-long": ..., "sentences": ..., "custom": ...}}`; everything stored for the language (`freeplay` and `freetype` are missing in older files; without `climbLevels` Climb's levels are the old 0..1, turned into 1..10 on import) |
+| GET | `/api/v1/export` | | `{unlocked, lap, keys: {char: {count, mistakes, errEma, timeEma, timedCount, held}}, sessions: [all, OLDEST first, each with its raw keys], freeplay: {sessions (each with its level)}, climbLevels: 10, freetype: {"1000": {sessions}, "1000-long": ..., "sentences": ..., "custom": ...}}`; everything stored for the language (`freeplay` and `freetype` are missing in older files; without `climbLevels` Climb's levels are the old 0..1, turned into 1..10 on import) |
 | POST | `/api/v1/import` | the same JSON as `/export` | `{unlocked, sessions}`; REPLACES the language's data, or changes nothing if the data is invalid |
-| GET | `/api/v1/stats?length=` | | `{keys: [{char, count, errorRate, avgMs, difficulty, mastered, unlocked}], sessions: [last 50 of that length, newest first, without raw keys], order: [the unlock order, for the letters a round opened], streaks (as in `/freeplay/stats`), sessionCount (of that length), lengths: [every length in the history], bests: {length: the fastest round of it}, targetWpm, masteryMin, masteryErr (the mastery rule: at least masteryMin presses, under masteryErr % mistakes, for the texts)}`; no `length` = every length |
-| GET | `/api/v1/learn/history` | | `{order: [the letters in unlock order], rounds: [{wpm, accuracy, unlocked, letters: [{count, errorRate, avgMs, mastered} or null while locked, in order]}], confusions: [{want, typed, n}]}`: every Learn round oldest first, every length, with the letter model replayed over the rounds' raw keys (`history.LetterTimeline`); the pairs mixed up at least `ConfusionMin` times, at most `ConfusionShown` (`history.Confusions`) |
+| GET | `/api/v1/stats?length=` | | `{keys: [{char, count, errorRate, avgMs, difficulty, mastered, unlocked}], sessions: [last 50 of that length, newest first, without raw keys], order: [the unlock order, for the letters a round opened], streaks (as in `/freeplay/stats`), sessionCount (of that length), lengths: [every length in the history], bests: {length: the fastest round of it}, targetWpm (the goal of the current lap), lap (0 = the first), lastLap, forecast: {known, rounds, more, letter, few} (about how many rounds to the next letter, `history.NextForecast`, ALGORITHM.md 6.2), masteryMin, masteryErr (the mastery rule: at least masteryMin presses, under masteryErr % mistakes, for the texts)}`; no `length` = every length |
+| GET | `/api/v1/learn/history` | | `{order: [the letters in unlock order], rounds: [{wpm, accuracy, unlocked, lap, letters: [{count, errorRate, avgMs, mastered} or null while locked, in order]}], confusions: [{want, typed, n}]}`: every Learn round oldest first, every length, with the letter model replayed over the rounds' raw keys (`history.LetterTimeline`); the pairs mixed up at least `ConfusionMin` times, at most `ConfusionShown` (`history.Confusions`) |
 | GET | `/api/v1/activity?tz=` | | `{days: [{date, rounds, seconds, chars}]}`: every day with a finished round, every mode together, oldest first; `tz` = the browser's minutes from UTC (east positive), so days end at the user's midnight. `seconds` = right letters / 5 / WPM (`storage.RoundSeconds`). The stats screen builds the total time typing, the days in a row and the activity calendar from it |
 | POST | `/api/v1/freeplay/portion` | `{recent: [words of the round], start: bool, level}` | `{portions: [{words}], round, level}`; Climb: the next words at the level of the round (`level` 1..10, or 0 = where the user stands, `freeplay.Standing`) |
 | POST | `/api/v1/freeplay/results` | `{chars, wpm, accuracy, perSecond, keys, length, level}` | `{consistency, weak: [{pair, cost, count}], verdict: "pass" \| "hold" \| "fail", place: {level, passes, fails, moved}}`; one entry in Climb's history with the level it was typed at (a whole number 1..10); verdict and place say what it counted for and where the next round starts; its keys may be capitals and `,` `.` (rounds from before 2026-10-20 had them) |
@@ -232,7 +232,7 @@ from every keypress.
 
 Validation on `/import`: `unlocked` between 0 and the number of letters; every key is
 one letter of the language or a space; per letter `0 <= mistakes <= count`,
-`0 <= timedCount <= count`, `0 <= errEma <= 1`, `timeEma >= 0`; per session WPM
+`0 <= timedCount <= count`, `0 <= errEma <= 1`, `timeEma >= 0`; `lap` (and each Learn session's `lap`) between 0 and the last lap, 0 in Climb and Freetype; per session WPM
 0–400, accuracy 0–100, `chars >= 0`, consistency 0–100 or missing (older files have none). Limits (`MaxImportBytes`,
 `MaxImportSessions`) are in `internal/config/config.go`. The browser joins the
 languages into one file `{app, version, exportedAt, languages: {id: <export>}}`
@@ -380,7 +380,7 @@ in git. How to install PostgreSQL on Windows: USER-GUIDE.md.
   says 1.25 (1.24 is no longer supported by the Go team either). The
   WebAssembly build does not include it (`postgres.go` has a build tag).
 - **Tables** (`internal/storage/migrations/001_init.sql`): `users`, `logins`
-  (token hashes), `progress` (unlocked letters, study group; the typing
+  (token hashes), `progress` (unlocked letters, study group, Learn's lap (migration 010); the typing
   test's flag, no longer used),
   `key_stats`
   (the letter model) and `sessions` (the history of every mode, `mode`

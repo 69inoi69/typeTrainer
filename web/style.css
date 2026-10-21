@@ -641,8 +641,8 @@ body.typing-now .learn-panel { opacity: .4; }
    the first key of a round changes no layout */
 .lp-stack { display: grid; }
 .lp-stack > p { grid-area: 1 / 1; margin: 0; display: flex; align-items: center; gap: 10px; min-width: 0; transition: opacity .3s var(--ease); }
-.lp-stack.has-news .lp-letter { opacity: 0; }
-body.typing-now .lp-stack.has-news .lp-letter { opacity: 1; }
+.lp-stack.has-news .lp-letter { opacity: 0; pointer-events: none; }   /* or it covers the news and its tooltip */
+body.typing-now .lp-stack.has-news .lp-letter { opacity: 1; pointer-events: auto; }
 body.typing-now .lp-news { opacity: 0; pointer-events: none; }
 .lp-stack > .lp-news { display: block; align-self: center; color: var(--text); cursor: default; }
 .lp-news.big { color: var(--accent-text); }
@@ -1987,6 +1987,8 @@ body.afk :is(.top, .views, .bottom) { opacity: .45; }
   background: var(--accent-fill); color: var(--on-accent); font-family: var(--mono); font-weight: 600; }
 .ls-facts { margin: 4px 0 8px; }
 .ls-needs { margin: 0 0 12px; font-size: .9rem; color: var(--text); }
+.ls-fc { margin: 14px 0 0; color: var(--sub); }
+.ls-fc b { color: var(--text); font-weight: 500; }
 .ls-chart-box svg { display: block; width: 100%; height: auto; }
 .ls-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
 /* the keys you mix up */

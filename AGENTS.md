@@ -111,7 +111,10 @@ Details: `docs/ARCHITECTURE.md`.
   It has no result screen (owner, 2026-10-20): its progress while typing
   is the letters row and the Learn panel above the text (the last round
   against your average, an accuracy streak, a daily goal, the focus letter
-  and what it needs, the news of the round; no charts there). Its charts
+  and what it needs, about how many rounds to the next letter, the news
+  of the round; no charts there). After Learn complete the letters are
+  learned again in laps, the goal 5 wpm higher each, up to 60 (owner,
+  2026-10-21, after keybr). Its charts
   live on the stats screen (owner, 2026-10-21, reversing "no stats screen"):
   every letter round by round, one letter's speed against the goal, the
   keys you mix up.

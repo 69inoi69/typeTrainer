@@ -4,7 +4,7 @@
 //   - every letter, round by round: a row per letter in the order they
 //     open, a cell per round, coloured as the letters row colours it (red
 //     far from mastered, green mastered); you see when each letter opened
-//     and how long it took to turn green;
+//     and how long it took to turn green; under it the forecast and the lap;
 //   - one letter: its speed round by round against the goal line, with
 //     its numbers now (a click on a letter of the grid picks it);
 //   - the keys you mix up: "r, you press t" and how often.
@@ -18,7 +18,7 @@
 import { t } from "./i18n.js";
 import { $, S } from "./state.js";
 import { getJSON } from "./api.js";
-import { letterProgress, letterNeeds } from "./letters.js";
+import { letterProgress, letterNeeds, forecastText } from "./letters.js";
 
 // a round's square in the grid: as wide as the rounds let it, between
 // CELL_MIN and CELL_MAX px; more rounds than fit: the last ones
@@ -81,7 +81,17 @@ function gridPanel(rounds, order, open) {
   }).join("");
   const scope = shown.length === rounds.length ? t("chart.all") : t("chart.last", { n: shown.length });
   return `<div class="panel ls-panel"><div class="panel-head"><h2>${t("ls.grid")}</h2><span class="panel-note">${t("ls.gridNote", { scope })}</span></div>` +
-    `<div class="ls-grid" style="--cell:${cell}px;--gap:${GAP}px">${rows}</div></div>`;
+    `<div class="ls-grid" style="--cell:${cell}px;--gap:${GAP}px">${rows}</div>${forecastLine(order, open)}</div>`;
+}
+// Under the grid: about how many rounds to the next letter (or the end of
+// the lap), as on the Learn panel, and the lap after Learn complete.
+function forecastLine(order, open) {
+  const s = S.lastStats ?? {};
+  const f = forecastText(s.forecast, open >= order.length);
+  const lap = s.lap ? t("ls.lap", { n: s.lap + 1, all: s.lastLap + 1, w: s.targetWpm }) : "";
+  if (!f && !lap) return "";
+  const fc = f ? `<span tabindex="0" data-tip-text="${f.tip}">${f.label}: <b>${f.value}</b></span>` : "";
+  return `<p class="ls-needs ls-fc">${[lap, fc].filter(Boolean).join(" · ")}</p>`;
 }
 
 // ---------- one letter ----------

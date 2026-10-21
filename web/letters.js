@@ -206,3 +206,17 @@ function letterTip(c, k) {
   parts.push(k.mastered ? t("letter.mastered") : t("letter.needs", { list: needs.map((n) => t(n)).join(", ") }));
   return parts.join(" · ");
 }
+
+// ---------- the forecast ----------
+// /stats forecast (history.NextForecast) in words: about how many rounds
+// until the next letter opens or, with every letter open, until the lap is
+// done. { label, value, tip }, or null when there is no honest answer
+// (too few rounds of a letter, or one not getting better: then nothing is
+// shown rather than a guess; the letter line says what the letter needs)
+// or no letter waiting. Used by the Learn panel and the stats screen.
+export function forecastText(f, allOpen) {
+  if (!f?.known) return null;
+  const label = t(allOpen ? "fc.lap" : "fc.next");
+  const value = f.more ? t("fc.more", { n: f.rounds }) : t(f.rounds === 1 ? "fc.one" : "fc.rounds", { n: f.rounds });
+  return { label, value, tip: t("fc.tip", { l: f.letter }) };
+}
