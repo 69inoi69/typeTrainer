@@ -75,7 +75,7 @@
             <button type="button" id="account-out" data-i18n="account.logout">Log out</button>
           </div>
         </div>
-        <p class="profile-soon" id="profile-soon" data-i18n="profile.soon">No accounts on this site. Your progress stays in this browser; to move it to another one, use Export in Settings.</p>
+        <p class="profile-soon" id="profile-soon" data-i18n="profile.soon">No accounts on this site. Your progress stays in this browser; use Export in Settings to move it to another browser.</p>
       </div>
     </div>
     </div>
@@ -130,7 +130,7 @@
         <!-- a round paused because the window lost focus (typing.js pauseRound):
              a slowly breathing pause sign, the word, how to go on and what
              happened to the time -->
-        <div class="pause-note" aria-live="polite"><span class="pause-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg></span><b data-i18n="pause.title">Paused</b><span class="pause-go"><kbd data-i18n="pause.key">any key</kbd> <span data-i18n="pause.go">to go on</span></span><small data-i18n="pause.away">The time away does not count.</small></div>
+        <div class="pause-note" aria-live="polite"><span class="pause-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg></span><b data-i18n="pause.title">Paused</b><span class="pause-go"><kbd data-i18n="pause.key">any key</kbd> <span data-i18n="pause.go">to go on</span></span><small data-i18n="pause.away">Time spent paused doesn't count.</small></div>
         <!-- the result screen takes the place of the text when typing stops (result.js) -->
         <div id="result" class="result" role="status" aria-live="polite" hidden></div>
       </div>
@@ -296,37 +296,37 @@
              where every key has the colour of the finger that presses it -->
         <section class="intro-step" data-step="0">
           <p class="intro-kicker" data-i18n="intro.kickerWhat">Touch typing</p>
-          <h2 id="intro-title" data-i18n="intro.titleWhat">All ten fingers, eyes on the text</h2>
+          <h2 id="intro-title" data-i18n="intro.titleWhat">Use all ten fingers, keep your eyes on the text</h2>
           <div class="intro-map" id="intro-map" aria-hidden="true"></div>
-          <p data-i18n="intro.pWhat">Every finger has its own keys: the colours show whose. Once the fingers know them, you stop looking down: fewer typos, more speed.</p>
-          <p class="intro-small" data-i18n="intro.posture">Sit up, shoulders loose, wrists just above the keyboard.</p>
+          <p data-i18n="intro.pWhat">The colours show which finger belongs on each key. Learn where your fingers go so you can keep your eyes on the text and make fewer mistakes.</p>
+          <p class="intro-small" data-i18n="intro.posture">Sit up, relax your shoulders and keep your wrists just above the keyboard.</p>
           <p class="intro-do" data-i18n="intro.doWhat">Press any key</p>
         </section>
         <section class="intro-step" data-step="1">
           <p class="intro-kicker" data-i18n="intro.kicker0">Home row</p>
-          <h2 data-i18n="intro.title0">Put your fingers on the middle row</h2>
+          <h2 data-i18n="intro.title0">Place your fingers on the home row</h2>
           <div class="home-row" id="intro-home" aria-hidden="true"></div>
-          <p data-i18n="intro.p0">Left hand on A S D F, right hand on J K L ;. Feel the bumps on F and J.</p>
+          <p data-i18n="intro.p0">Left hand on <b>A S D F</b>, right hand on <b>J K L ;</b>. Feel the bumps on <b>F</b> and <b>J</b> to find where your index fingers belong.</p>
           <p class="intro-do" data-i18n="intro.do0">Press all eight keys</p>
         </section>
         <section class="intro-step" data-step="2">
           <p class="intro-kicker" data-i18n="intro.kicker1">Thumbs</p>
-          <h2 data-i18n="intro.title1">Thumbs rest on the space bar</h2>
+          <h2 data-i18n="intro.title1">Rest your thumbs on the space bar</h2>
           <div class="intro-space" id="intro-space" aria-hidden="true"><span data-i18n="key.space">Space</span></div>
-          <p data-i18n="intro.p1">Either thumb can press it. Keep the other fingers where they are.</p>
+          <p data-i18n="intro.p1">Either thumb can press the space bar. Keep your other fingers on the home row.</p>
           <p class="intro-do" data-i18n="intro.do1">Press space</p>
         </section>
         <section class="intro-step" data-step="3">
           <p class="intro-kicker" data-i18n="intro.kicker2">Eyes up</p>
-          <h2 data-i18n="intro.title2">Watch the screen, not your hands</h2>
+          <h2 data-i18n="intro.title2">Watch the text, not your hands</h2>
           <div class="hands intro-hands" id="intro-hands" aria-hidden="true"></div>
-          <p data-i18n="intro.p2">The yellow key is the next one, and the hands show which finger presses it. Mistakes are fine: the trainer uses them to pick your next words.</p>
+          <p data-i18n="intro.p2">The highlighted key is the next one to press, and the hands show which finger to use. Mistakes help Learn give you more practice with the letters you miss.</p>
           <p class="intro-do" data-i18n="intro.do2">Press any key</p>
         </section>
         <section class="intro-step" data-step="4">
           <p class="intro-kicker"><span data-i18n="intro.kicker3">Ready</span><span id="intro-lang"></span></p>
           <h2 data-i18n="intro.title3">Start with a few letters</h2>
-          <p data-i18n="intro.p3">A new letter opens when you type every open letter with few mistakes at 30 words per minute.</p>
+          <p data-i18n="intro.p3">A new letter opens when every open letter has at least <b>20</b> presses, under <b>5%</b> mistakes and a speed of <b>30</b> wpm or faster.</p>
           <div class="intro-choice">
             <button id="intro-new" type="button" class="primary" data-i18n="intro.new">Start <kbd>enter</kbd></button>
           </div>
