@@ -13,16 +13,21 @@ import { API } from "./api.js";
 // Icon buttons have no text, so their meaning (and the shortcut) is shown in a
 // small tooltip: data-tip="key" in index.html, text from i18n.js.
 let tipFor = null;
+// The tooltip is a popover (index.html), so it lives in the top layer and
+// can show above an open window too. A closed popover is not drawn at all,
+// so it is opened once here and stays open: the class "show" (opacity)
+// shows and hides it, also for the chart's own tooltips (stats.js).
+if (el.tooltip.showPopover) el.tooltip.showPopover();
 // Shows the tooltip of node above it (below it near the top of the window).
 export function showTip(node) {
   tipFor = node;
   const r = node.getBoundingClientRect();
   el.tooltip.textContent = node.dataset.tipText || t(node.dataset.tip); // tipText: ready text, tip: i18n key
   el.tooltip.classList.toggle("wide", el.tooltip.textContent.length > 60);   // a sentence wraps
-  // inside an open window (the settings) the tooltip must be in the top
-  // layer to show above it: a popover, opened anew so it lands on top
+  // over an open window (the settings) the popover is opened anew, which
+  // puts it on top of that window (see openTooltip below)
   if (node.closest("dialog[open]") && el.tooltip.showPopover) {
-    if (el.tooltip.matches(":popover-open")) el.tooltip.hidePopover();
+    el.tooltip.hidePopover();
     el.tooltip.showPopover();
   }
   // keep a long tooltip inside the window (measured on hover, never per keypress)

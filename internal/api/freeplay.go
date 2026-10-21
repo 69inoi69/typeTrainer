@@ -9,11 +9,13 @@ import (
 	"encoding/json"
 	"math"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
 	"typingtrainer/internal/engine"
 	"typingtrainer/internal/freeplay"
+	"typingtrainer/internal/history"
 	"typingtrainer/internal/storage"
 )
 
@@ -219,18 +221,23 @@ func (s *Server) handleFreeplayStats(w http.ResponseWriter, r *http.Request, use
 
 // history is what the stats screen shows of one mode outside learning:
 // "sessions" (the last 50 of the length, newest first, each with its
-// level in Climb), "sessionCount" (of the length), "lengths" (every length
+// level in Climb), "sessionCount" (of the length), "streaks" (the accuracy
+// streaks of the length, history.AccuracyStreaks), "lengths" (every length
 // in the history), "bests" (the fastest round of every length). length ""
 // = rounds of every length.
 func (s *Server) history(user, lang, mode, length string) (map[string]any, error) {
-	sessions, err := s.store.RecentFreeplaySessions(user, lang, mode, length, 50)
-	if err != nil {
-		return nil, err
-	}
 	count, err := s.store.FreeplaySessionCount(user, lang, mode, length)
 	if err != nil {
 		return nil, err
 	}
+	// every round of the length: the streaks look at the whole history
+	all, err := s.store.RecentFreeplaySessions(user, lang, mode, length, count)
+	if err != nil {
+		return nil, err
+	}
+	sessions := slices.Clone(all[:min(len(all), 50)]) // a copy: all is turned round below
+	slices.Reverse(all)                               // oldest first
+	streaks := history.AccuracyStreaks(all, s.cfg.StreakAccuracies)
 	lengths, err := s.store.FreeplaySessionLengths(user, lang, mode)
 	if err != nil {
 		return nil, err
@@ -239,5 +246,5 @@ func (s *Server) history(user, lang, mode, length string) (map[string]any, error
 	if err != nil {
 		return nil, err
 	}
-	return map[string]any{"sessions": summaries(sessions), "sessionCount": count, "lengths": lengths, "bests": bests}, nil
+	return map[string]any{"sessions": summaries(sessions), "sessionCount": count, "lengths": lengths, "bests": bests, "streaks": streaks}, nil
 }

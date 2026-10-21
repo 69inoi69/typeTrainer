@@ -349,15 +349,19 @@ the normal server, it shows yours.
     first round). A click on a cell picks the length everything below shows
     (it opens on the mode's own length): rounds of different lengths
     are never mixed;
-  - **all time**, every round length and both modes together: time typing,
-    rounds, words, **days in a row** (a day not practised yet does not break
+  - **time typed**, every round length and every mode together, counted
+    for **today**, the **last 7 days** or **all time** (the switch on the
+    right; your choice is remembered): time typing, rounds, words, **days in a row** (a day not practised yet does not break
     it; a whole missed day does) and an **activity calendar** of the last
     year (fewer weeks on a narrow screen), a square a day, brighter the
     longer you typed, with the months above and Mon / Wed / Fri on the left
     (hover a square for the day). Days end at your own midnight;
   - the picked length in detail: rounds, and the averages of the last 10
     rounds (wpm, accuracy, consistency), each with a small green or red
-    arrow for how it moved against the 10 rounds before; with a **goal** set
+    arrow for how it moved against the 10 rounds before; the **accuracy
+    streak**: your longest run of rounds in a row at 95% accuracy or better,
+    with the same for 97% and 100% under it (hover it to see the run you are
+    on now); speed does not count there, only care; with a **goal** set
     in the settings (50–200 wpm, learning only) one more tile with the goal,
     how much the average of the last 10 is still below it, and a bar of the
     way (the goal is only for you: letters still open at the trainer's own
