@@ -2,10 +2,10 @@
 // the whole app: the live numbers on or off, the text size, the caret (its
 // look and glide), marks on the spaces, the streak badge of Freetype on or
 // off, what falls in the background, the colour theme; how typing answers
-// (the caret stops on a mistake, sounds and their volume); the on-screen
-// keyboard (on or off, the next key lit, the finger colours); the goals (a
-// daily goal in minutes for the Learn panel, a speed goal for the stats
-// screen, a rest reminder); and exporting, importing
+// (the caret stops on a mistake, sounds and their volume, a break
+// reminder); the on-screen keyboard (on or off, and while it is on: the
+// next key lit, the finger colours); the goals (a daily goal in minutes
+// for the Learn panel, a speed goal for the stats screen); and exporting, importing
 // and resetting the progress (tools.js does those three). Settings change
 // HOW IT LOOKS, never WHAT is practised. How long a round is belongs to
 // each mode and is set in the round bar above the text (modebar.js); this
@@ -69,7 +69,7 @@ const CARETS = ["line", "block", "underline", "outline"];
 // screen shows it (a tile, the line on the chart): the algorithm never sees
 // it, letters open at the trainer's own target as before (AGENTS.md: a
 // setting never changes what is practised).
-const GOALS = [0, 50, 75, 100, 125, 150, 200];
+const GOALS = [0, 30, 40, 50, 75, 100, 125, 150, 200];   // 30 and 40: a goal a beginner can reach (2026-10-21)
 // What falls in the background (ambient.js; owner, 2026-10-20), in the
 // order of the buttons; "keys" is the default.
 // To add one: its id here, what it shows in ambient.js and its name in i18n.js.
@@ -220,7 +220,7 @@ const action = (id, icon, label, cls = "btn") => `<button type="button" class="$
 const pick = (name, label) => seg(CHOICES[name].values.map((v) => choice(name, v, label(v), S.settings[name] === v)));
 const ROWS = [
   { group: "settings.look", name: "settings.live", desc: "settings.liveDesc", ctl: () => onOff("live", S.settings.live) },
-  { group: "settings.look", name: "settings.size", desc: "settings.sizeDesc", ctl: () => pick("size", (v) => t("settings.size_" + v)) },
+  { group: "settings.look", name: "settings.size", ctl: () => pick("size", (v) => t("settings.size_" + v)) },
   { group: "settings.look", name: "settings.caret", ctl: () => seg(CARETS.map((id) =>
     choice("caret", id, `<i class="cs ${id}"></i>${t("settings." + id)}`, S.settings.caret === id))) },
   { group: "settings.look", name: "settings.glide", desc: "settings.glideDesc", ctl: () => pick("glide", (v) => t("settings.glide_" + v)) },
@@ -234,14 +234,14 @@ const ROWS = [
   { group: "settings.typing", name: "settings.stop", desc: "settings.stopDesc", ctl: () => onOff("stop", S.settings.stop) },
   { group: "settings.typing", name: "settings.sound", desc: "settings.soundDesc", ctl: () => pick("sound", (v) => t("settings.sound_" + v)) },
   { group: "settings.typing", name: "settings.volume", ctl: () => pick("volume", (v) => v + "%"), show: () => S.settings.sound !== "off" },
+  { group: "settings.typing", name: "settings.rest", desc: "settings.restDesc", ctl: () => pick("rest", (v) => (v === "0" ? t("settings.off") : v)) },
   { group: "settings.kbGroup", name: "settings.keyboard", desc: "settings.keyboardDesc", ctl: () => onOff("kb", !S.kbHidden), show: () => !isTouch() },   // no keyboard on touch screens
-  { group: "settings.kbGroup", name: "settings.nextKey", desc: "settings.nextKeyDesc", ctl: () => onOff("nextKey", S.settings.nextKey), show: () => !isTouch() },
-  { group: "settings.kbGroup", name: "settings.fingers", desc: "settings.fingersDesc", ctl: () => onOff("fingers", S.settings.fingers), show: () => !isTouch() },
+  { group: "settings.kbGroup", name: "settings.nextKey", desc: "settings.nextKeyDesc", ctl: () => onOff("nextKey", S.settings.nextKey), show: () => !isTouch() && !S.kbHidden },   // nothing to light without the keyboard
+  { group: "settings.kbGroup", name: "settings.fingers", desc: "settings.fingersDesc", ctl: () => onOff("fingers", S.settings.fingers), show: () => !isTouch() && !S.kbHidden },
   { group: "settings.statsGroup", name: "settings.daily", desc: "settings.dailyDesc", ctl: () => seg(DAILY.map((m) =>
     choice("daily", String(m), m ? String(m) : t("settings.off"), S.settings.daily === m))) },
   { group: "settings.statsGroup", name: "settings.goal", desc: "settings.goalDesc", ctl: () => seg(GOALS.map((g) =>
     choice("goal", String(g), g ? String(g) : t("settings.off"), S.settings.goal === g))) },
-  { group: "settings.statsGroup", name: "settings.rest", desc: "settings.restDesc", ctl: () => pick("rest", (v) => (v === "0" ? t("settings.off") : v)) },
   { group: null, name: "settings.data", desc: "settings.dataDesc", ctl: () => action("btn-export", "export", "data.save") + action("btn-import", "import", "data.load") },
   { group: null, name: "settings.danger", desc: "settings.dangerDesc", danger: true, ctl: () => action("btn-reset", "trash", "data.reset", "btn danger") },
 ];

@@ -141,9 +141,9 @@ the normal server, it shows yours.
   line types itself in the look you choose (text size, caret, its
   movement, the marks on spaces, the theme), and stays in view while you
   scroll, so every change shows at once. Hold the mouse over a setting's
-  name and a tooltip says what it does and why you might want it. What is in it, by group:
+  name and a tooltip says what you get from it. What is in it, by group:
   **Screen**
-  - **live speed** (wpm and accuracy while typing): on or off. A brand-new user does
+  - **live stats** (wpm, raw speed and accuracy while typing): on or off. A brand-new user does
     not see them until the first finished round (a beginner should not
     chase speed); then they appear and you can hide them again. The word
     counter always stays.
@@ -151,9 +151,9 @@ the normal server, it shows yours.
     screen.
   - **caret movement**: smooth (default: the caret glides to the next
     letter) or jump (it moves at once).
-  - **spaces**: plain (default), a faint dot or a short bar on every space
+  - **space marks**: off (default), a faint dot or a short bar on every space
     between words, in the colour of the letters around it.
-  - **streak in Freetype**: the bolt and number above the caret (clean
+  - **clean words in Freetype**: the bolt and number above the caret (clean
     words in a row), on or off (default). Learn and Climb never show it.
   - **background**: what falls slowly in the empty fields at the sides:
     keycaps with the open letters (default), the letters alone, short words
@@ -170,6 +170,9 @@ the normal server, it shows yours.
   - **sounds**: off (default), mistakes (a short low tone) or every key (a
     soft click, and the tone on a mistake), and their **volume** (25-100%,
     shown only with a sound on). Choosing one plays it once.
+  - **break reminder, minutes**: off (default), 20, 30, 45 or 60. After that
+    much typing with no break (a gap of 5 minutes between rounds is a break)
+    a calm message at the end of a round suggests a rest.
   **Keyboard**
   - **keyboard** (the keys and the hands): on or off (same as `Alt + K`; remembered
     in your browser, separately for Learn and for Climb and Freetype, where they start
@@ -177,24 +180,24 @@ the normal server, it shows yours.
     on the device's own keyboard, so the option is not shown. There
     is no size setting: the keyboard is always as big as the window allows
     without making the page scroll.
+  - **next key** and **finger colours** are shown only while the keyboard
+    is on: without it there is nothing for them to change.
   - **next key**: on (default) or off. Off, neither the next key nor its
     finger lights up: you find every key from memory.
   - **finger colours**: on (default) or off. Off, every key and finger is
     one calm grey, and the next key lights up in gold instead.
   **Goals**
   - **daily goal, minutes**: off, 5 to 60 (15 by default). The Learn panel
-    shows today's typing time against it.
-  - **speed goal, wpm**: off (default), 50, 75, 100, 125, 150 or
+    shows today's typing time against it, and the stats calendar rings
+    every day that met it.
+  - **speed goal, wpm**: off (default), 30, 40, 50, 75, 100, 125, 150 or
     200. The stats screen then shows how far you are from it. Only for you:
     the trainer does not change, letters still open at its own speed.
-  - **rest reminder, minutes**: off (default), 20, 30, 45 or 60. After that
-    much typing with no break (a gap of 5 minutes between rounds is a break)
-    a calm message at the end of a round suggests a rest.
-  - **data**: **export** writes all languages and the full history
+  - **progress data**: **export** writes all languages and the full history
     to one `.json` file, **import** reads such a file back and **replaces** the
     current data (use it to keep progress across server restarts, or to
     move it from the website to another browser).
-  - **danger zone**: **reset all progress** deletes everything: progress in all
+  - **reset progress**: the **reset** button deletes everything: progress in all
     languages and the settings saved in your browser, as on the very first
     visit. A window asks first ("Reset all progress? This can't be undone.",
     Cancel has the focus), so it does not happen by accident.
@@ -365,7 +368,7 @@ the normal server, it shows yours.
     streak**: your longest run of rounds in a row at 95% accuracy or better,
     with the same for 97% and 100% under it (hover it to see the run you are
     on now); speed does not count there, only care; with a **goal** set
-    in the settings (50–200 wpm, learning only) one more tile with the goal,
+    in the settings (30–200 wpm, learning only) one more tile with the goal,
     how much the average of the last 10 is still below it, and a bar of the
     way (the goal is only for you: letters still open at the trainer's own
     speed); **image** saves these numbers as a picture;

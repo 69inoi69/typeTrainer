@@ -96,8 +96,8 @@ sentences and ends with a full stop.
 | the letter the trainer is drilling now | focus |
 | a letter that meets the goal | mastered |
 | the next letter to open | next letter |
-| the file with all progress | Export / Import (the section is "Data") |
-| deleting all progress | Reset all progress (in "Danger zone") |
+| the file with all progress | Export / Import (the section is "Progress data") |
+| deleting all progress | Reset progress (the button says "Reset") |
 | speed | wpm after a number ("30 wpm"), WPM as a label on its own |
 
 `wpm`, `raw` and the mode names Learn, Climb and Freetype stay in English in every
