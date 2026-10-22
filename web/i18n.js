@@ -25,7 +25,7 @@ const I18N = {
     "settings.time": "Time",
     "settings.live": "Live stats",
     "settings.streak": "Clean words in Freetype",
-    "settings.background": "Background", "settings.bgKeys": "Keycaps", "settings.bgLetters": "Letters", "settings.bgWords": "Words",
+    "settings.background": "Background",
     "settings.statsGroup": "Goals", "settings.goal": "Speed goal, WPM", "settings.daily": "Daily goal, minutes",
     "settings.sample": "type real words",
     // the tooltips over the names of the settings (settings.js ROWS desc):
@@ -40,7 +40,7 @@ const I18N = {
     "settings.ws": "Space marks", "settings.ws_none": "Off", "settings.ws_dot": "Dot", "settings.ws_bar": "Bar",
     "settings.wsDesc": "Show a dot or bar between words to make each space easier to spot",
     "settings.streakDesc": "A number above the caret counts the words you type in a row without a mistake. One mistake resets it to zero",
-    "settings.backgroundDesc": "Keycaps, letters or words fall slowly along the empty sides of the screen",
+    "settings.backgroundDesc": "Keycaps fall slowly along the empty sides of the screen",
     "settings.typing": "Typing",
     "settings.stop": "Stop on a mistake",
     "settings.stopDesc": "The caret waits on a wrong key until you press the correct one. Every wrong press still counts as a mistake",

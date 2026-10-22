@@ -167,7 +167,7 @@ export const FX = (() => {
 // even while the page is still busy loading.
 export const Splash = (() => {
   // the icon, 11 letters at --step 85 ms from --t0 320 ms (screens.css),
-  // then a short look at the whole word with the caret blinking
+  // then a short look at the whole word
   const MIN_MS = 1750;
   const FADE_MS = 450;  // the splash fading away
   function start() {
@@ -186,10 +186,12 @@ export const Splash = (() => {
       const wait = MIN_MS - (performance.now() - t0);
       // a timer as a wait, not an animation: it runs once, at load
       if (!skipped && wait > 0) await new Promise((r) => setTimeout(r, wait));
-      root.animate([{ opacity: 1 }, { opacity: 0 }], { duration: FADE_MS, easing: "ease-in-out", fill: "forwards" });
+      const fade = root.animate([{ opacity: 1 }, { opacity: 0 }], { duration: FADE_MS, easing: "ease-in-out", fill: "forwards" });
       // typing is allowed at once; the page appears under the fading splash
       document.body.classList.remove("splashing");
-      await new Promise((r) => setTimeout(r, FADE_MS));
+      // the fade's own end, not a timer: on a busy slow laptop the fade
+      // starts late, and the splash must not vanish before it has faded
+      await fade.finished;
       root.remove();
     }
     return { done };
