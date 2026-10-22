@@ -248,7 +248,7 @@ button.primary kbd { background: rgba(0, 0, 0, .16); color: inherit; }
 /* intro: the fingers light up one after another. Both ends spelled out: with
    one end left implicit, Chrome mixes the colours through odd neon shades */
 @keyframes demo-lift { 0%, 9% { translate: calc(var(--dx) * -6 * var(--hu)) calc(var(--dy) * -6 * var(--hu)); } 12%, 100% { translate: 0 0; } }
-@keyframes demo-fill { 0%, 9% { fill: var(--fc); } 12%, 100% { fill: var(--tint); } }
+@keyframes demo-fill { 0%, 9% { fill: var(--fc); } 12%, 100% { fill: var(--skin); } }
 .intro-choice { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
 .intro-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; }
 .dots { display: flex; gap: 6px; }
