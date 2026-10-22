@@ -83,7 +83,8 @@ const DAILY_DEFAULT = 15;
 // Plain choices (owner, 2026-10-20, after keybr): S.settings[name] is one of
 // values (in the order of the buttons), def when nothing valid is saved,
 // kept in localStorage under key.
-// What each does: caret glide (typing.css body[data-glide]), text size
+// What each does: caret glide (typing.css body[data-glide]), what the
+// caret does at rest (typing.css body[data-blink], caret.js breathe), text size
 // (body[data-size]), a mark on every space (body[data-ws]), sounds
 // (sound.js), their volume, the rest reminder (typing.js restCheck,
 // minutes, "0" = off).
@@ -92,6 +93,7 @@ const DAILY_DEFAULT = 15;
 // use in the code, and its texts in i18n.js.
 const CHOICES = {
   glide: { key: "tt.glide", values: ["smooth", "jump"], def: "smooth" },
+  blink: { key: "tt.blink", values: ["off", "breathe", "pulse"], def: "breathe" },
   size: { key: "tt.size", values: ["s", "m", "l"], def: "m" },
   ws: { key: "tt.ws", values: ["none", "dot", "bar"], def: "none" },
   sound: { key: "tt.sound", values: ["off", "errors", "keys"], def: "off" },
@@ -224,6 +226,7 @@ const ROWS = [
   { group: "settings.look", name: "settings.caret", ctl: () => seg(CARETS.map((id) =>
     choice("caret", id, `<i class="cs ${id}"></i>${t("settings." + id)}`, S.settings.caret === id))) },
   { group: "settings.look", name: "settings.glide", desc: "settings.glideDesc", ctl: () => pick("glide", (v) => t("settings.glide_" + v)) },
+  { group: "settings.look", name: "settings.blink", desc: "settings.blinkDesc", ctl: () => pick("blink", (v) => t("settings.blink_" + v)) },
   { group: "settings.look", name: "settings.ws", desc: "settings.wsDesc", ctl: () => pick("ws", (v) => t("settings.ws_" + v)) },
   { group: "settings.look", name: "settings.streak", desc: "settings.streakDesc", ctl: () => onOff("streak", S.settings.streak) },
   { group: "settings.look", name: "settings.background", desc: "settings.backgroundDesc", ctl: () => seg(BGS.map((id) =>
