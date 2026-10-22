@@ -161,10 +161,10 @@ const I18N = {
     "result.consTip": "Shows how steady your speed was: 100% means it stayed the same every second",
     "result.time": "Time", "result.chars": "Characters",
     "mode.learn": "Learn", "mode.free": "Climb",
-    "tip.learn": "Learn starts with a few home-row letters and adds more as you improve. Words focus on the letters you find hardest",
-    "tip.free": "Climb has 10 levels, from the 200 most common words to all 25,000. Accuracy moves you up, not speed",
+    "tip.learn": "Learn touch typing, one letter at a time",
+    "tip.free": "Improve accuracy. Climb the levels",
     "mode.freetype": "Freetype",
-    "tip.freetype": "Choose a word list, long words, real sentences or your own text. Nothing adapts to you or changes Learn's letter stats",
+    "tip.freetype": "Practise with words, sentences, or your own text",
     // Freetype's word lists (letters.js, result.js, stats.js)
     "freetype.list": "Word list",
     // the round bar above the text (modebar.js)
