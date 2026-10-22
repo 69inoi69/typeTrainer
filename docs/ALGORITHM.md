@@ -567,7 +567,7 @@ a mistake on its first word changed the text only 20 to 40 words later.
 **The round.** The stream is cut into rounds of `RoundPortions = 5` portions
 (30 words), so the user always sees how much is left (a counter `12/30`) and
 gets a result at a clear point. The last letter of the last word ends it (no space after it is needed,
-right or wrong); Esc ends it early. The WPM and accuracy of the round go to
+right or wrong). The WPM and accuracy of the round go to
 the history, and the next round starts from scratch: new waiting portions, an
 empty list of recent words. Inside a round the words are still chosen portion
 by portion. The time of a round ends at its last keypress. Leaving the

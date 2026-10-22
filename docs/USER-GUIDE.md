@@ -211,8 +211,8 @@ the normal server, it shows yours.
   language of the interface**.
 - **Tab starts a new round** (as on monkeytype): the round you were typing
   is dropped and not saved; the keypresses already sent on the way stay with
-  your letters. `Esc` ends the round early, shows its result and opens the
-  settings over it.
+  your letters. `Esc` pauses the round and opens the settings; the first key
+  after them goes on with it.
 - **Rounds of 30 words, picked while you type.** The text is not ready in
   advance: it grows a few words at a time (a portion of 6 words around one
   focus letter), and every new portion is chosen from your newest statistics.
@@ -318,14 +318,12 @@ the normal server, it shows yours.
   result is open, also after a look at the stats and back.
 - Small messages under the letters are only used outside typing (a file
   saved or loaded).
-- On a touch screen there is no `Esc`: a small **stop** button under the text
-  card ends the round (it appears with the first letter). The shortcut line
-  is hidden there; on the stats screen it shows only the keys that work
-  there.
+- On a touch screen the shortcut line is hidden.
 - Behind Settings the page dims.
-- Shortcuts, also listed small at the bottom of the page: `Esc` stop /
-  settings ·
-  `Shift + Tab` typing / stats · `Alt + K` keyboard and hands on / off.
+- Shortcuts, also listed small at the bottom of the page (each screen lists
+  only the keys that work on it): `Tab` new round · `Esc` settings ·
+  `Shift + Tab` typing / stats · `Alt + K` keyboard and hands on / off ·
+  `Ctrl + Backspace` delete the word.
 - **Stats**: nothing on the page can be selected by dragging; instead the
   stats screen has **image** (a PNG card with the five numbers and the speed
   of the last 30 rounds of Climb, in the colours of the current theme).

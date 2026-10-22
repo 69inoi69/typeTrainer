@@ -25,8 +25,9 @@
    hidden, so the whole result fits on one screen without scrolling (owner,
    2026-10-16). They come back with the next round. */
 #view-type:has(> .text-box.resulting) > :is(.hands, .keyboard) { display: none; }
-/* nothing to stop on the result: "esc Stop" leaves the shortcut line */
-body:has(.text-box.resulting) .hints .stop-hint { display: none; }
+/* no round on the result: its keys leave the shortcut line (Tab is on the
+   Next round button there) */
+body:has(.text-box.resulting) .hints .round-only { display: none; }
 /* desktop: the result, with the letters on top of it, stands in the middle
    of the free room (owner, 2026-10-16; the letters joined it 2026-10-18);
    the view takes all the height, equal room above and below */
