@@ -127,13 +127,11 @@ body.typing-now .lp-news { opacity: 0; pointer-events: none; }
 .fb-cols .lp-cell { padding: 0 13px; }
 .fb-cols .lp-cell:first-child { padding-left: 0; }
 .fb-cols .lp-cell:last-child { align-items: flex-start; }
-.fb-gold .lp-val { align-items: center; }
 .fb-gold .lp-val b.ok, .lp-cell.met .lp-val b { color: var(--ok); }
 .fb-tick { color: var(--ok); font-size: .85rem; }
 .lp-news { margin: 0; white-space: nowrap; color: var(--text); cursor: default; }
 .lp-news.big { color: var(--accent-text); }
 .lp-news b { color: var(--accent-text); font-weight: 600; }
-.lp-chip { flex: none; width: 1.6em; height: 1.6em; font-size: .95rem; }
 @media (min-width: 1000px) and (pointer: fine) {
   .learn-panel { font-size: .95rem; }
 }

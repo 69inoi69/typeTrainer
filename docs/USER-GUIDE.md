@@ -289,7 +289,8 @@ the normal server, it shows yours.
   (the letter in focus) sits in the line just above the text, between the
   word counter and the round switch, in the same label-over-value columns:
   **Gold letter** (how far it is on the way to mastered, the weakest of
-  the three parts of the rule, as on its chip), **Presses** ("18 of 20"),
+  the three parts of the rule; the letter itself is the gold chip in the
+  row above), **Presses** ("18 of 20"),
   **Mistakes** ("8% under 5%") and **Speed** ("24 of 30 wpm"); a part
   already met turns green with a tick, a letter never typed shows "—".
   Everything follows you as you type: after every line of words the

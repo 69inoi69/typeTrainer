@@ -233,7 +233,7 @@ function dailyGoal() {
   return cell(`lp-goal${met ? " met" : ""}`, label, value, t("lp.goalTip", { g: goal }));
 }
 
-// The gold letter in four columns: "Gold letter / f 62% to mastered",
+// The gold letter in four columns: "Gold letter / 62% to mastered",
 // "Presses / 18 of 20", "Mistakes / 8% under 5%", "Speed / 24 of 30 wpm";
 // a part of the rule already met is green with a tick. A letter never
 // typed shows "—" (0% mistakes would read as a result). The percentage is
@@ -245,10 +245,11 @@ function focusCells() {
   const s = S.lastStats, r = rule(), err = Math.round(s.masteryErr);
   const typed = !!k?.count;
   const pctTip = t("lp.pctTip", { l: c, min: s.masteryMin, err, target: s.targetWpm });
-  const chip = `<span class="chip focus lp-chip${k?.mastered ? " mastered" : ""}">${c}</span>`;
-  const gold = !typed ? chip + NONE
-    : k.mastered ? `${chip}<b class="ok">${t("lp.fMastered")}</b>`
-      : `${chip}<b>${Math.round(letterProgress(k) * 100)}%</b><small>${t("lp.fToGo")}</small>`;
+  // no letter chip here: the gold chip in the row above already shows
+  // which letter it is (owner, 2026-10-22: a second one read as a double)
+  const gold = !typed ? NONE
+    : k.mastered ? `<b class="ok">${t("lp.fMastered")}</b>`
+      : `<b>${Math.round(letterProgress(k) * 100)}%</b><small>${t("lp.fToGo")}</small>`;
   const tick = (ok) => ok ? `<span class="fb-tick" aria-hidden="true">✓</span>` : "";
   const part = (cls, label, ok, value) =>
     cell(`fb-${cls}${ok ? " met" : ""}`, label, typed ? value + tick(ok) : NONE);
