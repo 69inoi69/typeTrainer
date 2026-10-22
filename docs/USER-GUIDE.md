@@ -70,8 +70,10 @@ the normal server, it shows yours.
   capital = the finger + the other hand's little finger on Shift). The next
   letter in the text takes the colour of that finger, so you can see the
   finger without looking down.
-- The keyboard is the same size in Learn, Climb and Freetype. Browser zoom
-  makes it smaller or bigger together with the rest of the page.
+- The keyboard is the same size and at the same place in Learn, Climb and
+  Freetype; no setting but the text size changes it. Browser zoom makes it
+  smaller or bigger together with the rest of the page. `Alt + K` fades it
+  away or in, and the text glides to its new place.
 - The screen has three fixed places, as in a real app:
   - **the header**: the logo on the left, the account on the right ("log in"
     with a person icon until you are logged in, then your picture and name);
@@ -195,8 +197,8 @@ the normal server, it shows yours.
     combination. The keys are always in their finger colours.
   - **next key**: on (default) or off. Off, the next key does not light up:
     you find every key from memory.
-  - **hand above the keys**: on (default) or off. Off, there is no hand and
-    no room for it above the keyboard, so the keys get bigger.
+  - **hand above the keys**: on (default) or off. Off, there is no hand;
+    its room stays, so the keyboard keeps its size and place.
   - **finger colour in the text**: on (default) or off. On, the next letter
     in the text is in the colour of the finger that types it.
   **Goals**

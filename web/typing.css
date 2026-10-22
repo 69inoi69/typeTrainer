@@ -84,7 +84,14 @@
    (keyboard.js) keeps this room in every mode, so the keyboard has one
    size in all of them */
 .learn-panel { display: grid; height: 3.6em; margin-top: 12px; font-size: .9rem; color: color-mix(in srgb, var(--text) 80%, var(--sub)); transition: opacity .4s var(--ease); }
-.learn-panel[hidden] { display: none; }
+/* Hidden (Climb, Freetype, Learn before its first stats) it keeps its
+   room: the text and the keyboard stand at the same place and size in
+   every mode (owner, 2026-10-22: "the same everywhere"). Climb's and
+   Freetype's round bar sits at the bottom of that room, right above the
+   text, as it does when it takes the panel's place. */
+.learn-panel[hidden] { visibility: hidden; }
+#view-type > .letters { position: relative; }
+body:not([data-mode="learn"]) #view-type > .letters > .mode-bar { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; }
 body.typing-now .learn-panel { opacity: .75; }   /* a step back, still readable: it follows you as you type */
 .lp-row { display: flex; align-items: center; gap: 30px; min-height: 1.9em; white-space: nowrap; min-width: 0; }
 /* line 1: four fixed columns, a small grey label over a bright value, so a
@@ -604,7 +611,8 @@ body[data-blink="pulse"][data-caret="outline"] .caret { box-shadow: inset 0 0 0 
   margin-top: calc(var(--u) * var(--feel-hand-room, 1));
   border-radius: var(--r-lg); background: color-mix(in srgb, var(--panel) 55%, transparent); box-shadow: var(--ring);
 }
-body.hand-off .keyboard { margin-top: 0; }   /* the hand is a setting */
+/* the hand is a setting; off, its room above the keyboard stays, so the
+   keyboard keeps its size and place */
 body.hand-off .keyboard > .hands { display: none; }
 :root[data-theme="light"] .keyboard { background: rgba(255, 255, 255, .55); box-shadow: var(--ring), 0 10px 30px -18px rgba(20, 24, 32, .25); }
 .keyboard.off { display: none; }

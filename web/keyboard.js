@@ -9,7 +9,6 @@
 
 import { FEEL } from "./feel.js";
 import { t } from "./i18n.js";
-import { FX } from "./fx.js";
 import { el, S, store, isTouch, themeColor, reducedMotion } from "./state.js";
 
 // ---------- keyboard ----------
@@ -202,16 +201,49 @@ export function restoreKb(animate = false) {
   applyKb(animate && was !== S.kbHidden);
 }
 
-// animate = true on a click: the keyboard folds away / unfolds smoothly
+// animate = true on a click: the keyboard fades away / in and the text
+// glides to its new place (fold below)
 export function applyKb(animate = false) {
-  if (animate) {   // measure again once the fold is over (fitKeyboard skips it while it runs)
-    FX.collapse(el.keyboard, S.kbHidden).then(requestFit);
-  } else {
-    el.keyboard.classList.toggle("off", S.kbHidden);
-  }
   document.body.classList.toggle("kb-hidden", S.kbHidden);   // phone CSS centres the text then
   if (!isTouch()) store.set(kbKey(), S.kbHidden ? "1" : "");   // a phone never chose it
-  requestFit();
+  if (animate && !reducedMotion() && el.keyboard.animate) fold(S.kbHidden);
+  else {
+    el.keyboard.classList.toggle("off", S.kbHidden);
+    requestFit();
+  }
+}
+
+// The keyboard goes or comes with the graphics card only (owner,
+// 2026-10-22: the old fold stuttered; it animated the height, which lays
+// out the page on every frame). Going: it fades and sinks a little, then
+// leaves the page. Coming: it is put in at once at its final size and
+// fades in. Either way the letters and the text jump to their new place
+// and are moved back by "transform", which then glides to nothing (FLIP),
+// so they seem to slide. A newer click cancels the running one.
+const FOLD_MS = 220;
+const FOLD_EASE = "cubic-bezier(.2, .8, .2, 1)";
+let foldRun = 0;
+async function fold(hide) {
+  const run = ++foldRun;
+  const movers = [lettersBar, el.textBox];
+  for (const n of [el.keyboard, ...movers]) n.getAnimations().forEach((a) => a.cancel());
+  if (hide) {
+    const out = el.keyboard.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(14px)" }],
+      { duration: FOLD_MS * .7, easing: "ease-in" });
+    try { await out.finished; } catch { return; }   // cancelled by a newer click
+    if (run !== foldRun) return;
+  }
+  const before = movers.map((n) => n.getBoundingClientRect().top);
+  el.keyboard.classList.toggle("off", hide);
+  if (!hide) fitKeyboard();                          // its size before anything is seen
+  const after = movers.map((n) => n.getBoundingClientRect().top);
+  movers.forEach((n, i) => {
+    const dy = before[i] - after[i];
+    if (Math.abs(dy) > .5) n.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }], { duration: FOLD_MS, easing: FOLD_EASE });
+  });
+  if (!hide) el.keyboard.animate([{ opacity: 0, transform: "translateY(14px)" }, { opacity: 1, transform: "none" }],
+    { duration: FOLD_MS, easing: FOLD_EASE });
+  if (hide) requestFit();
 }
 
 // Fit to the window: the keyboard grows with the key unit --u, and it must
@@ -220,8 +252,9 @@ export function applyKb(animate = false) {
 // caps the unit so the rest fits. Runs on load, resize, a new text and when
 // the keyboard is switched on: never on a keypress.
 // keyboard 4.36 u (4 rows, 3 gaps of .12 u) + the room above it for the
-// hand (typing.css .keyboard margin-top), none while the hand is off
-const kbPerU = () => 4 + 3 * KEY_GAP + (S.settings.hand ? FEEL.handRoom : 0);
+// hand (typing.css .keyboard margin-top), kept also while the hand is off:
+// a setting never changes the keyboard's size
+const KB_PER_U = 4 + 3 * KEY_GAP + FEEL.handRoom;
 const KB_MIN_U = 26;       // px: a key smaller than this cannot be read at a glance
 let fitFrame = 0;
 // Asks for fitKeyboard in the next animation frame; several asks in one
@@ -231,7 +264,6 @@ export function requestFit() {
   fitFrame = requestAnimationFrame(fitKeyboard);
 }
 const lettersBar = document.querySelector("#view-type > .letters");   // carries the centring margin
-const learnPanel = document.getElementById("learn-panel");
 // The unit fitted at the browser zoom the page was opened at (baseDpr).
 // A zoom changes devicePixelRatio, not the window: then the keys keep this
 // size in CSS px, so they shrink and grow with the zoom like the text
@@ -256,16 +288,13 @@ function fitKeyboard() {
   // not grow with --u, so they count as fixed room like everything else
   const kb = getComputedStyle(el.keyboard);
   const kbFrame = ["paddingTop", "paddingBottom", "borderTopWidth", "borderBottomWidth"].reduce((sum, p) => sum + parseFloat(kb[p]), 0);
-  // the room above the keyboard grows with --u too (it is in kbPerU)
+  // the room above the keyboard grows with --u too (it is in KB_PER_U)
   const away = document.body.classList.contains("kb-nofit");
   const above = away ? 0 : parseFloat(kb.marginTop) || 0;
-  // the Learn panel's room counts in every mode, also while it is hidden
-  // (Climb, Freetype, or Learn before its first stats): the keyboard is
-  // the same size in all three modes (owner, 2026-10-22). Its height is
-  // fixed in typing.css, so it can be read even while hidden.
-  const panel = getComputedStyle(learnPanel);
-  const panelRoom = learnPanel.hidden ? parseFloat(panel.height) + parseFloat(panel.marginTop) : 0;
-  const rest = document.querySelector(".top").offsetHeight + el.viewType.offsetHeight + panelRoom
+  // Every mode has the same room above the text (typing.css: the hidden
+  // Learn panel keeps its place), so the keyboard is the same size in all
+  // three (owner, 2026-10-22).
+  const rest = document.querySelector(".top").offsetHeight + el.viewType.offsetHeight
     - el.keyboard.offsetHeight - above + kbFrame
     // desktop (typing.css --view-centred): the view takes all the height and
     // centres the letters and the text with two equal auto margins (above
@@ -274,7 +303,7 @@ function fitKeyboard() {
     + (centred ? -2 * parseFloat(getComputedStyle(lettersBar).marginTop) : parseFloat(getComputedStyle(el.viewType).marginTop))
     + document.querySelector(".bottom").offsetHeight + 12    // 12 = bottom padding of .views
     + parseFloat(getComputedStyle(document.body).paddingBottom);   // the bottom navigation bar (narrow windows)
-  let fit = Math.floor((innerHeight - rest - 4) / kbPerU());
+  let fit = Math.floor((innerHeight - rest - 4) / KB_PER_U);
   if (!baseU || devicePixelRatio === baseDpr) { baseU = fit; baseDpr = devicePixelRatio; }
   else fit = Math.min(fit, baseU);   // zoomed: never bigger than at the start
   // too small to be of use (a short window, or the page zoomed far in):
