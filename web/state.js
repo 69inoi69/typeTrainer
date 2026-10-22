@@ -67,8 +67,9 @@ export const S = {
   climbLevel: null,       // Climb: the level of this round and the next, 1..10 (typing.js); null = not known yet in this language
   settings: { length: "words-30", live: false, caret: "line", theme: "dark", streak: false, bg: "keys", goal: 0, daily: 15,
     glide: "smooth", blink: "breathe", size: "m", ws: "none", sound: "off", volume: "50", rest: "0",
-    stop: false, nextKey: true, fingers: true },   // settings.js
-  kbHidden: false,        // keyboard and hands switched off
+    stop: false, nextKey: true, hand: true, fingerText: true },   // settings.js
+  kbHidden: false,        // keyboard switched off
+  nextFc: "",             // the colour of the finger for the next key, "" = none lit (keyboard.js)
 };
 
 // ---------- small helpers ----------

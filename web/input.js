@@ -10,9 +10,9 @@
 // (the "views" and "modes" sections below are the pattern).
 
 import { $, el, S, introOpen, isTouch, focusText } from "./state.js";
-import { applyKb, requestFit, highlightNextKey } from "./keyboard.js";
+import { applyKb, requestFit } from "./keyboard.js";
 import { refreshStats, renderStats, resetStatsPick } from "./stats.js";
-import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, stopRound, loadExercise, roundStarted, pauseRound, checkLayout } from "./typing.js";
+import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, stopRound, loadExercise, roundStarted, pauseRound, checkLayout, lightNext } from "./typing.js";
 import { checkCaps } from "./warn.js";
 import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
@@ -28,13 +28,14 @@ import { renderPanel } from "./learnpanel.js";
 import { keySound } from "./sound.js";
 import "./share.js";   // the copy / image buttons of the stats screen: it wires them itself
 
-// the keyboard choice in the settings and Alt+K: keyboard and hands off, or
+// the keyboard choice in the settings and Alt+K: keyboard off, or
 // back on (never on a touch screen, see restoreKb)
 function toggleKb() {
   if (isTouch()) return;
   S.kbHidden = !S.kbHidden;
   applyKb(true);
   placeCaret(true);
+  lightNext();   // the finger colour in the text goes and comes with the keyboard
 }
 onKbToggle(toggleKb);
 window.addEventListener("resize", () => {
@@ -152,7 +153,7 @@ onTypingLook(() => {
   fitText();
   requestFit();
   placeCaret(true);
-  highlightNextKey();
+  lightNext();
 });
 // a sound was chosen: one of it, so you hear what you picked
 onSoundPick((mode) => keySound(mode !== "errors", mode));

@@ -381,7 +381,7 @@ export async function loadExercise() {
   el.textBox.classList.remove("typing");
   setTyping(false);
   if (!el.live.classList.contains("final")) { setLive(el.wpm, 0, true); setLive(el.raw, 0, true); setLive(el.acc, 100, true); }
-  highlightNextKey();
+  lightNext();
   showPortion(0);
   placeCaret(true);
   requestAnimationFrame(keepTextInView);     // after the keyboard has its size for this window
@@ -415,6 +415,22 @@ function setState(i, s) {
   state[i] = s;
   spans[i].className = s === 0 && focusMask[i] ? "fx" : ["", "ok", "bad", "miss"][s];
 }
+// The next key on the keyboard (keyboard.js) and the next letter in the
+// colour of its finger (a setting, on while the keyboard is shown): the
+// finger is seen without looking down from the text (owner, 2026-10-22).
+// Only the old and the new letter change.
+let tinted = null;
+export function lightNext() {
+  highlightNextKey();
+  if (tinted) { tinted.classList.remove("fnext"); tinted = null; }
+  if (!S.settings.fingerText || S.kbHidden || !S.nextFc) return;
+  const s = spans[S.pos];
+  if (!s) return;
+  s.style.setProperty("--fc", S.nextFc);
+  s.classList.add("fnext");
+  tinted = s;
+}
+
 // The sample of position i. Created at the first press there and never
 // deleted, so a mistake fixed with Backspace still counts for the letter.
 // typed: the key pressed; the first wrong one at a place is kept, so the
@@ -567,7 +583,7 @@ export function handleChar(ch) {
   lastTime = now; afterBackspace = false; afterPause = false;
   // after lastTime: the time of the round ends with this keypress
   if (roundOver) { placeCaret(false, true); finishRound(true); return; }   // the caret goes past the last letter too
-  highlightNextKey();
+  lightNext();
   placeCaret(false);
 }
 
@@ -602,7 +618,7 @@ export function backspace(wholeWord) {
     setState(--S.pos, 0);
   }
   afterBackspace = true;
-  highlightNextKey();
+  lightNext();
   placeCaret(false);
 }
 // mistakes recorded for the word start..end (its space included: extra letters)

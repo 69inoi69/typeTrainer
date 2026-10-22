@@ -49,8 +49,9 @@ your browser.
 
 - Stats that tell you something: your best for every round length, every
   round's speed, Learn's letters round by round, the keys you mix up.
-- An on-screen keyboard with finger colours and hands, so you learn where
-  each finger goes instead of looking down.
+- An on-screen keyboard in finger colours, with a small hand above the next
+  key and the next letter in its finger's colour, so you learn where each
+  finger goes instead of looking down.
 - Dark and light themes, caret styles, sounds, a daily goal and the rest of
   the settings you would expect.
 - Export and import, so you can move your progress to another browser.

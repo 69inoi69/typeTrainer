@@ -80,7 +80,9 @@
    the accuracy streak and today's goal; then the gold letter and what it
    needs, or the news of the round that just ended. Readable at rest (the
    text colour, not grey), stepping back while you type. */
-.learn-panel { display: grid; gap: 4px; margin-top: 12px; font-size: .9rem; color: color-mix(in srgb, var(--text) 80%, var(--sub)); transition: opacity .4s var(--ease); }
+/* a fixed height (two rows): fitKeyboard (keyboard.js) keeps this room in
+   every mode, so the keyboard has one size in all of them */
+.learn-panel { display: grid; grid-template-rows: 1fr 1fr; height: calc(2 * 2.2em + 4px); gap: 4px; margin-top: 12px; font-size: .9rem; color: color-mix(in srgb, var(--text) 80%, var(--sub)); transition: opacity .4s var(--ease); }
 .learn-panel[hidden] { display: none; }
 body.typing-now .learn-panel { opacity: .4; }
 .lp-row { display: flex; align-items: center; gap: 30px; min-height: 1.9em; white-space: nowrap; min-width: 0; }
@@ -135,10 +137,6 @@ body:is([data-ws="dot"], [data-ws="bar"]) .text span[data-sp]::after {
 }
 body[data-ws="dot"] .text span[data-sp]::after { top: 50%; width: .14em; height: .14em; border-radius: 50%; translate: -50% -50%; }
 body[data-ws="bar"] .text span[data-sp]::after { bottom: .32em; width: .55em; height: .06em; border-radius: 1px; }
-/* finger colours off: every key and finger in one calm grey, the next key
-   in the accent instead (the colours come inline from JS, so !important) */
-body.fingers-off :is(.key, .hand .finger) { --fc: #7d828c !important; }
-body.fingers-off .key.next { --fc: var(--accent) !important; }
 /* the round bar above the letters (modebar.js): plain words as on
    monkeytype's config bar, in groups split by a thin line, the chosen one
    in the accent colour. It steps back while you type. */
@@ -305,13 +303,15 @@ body.typing-now .mode-bar { opacity: 0; pointer-events: none; }
 }
 .pause-note small { color: var(--sub); font-size: .8rem; opacity: .8; margin-top: 4px; }
 .text-box.paused .pause-note { opacity: 1; }
-.text-box :is(.text, .live), .text-box::before, #view-type > :is(.hands, .keyboard) { transition: opacity var(--med), filter var(--med); }
+.text-box :is(.text, .live), .text-box::before, #view-type > .keyboard { transition: opacity var(--med), filter var(--med); }
 .text-box.paused :is(.text, .live) { filter: blur(5px); opacity: .2; }
 .text-box.paused::before { opacity: .25; }
 /* put on at once (typing.js pauseRound): a window out of sight draws
    nothing, so a fade would only start when you come back */
-.text-box.snap, .text-box.snap *, .text-box.snap::before, #view-type:has(> .text-box.snap) > :is(.hands, .keyboard) { transition: none; }
-#view-type:has(> .text-box.paused) > :is(.hands, .keyboard) { opacity: .3; }
+.text-box.snap, .text-box.snap *, .text-box.snap::before, #view-type:has(> .text-box.snap) > .keyboard { transition: none; }
+/* the keyboard blurs like the text (owner, 2026-10-22): a sharp keyboard
+   under a blurred text looked like it was still in use */
+#view-type:has(> .text-box.paused) > .keyboard { filter: blur(5px); opacity: .25; }
 .text-box.paused :is(.caret, .focus-hint) { opacity: 0; }
 
 /* A typed letter turns white at the key press: one change, no fade,
@@ -325,6 +325,12 @@ body.typing-now .mode-bar { opacity: 0; pointer-events: none; }
    a muted gold, half way to the grey of the text (owner, 2026-10-18: the
    brighter tint pulled the eye away from the words) */
 .text span.fx { color: color-mix(in srgb, var(--accent) 46%, var(--sub)); }
+/* the next letter in the colour of its finger (typing.js lightNext, a
+   setting): the finger is seen without looking down. Light theme: the
+   finger colours are pastels, so a deeper shade.
+   Only the colour: the caret already marks the place (owner, 2026-10-22). */
+.text span.fnext { color: var(--fc); }
+:root[data-theme="light"] .text span.fnext { color: color-mix(in oklab, var(--fc) 60%, #1d1428); }
 :root[data-theme="light"] .text span.fx { color: color-mix(in srgb, var(--accent-text) 80%, var(--sub)); }
 /* no glow on the text at rest: crisp letters read better; a mistake keeps a
    short red glow (text-shadow moves nothing, so it costs nothing on a keypress) */
@@ -439,8 +445,8 @@ body[data-blink="pulse"][data-caret="outline"] .caret { box-shadow: inset 0 0 0 
 
 /* ---------- hands: which finger presses the next key ---------- */
 /* Each finger is a rounded bar in its finger color; the one to use lights up
-   and lifts a little. Sizes follow the keyboard unit --u, so the hands grow
-   and shrink with the keyboard. Every finger is its own layer (index.html):
+   and lifts a little. Sizes follow the keyboard unit --u, so the hand grows
+   and shrinks with the keyboard (the intro has its own bigger copy). Every finger is its own layer (index.html):
    the lift is the CSS "translate", moved by the graphics card. The finger
    no longer taps or bounces on a keypress (measured, 2026-10-20: every
    animation started per key made the typed letter show later). */
@@ -448,12 +454,26 @@ body[data-blink="pulse"][data-caret="outline"] .caret { box-shadow: inset 0 0 0 
   display: flex; justify-content: center; align-items: flex-end; gap: calc(var(--u) * .9 * var(--feel-hand, 1));
   margin: 6px 0 8px; user-select: none; pointer-events: none;
 }
-.hands.off { display: none; }
-/* on the typing screen the hands rest on the keyboard's top edge, as real
-   hands over the keys (their wrists fade out anyway): drawn above it, and
-   that much less height used, so the keys can be bigger (FEEL.handOverlap,
-   counted by fitKeyboard in keyboard.js) */
-#view-type > .hands { position: relative; z-index: 1; margin-bottom: calc(var(--u) * var(--feel-hand-overlap, 0) * -1); }
+/* On the typing screen a small hand rides on a little card along the top
+   edge of the keyboard, right above the column of the next key, so key and
+   finger are seen in one place (owner, 2026-10-22: with big hands above
+   the keyboard the eyes went to the hands first, then to the keys; a card
+   standing on the key above covered that key). Only the hand of that side;
+   both when both are used (space, Shift, AltGr). keyboard.js sets the
+   middle of the key in keys (--kx); the card moves there by "translate"
+   (the graphics card, no layout). left: the keyboard's padding, where the
+   rows start. */
+.keyboard > .hands {
+  position: absolute; left: 12px; top: 0; z-index: 2; margin: 0;
+  gap: calc(var(--u) * .08); padding: 4px 5px 0; border-radius: 8px;
+  background: var(--panel); box-shadow: var(--ring), 0 6px 16px -8px rgba(0, 0, 0, .5);
+  translate: calc(var(--kx, 0) * var(--u) - 50%) calc(-100% - 4px);
+  will-change: translate;
+  transition: translate var(--fast) var(--ease);
+}
+.keyboard > .hands[data-show=""] { visibility: hidden; }
+.keyboard > .hands[data-show="l"] .hand.right, .keyboard > .hands[data-show="r"] .hand.left { display: none; }
+.keyboard .hand { --skin: color-mix(in srgb, var(--text) 16%, var(--panel)); }
 .hand {
   /* --hu: one unit of the 100 x 84 drawing in px, for the finger moves */
   --hu: calc(var(--u) * 2 * var(--feel-hand, 1) / 100);
@@ -505,15 +525,20 @@ body[data-blink="pulse"][data-caret="outline"] .caret { box-shadow: inset 0 0 0 
    counted by fitKeyboard, keyboard.js) */
 .keyboard {
   display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * .12); user-select: none;
-  isolation: isolate;   /* the lit key (.lit, z-index 1) stays under the hands */
+  position: relative;   /* the hand over the next key (.hands) is placed in it */
+  isolation: isolate;   /* the lit key (.lit, z-index 1) stays under the hand */
   width: max-content; max-width: 100%; margin-inline: auto; padding: 10px 12px 12px;
+  /* room for the hand above it (FEEL.handRoom, counted by fitKeyboard) */
+  margin-top: calc(var(--u) * var(--feel-hand-room, 1));
   border-radius: var(--r-lg); background: color-mix(in srgb, var(--panel) 55%, transparent); box-shadow: var(--ring);
 }
+body.hand-off .keyboard { margin-top: 0; }   /* the hand is a setting */
+body.hand-off .keyboard > .hands { display: none; }
 :root[data-theme="light"] .keyboard { background: rgba(255, 255, 255, .55); box-shadow: var(--ring), 0 10px 30px -18px rgba(20, 24, 32, .25); }
 .keyboard.off { display: none; }
-/* a window too small for usable keys (fitKeyboard): keyboard and hands
-   step aside for the text, without changing the saved choice */
-body.kb-nofit :is(#keyboard, #hands) { display: none; }
+/* a window too small for usable keys (fitKeyboard): the keyboard steps
+   aside for the text, without changing the saved choice */
+body.kb-nofit #keyboard { display: none; }
 .kb-row { display: flex; gap: calc(var(--u) * .12); width: calc(var(--u) * 13.4); }
 .key {
   --fc: #888;                         /* finger color, set from JS */

@@ -64,8 +64,14 @@ the normal server, it shows yours.
   (bright on the dark theme, a deep shade on the light one), raised a little
   and glowing in that color, so the corner of the eye finds it without
   looking down; keys you do not need yet
-  are dimmed. Above the keyboard two hands light up the finger that presses
-  it (space = both thumbs, AltGr letters = right thumb + the finger).
+  are dimmed. A small hand rides along the top edge of the keyboard, right
+  above the column of the next key, and lights up the finger that presses
+  it (space = both thumbs, AltGr letters = right thumb + the finger, a
+  capital = the finger + the other hand's little finger on Shift). The next
+  letter in the text takes the colour of that finger, so you can see the
+  finger without looking down.
+- The keyboard is the same size in Learn, Climb and Freetype. Browser zoom
+  makes it smaller or bigger together with the rest of the page.
 - The screen has three fixed places, as in a real app:
   - **the header**: the logo on the left, the account on the right ("log in"
     with a person icon until you are logged in, then your picture and name);
@@ -177,18 +183,21 @@ the normal server, it shows yours.
     much typing with no break (a gap of 5 minutes between rounds is a break)
     a calm message at the end of a round suggests a rest.
   **Keyboard**
-  - **keyboard** (the keys and the hands): on or off (same as `Alt + K`; remembered
+  - **keyboard** (the keys and the hand above them): on or off (same as `Alt + K`; remembered
     in your browser, separately for Learn and for Climb and Freetype, where they start
     hidden). Not on a phone or tablet: there you type
     on the device's own keyboard, so the option is not shown. There
     is no size setting: the keyboard is always as big as the window allows
     without making the page scroll.
-  - **next key** and **finger colours** are shown only while the keyboard
-    is on: without it there is nothing for them to change.
-  - **next key**: on (default) or off. Off, neither the next key nor its
-    finger lights up: you find every key from memory.
-  - **finger colours**: on (default) or off. Off, every key and finger is
-    one calm grey, and the next key lights up in gold instead.
+  - **next key**, **hand above the keys** and **finger colour in the text**
+    are shown only while the keyboard is on. Each works on its own, in any
+    combination. The keys are always in their finger colours.
+  - **next key**: on (default) or off. Off, the next key does not light up:
+    you find every key from memory.
+  - **hand above the keys**: on (default) or off. Off, there is no hand and
+    no room for it above the keyboard, so the keys get bigger.
+  - **finger colour in the text**: on (default) or off. On, the next letter
+    in the text is in the colour of the finger that types it.
   **Goals**
   - **daily goal, minutes**: off, 5 to 60 (15 by default). The Learn panel
     shows today's typing time against it, and the stats calendar rings
@@ -222,7 +231,7 @@ the normal server, it shows yours.
   typed (no space needed). Leaving the window (Alt+Tab, another app,
   another tab) or 10 seconds without a key pause the round, before the
   first key too: the
-  text, the numbers, the hands and the keyboard step back under a breathing
+  text, the numbers and the keyboard blur and step back under a breathing
   pause sign and "Paused", the clock stops (a timed round does not run
   out), and any key goes on; the time away does not count.
 - In Freetype, with the streak turned on in the settings: from 3 clean
@@ -325,7 +334,7 @@ the normal server, it shows yours.
 - Behind Settings the page dims.
 - Shortcuts, also listed small at the bottom of the page: `Esc` stop /
   settings ·
-  `Shift + Tab` typing / stats · `Alt + K` keyboard and hands on / off.
+  `Shift + Tab` typing / stats · `Alt + K` keyboard on / off.
 - **Stats**: nothing on the page can be selected by dragging; instead the
   stats screen has **image** (a PNG card with the five numbers and the speed
   of the last 30 rounds of Climb, in the colours of the current theme).

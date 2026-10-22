@@ -77,15 +77,12 @@ export const FEEL = {
   // extra = struck through. Thickness of those lines, px.
   markLine: 2,
 
-  // The hands above the keyboard (issue #19): the finger to use is the main
-  // signal, the key itself is only hinted.
-  handScale: 1.4,           // hand width in keys: 2 * handScale (1 = the old size)
+  // The small hand above the keyboard, over the next key's column
+  // (keyboard.js highlightNextKey): the finger to use lights up on it.
+  handScale: 0.55,          // hand width in keys: 2 * handScale
+  handRoom: 1.05,           // room above the keyboard for the hand, in keys
   fingerLiftPx: 8,          // how far the finger to use lifts, in units of the hand drawing (100 = its width)
   fingerGlowPx: 0,          // a see-through outline around it, in the hand drawing's units (0 = none; owner, 2026-10-18: it looked like double vision)
-  // The hands rest on the top edge of the keyboard, as real hands over the
-  // keys: they overlap it by this part of a key (their wrists fade out
-  // anyway). It also leaves more height for bigger keys.
-  handOverlap: 0.42,        // in keys (0 = the hands stand above the keyboard)
   // The next key stands out by brightness, not by colour: side vision sees
   // light and movement, not hues (owner, 2026-10-18: it got lost while typing).
   nextKeyLiftPx: 3,         // how far the next key rises above the others (0 = stays flat)
@@ -110,6 +107,6 @@ function applyFeel() {
   root.setProperty("--feel-next-lift", -FEEL.nextKeyLiftPx + "px");
   root.setProperty("--feel-key-press-ms", FEEL.keyPressMs + "ms");
   root.setProperty("--feel-key-press-scale", String(FEEL.keyPressScale));
-  root.setProperty("--feel-hand-overlap", String(FEEL.handOverlap));
+  root.setProperty("--feel-hand-room", String(FEEL.handRoom));
 }
 applyFeel();

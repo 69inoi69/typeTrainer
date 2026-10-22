@@ -24,7 +24,7 @@
 /* The keyboard and the hands only help while typing: on the result they are
    hidden, so the whole result fits on one screen without scrolling (owner,
    2026-10-16). They come back with the next round. */
-#view-type:has(> .text-box.resulting) > :is(.hands, .keyboard) { display: none; }
+#view-type:has(> .text-box.resulting) > .keyboard { display: none; }
 /* nothing to stop on the result: "esc Stop" leaves the shortcut line */
 body:has(.text-box.resulting) .hints .stop-hint { display: none; }
 /* desktop: the result, with the letters on top of it, stands in the middle
@@ -50,7 +50,7 @@ body:has(.text-box.resulting) .hints .stop-hint { display: none; }
    letter has shown. Then the whole result comes in at once, fading in while it rises
    a little (FEEL.resultIn*); the letters row glides to its new place
    (result.js glideLetters). */
-#view-type:has(> .text-box.ending) > :is(.hands, .keyboard) {
+#view-type:has(> .text-box.ending) > .keyboard {
   opacity: 0;
   transition: opacity var(--feel-result-hold, 250ms) var(--ease);
 }

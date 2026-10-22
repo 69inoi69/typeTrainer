@@ -1,7 +1,7 @@
-// The on-screen keyboard and the two hands above it: drawing them from the
-// layout data (data/layouts/*.json, from /api/v1/layout), lighting the next
-// key and its finger, keyboard on / off, and fitting the keyboard into the
-// window.
+// The on-screen keyboard and the small hand over its next key: drawing them
+// from the layout data (data/layouts/*.json, from /api/v1/layout), lighting
+// the next key and its finger, keyboard on / off, and fitting the keyboard
+// into the window.
 // Layer: middle. Imports only the bottom layer.
 // Called by: typing.js (highlightNextKey, pulseKey, glowKey on keys),
 // languages.js (drawKeyboard for a new layout), intro.js (makeKey),
@@ -14,6 +14,7 @@ import { el, S, store, isTouch, themeColor, reducedMotion } from "./state.js";
 
 // ---------- keyboard ----------
 let fingerOf = {};         // char -> finger id
+const KEY_GAP = 0.12;      // the gap between keys, in keys (typing.css .kb-row)
 
 // One key <div> from one key of the layout data ({char, finger, home,
 // width, alt, label, modifier}). Also used by the intro for its small keyboards.
@@ -48,10 +49,16 @@ export function drawKeyboard() {
   S.layout.rows.forEach((row, i) => {
     const rowEl = document.createElement("div");
     rowEl.className = "kb-row";
-    rowEl.style.paddingLeft = `calc(var(--u) * ${S.layout.offsets?.[i] ?? 0})`;
+    let x = S.layout.offsets?.[i] ?? 0;      // in keys, from the left of the row
+    rowEl.style.paddingLeft = `calc(var(--u) * ${x})`;
     for (const k of row) {
       const key = makeKey(k);
       addLit(key);
+      // the middle of the key, in keys from the row's left edge (a wide
+      // key is w keys and the gaps between them): where the hand stands
+      const w = (k.width ?? 1) * (1 + KEY_GAP) - KEY_GAP;
+      key.dataset.x = String(x + w / 2);
+      x += w + KEY_GAP;
       rowEl.appendChild(key);
       if (k.modifier) { S.altgrEl = key; continue; }
       S.keyEls[k.char] = key;
@@ -60,6 +67,7 @@ export function drawKeyboard() {
     }
     el.keyboard.appendChild(rowEl);
   });
+  el.keyboard.appendChild(el.hands);
   // the hands take the finger colors of this layout (both thumbs: "th")
   handFingers = {};
   for (const f of el.hands.querySelectorAll("[data-f]")) {
@@ -92,8 +100,13 @@ function addLit(key) {
 const baseOf = (ch) => { const lc = ch.toLowerCase(); return S.altBase[lc] ?? lc; };
 const keyFor = (ch) => S.keyEls[ch] || S.keyEls[baseOf(ch)] || null;
 
-// Which finger presses the next key: that finger lights up on the two
-// hands above the keyboard. Space = both thumbs; an AltGr letter = the right
+// Which finger presses the next key: a small hand rides along the top edge
+// of the keyboard, right above the column of the next key, and that finger
+// lights up on it, so the eyes find key and finger in one place (owner,
+// 2026-10-22: with big hands above the keyboard you looked at the hands
+// first, then at the keys; a hand standing on the key above covered it).
+// The hand of that side; both hands when both are used. Three separate
+// settings: the lit key, the hand, the letter's colour in the text. Space = both thumbs; an AltGr letter = the right
 // thumb (holding AltGr) plus the finger of the base key; a capital (Climb)
 // = the finger of its key plus the little finger of the other hand, which
 // holds Shift (the touch typing rule). The same thing is also written as a
@@ -106,13 +119,15 @@ export function highlightNextKey() {
   if (S.altgrEl) S.altgrEl.classList.remove("next");
   for (const f of litFingers) f.classList.remove("on");
   litFingers = [];
+  S.nextFc = "";
+  el.hands.dataset.show = "";
   const ch = S.text[S.pos];
   const base = ch === undefined ? ch : baseOf(ch);   // "ą" is typed on the "a" key, "A" too
   nextKeyEl = S.keyEls[base] || null;
   if (!nextKeyEl) { el.hint.innerHTML = "&nbsp;"; return; }
   // "Next key" off (a setting): find it from memory; the sentence for
   // screen readers still says it
-  const lit = S.settings.nextKey;
+  const lit = S.settings.nextKey, hand = S.settings.hand;
   if (lit) nextKeyEl.classList.add("next");
   const fingerId = fingerOf[base];
   let ids = fingerId === "th" ? ["thl", "thr"] : [fingerId];
@@ -125,11 +140,17 @@ export function highlightNextKey() {
   } else {
     el.hint.innerHTML = t("hint.press", vars);
   }
-  if (!lit) return;
+  S.nextFc = S.layout.fingers[fingerId].color;   // the next letter in the text (typing.js lightNext)
+  if (!hand) return;
   for (const id of ids) {
     const f = handFingers[id];
     if (f) { f.classList.add("on"); litFingers.push(f); }
   }
+  // above the key's column: a custom property, the hand moves by
+  // "translate" (typing.css .keyboard > .hands); no layout is read
+  const sides = new Set(ids.map((id) => (id === "thl" || id[0] === "l" ? "l" : "r")));
+  el.hands.dataset.show = sides.size === 2 ? "lr" : [...sides][0];
+  el.hands.style.setProperty("--kx", nextKeyEl.dataset.x);
 }
 
 // A wrong key gets a quick red tint in the theme's --error (FEEL.keyMiss*,
@@ -159,7 +180,7 @@ export function glowKey(ch) {
 }
 
 // Keyboard on / off (the choice in the settings panel, or Alt+K; both go
-// through input.js): keyboard and hands together. Its size is not a
+// through input.js): the hand is inside the keyboard and goes with it. Its size is not a
 // setting: it is always the largest that fits the window (fitKeyboard
 // below). Remembered in localStorage, separately
 // for learning (tt.kbHidden) and for Climb and Freetype together
@@ -184,25 +205,23 @@ export function restoreKb(animate = false) {
 // animate = true on a click: the keyboard folds away / unfolds smoothly
 export function applyKb(animate = false) {
   if (animate) {   // measure again once the fold is over (fitKeyboard skips it while it runs)
-    Promise.all([FX.collapse(el.keyboard, S.kbHidden), FX.collapse(el.hands, S.kbHidden)]).then(requestFit);
+    FX.collapse(el.keyboard, S.kbHidden).then(requestFit);
   } else {
     el.keyboard.classList.toggle("off", S.kbHidden);
-    el.hands.classList.toggle("off", S.kbHidden);
   }
   document.body.classList.toggle("kb-hidden", S.kbHidden);   // phone CSS centres the text then
   if (!isTouch()) store.set(kbKey(), S.kbHidden ? "1" : "");   // a phone never chose it
   requestFit();
 }
 
-// Fit to the window: keyboard and hands grow with the key unit --u, and they
-// must never push the page below the bottom of the window (no scrolling).
+// Fit to the window: the keyboard grows with the key unit --u, and it must
+// never push the page below the bottom of the window (no scrolling).
 // Everything else is measured once (it does not depend on --u), and --u-fit
 // caps the unit so the rest fits. Runs on load, resize, a new text and when
 // the keyboard is switched on: never on a keypress.
-// hands 1.68 u * handScale (2 u wide, 100:84) + keyboard 4.36 u (4 rows, 3 gaps of .12 u)
-// The hands overlap the keyboard's top edge by FEEL.handOverlap keys
-// (typing.css .hands, a negative margin), so that much less height is used.
-const HANDS_KB_PER_U = 1.68 * FEEL.handScale + 4.36 - FEEL.handOverlap;
+// keyboard 4.36 u (4 rows, 3 gaps of .12 u) + the room above it for the
+// hand (typing.css .keyboard margin-top), none while the hand is off
+const kbPerU = () => 4 + 3 * KEY_GAP + (S.settings.hand ? FEEL.handRoom : 0);
 const KB_MIN_U = 26;       // px: a key smaller than this cannot be read at a glance
 let fitFrame = 0;
 // Asks for fitKeyboard in the next animation frame; several asks in one
@@ -212,6 +231,15 @@ export function requestFit() {
   fitFrame = requestAnimationFrame(fitKeyboard);
 }
 const lettersBar = document.querySelector("#view-type > .letters");   // carries the centring margin
+const learnPanel = document.getElementById("learn-panel");
+// The unit fitted at the browser zoom the page was opened at (baseDpr).
+// A zoom changes devicePixelRatio, not the window: then the keys keep this
+// size in CSS px, so they shrink and grow with the zoom like the text
+// does. Fitted again at every zoom, the keyboard grew while zooming out
+// (the text above it shrank and left more room) and then shrank (owner,
+// 2026-10-22: from 100 % to 75 % it first grew). Zooming in still makes it
+// smaller when it no longer fits.
+let baseU = 0, baseDpr = 0;
 function fitKeyboard() {
   const root = document.documentElement.style;
   // phones: the on-screen keyboard of the phone changes the window height all
@@ -222,19 +250,23 @@ function fitKeyboard() {
   if (el.textBox.classList.contains("resulting")) return;
   // while the keyboard folds / unfolds its height and the margins of the hands
   // are half-way: a measure now would give a wrong (too big) size
-  if (el.keyboard.getAnimations().length || el.hands.getAnimations().length) return;
+  if (el.keyboard.getAnimations().length) return;
   const centred = getComputedStyle(el.viewType).getPropertyValue("--view-centred").trim() === "1";
   // the keyboard's panel (typing.css .keyboard): its padding and border do
   // not grow with --u, so they count as fixed room like everything else
   const kb = getComputedStyle(el.keyboard);
   const kbFrame = ["paddingTop", "paddingBottom", "borderTopWidth", "borderBottomWidth"].reduce((sum, p) => sum + parseFloat(kb[p]), 0);
-  // the overlap of the hands grows with --u too (it is in HANDS_KB_PER_U):
-  // add back what the view lost to it now
-  // (none while they are out of the way: then the view lost nothing)
+  // the room above the keyboard grows with --u too (it is in kbPerU)
   const away = document.body.classList.contains("kb-nofit");
-  const overlap = away ? 0 : -parseFloat(getComputedStyle(el.hands).marginBottom) || 0;
-  const rest = document.querySelector(".top").offsetHeight + el.viewType.offsetHeight
-    - el.hands.offsetHeight - el.keyboard.offsetHeight + kbFrame + overlap
+  const above = away ? 0 : parseFloat(kb.marginTop) || 0;
+  // the Learn panel's room counts in every mode, also while it is hidden
+  // (Climb, Freetype, or Learn before its first stats): the keyboard is
+  // the same size in all three modes (owner, 2026-10-22). Its height is
+  // fixed in typing.css, so it can be read even while hidden.
+  const panel = getComputedStyle(learnPanel);
+  const panelRoom = learnPanel.hidden ? parseFloat(panel.height) + parseFloat(panel.marginTop) : 0;
+  const rest = document.querySelector(".top").offsetHeight + el.viewType.offsetHeight + panelRoom
+    - el.keyboard.offsetHeight - above + kbFrame
     // desktop (typing.css --view-centred): the view takes all the height and
     // centres the letters and the text with two equal auto margins (above
     // the letters, at the end): that is free room. Otherwise the room above
@@ -242,9 +274,11 @@ function fitKeyboard() {
     + (centred ? -2 * parseFloat(getComputedStyle(lettersBar).marginTop) : parseFloat(getComputedStyle(el.viewType).marginTop))
     + document.querySelector(".bottom").offsetHeight + 12    // 12 = bottom padding of .views
     + parseFloat(getComputedStyle(document.body).paddingBottom);   // the bottom navigation bar (narrow windows)
-  const fit = Math.floor((innerHeight - rest - 4) / HANDS_KB_PER_U);
+  let fit = Math.floor((innerHeight - rest - 4) / kbPerU());
+  if (!baseU || devicePixelRatio === baseDpr) { baseU = fit; baseDpr = devicePixelRatio; }
+  else fit = Math.min(fit, baseU);   // zoomed: never bigger than at the start
   // too small to be of use (a short window, or the page zoomed far in):
-  // keyboard and hands step aside and the text keeps the room, as on a
+  // the keyboard steps aside and the text keeps the room, as on a
   // phone; they come back when the window has room again
   document.body.classList.toggle("kb-nofit", fit < KB_MIN_U);
   root.setProperty("--u-fit", Math.max(KB_MIN_U, fit) + "px");
