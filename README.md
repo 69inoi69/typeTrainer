@@ -27,6 +27,9 @@ word you could meet in a book.
 A computer keyboard is needed to practise. On a phone the site shows your
 stats only.
 
+typeTrainer started as an engineering thesis at the Lublin University of
+Technology; the thesis notes live in [docs/thesis](docs/thesis/).
+
 The project is changing fast right now, so this page stays short. To see
 what it does today, [open the site](https://69inoi69.github.io/typeTrainer/).
 
@@ -61,12 +64,10 @@ the code follows. How the parts fit together is in
 - Fonts: [Geist Mono](https://github.com/vercel/geist-font) and
   [Sora](https://github.com/sora-xor/sora-font), **SIL OFL 1.1**.
 - The look owes a lot to [Monkeytype](https://github.com/monkeytypegame/monkeytype),
-  the teaching to [keybr](https://www.keybr.com).
+  the teaching to [keybr](https://github.com/aradzie/keybr.com).
 
 How the word lists were made: [docs/ALGORITHM.md](docs/ALGORITHM.md).
 
 ## License
 
-[GPL-3.0](LICENSE). typeTrainer started as an engineering thesis at the
-Lublin University of Technology; the thesis notes live in
-[docs/thesis](docs/thesis/).
+[GPL-3.0](LICENSE).
