@@ -201,8 +201,9 @@ the normal server, it shows yours.
     in the text is in the colour of the finger that types it.
   **Goals**
   - **daily goal, minutes**: off, 5 to 60 (15 by default). The Learn panel
-    shows today's typing time against it, and the stats calendar rings
-    every day that met it.
+    shows today's typing time against it, a Learn round that reaches it
+    pauses with "Daily goal reached", and the stats calendar rings every
+    day that met it.
   - **speed goal, wpm**: off (default), 30, 40, 50, 75, 100, 125, 150 or
     200. The stats screen then shows how far you are from it. Only for you:
     the trainer does not change, letters still open at its own speed.
@@ -231,10 +232,12 @@ the normal server, it shows yours.
   round is left. The round ends as soon as the last letter of its last word is
   typed (no space needed). Leaving the window (Alt+Tab, another app,
   another tab) or 10 seconds without a key pause the round, before the
-  first key too: the
-  text, the numbers and the keyboard blur and step back under a breathing
-  pause sign and "Paused", the clock stops (a timed round does not run
-  out), and any key goes on; the time away does not count.
+  first key too: everything between the header and the shortcuts (the
+  letters, the panel, the text, the keyboard) blurs and steps back under
+  a breathing pause sign and "Paused", the clock stops (a timed round does
+  not run out), and any key goes on; the time away does not count. In
+  Learn, reaching the daily goal pauses the round the same way, with a
+  green tick and "Daily goal reached" instead.
 - In Freetype, with the streak turned on in the settings: from 3 clean
   words in a row (typed without a single mistake) a small
   **bolt and number** ride just above the caret and count them; the colour
@@ -283,19 +286,26 @@ the normal server, it shows yours.
   after Learn complete the column is the **Lap** ("Lap 2 of 7 ≈ 6 rounds",
   when the lap ends); **Clean streak** ("4 rounds at 97%+": the highest of
   100, 98, 97, 95 and 90% reached two rounds in a row or more); and
-  **Today**, your typing time today in every mode against the **daily
-  goal** (15 minutes unless you change it in Settings; Off leaves the
-  column empty), with the days in a row you met it in its label. The **gold letter**
-  (the letter in focus) sits in the line just above the text, between the
-  word counter and the round switch, in the same label-over-value columns:
+  **Daily goal**, your typing time today in every mode against the daily
+  goal (15 minutes unless you change it in Settings; Off leaves the
+  column empty), on a ring that fills as the time passes, with the days
+  in a row you met it in its label; while you type it shows seconds too
+  ("12:34") and runs with the round. The line just above the text has
+  fixed columns too: **Round 48** over the word counter (Learn starts
+  the next round by itself; this counts them, every length), then the
+  **gold letter** (the letter in focus) in the same label-over-value
+  columns, and on the right the round switch (the live numbers while you
+  type):
   **Gold letter** (how far it is on the way to mastered, the weakest of
   the three parts of the rule; the letter itself is the gold chip in the
   row above), **Presses** ("18 of 20"),
   **Mistakes** ("8% under 5%") and **Speed** ("24 of 30 wpm"); a part
   already met turns green with a tick, a letter never typed shows "—".
   Everything follows you as you type: after every line of words the
-  letters row, the forecast, the gold letter and Today (with the round so
-  far) are drawn again, and a value that changed lights up once. Right
+  letters row, the forecast, the gold letter and the daily goal (with the
+  round so far) are drawn again, and a number that changed counts to its
+  new value and glows gold for a moment; a part of the rule just met gets
+  its tick with a small pop. Right
   after a round with news, the news takes the gold letter's place until
   you start typing: a new letter, the letters you
   mastered, your fastest round of this length, once per language

@@ -375,6 +375,8 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request, user string
 		// the mastery rule, for the texts that explain it (engine.Mastered)
 		"masteryMin": p.MasteryMinSamples, "masteryErr": p.MasteryErrorRate * 100,
 		"lengths": lengths, "group": group, "bests": bests,
+		// Learn rounds of every length, for "Round 48" above the word counter
+		"learnRounds": len(every),
 	})
 }
 

@@ -106,30 +106,47 @@ body.typing-now .learn-panel { opacity: .75; }   /* a step back, still readable:
 .lp-delta { font-size: .85rem; font-variant-numeric: tabular-nums; }
 .lp-delta.up { color: var(--ok); }
 .lp-delta.down { color: var(--sub); }   /* information, not a scolding */
-.lp-bar { align-self: center; width: 110px; height: 6px; margin-right: 6px; border-radius: 3px; background: var(--track); overflow: hidden; }
-.lp-bar i { display: block; height: 100%; background: var(--accent); transform-origin: left; transform: scaleX(var(--g, 0)); transition: transform .6s var(--ease); }
-.lp-goal.met .lp-bar i { background: var(--ok); }
+/* a number that counts to a new value (learnpanel.js num, redraw): the
+   digits and the unit are drawn from --v (an integer, layout.css) and
+   data-u, so the browser can animate --v from the old value */
+.lp-n { counter-reset: v var(--v); }
+.lp-n::after { content: counter(v) attr(data-u); }
+/* the daily goal: a ring that fills clockwise from the top as the time
+   passes (--g, 0..1; learnpanel.js ring), green once the goal is reached;
+   the time keeps the room of "12:34", so nothing moves when the seconds
+   show up on the first key */
+.lp-ring { align-self: center; width: 16px; height: 16px; margin-right: 3px; transform: rotate(-90deg); flex: none; }
+.lp-ring circle { fill: none; stroke: color-mix(in srgb, var(--sub) 30%, transparent); stroke-width: 3; }
+.lp-ring .fill { stroke: var(--accent); stroke-dasharray: 100; stroke-dashoffset: calc(100 - var(--g) * 100); transition: stroke-dashoffset .5s linear, stroke .4s; }
+.lp-goal.met .lp-ring .fill { stroke: var(--ok); }
+.lp-clock { min-width: 5ch; text-align: right; }
 /* the gold letter's columns (learnpanel.js focusCells), in the line above
    the text between the word counter and the round switch; the
    news of a round shares their grid cell and they swap by opacity only, so
    the first key changes no layout. While you type the columns stay (they
    follow every portion) and the news gives way to them; the live numbers
    show on the right. */
-.focus-box { position: absolute; top: 0; bottom: 0; left: 6.5rem;   /* after the counter, clear of the live numbers on the right */
-   display: flex; align-items: center; font-size: .9rem; transition: opacity .3s var(--ease); }
+.focus-box { position: absolute; top: 0; bottom: 0; left: 5.5rem; right: 15rem;   /* between the counter and the live numbers */
+   container-type: inline-size; display: flex; align-items: center; font-size: .9rem; transition: opacity .3s var(--ease); }
 .focus-box[hidden] { display: none; }
-.fb-stack { display: grid; align-items: center; }
+.fb-stack { flex: 1; min-width: 0; display: grid; align-items: center; }
 .fb-stack > * { grid-area: 1 / 1; transition: opacity .3s var(--ease); }
 .fb-stack.has-news .fb-cols { opacity: 0; pointer-events: none; }   /* or it covers the news and its tooltip */
 body.typing-now .fb-stack.has-news .fb-cols { opacity: 1; pointer-events: auto; }
 body.typing-now .lp-news { opacity: 0; pointer-events: none; }
-.fb-cols { display: flex; }
-.fb-cols .lp-cell { padding: 0 13px; }
-.fb-cols .lp-cell:first-child { padding-left: 0; }
+/* four fixed columns, as the panel's: each keeps its place whatever its
+   value (owner, 2026-10-22) */
+.fb-cols { display: grid; grid-template-columns: 1.15fr .85fr 1fr 1.15fr; }
+.fb-cols .lp-cell { padding: 0 12px; }
+.fb-cols .lp-cell:first-child { border-left: 1px solid var(--line); }   /* apart from the counter */
+/* a narrow window: the words after a value go ("45%", "24 of 30"); the
+   label and the tooltip still say what it is, nothing runs over */
+@container (max-width: 570px) { .fb-cols .lp-val .opt { display: none; } }
 .fb-cols .lp-cell:last-child { align-items: flex-start; }
 .fb-gold .lp-val b.ok, .lp-cell.met .lp-val b { color: var(--ok); }
-.fb-tick { color: var(--ok); font-size: .85rem; }
-.lp-news { margin: 0; white-space: nowrap; color: var(--text); cursor: default; }
+.fb-tick { display: inline-block; color: var(--ok); font-size: .85rem; }
+.lp-news { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;   /* never under the round switch */
+   color: var(--text); cursor: default; }
 .lp-news.big { color: var(--accent-text); }
 .lp-news b { color: var(--accent-text); font-weight: 600; }
 @media (min-width: 1000px) and (pointer: fine) {
@@ -185,6 +202,12 @@ body.typing-now .round-switch { opacity: 0; pointer-events: none; }
 body[data-mode="learn"] .live > .metric:not(.num) { order: -1; }
 body[data-mode="learn"] .live > .metric.num:first-child { margin-left: auto; }
 body[data-mode="learn"] #progress-label { display: none; }
+/* "Round 48" over the counter, as the panel's labels (learnpanel.js) */
+body[data-mode="learn"] .live > .metric:has(#round-no) { flex-direction: column; align-items: flex-start; gap: 1px; }
+body[data-mode="learn"] #progress { line-height: 1.1; }
+.metric > .round-no { margin: 0; font-size: .675rem;   /* as the gold letter's labels (.75rem at .9rem) */
+   color: var(--sub); cursor: default; }
+.round-no[hidden] { display: none; }
 body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; }
 .wl { padding: 2px 8px; border: 0; border-radius: 6px; background: none; color: var(--sub); font: inherit; font-size: .9rem; cursor: pointer; transition: color .15s, opacity .4s var(--ease); }
 .wl:hover { color: var(--text); }
@@ -316,8 +339,8 @@ body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; }
    strict containment keeps its update from touching the layout of the page */
 .finger-hint { contain: strict; }
 /* a round paused because the window lost focus (typing.js pauseRound).
-   Everything in the round freezes and steps back (the text, the live line,
-   the prompt sign, the hands and the keyboard) so that only the note is
+   Everything but the header freezes and steps back (the text, the live
+   line, the letters, the panel, the keyboard; not the shortcuts) so only the note is
    read: a pause sign whose ring breathes slowly (waiting, not broken), the
    word, the key that goes on (the footer's key style) and what happened to
    the time. Centred on the whole card, so on a phone it never sits on top
@@ -331,6 +354,7 @@ body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; }
   color: var(--accent-text); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent-text) 60%, transparent);
 }
 .pause-ic svg { width: 22px; height: 22px; fill: currentColor; }
+.pause-ic .goal-ic { fill: none; }
 .text-box.paused .pause-ic { animation: pause-breathe 2.6s ease-in-out infinite; }
 @keyframes pause-breathe { 50% { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent-text) 18%, transparent); } }
 .pause-note b { font-size: 1.6rem; font-weight: 500; letter-spacing: -.01em; color: var(--text); margin-bottom: 10px; }
@@ -341,15 +365,25 @@ body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; }
 }
 .pause-note small { color: var(--sub); font-size: .8rem; opacity: .8; margin-top: 4px; }
 .text-box.paused .pause-note { opacity: 1; }
-.text-box :is(.text, .live), .text-box::before, #view-type > .keyboard { transition: opacity var(--med), filter var(--med); }
+/* the pause of the daily goal reached (typing.js pauseRound "goal"): a
+   green tick in place of the pause sign, and the reason in place of the
+   time note */
+.pause-note .goal-only, .pause-ic .goal-ic, .text-box.goal .pause-ic svg:not(.goal-ic),
+.text-box.goal .pause-note > :is([data-i18n="pause.title"], [data-i18n="pause.away"]) { display: none; }
+.text-box.goal .pause-note .goal-only, .text-box.goal .pause-ic .goal-ic { display: revert; }
+.text-box.goal .pause-ic { color: var(--ok); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ok) 60%, transparent); animation: none; }
+.text-box :is(.text, .live), .text-box::before, #view-type > :not(.text-box) { transition: opacity var(--med), filter var(--med); }
 .text-box.paused :is(.text, .live) { filter: blur(5px); opacity: .2; }
 .text-box.paused::before { opacity: .25; }
 /* put on at once (typing.js pauseRound): a window out of sight draws
    nothing, so a fade would only start when you come back */
-.text-box.snap, .text-box.snap *, .text-box.snap::before, #view-type:has(> .text-box.snap) > .keyboard { transition: none; }
-/* the keyboard blurs like the text (owner, 2026-10-22): a sharp keyboard
-   under a blurred text looked like it was still in use */
-#view-type:has(> .text-box.paused) > .keyboard { filter: blur(5px); opacity: .25; }
+.text-box.snap, .text-box.snap *, .text-box.snap::before, #view-type:has(> .text-box.snap) > :not(.text-box) { transition: none; }
+/* everything between the header and the shortcuts blurs like the text:
+   the letters row, the panel, the keyboard (owner, 2026-10-22: a sharp
+   keyboard under a blurred text looked still in use; then "the pause
+   should blur everything except the header"; the shortcuts stay sharp,
+   they say what to press) */
+#view-type:has(> .text-box.paused) > :not(.text-box) { filter: blur(5px); opacity: .25; }
 .text-box.paused :is(.caret, .focus-hint) { opacity: 0; }
 
 /* A typed letter turns white at the key press: one change, no fade,
