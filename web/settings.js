@@ -4,7 +4,8 @@
 // off, what falls in the background, the colour theme; how typing answers
 // (the caret stops on a mistake, sounds and their volume, a break
 // reminder); the on-screen keyboard (on or off, and while it is on: the
-// next key lit, the finger colours); the goals (a daily goal in minutes
+// next key lit, the hand above the keys, the finger colour of the next
+// letter in the text); the goals (a daily goal in minutes
 // for the Learn panel, a speed goal for the stats screen); and exporting, importing
 // and resetting the progress (tools.js does those three). Settings change
 // HOW IT LOOKS, never WHAT is practised. How long a round is belongs to
@@ -97,12 +98,16 @@ const CHOICES = {
 };
 // On/off switches: S.settings[name], the default, the localStorage key.
 // stop: the caret waits on a wrong key (typing.js handleChar); nextKey:
-// the next key and finger light up (keyboard.js); fingers: the keys in
-// finger colours (typing.css body.fingers-off).
+// the next key lights up; hand: the small hand above the keyboard shows the
+// finger (keyboard.js); fingerText: the next letter in the text in its
+// finger's colour (typing.js lightNext). Each works without the others. The keys are always in
+// their finger colours: without them the keyboard says nothing about which
+// finger to use (owner, 2026-10-22, the switch was removed).
 const SWITCHES = {
   stop: { key: "tt.stop", on: false },
   nextKey: { key: "tt.nextKey", on: true },
-  fingers: { key: "tt.fingers", on: true },
+  hand: { key: "tt.hand", on: true },
+  fingerText: { key: "tt.fingerText", on: true },
 };
 
 // "time-60" -> {kind: "time", n: 60}
@@ -153,9 +158,9 @@ export function loadSettings() {
 function applySettings() {
   document.body.classList.toggle("live-off", !S.settings.live);
   document.body.classList.toggle("streak-off", !S.settings.streak);   // layout.css hides the badge
+  document.body.classList.toggle("hand-off", !S.settings.hand);       // typing.css: no hand, no room for it
   document.body.dataset.caret = S.settings.caret;      // typing.css: body[data-caret=...]
   for (const name of Object.keys(CHOICES)) document.body.dataset[name] = S.settings[name];
-  document.body.classList.toggle("fingers-off", !S.settings.fingers);
   document.documentElement.dataset.theme = S.settings.theme;
   document.querySelector('meta[name="theme-color"]')
     ?.setAttribute("content", getComputedStyle(document.documentElement).getPropertyValue("--bg").trim());
@@ -183,7 +188,7 @@ export function onGoalChange(fn) { goalListener = fn; }
 // Another background: input.js draws it again (ambient.js).
 let bgListener = () => {};
 export function onBgChange(fn) { bgListener = fn; }
-// Another text size or next-key choice: input.js fits the text and the
+// Another text size, next-key, hand or finger-colour choice: input.js fits the text and the
 // keyboard again and lights the next key (or not).
 let typingListener = () => {};
 export function onTypingLook(fn) { typingListener = fn; }
@@ -236,7 +241,8 @@ const ROWS = [
   { group: "settings.typing", name: "settings.rest", desc: "settings.restDesc", ctl: () => pick("rest", (v) => (v === "0" ? t("settings.off") : v)) },
   { group: "settings.kbGroup", name: "settings.keyboard", desc: "settings.keyboardDesc", ctl: () => onOff("kb", !S.kbHidden), show: () => !isTouch() },   // no keyboard on touch screens
   { group: "settings.kbGroup", name: "settings.nextKey", desc: "settings.nextKeyDesc", ctl: () => onOff("nextKey", S.settings.nextKey), show: () => !isTouch() && !S.kbHidden },   // nothing to light without the keyboard
-  { group: "settings.kbGroup", name: "settings.fingers", desc: "settings.fingersDesc", ctl: () => onOff("fingers", S.settings.fingers), show: () => !isTouch() && !S.kbHidden },
+  { group: "settings.kbGroup", name: "settings.hand", desc: "settings.handDesc", ctl: () => onOff("hand", S.settings.hand), show: () => !isTouch() && !S.kbHidden },
+  { group: "settings.kbGroup", name: "settings.fingerText", desc: "settings.fingerTextDesc", ctl: () => onOff("fingerText", S.settings.fingerText), show: () => !isTouch() && !S.kbHidden },
   { group: "settings.statsGroup", name: "settings.daily", desc: "settings.dailyDesc", ctl: () => seg(DAILY.map((m) =>
     choice("daily", String(m), m ? String(m) : t("settings.off"), S.settings.daily === m))) },
   { group: "settings.statsGroup", name: "settings.goal", desc: "settings.goalDesc", ctl: () => seg(GOALS.map((g) =>
@@ -283,7 +289,7 @@ function apply(key, value) {
   } else if (SWITCHES[key]) {
     S.settings[key] = value === "1";
     store.set(SWITCHES[key].key, value === "1" ? "1" : "0");
-    if (key === "nextKey") typingListener();
+    if (key === "nextKey" || key === "hand" || key === "fingerText") typingListener();
   } else if (key === "live") {
     S.settings.live = value === "1";
     store.set("tt.live", value === "1" ? "1" : "0");
