@@ -272,7 +272,7 @@ button:disabled:active { transform: none; }
 /* ---------- messages: on top of the top line of the text card ---------- */
 /* the numbers and the status line step aside while a message or the
    warning is shown */
-.live:is(.warning, .noticing) > :is(.metric, .letters-caption) { opacity: 0; transform: translateY(4px); pointer-events: none; }
+.live:is(.warning, .noticing) > :is(.metric, .letters-caption, .round-switch) { opacity: 0; transform: translateY(4px); pointer-events: none; }
 .live.warning .notice { opacity: 0; }        /* the layout warning wins */
 .notice {
   position: absolute; left: 0; right: 0; top: 0; z-index: 1;

@@ -8,8 +8,8 @@
 // each chip's tooltip says its numbers and what it still needs. On the
 // keyboard, the keys of locked letters are dimmed and the letters you have
 // mastered fade from their keys: the fingers know them, the eyes need not
-// look (touch typing is not looking down). The status line before the
-// first key says how many letters are open.
+// look (touch typing is not looking down). Learn has no status line under
+// the text: this row shows the open letters (owner, 2026-10-22).
 // In Climb and Freetype there are no letters to learn: the bar is hidden
 // and every key is open; in Climb the status line shows the level, how far
 // the typist is on it, and which words it draws. (Freetype's word lists are in the round bar, modebar.js.)
@@ -32,21 +32,19 @@ export function markNewLetter(l) { popLetter = l; }
 export function markMastered(list) { justMastered = new Set(list); }
 
 const STAT_ICONS = {
-  open: '<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>',
   // Climb's level: a mountain with a flag on top
   level: '<path d="M3 19l6.5-10 4 6 2.5-3.5L21 19z"/><path d="M9.5 9V4l3.5 1.4-3.5 1.4"/>',
 };
-// Draws the bar, the status line and the dimmed keys from S.exercise (the
+// Draws the bar and the dimmed keys from S.exercise (the
 // portion being typed) and S.lastStats. Runs on a portion change, never per
 // key. The chips are built again only when the set of letters changes (a
-// letter opened or mastered); a new focus only moves one class, and the
-// status line is rewritten only when what it says changes: rebuilding the
-// 26 chips on every portion cost a layout of the whole bar while typing.
-let builtFor = "", captionFor = "";
+// letter opened or mastered); a new focus only moves one class: rebuilding
+// the 26 chips on every portion cost a layout of the whole bar while typing.
+let builtFor = "";
 let chipOf = {};              // letter -> its chip, from the last build
 export function renderLetters() {
   if (!learning()) {
-    builtFor = captionFor = "";
+    builtFor = "";
     renderFreeLetters();
     return;
   }
@@ -58,7 +56,6 @@ export function renderLetters() {
   // next focus, with no presses yet) lit up, went out and came back only
   // after the next portion was sent (owner, 2026-10-18: "it shows late").
   const focus = S.exercise.focus;
-  const started = (S.lastStats?.keys ?? []).some((k) => k.count > 0);   // anything typed yet
 
   const set = JSON.stringify([S.lang, S.exercise.unlocked, S.exercise.locked,
     S.exercise.unlocked.filter((c) => info[c]?.mastered), popLetter, [...justMastered]]);
@@ -115,31 +112,13 @@ export function renderLetters() {
     chipOf[c]?.classList.toggle("focus", c === focus);
   }
 
-  // status line: only before anything is typed, how many letters are open
-  // and how to begin. No "focus" and no "next letter" once you type (owner,
-  // 2026-10-18): the row above shows both, the focus in gold (and in the
-  // text), the next letter marked; and no "mastered": its ticks.
-  const openCount = S.exercise.unlocked.length;
-  const all = openCount + S.exercise.locked.length;
-  const caption = JSON.stringify([S.lang, t("stat.open"), started, openCount, all]);
-  if (caption !== captionFor) {
-    captionFor = caption;
-    const parts = [];
-    if (!started) {
-      parts.push(pill("open", "", "tip.open", t("stat.open"), `<b>${openCount}/${all}</b>`));
-      parts.push(`<span class="begin">${t("stat.begin")}</span>`);
-    }
-    el.lettersCaption.innerHTML = parts.join("");
-  }
+  // No status line in Learn (owner, 2026-10-22): the row above already
+  // shows which letters are open, and the panel's letter line says what to
+  // type. Climb draws its level here (renderClimb).
+  if (el.lettersCaption.firstChild) el.lettersCaption.replaceChildren();
   popLetter = null;
   justMastered = new Set();
 }
-
-// One item of the status line: an icon, a fixed label and the value that
-// changes.
-const pill = (icon, cls, tip, label, value) =>
-  `<span class="stat ${cls}"${tip ? ` data-tip="${tip}"` : ""}><svg viewBox="0 0 24 24" aria-hidden="true">${STAT_ICONS[icon]}</svg>` +
-  `<span class="lbl">${label}</span>${value}</span>`;
 
 // Climb and Freetype: no letters to learn, every key is open. In Climb the
 // status line shows the level of the round with one dot per pass it needs

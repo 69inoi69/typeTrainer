@@ -80,26 +80,33 @@
    the accuracy streak and today's goal; then the gold letter and what it
    needs, or the news of the round that just ended. Readable at rest (the
    text colour, not grey), stepping back while you type. */
-/* a fixed height (two rows): fitKeyboard (keyboard.js) keeps this room in
-   every mode, so the keyboard has one size in all of them */
-.learn-panel { display: grid; grid-template-rows: 1fr 1fr; height: calc(2 * 2.2em + 4px); gap: 4px; margin-top: 12px; font-size: .9rem; color: color-mix(in srgb, var(--text) 80%, var(--sub)); transition: opacity .4s var(--ease); }
+/* a fixed height (the four columns, then the letter line): fitKeyboard
+   (keyboard.js) keeps this room in every mode, so the keyboard has one
+   size in all of them */
+.learn-panel { display: grid; grid-template-rows: 4.4em 2.2em; height: calc(6.6em + 10px); gap: 10px; margin-top: 12px; font-size: .9rem; color: color-mix(in srgb, var(--text) 80%, var(--sub)); transition: opacity .4s var(--ease); }
 .learn-panel[hidden] { display: none; }
 body.typing-now .learn-panel { opacity: .4; }
 .lp-row { display: flex; align-items: center; gap: 30px; min-height: 1.9em; white-space: nowrap; min-width: 0; }
-.lp-item { display: inline-flex; align-items: baseline; gap: 5px; cursor: default; }
-.lp-lbl { color: var(--sub); margin-right: 6px; }
-.lp-item b { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
-.lp-item small { color: var(--sub); }
-.lp-item .lp-gap { margin-left: 12px; }
-.lp-dim { color: var(--sub); }
-.lp-delta { font-variant-numeric: tabular-nums; }
+/* line 1: four fixed columns, a small grey label over a bright value, so a
+   label never reads as a value and nothing moves when a column fills
+   (owner, 2026-10-22) */
+.lp-cols {
+  display: grid; grid-template-columns: 1.4fr 1fr 1fr 1.3fr; padding: 10px 0;
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+}
+.lp-cell { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 0 18px; border-left: 1px solid var(--line); cursor: default; }
+.lp-cell:first-child { border-left: 0; padding-left: 0; }
+.lp-cell:last-child { align-items: flex-end; padding-right: 0; }
+.lp-lbl { font-size: .75rem; color: var(--sub); white-space: nowrap; }
+.lp-val { display: flex; align-items: baseline; gap: 5px; font-size: 1.1rem; color: var(--text); white-space: nowrap; }
+.lp-val b { font-weight: 500; font-variant-numeric: tabular-nums; }
+.lp-val small { font-size: .8rem; color: var(--sub); }
+.lp-val .lp-gap { margin-left: 14px; }
+.lp-none { color: var(--sub); }
+.lp-delta { font-size: .85rem; font-variant-numeric: tabular-nums; }
 .lp-delta.up { color: var(--ok); }
 .lp-delta.down { color: var(--sub); }   /* information, not a scolding */
-.lp-streak { align-items: center; }
-.lp-streak svg { width: 1em; height: 1em; fill: none; stroke: var(--ok); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.lp-goal { margin-left: auto; align-items: center; gap: 8px; }
-.lp-goal .lp-lbl { margin-right: 2px; }
-.lp-bar { width: 110px; height: 6px; border-radius: 3px; background: var(--track); overflow: hidden; }
+.lp-bar { align-self: center; width: 110px; height: 6px; margin-right: 6px; border-radius: 3px; background: var(--track); overflow: hidden; }
 .lp-bar i { display: block; height: 100%; background: var(--accent); transform-origin: left; transform: scaleX(var(--g, 0)); transition: transform .6s var(--ease); }
 .lp-goal.met .lp-bar i { background: var(--ok); }
 /* the news and the letter line share one cell and swap by opacity only:
@@ -147,7 +154,28 @@ body[data-ws="bar"] .text span[data-sp]::after { bottom: .32em; width: .55em; he
 .mode-bar button:hover { color: var(--text); }
 .mode-bar button[aria-pressed="true"] { color: var(--accent-text); }
 .mb-lbl { color: var(--sub); font-size: .9rem; margin-right: 4px; }
+.mode-bar[hidden], .round-switch[hidden] { display: none; }   /* one of the two per mode */
 body.typing-now .mode-bar { opacity: 0; pointer-events: none; }
+/* Learn's round length, at the right end of the line above the text: two
+   quiet words, the chosen one gold with a gold line under it, as the mode
+   under the icon in the header (owner, 2026-10-22, variant C) */
+.round-switch { position: absolute; top: 0; right: 0; bottom: 0; display: flex; align-items: center; transition: opacity .4s var(--ease); }
+.round-switch .mb-group { gap: 20px; padding: 0; }
+.round-switch button { position: relative; padding: 3px 2px; border: 0; background: none; color: var(--sub); font: inherit; font-size: .9rem; cursor: pointer; transition: color .15s; }
+.round-switch button:hover { color: var(--text); }
+.round-switch button[aria-pressed="true"] { color: var(--accent-text); }
+.round-switch button[aria-pressed="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -3px; height: 2px; border-radius: 2px; background: var(--accent); }
+body.typing-now .round-switch { opacity: 0; pointer-events: none; }
+/* Learn's line above the text: the word counter on the left; the live
+   numbers on the right only while you type, in place of the round switch
+   (laid over them, .round-switch) (at rest they would
+   repeat the panel's "Last round"); no "Words" label, the switch says it.
+   The numbers keep their room at rest, so nothing moves on the first key
+   (owner, 2026-10-22). */
+body[data-mode="learn"] .live > .metric:not(.num) { order: -1; }
+body[data-mode="learn"] .live > .metric.num:first-child { margin-left: auto; }
+body[data-mode="learn"] #progress-label { display: none; }
+body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; }
 .wl { padding: 2px 8px; border: 0; border-radius: 6px; background: none; color: var(--sub); font: inherit; font-size: .9rem; cursor: pointer; transition: color .15s, opacity .4s var(--ease); }
 .wl:hover { color: var(--text); }
 .wl[aria-pressed="true"] { color: var(--accent-text); }

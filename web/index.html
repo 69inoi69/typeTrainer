@@ -115,6 +115,10 @@
           <div class="metric"><span id="progress">0/30</span><small id="progress-label" data-i18n="metric.words">Words</small></div>
           <!-- the status line (letters.js): letters open before the first key in learning, the level in Climb -->
           <div id="letters-caption" class="letters-caption">&nbsp;</div>
+          <!-- Learn's round length (modebar.js): at the right end of this line,
+               next to the word counter it changes; the other modes keep the
+               round bar above the letters -->
+          <div id="round-switch" class="round-switch" hidden></div>
           <div class="warn" id="layout-warn" role="status" aria-live="polite"></div>
           <!-- messages (fx.js, FX.toast) appear here, on top of the line -->
           <div class="notice" id="notice" role="status" aria-live="polite"></div>
