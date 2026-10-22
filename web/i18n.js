@@ -18,7 +18,6 @@
 
 const I18N = {
   en: {
-    "tip.new": "Stop the round and see the result",
     "tip.settings": "Settings · Esc",
     "settings.title": "Settings",
     "settings.look": "Screen",
@@ -94,10 +93,11 @@ const I18N = {
     "streak.label": "Clean words",
     "metric.acc": "Acc", "metric.words": "Words", "metric.seconds": "s left",
     "metric.raw": "Raw", "tip.raw": "WPM counts only correct characters; raw speed counts every keypress, including mistakes",
-    "hint.new": "Stop", "hint.esc": "Stop / settings", "hint.kb": "Keyboard", "hint.view": "Typing / stats", "hint.lang": "Language",
+    "hint.tab": "New round", "hint.settings": "Settings", "hint.stats": "Stats", "hint.typing": "Typing",
+    "hint.kb": "Keyboard", "hint.word": "Delete word", "hint.lang": "Language",
     "focusHint": "Tap here to start typing",
     "phone.note": "Typing practice needs a computer keyboard. Here you can look at your stats.",
-    "pause.title": "Paused", "pause.key": "any key", "pause.go": "to go on", "pause.away": "Time spent paused doesn't count.",
+    "pause.title": "Paused", "pause.press": "Press", "pause.key": "any key", "pause.go": "to go on", "pause.away": "Time spent paused doesn't count.",
     "key.space": "Space",
     "stat.open": "Open", "stat.begin": "Type to begin",
     "tip.mastered": "Typed at least {min} times, under {err}% mistakes, at {target} wpm or faster",
@@ -274,7 +274,6 @@ const I18N = {
     "intro.doWhat": "Press any key",
   },
   pl: {
-    "tip.new": "stop, pokaż wynik (Esc)",
     "settings.title": "ustawienia", "settings.words": "słowa", "settings.time": "sekundy",
     "settings.live": "wpm i dokładność w trakcie pisania",
     "settings.caret": "kursor", "settings.line": "kreska", "settings.block": "blok",
@@ -305,7 +304,7 @@ const I18N = {
     "streak.label": "czyste słowa",
     "metric.acc": "dokł.", "metric.words": "słów", "metric.seconds": "s zostało",
     "metric.raw": "raw", "tip.raw": "surowa prędkość: liczy się każde naciśnięcie, błędy też",
-    "hint.new": "stop", "hint.kb": "klawiatura", "hint.view": "pisanie / statystyki", "hint.lang": "język",
+    "hint.kb": "klawiatura", "hint.lang": "język",
     "focusHint": "dotknij tutaj, aby zacząć pisać",
     "key.space": "spacja",
     "stat.open": "otwarte", "stat.begin": "zacznij pisać",
@@ -349,7 +348,6 @@ const I18N = {
     "intro.doWhat": "naciśnij dowolny klawisz",
   },
   uk: {
-    "tip.new": "стоп, показати результат (Esc)",
     "settings.title": "налаштування", "settings.words": "слова", "settings.time": "секунди",
     "settings.live": "wpm і точність під час друку",
     "settings.caret": "курсор", "settings.line": "риска", "settings.block": "блок",
@@ -380,7 +378,7 @@ const I18N = {
     "streak.label": "чисті слова",
     "metric.acc": "точн.", "metric.words": "слів", "metric.seconds": "с лишилось",
     "metric.raw": "raw", "tip.raw": "сира швидкість: рахується кожне натискання, помилки теж",
-    "hint.new": "стоп", "hint.kb": "клавіатура", "hint.view": "друк / статистика", "hint.lang": "мова",
+    "hint.kb": "клавіатура", "hint.lang": "мова",
     "focusHint": "торкнись тут, щоб почати друкувати",
     "key.space": "пробіл",
     "stat.open": "відкрито", "stat.begin": "почни друкувати",
@@ -424,7 +422,6 @@ const I18N = {
     "intro.doWhat": "натисни будь-яку клавішу",
   },
   ru: {
-    "tip.new": "стоп, показать результат (Esc)",
     "settings.title": "настройки", "settings.words": "слова", "settings.time": "секунды",
     "settings.live": "wpm и точность во время печати",
     "settings.caret": "курсор", "settings.line": "черта", "settings.block": "блок",
@@ -455,7 +452,7 @@ const I18N = {
     "streak.label": "чистые слова",
     "metric.acc": "точн.", "metric.words": "слов", "metric.seconds": "с осталось",
     "metric.raw": "raw", "tip.raw": "сырая скорость: считается каждое нажатие, ошибки тоже",
-    "hint.new": "стоп", "hint.kb": "клавиатура", "hint.view": "печать / статистика", "hint.lang": "язык",
+    "hint.kb": "клавиатура", "hint.lang": "язык",
     "focusHint": "нажми сюда, чтобы начать печатать",
     "key.space": "пробел",
     "stat.open": "открыто", "stat.begin": "начни печатать",

@@ -216,8 +216,6 @@ body:is([data-mode="climb"], [data-mode="freetype"]) .letter-row { visibility: h
 @keyframes view-in { from { opacity: 0; transform: translateY(6px); } }
 
 /* ---------- buttons and the shortcut line ---------- */
-/* "stop" only where there is no Esc key (phones, tablets) */
-@media (pointer: fine) { .touch-only { display: none !important; } }
 /* the keyboard shortcuts under the keyboard (fitKeyboard measures this bar) */
 .bottom { display: flex; justify-content: center; padding: 4px 16px 12px; }
 .hints {
@@ -235,7 +233,12 @@ body.stats-only .stats-only-note {
   display: block; margin: 0 0 14px; padding: 10px 14px; border-radius: var(--r-md);
   background: var(--panel); box-shadow: var(--ring); color: var(--sub); font-size: .85rem; line-height: 1.45;
 }
-body[data-view="stats"] .hints .type-only { display: none; }   /* nothing to stop, no keyboard on stats */
+/* Each screen lists only the keys that work on it: the round keys (Tab,
+   Alt+K, Ctrl+Backspace) only while a round is on screen, and Shift+Tab
+   names the screen it goes to. The result hides the round keys in screens.css. */
+.hints .stats-hint { display: none; }
+body[data-view="stats"] .hints :is(.type-only, .round-only) { display: none; }
+body[data-view="stats"] .hints .stats-hint { display: inline; }
 button {
   color: var(--sub); background: var(--panel); border: 0;
   padding: 8px 14px; border-radius: 8px; cursor: pointer;
@@ -247,16 +250,6 @@ kbd { font: inherit; font-size: .8em; padding: 1px 5px; border-radius: 4px; back
 button:disabled { opacity: .35; cursor: default; }
 button:disabled:hover { color: var(--sub); background: none; }
 button:disabled:active { transform: none; }
-
-/* "stop" under the card (touch screens): small, quiet, in the middle */
-.stop-btn {
-  display: flex; align-items: center; gap: 6px; margin: 12px auto 0; padding: 6px 14px 6px 10px;
-  border-radius: 999px; color: var(--sub); background: none; box-shadow: var(--ring); font-size: .78rem;
-}
-.stop-btn:hover, .stop-btn:active { color: var(--text); }
-.text-box.resulting + .stop-btn,
-.text-box:not(.typing) + .stop-btn { visibility: hidden; }   /* nothing to stop yet, or the round is over already (keeps its room: nothing jumps) */
-.stop-btn svg { width: 14px; height: 14px; fill: currentColor; stroke: none; }
 
 /* ---------- tooltip & toast ---------- */
 .tooltip {

@@ -187,7 +187,7 @@ const ICON_NEXT = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6
 // Puts the result into the window and waits until it is closed.
 function open(body, btn) {
   box.innerHTML = `<div class="r-body">${body}</div>` +
-    `<p class="r-foot"><button type="button" class="btn r-next">${ICON_NEXT}<span>${t(btn)}</span>${isTouch() ? "" : "<kbd>enter</kbd>"}</button></p>`;
+    `<p class="r-foot"><button type="button" class="btn r-next">${ICON_NEXT}<span>${t(btn)}</span>${isTouch() ? "" : "<kbd>enter</kbd> / <kbd>tab</kbd>"}</button></p>`;
   // phones have no hover: a tap on a word, a dot of the chart or the
   // characters shows its tooltip (and must not reach the text window, which would open the phone keyboard)
   box.querySelector(".r-body").addEventListener("click", (e) => {

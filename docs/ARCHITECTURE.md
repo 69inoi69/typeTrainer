@@ -175,7 +175,7 @@ is `RoundPortions` portions (30 words).
    visible moves when it appears. Two portions are always waiting, so the
    next word to show is always already there.
 4. The last letter of the last word of the round (no space needed after it;
-   right or wrong), or Esc, or 10 s without a key →
+   right or wrong) →
    `POST /api/v1/results` with the samples not sent yet, every keypress of
    the round (`keys`), WPM, accuracy, the number of typed characters and the
    keypresses per second; the handler learns from the samples the same way
