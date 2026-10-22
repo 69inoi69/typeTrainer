@@ -4,7 +4,8 @@
 // "keys" or "off"; owner, 2026-10-22: keycaps only, letters and words were
 // choices before). They are of a few kinds so the field does not look
 // stamped: most are square keys with an open letter (F and J with their
-// bump), some are blank wide keys (Shift, Tab), some are filled a little.
+// bump), some are wide keys with their name (Shift, Tab, Enter; owner,
+// 2026-10-22: blank ones did not read as keys), some are filled a little.
 // They keep moving while you type (owner, 2026-10-20: about 2 ms of a
 // keypress, "that is nothing"). After a minute with no key and no mouse
 // the page dims a little and the background grows a little stronger: a
@@ -26,6 +27,7 @@
 // To add a kind of keycap: a branch in keycap() below and its look in
 // screens.css (.ambient > i > b.<class>).
 
+import { t } from "./i18n.js";
 import { reducedMotion, S } from "./state.js";
 
 const COUNT = 16;          // pieces on the screen at once, at most
@@ -39,6 +41,9 @@ const WIDE = 0.2;          // share of wide keys...
 const WIDE_W = [1.5, 2];   // ...this many times as wide as high...
 const WIDE_TURN = 10;      // ...turning only a little, so they stay in their lane
 const FILL = 0.3;          // share of keys filled a little
+// the names a wide key may carry (i18n.js keys); a name must fit the
+// narrowest wide key, so no Backspace
+const WIDE_NAMES = ["key.tab", "key.caps", "key.shift", "key.enter", "key.space"];
 // One lane holds the largest square keycap turned 45 degrees (its
 // diagonal) plus its drift and a gap, so neighbouring lanes can never
 // touch. A wide key is kept as narrow as that diagonal.
@@ -65,6 +70,7 @@ function keycap(size, letters) {
   if (Math.random() < WIDE) {
     const w = Math.min(rand(...WIDE_W), (LANE - 2 * DRIFT - 8) / size);
     b.className = "wide";
+    b.textContent = t(pick(WIDE_NAMES));
     b.style.setProperty("--w", w.toFixed(2));
     turn = WIDE_TURN;
   } else {
