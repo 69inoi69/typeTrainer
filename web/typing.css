@@ -562,22 +562,23 @@ body[data-blink="pulse"][data-caret="outline"] .caret { box-shadow: inset 0 0 0 
   -webkit-mask-image: linear-gradient(to bottom, #000 74%, transparent);
   mask-image: linear-gradient(to bottom, #000 74%, transparent);
 }
-/* dark: the hands are quiet silhouettes, every finger only hinting at its
-   colour, so the one finger to use is the only bright thing in them (the
-   light theme tints them more, below: there the colours have to be strong
-   to show at all). No outlines, no shadow on the knuckle line. */
+/* the hands are plain grey silhouettes and only the finger to use takes its
+   colour, so it is the one coloured thing in them in both themes (owner,
+   2026-10-22: tinted fingers hid the right one in the light theme).
+   No outlines, no shadow on the knuckle line. */
 .hand > svg, .hand > .finger { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .hand .finger > svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .hand.right { scale: -1 1; }   /* the left hand mirrored */
-.hand .palm { fill: var(--skin); }
+/* the palm a shade darker than the fingers, so they stand apart from it */
+.hand .palm { fill: color-mix(in srgb, var(--skin) 78%, #000); }
 .hand .finger {
-  --fc: #888; --tint: color-mix(in srgb, var(--fc) 14%, var(--skin));
+  --fc: #888;
   will-change: translate;      /* a layer of its own from the start: no repaint when it starts moving */
   transition: translate var(--med) var(--ease);
 }
 /* the colour changes at once: a fade of "fill" cannot run on the graphics
    card, so it painted the hands again on every frame of every key */
-.hand .finger .skin { fill: var(--tint); }
+.hand .finger .skin { fill: var(--skin); }
 /* the finger to use: fills with its full colour and lifts, no glow (owner,
    2026-10-18: a blurred edge looked like double vision). It is the main
    "which finger" signal; the key below is only hinted (.key.next).
@@ -755,7 +756,7 @@ body.kb-nofit #keyboard { display: none; }
     inset 0 calc(-1 * var(--skirt)) 0 color-mix(in oklab, var(--fcd) 70%, #000), 0 0 0 2px var(--fcd),
     0 8px 18px -6px color-mix(in srgb, var(--fcd) 70%, transparent);
 }
-:root[data-theme="light"] .hand .finger { --tint: color-mix(in srgb, var(--fc) 75%, var(--skin)); }
+:root[data-theme="light"] .hand .palm { fill: color-mix(in srgb, var(--skin) 82%, var(--text)); }
 :root[data-theme="light"] .hand .finger.on .skin { fill: var(--fcd); stroke: color-mix(in srgb, var(--fc) 40%, transparent); }
 
 /* Climb: one dot per pass a level needs, filled when passed (letters.js
