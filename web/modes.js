@@ -3,9 +3,9 @@
 //   learn    - for beginners: the adaptive trainer (internal/engine),
 //              letters open one by one; its progress is the letters row,
 //              no stats;
-//   climb    - for people who can already type (internal/freeplay): the
-//              text gets harder while you type well and easier when you
-//              struggle (a level, 1 to 100);
+//   climb    - for people who can already type (internal/freeplay): ten
+//              levels of ever rarer words, up after clean rounds and down
+//              after bad ones (accuracy only);
 //   freetype - as on monkeytype: words from a list you choose (the 200 to
 //              25 000 most common ones), nothing adapts.
 // All are always open; the stats screen is Climb's and Freetype's. The
