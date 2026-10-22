@@ -285,12 +285,18 @@ the normal server, it shows yours.
   100, 98, 97, 95 and 90% reached two rounds in a row or more); and
   **Today**, your typing time today in every mode against the **daily
   goal** (15 minutes unless you change it in Settings; Off leaves the
-  column empty), with the days in a row you met it in its label. The second line is the
-  letter in focus: how far it is on the way to mastered (the weakest of the
-  three parts of the rule, as on its chip) and what it still needs, with
-  the numbers ("It still needs fewer mistakes (8%, aim under 5%) and more
-  speed (23 of 30 wpm)"). Right after a round with news, the news takes
-  that line until you start typing: a new letter, the letters you
+  column empty), with the days in a row you met it in its label. The **gold letter**
+  (the letter in focus) sits in the line just above the text, between the
+  word counter and the round switch, in the same label-over-value columns:
+  **Gold letter** (how far it is on the way to mastered, the weakest of
+  the three parts of the rule, as on its chip), **Presses** ("18 of 20"),
+  **Mistakes** ("8% under 5%") and **Speed** ("24 of 30 wpm"); a part
+  already met turns green with a tick, a letter never typed shows "—".
+  Everything follows you as you type: after every line of words the
+  letters row, the forecast, the gold letter and Today (with the round so
+  far) are drawn again, and a value that changed lights up once. Right
+  after a round with news, the news takes the gold letter's place until
+  you start typing: a new letter, the letters you
   mastered, your fastest round of this length, once per language
   "Every letter is open", and a new lap. **Laps** (after keybr): when every
   letter is mastered at 30 wpm, Learn is complete and the next lap starts

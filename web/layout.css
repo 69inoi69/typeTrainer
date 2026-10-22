@@ -41,7 +41,7 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
    it may push the text down while you type. */
 .live {
   position: relative;              /* the warning and the messages sit on top of it */
-  display: flex; gap: 6px 18px; align-items: center; height: 28px; margin: 0 0 10px; min-width: 0;
+  display: flex; gap: 6px 18px; align-items: center; height: 44px; margin: 0 0 6px; min-width: 0;
 }
 /* the numbers are as bright before the first key as while typing: dim at
    rest they looked switched off (owner, 2026-10-18) */
@@ -272,7 +272,7 @@ button:disabled:active { transform: none; }
 /* ---------- messages: on top of the top line of the text card ---------- */
 /* the numbers and the status line step aside while a message or the
    warning is shown */
-.live:is(.warning, .noticing) > :is(.metric, .letters-caption, .round-switch) { opacity: 0; transform: translateY(4px); pointer-events: none; }
+.live:is(.warning, .noticing) > :is(.metric, .letters-caption, .round-switch, .focus-box) { opacity: 0; transform: translateY(4px); pointer-events: none; }
 .live.warning .notice { opacity: 0; }        /* the layout warning wins */
 .notice {
   position: absolute; left: 0; right: 0; top: 0; z-index: 1;

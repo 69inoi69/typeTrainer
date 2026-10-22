@@ -242,8 +242,10 @@ function showPortion(i) {
   if (portions[i] && S.exercise) S.exercise.focus = portions[i].focus;
   renderTop();
 }
-// Everything above the text that follows the letters: the row and the panel.
+// Everything above the text that follows the letters: the row and the panel
+// (with the time typed in this round so far, for its "Today").
 function renderTop() {
+  S.roundSeconds = startTime === null ? 0 : (performance.now() - startTime) / 1000;
   renderLetters();
   renderPanel();
 }
