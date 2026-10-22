@@ -94,23 +94,31 @@
 body:not([data-mode="learn"]) #view-type > .letters > .mode-bar { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; }
 body.typing-now .learn-panel { opacity: .75; }   /* a step back, still readable: it follows you as you type */
 .lp-row { display: flex; align-items: center; gap: 30px; min-height: 1.9em; white-space: nowrap; min-width: 0; }
-/* line 1: four fixed columns, a small grey label over a bright value, so a
-   label never reads as a value and nothing moves when a column fills
-   (owner, 2026-10-22) */
+/* One grid for both lines (owner, 2026-10-22: one size for everything,
+   clean alignment across and down): the panel under the letters and
+   Learn's line above the text share these six tracks, so their dividers
+   line up. Line 1 spans them as Last round (1-2), Next letter (3), Clean
+   streak (4-5), Daily goal (6); line 2 is the word counter (1), the gold
+   letter's four columns (2-5) and the round switch or the live numbers (6).
+   Every label is .75rem grey, every value .9rem, number and words alike
+   (the number stands out by weight and colour, not size).
+   To add a column: change the tracks here and the spans below together. */
+:root { --lp-grid: 1.1fr 1.6fr 1.3fr 1.3fr 1.6fr 2.6fr; --lp-pad: 12px; }
 .lp-cols {
-  display: grid; grid-template-columns: 1.4fr 1fr 1fr 1.3fr; padding: 6px 0;
+  display: grid; grid-template-columns: var(--lp-grid); padding: 6px 0;
   border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
 }
-.lp-cell { display: flex; flex-direction: column; gap: 1px; min-width: 0; padding: 0 18px; border-left: 1px solid var(--line); cursor: default; }
-.lp-cell:first-child { border-left: 0; padding-left: 0; }
-.lp-cell:last-child { align-items: flex-end; padding-right: 0; }
-.lp-lbl { font-size: .75rem; color: var(--sub); white-space: nowrap; }
-.lp-val { display: flex; align-items: baseline; gap: 5px; font-size: 1rem; color: var(--text); white-space: nowrap; }
-.lp-val b { font-weight: 500; font-variant-numeric: tabular-nums; }
-.lp-val small { font-size: .8rem; color: var(--sub); }
-.lp-val .lp-gap { margin-left: 14px; }
+.lp-cols > .lp-last { grid-column: 1 / 3; }
+.lp-cols > .lp-streak { grid-column: 4 / 6; }
+.lp-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 0 var(--lp-pad); border-left: 1px solid var(--line); cursor: default; }
+.lp-cols > .lp-cell:first-child { border-left: 0; padding-left: 0; }
+.lp-lbl { font-size: .75rem; line-height: 1.3; color: var(--sub); white-space: nowrap; }
+.lp-val { display: flex; align-items: baseline; gap: .5ch; font-size: .9rem; line-height: 1.3; color: var(--text); white-space: nowrap; }
+.lp-val b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.lp-val small { font-size: 1em; color: color-mix(in srgb, var(--text) 55%, var(--sub)); }
+.lp-val .lp-gap { margin-left: 2ch; }
 .lp-none { color: var(--sub); }
-.lp-delta { font-size: .85rem; font-variant-numeric: tabular-nums; }
+.lp-delta { font-variant-numeric: tabular-nums; }
 .lp-delta.up { color: var(--ok); }
 .lp-delta.down { color: var(--sub); }   /* information, not a scolding */
 /* a number that counts to a new value (learnpanel.js num, redraw): the
@@ -120,45 +128,30 @@ body.typing-now .learn-panel { opacity: .75; }   /* a step back, still readable:
 .lp-n::after { content: counter(v) attr(data-u); }
 /* the daily goal: a ring that fills clockwise from the top as the time
    passes (--g, 0..1; learnpanel.js ring), green once the goal is reached;
-   the time keeps the room of "12:34", so nothing moves when the seconds
-   show up on the first key */
+   ring and time sit together on the left, the seconds only add to the
+   right */
 .lp-ring { align-self: center; width: 16px; height: 16px; margin-right: 3px; transform: rotate(-90deg); flex: none; }
 .lp-ring circle { fill: none; stroke: color-mix(in srgb, var(--sub) 30%, transparent); stroke-width: 3; }
 .lp-ring .fill { stroke: var(--accent); stroke-dasharray: 100; stroke-dashoffset: calc(100 - var(--g) * 100); transition: stroke-dashoffset .5s linear, stroke .4s; }
 .lp-goal.met .lp-ring .fill { stroke: var(--ok); }
-.lp-clock { min-width: 5ch; text-align: right; }
-/* the gold letter's columns (learnpanel.js focusCells), in the line above
-   the text between the word counter and the round switch; the
+/* the gold letter's columns (learnpanel.js focusCells), tracks 2-5 of the
+   line above the text (subgrid: the same edges as the panel's); the
    news of a round shares their grid cell and they swap by opacity only, so
    the first key changes no layout. While you type the columns stay (they
-   follow every portion) and the news gives way to them; the live numbers
-   show on the right. */
-.focus-box { position: absolute; top: 0; bottom: 0; left: 5.5rem; right: 15rem;   /* between the counter and the live numbers */
-   container-type: inline-size; display: flex; align-items: center; font-size: .9rem; transition: opacity .3s var(--ease); }
+   follow every portion) and the news gives way to them. */
+.focus-box { grid-column: 2 / 6; grid-row: 1; display: grid; grid-template-columns: subgrid; transition: opacity .3s var(--ease); }
 .focus-box[hidden] { display: none; }
-.fb-stack { flex: 1; min-width: 0; display: grid; align-items: center; }
-.fb-stack > * { grid-area: 1 / 1; transition: opacity .3s var(--ease); }
+.fb-stack { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; align-items: end; }
+.fb-stack > * { grid-column: 1 / -1; grid-row: 1; transition: opacity .3s var(--ease); }
 .fb-stack.has-news .fb-cols { opacity: 0; pointer-events: none; }   /* or it covers the news and its tooltip */
 body.typing-now .fb-stack.has-news .fb-cols { opacity: 1; pointer-events: auto; }
 body.typing-now .lp-news { opacity: 0; pointer-events: none; }
-/* four fixed columns, as the panel's: each keeps its place whatever its
-   value (owner, 2026-10-22) */
-.fb-cols { display: grid; grid-template-columns: 1.15fr .85fr 1fr 1.15fr; }
-.fb-cols .lp-cell { padding: 0 12px; }
-.fb-cols .lp-cell:first-child { border-left: 1px solid var(--line); }   /* apart from the counter */
-/* a narrow window: the words after a value go ("45%", "24 of 30"); the
-   label and the tooltip still say what it is, nothing runs over */
-@container (max-width: 570px) { .fb-cols .lp-val .opt { display: none; } }
-.fb-cols .lp-cell:last-child { align-items: flex-start; }
+.fb-cols { display: grid; grid-template-columns: subgrid; }
 .fb-gold .lp-val b.ok, .lp-cell.met .lp-val b { color: var(--ok); }
-.fb-tick { display: inline-block; color: var(--ok); font-size: .85rem; }
-.lp-news { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;   /* never under the round switch */
-   color: var(--text); cursor: default; }
+.lp-news { margin: 0 0 0 var(--lp-pad); align-self: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;   /* never under the round switch */
+   font-size: .9rem; color: var(--text); cursor: default; }
 .lp-news.big { color: var(--accent-text); }
 .lp-news b { color: var(--accent-text); font-weight: 600; }
-@media (min-width: 1000px) and (pointer: fine) {
-  .learn-panel { font-size: .95rem; }
-}
 
 /* ---------- typing settings (settings.js CHOICES and SWITCHES) ---------- */
 /* text size: the size of the text on a computer screen (the phone layout
@@ -200,20 +193,40 @@ body.typing-now .mode-bar { opacity: 0; pointer-events: none; }
 .round-switch button[aria-pressed="true"] { color: var(--accent-text); }
 .round-switch button[aria-pressed="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -3px; height: 2px; border-radius: 2px; background: var(--accent); }
 body.typing-now .round-switch { opacity: 0; pointer-events: none; }
-/* Learn's line above the text: the word counter on the left; the live
-   numbers on the right only while you type, in place of the round switch
-   (laid over them, .round-switch) (at rest they would
-   repeat the panel's "Last round"); no "Words" label, the switch says it.
-   The numbers keep their room at rest, so nothing moves on the first key
-   (owner, 2026-10-22). */
-body[data-mode="learn"] .live > .metric:not(.num) { order: -1; }
-body[data-mode="learn"] .live > .metric.num:first-child { margin-left: auto; }
-body[data-mode="learn"] #progress-label { display: none; }
-/* "Round 48" over the counter, as the panel's labels (learnpanel.js) */
-body[data-mode="learn"] .live > .metric:has(#round-no) { flex-direction: column; align-items: flex-start; gap: 1px; }
-body[data-mode="learn"] #progress { line-height: 1.1; }
-.metric > .round-no { margin: 0; font-size: .675rem;   /* as the gold letter's labels (.75rem at .9rem) */
-   color: var(--sub); cursor: default; }
+/* Learn's line above the text, on the panel's grid (--lp-grid): the word
+   counter with "Round 48" over it (track 1), the gold letter (2-5), the
+   round switch at rest or the live numbers while you type (6, laid over
+   each other; at rest the numbers would repeat the panel's "Last round"),
+   all from the column's left edge like Daily goal above them.
+   No "Words" label: the switch says it. Every number is the panel's value
+   size; the counter and the live numbers keep their gold. The bottoms line
+   up: a label over a value everywhere, the numbers on the values' line.
+   The live numbers keep their room at rest, so nothing moves on the first
+   key. A narrow window drops the words after a value ("45%", "24 of 30"),
+   so nothing runs over (container query below). */
+body[data-mode="learn"] .live {
+  display: grid; grid-template-columns: var(--lp-grid); align-items: end; align-content: center; gap: 0;
+  container-type: inline-size;
+}
+body[data-mode="learn"] .live > * { grid-row: 1; }
+body[data-mode="learn"] .live > .metric:has(#round-no) { grid-column: 1; flex-direction: column; align-items: flex-start; gap: 2px; }
+body[data-mode="learn"] #progress-label, body[data-mode="learn"] .letters-caption { display: none; }
+body[data-mode="learn"] .live > .metric > span { font-size: .9rem; line-height: 1.3; font-weight: 600; letter-spacing: 0; }
+body[data-mode="learn"] .live > .metric small:not(.round-no) { font-size: .9rem; line-height: 1.3; margin-left: .5ch; }
+body[data-mode="learn"] .live > .metric > span.pct { margin-left: 0; }
+body[data-mode="learn"] .live > .metric.num { grid-column: 6; min-width: 0; padding-left: var(--lp-pad); }
+body[data-mode="learn"] .live > .metric.num:nth-child(2) { padding-left: calc(var(--lp-pad) + 5rem); }   /* after "188 wpm" */
+body[data-mode="learn"] .live > .metric.num:nth-child(3) { padding-left: calc(var(--lp-pad) + 10rem); }   /* after "188 Raw"; "100% Acc" still fits at 1366 */
+body[data-mode="learn"] .round-switch { position: static; grid-column: 6; justify-self: start; align-self: end; padding-left: var(--lp-pad); }
+body[data-mode="learn"] .round-switch .mb-group { gap: 2ch; }
+/* track 6's divider, as the gold letter's columns have */
+body[data-mode="learn"] .live::after { content: ""; grid-column: 6; grid-row: 1; align-self: stretch; border-left: 1px solid var(--line); pointer-events: none; }
+body[data-mode="learn"] .live:has(> .focus-box[hidden])::after { display: none; }
+@container (max-width: 920px) {
+  .fb-cols .lp-val .opt { display: none; }
+  .lp-cell { --lp-pad: 9px; }
+}
+.metric > .round-no { margin: 0; font-size: .75rem; line-height: 1.3; color: var(--sub); cursor: default; }
 .round-no[hidden] { display: none; }
 body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; }
 .wl { padding: 2px 8px; border: 0; border-radius: 6px; background: none; color: var(--sub); font: inherit; font-size: .9rem; cursor: pointer; transition: color .15s, opacity .4s var(--ease); }
@@ -329,6 +342,9 @@ body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; }
      middle asked for more room), on every screen: header, text, result, stats */
   :root { --tw: min(100vw - 32px - 2 * var(--side), 56rem); --u-max: calc((var(--tw) - 24px) / 13.4); }
   .text-box, .text-box:focus-within, .text-box:focus { background: none; box-shadow: none; padding: 0 0 0 40px; }
+  /* Learn's line above the text starts at the card's edge, not the text's,
+     so its columns line up with the panel's (--lp-grid) */
+  body[data-mode="learn"] .live { margin-left: -40px; }
   #view-type > .letters { margin-top: auto; }
   .text-box::before { left: 0; top: 38px; }   /* next to the first line: under the live line */
   .text, .text-box::before { font-size: var(--text-size); }
