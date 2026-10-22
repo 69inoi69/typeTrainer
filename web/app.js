@@ -64,8 +64,11 @@ async function joinStudy() {
     el.text.textContent = t("err.load");
   }
   startView();      // a phone or tablet opens on the stats
+  // now the letters bar is drawn: the background uses its open letters. It
+  // starts under the start screen, so the keys are already falling as the
+  // splash fades (owner, 2026-10-22)
+  buildAmbient();
   await splash.done();
-  buildAmbient();   // now the letters bar is drawn: the background uses its open letters
   const flash = store.get("tt.flash");                     // set by a finished import
   if (flash) {
     store.set("tt.flash", "");
