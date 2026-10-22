@@ -17,7 +17,7 @@
 //           (#focus-box; owner, 2026-10-22: a sentence there said little,
 //           columns read at a glance): how far it is on the way to
 //           mastered, then the three parts of the mastery rule, each
-//           ticked green once met. Right after a round with news (a new
+//           green once met. Right after a round with news (a new
 //           letter, letters mastered, a record, every letter open, a new
 //           lap, the last lap done) the news takes its place until you
 //           start typing.
@@ -153,7 +153,7 @@ export function renderPanel() {
 // Puts new HTML in el, and lets what changed show it (owner, 2026-10-22:
 // nicer movement in the live values): a number counts from its old value
 // to the new one, as the live wpm does (layout.css .live-n), and lights
-// up gold for a moment; a part of the rule just met gets its tick with a
+// up gold for a moment; a part of the rule just met turns green with a
 // small pop. Runs per portion and at the end of a round, never per key;
 // the counting is the CSS property --v animated by the browser (WAAPI).
 function redraw(el, sel, html) {
@@ -170,8 +170,8 @@ function redraw(el, sel, html) {
   });
   [...el.querySelectorAll(".lp-cell")].forEach((c, i) => {
     if (c.classList.contains("met") && metBefore[i] === false) {
-      c.querySelector(".fb-tick")?.animate([{ transform: "scale(.2)", opacity: 0 }, { transform: "scale(1.35)", opacity: 1, offset: .6 }, { transform: "scale(1)" }],
-        { duration: 500, easing: "ease-out" });
+      c.querySelector(".lp-val")?.animate([{ transform: "scale(1.12)" }, { transform: "scale(1)" }],
+        { duration: 450, easing: "cubic-bezier(.2, .7, .3, 1)" });
     }
   });
 }
@@ -299,7 +299,8 @@ export function tickGoal() {
 
 // The gold letter in four columns: "Gold letter / 62% to mastered",
 // "Presses / 18 of 20", "Mistakes / 8% under 5%", "Speed / 24 of 30 wpm";
-// a part of the rule already met is green with a tick. A letter never
+// a part of the rule already met is green (no tick: one column, one
+// size, nothing extra to fit). A letter never
 // typed shows "—" (0% mistakes would read as a result). The percentage is
 // the weakest of the three parts, as on its chip.
 function focusCells() {
@@ -314,9 +315,8 @@ function focusCells() {
   const gold = !typed ? NONE
     : k.mastered ? `<b class="ok">${t("lp.fMastered")}</b>`
       : `${num(letterProgress(k) * 100, "%")}<small class="opt">${t("lp.fToGo")}</small>`;
-  const tick = (ok) => ok ? `<span class="fb-tick" aria-hidden="true">✓</span>` : "";
   const part = (cls, label, ok, value) =>
-    cell(`fb-${cls}${ok ? " met" : ""}`, label, typed ? value + tick(ok) : NONE);
+    cell(`fb-${cls}${ok ? " met" : ""}`, label, typed ? value : NONE);
   const wpm = k?.avgMs ? Math.round(12000 / k.avgMs) : 0;
   return cell("fb-gold", t("lp.fGold"), gold, pctTip) +
     part("presses", t("lp.fPresses"), k?.count >= r.min, `${num(k?.count ?? 0)}<small>${t("lp.fOf", { n: r.min })}</small>`) +

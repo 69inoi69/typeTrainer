@@ -292,8 +292,9 @@ the normal server, it shows yours.
   goal (15 minutes unless you change it in Settings; Off leaves the
   column empty), on a ring that fills as the time passes, with the days
   in a row you met it in its label; while you type it shows seconds too
-  ("12:34") and runs with the round. The line just above the text has
-  fixed columns too: **Round 48** over the word counter (Learn starts
+  ("12:34") and runs with the round. The line just above the text uses
+  the same six columns as the panel, so their dividers line up, and every
+  label and every value has one size in both lines: **Round 48** over the word counter (Learn starts
   the next round by itself; this counts them, every length), then the
   **gold letter** (the letter in focus) in the same label-over-value
   columns, and on the right the round switch (the live numbers while you
@@ -302,12 +303,12 @@ the normal server, it shows yours.
   the three parts of the rule; the letter itself is the gold chip in the
   row above), **Presses** ("18 of 20"),
   **Mistakes** ("8% under 5%") and **Speed** ("24 of 30 wpm"); a part
-  already met turns green with a tick, a letter never typed shows "—".
+  already met turns green, a letter never typed shows "—".
   Everything follows you as you type: after every line of words the
   letters row, the forecast, the gold letter and the daily goal (with the
   round so far) are drawn again, and a number that changed counts to its
-  new value and glows gold for a moment; a part of the rule just met gets
-  its tick with a small pop. Right
+  new value and glows gold for a moment; a part of the rule just met turns
+  green with a small pop. Right
   after a round with news, the news takes the gold letter's place until
   you start typing: a new letter, the letters you
   mastered, your fastest round of this length, once per language
