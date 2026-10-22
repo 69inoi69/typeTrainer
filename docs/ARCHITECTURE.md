@@ -90,7 +90,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | middle | `letters.js` | The letters bar above the text: learning's progress (each open letter coloured from red to green and with a bar by how close it is to mastered, locked ones crossed out, a tooltip of what each still needs, `letterProgress`, `letterNeeds`, `rule`), its status line (Climb: the level and what it brings; Climb and Freetype keep the row empty, at its height, so every mode has the same layout), locked keys dimmed and mastered letters fading from their keys on the keyboard. |
 | middle | `customtext.js` | Freetype's own text: the editor window, the cleaning of a pasted text (`cleanText`), the portions cut from it in order (`customPortions`, as `/freetype/portion` would give them) and where the next round starts (`customRoundDone`). The text stays in the browser. |
 | middle | `learnstats.js` | The Learn part of the stats screen, under the tiles and the chart: every letter round by round (a square per round in the letters row's colour), one letter's speed against the goal (a click on a letter picks it), the keys you mix up; from `/learn/history`. |
-| middle | `learnpanel.js` | The Learn panel under the letters in place of a result screen. Line 1 is four fixed columns (label over value, "—" when empty): the last round (speed and accuracy, each against the average of the 10 rounds before it), the forecast (or the lap after Learn complete), an accuracy streak, today's typing time from `/activity` against the daily goal (and the days in a row it was met); then the focus letter, its progress and what it still needs, or the news of the round that just ended (a new letter, letters mastered, a record, every letter open, Learn complete; the two milestones once per language, `tt.milestone.<lang>`) until the next round is begun. `compareStats()` works out what a round changed. |
+| middle | `learnpanel.js` | The Learn panel under the letters in place of a result screen. Line 1 is four fixed columns (label over value, "—" when empty): the last round (speed and accuracy, each against the average of the 10 rounds before it), the forecast (or the lap after Learn complete), an accuracy streak, today's typing time from `/activity` against the daily goal (and the days in a row it was met); then, in the line above the text (`#focus-box`), the focus letter's progress and the three parts of the mastery rule as columns, or the news of the round that just ended (a new letter, letters mastered, a record, every letter open, Learn complete; the two milestones once per language, `tt.milestone.<lang>`) until the next round is begun. `compareStats()` works out what a round changed. |
 | middle | `sound.js` | Key sounds (a setting): a click on every key and a low tone on a mistake, made by Web Audio on the spot (no sound files). |
 | middle | `intro.js` | The intro, "touch typing basics" (what it is, home row, space, eyes up); opens by itself on the first visit only; ← → / A D to go back and on. |
 | middle | `languages.js` | The language switch and `loadLanguage()`. |
@@ -136,8 +136,8 @@ Three fixed places, the same in every view (`index.html`, `layout.css`):
 
 On the typing screen the text block holds, top to bottom, one line with the
 live numbers and the status line (Climb's level; in Learn the word
-counter on the left and the round switch on the right, the numbers only
-while typing), with the
+counter on the left, the gold letter's columns after it and the round
+switch on the right, the numbers only while typing), with the
 warnings and messages shown on top of it, and then the text; the
 letters bar sits above it, the keyboard (on a panel as wide as the text,
 with the hand riding along its top edge) below.

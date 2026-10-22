@@ -54,6 +54,7 @@ export const S = {
   // older name, from before rounds)
   exercise: null,
   lastStats: null,        // last /stats answer
+  roundSeconds: 0,        // Learn: seconds typed in the round so far, as of the last portion (typing.js; the panel's "Today")
   text: "",               // the text of the stream so far (grows while you type)
   pos: 0,                 // index of the character to type next
   busy: false,            // true while a finished run is being saved

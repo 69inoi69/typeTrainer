@@ -80,25 +80,25 @@
    the accuracy streak and today's goal; then the gold letter and what it
    needs, or the news of the round that just ended. Readable at rest (the
    text colour, not grey), stepping back while you type. */
-/* a fixed height (the four columns, then the letter line): fitKeyboard
+/* a fixed height (one line of columns): fitKeyboard
    (keyboard.js) keeps this room in every mode, so the keyboard has one
    size in all of them */
-.learn-panel { display: grid; grid-template-rows: 4.4em 2.2em; height: calc(6.6em + 10px); gap: 10px; margin-top: 12px; font-size: .9rem; color: color-mix(in srgb, var(--text) 80%, var(--sub)); transition: opacity .4s var(--ease); }
+.learn-panel { display: grid; height: 3.6em; margin-top: 12px; font-size: .9rem; color: color-mix(in srgb, var(--text) 80%, var(--sub)); transition: opacity .4s var(--ease); }
 .learn-panel[hidden] { display: none; }
-body.typing-now .learn-panel { opacity: .4; }
+body.typing-now .learn-panel { opacity: .75; }   /* a step back, still readable: it follows you as you type */
 .lp-row { display: flex; align-items: center; gap: 30px; min-height: 1.9em; white-space: nowrap; min-width: 0; }
 /* line 1: four fixed columns, a small grey label over a bright value, so a
    label never reads as a value and nothing moves when a column fills
    (owner, 2026-10-22) */
 .lp-cols {
-  display: grid; grid-template-columns: 1.4fr 1fr 1fr 1.3fr; padding: 10px 0;
+  display: grid; grid-template-columns: 1.4fr 1fr 1fr 1.3fr; padding: 6px 0;
   border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
 }
-.lp-cell { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 0 18px; border-left: 1px solid var(--line); cursor: default; }
+.lp-cell { display: flex; flex-direction: column; gap: 1px; min-width: 0; padding: 0 18px; border-left: 1px solid var(--line); cursor: default; }
 .lp-cell:first-child { border-left: 0; padding-left: 0; }
 .lp-cell:last-child { align-items: flex-end; padding-right: 0; }
 .lp-lbl { font-size: .75rem; color: var(--sub); white-space: nowrap; }
-.lp-val { display: flex; align-items: baseline; gap: 5px; font-size: 1.1rem; color: var(--text); white-space: nowrap; }
+.lp-val { display: flex; align-items: baseline; gap: 5px; font-size: 1rem; color: var(--text); white-space: nowrap; }
 .lp-val b { font-weight: 500; font-variant-numeric: tabular-nums; }
 .lp-val small { font-size: .8rem; color: var(--sub); }
 .lp-val .lp-gap { margin-left: 14px; }
@@ -109,19 +109,29 @@ body.typing-now .learn-panel { opacity: .4; }
 .lp-bar { align-self: center; width: 110px; height: 6px; margin-right: 6px; border-radius: 3px; background: var(--track); overflow: hidden; }
 .lp-bar i { display: block; height: 100%; background: var(--accent); transform-origin: left; transform: scaleX(var(--g, 0)); transition: transform .6s var(--ease); }
 .lp-goal.met .lp-bar i { background: var(--ok); }
-/* the news and the letter line share one cell and swap by opacity only:
-   the first key of a round changes no layout */
-.lp-stack { display: grid; }
-.lp-stack > p { grid-area: 1 / 1; margin: 0; display: flex; align-items: center; gap: 10px; min-width: 0; transition: opacity .3s var(--ease); }
-.lp-stack.has-news .lp-letter { opacity: 0; pointer-events: none; }   /* or it covers the news and its tooltip */
-body.typing-now .lp-stack.has-news .lp-letter { opacity: 1; pointer-events: auto; }
+/* the gold letter's columns (learnpanel.js focusCells), in the line above
+   the text between the word counter and the round switch; the
+   news of a round shares their grid cell and they swap by opacity only, so
+   the first key changes no layout. While you type the columns stay (they
+   follow every portion) and the news gives way to them; the live numbers
+   show on the right. */
+.focus-box { position: absolute; top: 0; bottom: 0; left: 6.5rem;   /* after the counter, clear of the live numbers on the right */
+   display: flex; align-items: center; font-size: .9rem; transition: opacity .3s var(--ease); }
+.focus-box[hidden] { display: none; }
+.fb-stack { display: grid; align-items: center; }
+.fb-stack > * { grid-area: 1 / 1; transition: opacity .3s var(--ease); }
+.fb-stack.has-news .fb-cols { opacity: 0; pointer-events: none; }   /* or it covers the news and its tooltip */
+body.typing-now .fb-stack.has-news .fb-cols { opacity: 1; pointer-events: auto; }
 body.typing-now .lp-news { opacity: 0; pointer-events: none; }
-.lp-stack > .lp-news { display: block; align-self: center; color: var(--text); cursor: default; }
+.fb-cols { display: flex; }
+.fb-cols .lp-cell { padding: 0 13px; }
+.fb-cols .lp-cell:first-child { padding-left: 0; }
+.fb-cols .lp-cell:last-child { align-items: flex-start; }
+.fb-gold .lp-val b.ok, .lp-cell.met .lp-val b { color: var(--ok); }
+.fb-tick { color: var(--ok); font-size: .85rem; }
+.lp-news { margin: 0; white-space: nowrap; color: var(--text); cursor: default; }
 .lp-news.big { color: var(--accent-text); }
 .lp-news b { color: var(--accent-text); font-weight: 600; }
-.lp-chip { flex: none; width: 1.75em; }
-.lp-pct { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; cursor: default; }
-.lp-text { overflow: hidden; text-overflow: ellipsis; }
 @media (min-width: 1000px) and (pointer: fine) {
   .learn-panel { font-size: .95rem; }
 }

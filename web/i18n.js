@@ -222,7 +222,7 @@ const I18N = {
     "letter.needs": "still needs {list}",
     "need.start": "not typed yet", "need.cleaner": "fewer mistakes", "need.faster": "faster typing", "need.more": "more practice",
     "tip.nextNeeds": "Master {list} to open {l}",
-    // the Learn panel (learnpanel.js), line 1: the last round, the accuracy streak, today
+    // the Learn panel (learnpanel.js): the last round, the forecast or lap, the accuracy streak, today
     "lp.last": "Last round",
     "lp.first": "Finish your first round to see your speed and accuracy",
     "lp.faster": "You're {d} wpm faster than your average over the previous {n} rounds ({avg} wpm)",
@@ -235,21 +235,17 @@ const I18N = {
     "lp.today": "Today",
     "lp.goalOf": "of {g} min", "lp.goalMet": "min, goal reached", "lp.todayDays": "Today, {n} days in a row",
     "lp.goalTip": "Your goal is {g} minutes of typing across all modes. Change it in Settings or turn it off. You can keep typing whether you reach it or not",
-    // line 2: the gold letter (the focus) and what it still needs before it is mastered
-    "lp.letterNew": "You haven't typed {l} yet. Find it in gold below and type it to start tracking your progress",
-    "lp.letterDone": "This letter is mastered, but you'll still see it now and then to keep it fresh",
-    "lp.letterNeeds": "To master this letter, focus on {list}",
-    "lp.needClean": "fewer mistakes ({e}% now, under {err}% to master)",
-    "lp.needFast": "faster typing ({w} of {target} wpm)",
-    "lp.needMore": "more practice ({n} of {min} presses)",
-    "lp.and": " and ",
     "lp.lap": "Lap", "lp.lapOf": "{n} of {all}",
     "lp.lapTip": "Each lap raises the goal by 5 wpm, from 30 to 60 wpm. Master every letter at {w} wpm to complete this lap",
     "fc.next": "Next letter", "fc.none": "Appears once your recent rounds give enough to make a fair guess", "fc.lap": "Lap done in",
     "fc.rounds": "≈ {n} rounds", "fc.one": "≈ 1 round", "fc.more": "{n}+ rounds",
     "fc.tip": "This estimate uses your last 10 rounds to guess when each letter will reach its goal. The slowest is {l}; the estimate appears only when there's enough data to be useful",
+    // the gold letter (the focus) in the line above the text: how far, and the three parts of the rule
+    "lp.fGold": "Gold letter", "lp.fToGo": "to mastered", "lp.fMastered": "mastered",
+    "lp.fPresses": "Presses", "lp.fOf": "of {n}", "lp.fMistakes": "Mistakes", "lp.fUnder": "under {n}%",
+    "lp.fSpeed": "Speed", "lp.fOfWpm": "of {n} wpm",
     "lp.pctTip": "The percentage shows how close {l} is to mastered. You need at least {min} presses, fewer than {err}% mistakes, and a speed of {target} wpm or faster. Your weakest result sets the percentage",
-    // the news of the round that just ended (line 2 until you start typing)
+    // the news of the round that just ended (in the gold letter's place until you start typing)
     "news.newLetter": "New letter: {l}. It'll show up often for a while, so take your time",
     "news.newLetterTip": "You've mastered the earlier letters, so {l} is now open. Look for it in gold in the next words",
     "news.mastered": "You've mastered {list}",

@@ -1,8 +1,8 @@
-// The Learn panel: two lines between the letters row and the text, in
+// The Learn panel: a line of columns between the letters row and the text, in
 // place of a result screen (owner, 2026-10-20: "the result screen is not
 // needed"; the model is keybr's lines above its text). A Learn round ends
 // and the next one starts at once; what the round did is read here:
-//   line 1: four fixed columns, each a small grey label over a bright
+//   the panel: four fixed columns, each a small grey label over a bright
 //           value (owner, 2026-10-22: every item in its own place, nothing
 //           shifting or running off the edge): the last round (speed and
 //           accuracy, each with its difference from your recent average),
@@ -11,14 +11,25 @@
 //           (rounds in a row at 95% or better) and today's practice against
 //           the daily goal. A column with nothing to say yet shows "—";
 //           its tooltip says when it fills;
-//   line 2: the gold letter (the focus of the words being typed): how far
-//           it is on the way to mastered and what it still needs, in plain
-//           words. Right after a round with news (a new letter, letters
-//           mastered, a record, every letter open, a new lap, the last lap
-//           done) the
-//           news takes this line until you start typing.
-// The panel steps back while you type (body.typing-now, typing.css): the
-// news and the letter line sit in one grid cell and swap by opacity only,
+//   the gold letter (the focus of the words being typed), in the same
+//           label-over-value style, sits apart: in the line just above
+//           the text, between the word counter and the round switch
+//           (#focus-box; owner, 2026-10-22: a sentence there said little,
+//           columns read at a glance): how far it is on the way to
+//           mastered, then the three parts of the mastery rule, each
+//           ticked green once met. Right after a round with news (a new
+//           letter, letters mastered, a record, every letter open, a new
+//           lap, the last lap done) the news takes its place until you
+//           start typing.
+// Everything here follows you as you type (owner, 2026-10-22: the whole
+// Learn screen is live): it is drawn again after every portion, when the
+// server has learned from its presses (POST /portion, then /stats), and a
+// value that changed lights up once (redraw). The forecast, the gold
+// letter and Today (with the round so far, S.roundSeconds) move while you
+// type; Last round and the streak at the end of a round. The panel steps
+// back a little while you type (typing.css); the live numbers show on the
+// right of the line above the text.
+// The news and the columns sit in one grid cell and swap by opacity only,
 // so the first key changes no layout.
 // Display only: nothing here changes what is measured or sent.
 // Layer: middle. Imports the bottom layer, letters.js (a letter's progress)
@@ -26,7 +37,7 @@
 // Called by: typing.js (renderPanel with the letters row; roundNews and
 // refreshActivity at the end of a round), input.js (renderPanel after a
 // change of the daily goal), languages.js (refreshActivity).
-// To add a column to line 1: a function that returns cell(...), called in
+// To add a column to the panel: a function that returns cell(...), called in
 // renderPanel, one more track in .lp-cols (typing.css), its texts in
 // i18n.js ("lp.*").
 
@@ -36,7 +47,7 @@ import { getJSON } from "./api.js";
 import { letterProgress, rule, forecastText } from "./letters.js";
 import { learning } from "./modes.js";
 
-const box = $("learn-panel");
+const box = $("learn-panel"), focusBox = $("focus-box");
 
 // The average to compare a round with: the AVG_ROUNDS rounds before it,
 // and none with fewer than AVG_MIN (an average of one or two rounds says
@@ -71,7 +82,7 @@ export function compareStats(before, after) {
 
 // ---------- news of the round ----------
 // What the round that just ended brought, most important first; shown on
-// line 2 until the next round is begun. The two milestones of Learn are
+// the gold letter's place until the next round is begun. The two milestones of Learn are
 // told once per language (tt.milestone.<lang>: "open", then "complete").
 // A new lap (r.newLap, its goal in wpm) is a milestone every time; the end
 // of the last lap is told once ("final").
@@ -112,25 +123,35 @@ const masteredTip = () => {
 };
 
 // ---------- drawing ----------
-let drawn = "";
+let drawn = "", drawnFocus = "";
 // Draws the panel from S.lastStats, S.exercise.focus and today's practice.
 // Runs on a portion change and at the end of a round, never per key; the
 // page is touched only when the HTML changes.
 export function renderPanel() {
   if (!box) return;
   const show = learning() && !!S.lastStats && !!S.exercise;
-  box.hidden = !show;
-  if (!show) { drawn = ""; return; }
+  box.hidden = focusBox.hidden = !show;
+  if (!show) { drawn = drawnFocus = ""; return; }
   if (news && news.lang !== S.lang) news = null;   // the news of another language
   const top = [lastRound(), forecast(), accStreak(), dailyGoal()].join("");
-  const letter = letterLine();
-  const html = `<div class="lp-cols">${top}</div>` +
-    `<div class="lp-row lp-stack${news ? " has-news" : ""}">` +
+  const html = `<div class="lp-cols">${top}</div>`;
+  if (html !== drawn) { drawn = html; redraw(box, ".lp-val", html); }
+  const focus = `<div class="fb-stack${news ? " has-news" : ""}">` +
     (news ? `<p class="lp-news${news.big ? " big" : ""}"${news.tip ? ` tabindex="0" data-tip-text="${news.tip}"` : ""}>${news.text}</p>` : "") +
-    `<p class="lp-letter">${letter}</p></div>`;
-  if (html === drawn) return;
-  drawn = html;
-  box.innerHTML = html;
+    `<div class="fb-cols">${focusCells()}</div></div>`;
+  if (focus !== drawnFocus) { drawnFocus = focus; redraw(focusBox, ".fb-cols .lp-val", focus); }
+}
+
+// Puts new HTML in el; while you type, a value (sel) that changed lights up
+// once so the eye catches it (opacity only: the compositor's work, nothing
+// to lay out). Runs per portion, never per key.
+function redraw(el, sel, html) {
+  const before = [...el.querySelectorAll(sel)].map((v) => v.textContent);
+  el.innerHTML = html;
+  if (!document.body.classList.contains("typing-now")) return;
+  el.querySelectorAll(sel).forEach((v, i) => {
+    if (before[i] !== undefined && before[i] !== v.textContent) v.animate([{ opacity: 0.25 }, { opacity: 1 }], { duration: 450, easing: "ease-out" });
+  });
 }
 
 // "Last round / 54 wpm ↑3 97% Acc ↓1": the newest round of this length and its
@@ -197,7 +218,10 @@ function dailyGoal() {
     d.setDate(d.getDate() - back);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   };
-  const need = goal * 60, today = byDate[day(0)] ?? 0;
+  // while you type, the round so far counts too (as of the last portion;
+  // /activity has it once the round is saved)
+  const now = document.body.classList.contains("typing-now") ? S.roundSeconds : 0;
+  const need = goal * 60, today = (byDate[day(0)] ?? 0) + now;
   const met = today >= need;
   // the days in a row: from today if it is met already, else from yesterday
   let streak = 0;
@@ -209,37 +233,35 @@ function dailyGoal() {
   return cell(`lp-goal${met ? " met" : ""}`, label, value, t("lp.goalTip", { g: goal }));
 }
 
-// Line 2: the gold letter, how far it is (the weakest of the three parts of
-// the mastery rule, as on its chip) and what it still needs, with the
-// numbers: "f 62% It still needs fewer mistakes (8%, aim under 5%) and
-// more speed (24 of 30 wpm)".
-function letterLine() {
+// The gold letter in four columns: "Gold letter / 62% to mastered",
+// "Presses / 18 of 20", "Mistakes / 8% under 5%", "Speed / 24 of 30 wpm";
+// a part of the rule already met is green with a tick. A letter never
+// typed shows "—" (0% mistakes would read as a result). The percentage is
+// the weakest of the three parts, as on its chip.
+function focusCells() {
   const c = S.exercise.focus;
   if (!c) return "";
   const k = (S.lastStats.keys ?? []).find((x) => x.char === c);
-  const p = k?.mastered ? 1 : letterProgress(k);
-  const s = S.lastStats, r = rule();
-  const pctTip = t("lp.pctTip", { l: c, min: s.masteryMin, err: Math.round(s.masteryErr), target: s.targetWpm });
-  const head = `<span class="chip focus lp-chip${k?.mastered ? " mastered" : ""}">${c}</span>` +
-    (k?.count ? `<b class="lp-pct" tabindex="0" data-tip-text="${pctTip}">${Math.round(p * 100)}%</b>` : "");
-  let text;
-  if (!k?.count) text = t("lp.letterNew", { l: c });
-  else if (k.mastered) text = t("lp.letterDone");
-  else {
-    const parts = [];
-    if (k.errorRate > r.err) parts.push(t("lp.needClean", { e: Math.round(k.errorRate * 100), err: Math.round(s.masteryErr) }));
-    if (!k.avgMs || k.avgMs > r.ms) parts.push(t("lp.needFast", { w: k.avgMs ? Math.round(12000 / k.avgMs) : 0, target: s.targetWpm }));
-    if (k.count < r.min) parts.push(t("lp.needMore", { n: k.count, min: r.min }));
-    // "a and b", "a, b and c"
-    const list = parts.length > 1 ? parts.slice(0, -1).join(", ") + t("lp.and") + parts.at(-1) : parts[0];
-    text = t("lp.letterNeeds", { list });
-  }
-  // the whole sentence in a tooltip too, for when a narrow window cuts it
-  return `${head}<span class="lp-text" data-tip-text="${text}">${text}</span>`;
+  const s = S.lastStats, r = rule(), err = Math.round(s.masteryErr);
+  const typed = !!k?.count;
+  const pctTip = t("lp.pctTip", { l: c, min: s.masteryMin, err, target: s.targetWpm });
+  // no letter chip here: the gold chip in the row above already shows
+  // which letter it is (owner, 2026-10-22: a second one read as a double)
+  const gold = !typed ? NONE
+    : k.mastered ? `<b class="ok">${t("lp.fMastered")}</b>`
+      : `<b>${Math.round(letterProgress(k) * 100)}%</b><small>${t("lp.fToGo")}</small>`;
+  const tick = (ok) => ok ? `<span class="fb-tick" aria-hidden="true">✓</span>` : "";
+  const part = (cls, label, ok, value) =>
+    cell(`fb-${cls}${ok ? " met" : ""}`, label, typed ? value + tick(ok) : NONE);
+  const wpm = k?.avgMs ? Math.round(12000 / k.avgMs) : 0;
+  return cell("fb-gold", t("lp.fGold"), gold, pctTip) +
+    part("presses", t("lp.fPresses"), k?.count >= r.min, `<b>${k?.count ?? 0}</b><small>${t("lp.fOf", { n: r.min })}</small>`) +
+    part("mistakes", t("lp.fMistakes"), typed && k.errorRate <= r.err, `<b>${Math.round((k?.errorRate ?? 0) * 100)}%</b><small>${t("lp.fUnder", { n: err })}</small>`) +
+    part("speed", t("lp.fSpeed"), !!k?.avgMs && k.avgMs <= r.ms, `<b>${wpm}</b><small>${t("lp.fOfWpm", { n: s.targetWpm })}</small>`);
 }
 
-// One column of line 1: a small grey label over its value; the tooltip, if
-// any, on the whole column.
+// One column (the panel's and the gold letter's): a small grey label over its
+// value; the tooltip, if any, on the whole column.
 const NONE = `<b class="lp-none">—</b>`;
 const cell = (cls, label, value, tip = "") =>
   `<span class="lp-cell ${cls}"${tip ? ` tabindex="0" data-tip-text="${tip}"` : ""}>` +
