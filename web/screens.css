@@ -259,45 +259,46 @@ button.link { background: none; padding: 8px 0; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ---------- start screen ---------- */
+/* --t0: when the first letter is typed (after the icon), --step: the time
+   per letter. At about 12 letters a second it reads as typing, not as a
+   flash (owner, 2026-10-22: "it should type itself, not appear so fast");
+   fx.js Splash waits for the whole word (MIN_MS) */
 .splash {
   position: fixed; inset: 0; z-index: 50; background: var(--bg);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  --t0: 320ms; --step: 85ms;
+  will-change: opacity;   /* its own layer from the start: the fade (fx.js) needs no repaint */
 }
-/* the header's logo, bigger: the key icon and the word, in the same
-   proportions as in the header (34px icon and 10px gap to 1.75rem text),
-   so the whole of it flies into the header as one (fx.js Splash) */
+/* the header's logo, bigger: the key icon and the word */
 .splash-logo {
   display: flex; align-items: center; gap: .357em;
   font-family: var(--logo); font-weight: 600; letter-spacing: -.03em; font-size: clamp(2rem, 7vw, 3.4rem);
-  color: var(--accent-text); transform-origin: top left; line-height: 1.2;
+  color: var(--accent-text); line-height: 1.2;
 }
-.splash-logo .logo-key { width: 1.214em; height: 1.214em; animation: splash-key .22s cubic-bezier(.2, 1.4, .4, 1) both; }
+.splash-logo .logo-key { width: 1.214em; height: 1.214em; animation: splash-key .28s cubic-bezier(.2, 1.4, .4, 1) both; }
 @keyframes splash-key { from { opacity: 0; transform: scale(.6); } }
 .splash-logo b { color: var(--text); font-weight: inherit; }
 /* typewriter: the letters appear one by one (each its own <i>, --i its
    turn; the logo font is not monospace, so a growing width would cut
-   letters in half) */
+   letters in half). A caret stands after the newest letter: each letter
+   has its own, shown only until the next letter comes; the last one
+   stays and blinks. Only opacity, on layers of their own, with a real
+   duration (40 ms, not 0 s): such animations run on the compositor, so the
+   page loading underneath cannot make the typing stutter (measured with
+   the CPU slowed 6 times, 2026-10-22) */
 .splash-type { display: inline-block; white-space: nowrap; vertical-align: bottom; }
-.splash-type i { font-style: normal; opacity: 0; animation: splash-letter 0s calc(90ms + var(--i) * 26ms) forwards; }
-@keyframes splash-letter { to { opacity: 1; } }
-body.splashing .top .logo, body.landing .top .logo { visibility: hidden; }  /* the splash logo lands here */
-
-/* after the splash: the page slides in, piece by piece */
-body.entering .lang-switch, body.entering .profile, body.entering .rail, body.entering .letters, body.entering .text-box,
-body.entering .hands, body.entering .kb-row, body.entering .bottom {
-  animation: rise-in .4s var(--ease) both;
+.splash-type i { position: relative; font-style: normal; opacity: 0; will-change: opacity; animation: splash-letter 40ms linear calc(var(--t0) + var(--i) * var(--step)) forwards; }
+.splash-type i::after {
+  content: ""; position: absolute; right: -.08em; top: .14em; bottom: .1em; width: .07em;
+  border-radius: 1px; background: var(--accent); opacity: 0; will-change: opacity;
+  animation: splash-caret var(--step) calc(var(--t0) + var(--i) * var(--step));
 }
-body.entering .rail, body.entering .lang-switch { animation-delay: .04s; }
-body.entering .profile { animation-delay: .06s; }
-body.entering .letters { animation-delay: .08s; }
-body.entering .text-box { animation-delay: .11s; }
-body.entering .hands { animation-delay: .14s; }
-body.entering .kb-row:nth-child(1) { animation-delay: .15s; }
-body.entering .kb-row:nth-child(2) { animation-delay: .17s; }
-body.entering .kb-row:nth-child(3) { animation-delay: .19s; }
-body.entering .kb-row:nth-child(4) { animation-delay: .21s; }
-body.entering .bottom { animation-delay: .24s; }
-@keyframes rise-in { from { opacity: 0; transform: translateY(12px); } }
+.splash-type b i:last-child::after { animation: splash-blink 1s steps(1) calc(var(--t0) + var(--i) * var(--step)) infinite; }
+@keyframes splash-letter { to { opacity: 1; } }
+@keyframes splash-caret { from, to { opacity: 1; } }
+@keyframes splash-blink { 0% { opacity: 1; } 50% { opacity: 0; } }
+body.splashing .top .logo { visibility: hidden; }  /* shown as the splash fades away */
+
 .letters-caption .begin + .begin::before { content: "·"; margin-right: 10px; color: var(--sub); }
 
 /* ---------- profile: the account card in the header (profile.js) ---------- */

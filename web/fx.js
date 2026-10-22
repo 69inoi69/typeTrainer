@@ -157,20 +157,26 @@ export const FX = (() => {
 
 // ---------- start screen ----------
 // Splash.start() runs right away; splash.done() is awaited once the app has
-// loaded. The splash stays at least MIN_MS so the animation can play, and any
-// key or click skips the rest. The logo then flies into the header (FLIP:
-// measure both positions, animate the difference) and the page slides in.
+// loaded. The splash stays at least MIN_MS so the word can type itself out
+// (screens.css, .splash-type), and any key or click skips the rest. Then
+// the splash fades away over the page, which is already drawn under it.
+// It used to fly the logo into the header while the page rose in piece by
+// piece; the owner wanted a calm fade (2026-10-22), and the rise-in
+// restyled the whole page at the moment the fade began, which stuttered
+// on a slow laptop. Only opacity is animated, so the compositor runs it
+// even while the page is still busy loading.
 export const Splash = (() => {
-  // quicker (owner, 2026-10-18: "the animation is long")
-  const MIN_MS = 520;   // the icon, the typing (screens.css, .splash-type) plus a short look
-  const FLY_MS = 300;   // the logo flying into the header
+  // the icon, 11 letters at --step 85 ms from --t0 320 ms (screens.css),
+  // then a short look at the whole word with the caret blinking
+  const MIN_MS = 1750;
+  const FADE_MS = 450;  // the splash fading away
   function start() {
     const root = document.getElementById("splash");
     const t0 = performance.now();
     let skipped = false;
     const skip = () => { skipped = true; };
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      root.remove(); document.body.classList.remove("splashing", "landing");
+      root.remove(); document.body.classList.remove("splashing");
       return { done: async () => {} };
     }
     addEventListener("keydown", skip, { once: true });
@@ -180,40 +186,11 @@ export const Splash = (() => {
       const wait = MIN_MS - (performance.now() - t0);
       // a timer as a wait, not an animation: it runs once, at load
       if (!skipped && wait > 0) await new Promise((r) => setTimeout(r, wait));
-      // FLIP: move the big logo, icon and word together, onto the header's
-      // (owner, 2026-10-18): scale by the font size (the two are drawn in
-      // the same proportions), line up the left edges and the vertical
-      // centres
-      const from = document.getElementById("splash-logo");
-      const name = document.querySelector(".top .logo-name");
-      const to = document.querySelector(".top .logo");
-      const a = from.getBoundingClientRect(), b = to.getBoundingClientRect();
-      if (name.getBoundingClientRect().width > 0) {
-        const s = parseFloat(getComputedStyle(name).fontSize) / parseFloat(getComputedStyle(from).fontSize);
-        const dx = b.left - a.left;
-        const dy = (b.top + b.height / 2) - (a.top + (a.height / 2) * s);
-        from.style.transformOrigin = "0 0";
-        from.animate([{ transform: "none" },
-          { transform: `translate(${dx}px, ${dy}px) scale(${s})` }],
-          { duration: FLY_MS, easing: "cubic-bezier(.6,0,.2,1)", fill: "forwards" });
-      } else {
-        // phone: the header has no logo to land on, so the big one simply
-        // drifts up a little, shrinks slightly and fades out
-        from.style.transformOrigin = "50% 50%";
-        from.animate([{ opacity: 1, transform: "none" },
-          { opacity: 0, transform: "translateY(-14px) scale(.94)" }],
-          { duration: FLY_MS - 80, easing: "cubic-bezier(.4,0,.2,1)", fill: "forwards" });
-      }
-      root.animate([{ backgroundColor: getComputedStyle(root).backgroundColor }, { backgroundColor: "transparent" }],
-        { duration: FLY_MS, easing: "ease-in", fill: "forwards" });
-      // typing is allowed again, but the header logo stays hidden ("landing")
-      // until the flying logo has arrived, so there are never two of them
-      document.body.classList.add("entering", "landing");
+      root.animate([{ opacity: 1 }, { opacity: 0 }], { duration: FADE_MS, easing: "ease-in-out", fill: "forwards" });
+      // typing is allowed at once; the page appears under the fading splash
       document.body.classList.remove("splashing");
-      await new Promise((r) => setTimeout(r, FLY_MS));
-      document.body.classList.remove("landing");
+      await new Promise((r) => setTimeout(r, FADE_MS));
       root.remove();
-      setTimeout(() => document.body.classList.remove("entering"), 700);
     }
     return { done };
   }

@@ -22,8 +22,8 @@
   <script>try { if (localStorage.getItem("tt.theme") === "light") document.documentElement.dataset.theme = "light"; } catch {}</script>
 </head>
 <body class="splashing">
-  <!-- Start screen: the logo types itself, then flies to its place in the
-       header (fx.js, Splash). -->
+  <!-- Start screen: the logo types itself, then fades away over the page
+       (fx.js, Splash). -->
   <div class="splash" id="splash" aria-hidden="true">
     <div class="splash-logo" id="splash-logo"><svg class="logo-key" viewBox="0 0 64 64" aria-hidden="true"><rect x="9" y="12" width="46" height="44" rx="10" fill="#a8851a"/><rect x="9" y="8" width="46" height="42" rx="10" fill="#e2b714"/><rect x="22" y="38" width="20" height="5" rx="2.5" fill="#15171a"/></svg><span class="splash-type"><i style="--i:0">t</i><i style="--i:1">y</i><i style="--i:2">p</i><i style="--i:3">e</i><b><i style="--i:4">T</i><i style="--i:5">r</i><i style="--i:6">a</i><i style="--i:7">i</i><i style="--i:8">n</i><i style="--i:9">e</i><i style="--i:10">r</i></b></span></div>
   </div>
@@ -223,7 +223,7 @@
       <button type="button" role="tab" id="tab-climb" aria-selected="false" aria-controls="view-type" data-tip="tip.free"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19l6.5-10 4 6 2.5-3.5L21 19z"/><path d="M9.5 9V4l3.5 1.4-3.5 1.4"/></svg><small data-i18n="mode.free">Climb</small></button>
       <!-- Freetype: a feather, typing for its own sake with nothing to pass (Learn: a graduation cap) -->
       <button type="button" role="tab" id="tab-freetype" aria-selected="false" aria-controls="view-type" data-tip="tip.freetype"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 3.8c-6.5 0-12.2 4.6-13.6 11l-.6 2.6 2.6-.6c6.4-1.4 11-7.1 11-13.6z"/><path d="M4 20l9-9M9 15h4.5"/></svg><small data-i18n="mode.freetype">Freetype</small></button>
-      <button type="button" role="tab" id="tab-stats" aria-selected="false" aria-controls="view-stats" data-tip="tip.stats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16"/><path d="M7 16v-5M12 16V7M17 16v-8"/></svg><small data-i18n="nav.stats">Stats</small></button>
+      <button type="button" role="tab" id="tab-stats" aria-selected="false" aria-controls="view-stats" data-tip="tip.stats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16"/><path d="M7 17v-3M12 17v-4M17 17v-6"/><path d="M5 9.5l5-3.5 4 2.5 5-4.5"/></svg><small data-i18n="nav.stats">Stats</small></button>
     </div>
     <div class="rail-group tools">
       <!-- settings: the button opens the settings window (settings.js), Esc too -->
