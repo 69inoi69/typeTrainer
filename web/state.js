@@ -29,7 +29,6 @@ export const el = {
   live: $("live"), wpm: $("wpm"), raw: $("raw"), acc: $("acc"), progress: $("progress"), progressLabel: $("progress-label"),
   letters: $("letters"), lettersCaption: $("letters-caption"),
   tooltip: $("tooltip"),
-  btnNew: $("btn-new"),
   hands: $("hands"),
   intro: $("intro"),
   nav: $("nav-switch"), tabLearn: $("tab-learn"), tabClimb: $("tab-climb"), tabFreetype: $("tab-freetype"), tabStats: $("tab-stats"),

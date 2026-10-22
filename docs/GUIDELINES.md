@@ -135,7 +135,7 @@ consequences, the same word for the same thing. All text lives in
   "Reset all progress? This can't be undone.", Cancel has the focus).
 - Results stay on screen until the user presses Next round, Enter or Tab
   (Tab = new round everywhere). Esc opens the settings on every screen
-  (while typing it stops the round first), never "next round".
+  (a round being typed pauses behind it), never "next round".
 - Short messages go in a toast (`web/fx.js`); live areas use
   `aria-live="polite"`.
 
@@ -209,7 +209,7 @@ consequences, the same word for the same thing. All text lives in
 - Look at the real result in a browser, not just the code: the screen that
   changed, at phone and desktop width, in both themes when colours change.
 - Check the edges: no data yet, a very long name, the first and the last
-  letter, a round stopped early, Climb at a low and a high level.
+  letter, a time round that runs out, Climb at a low and a high level.
 - Check what is next to the change, not only the element that was asked
   about.
 

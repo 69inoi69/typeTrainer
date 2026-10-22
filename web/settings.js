@@ -4,7 +4,8 @@
 // off, what falls in the background, the colour theme; how typing answers
 // (the caret stops on a mistake, sounds and their volume, a break
 // reminder); the on-screen keyboard (on or off, and while it is on: the
-// next key lit, the finger colours); the goals (a daily goal in minutes
+// next key lit, the hand above the keys, the finger colour of the next
+// letter in the text); the goals (a daily goal in minutes
 // for the Learn panel, a speed goal for the stats screen); and exporting, importing
 // and resetting the progress (tools.js does those three). Settings change
 // HOW IT LOOKS, never WHAT is practised. How long a round is belongs to
@@ -70,11 +71,6 @@ const CARETS = ["line", "block", "underline", "outline"];
 // it, letters open at the trainer's own target as before (AGENTS.md: a
 // setting never changes what is practised).
 const GOALS = [0, 30, 40, 50, 75, 100, 125, 150, 200];   // 30 and 40: a goal a beginner can reach (2026-10-21)
-// What falls in the background (ambient.js; owner, 2026-10-20), in the
-// order of the buttons; "keys" is the default.
-// To add one: its id here, what it shows in ambient.js and its name in i18n.js.
-const BGS = ["keys", "letters", "words", "off"];
-const BG_NAMES = { keys: "settings.bgKeys", letters: "settings.bgLetters", words: "settings.bgWords", off: "settings.off" };
 // A daily goal, minutes of typing in any mode (0 = none; owner, 2026-10-20,
 // after keybr). The Learn panel shows today against it (learnpanel.js).
 // 15 by default: a beginner's honest daily dose; more is a choice.
@@ -135,8 +131,10 @@ export function loadSettings() {
   // 2026-10-20: it says little, and every extra thing on the text slows
   // typing). A new key: the old tt.streak was on by default.
   S.settings.streak = store.get("tt.streak.free") === "1";
-  const bg = store.get("tt.bg");
-  S.settings.bg = BGS.includes(bg) ? bg : "keys";
+  // the background: falling keycaps or nothing (ambient.js). Letters and
+  // words were choices too until 2026-10-22 (owner: keycaps only, on or
+  // off); a browser that chose one of them keeps a background of keycaps.
+  S.settings.bg = store.get("tt.bg") === "off" ? "off" : "keys";
   const caret = store.get("tt.caret");
   S.settings.caret = CARETS.includes(caret) ? caret : "line";
   S.settings.theme = store.get("tt.theme") === "light" ? "light" : "dark";
@@ -233,8 +231,7 @@ const ROWS = [
   { group: "settings.look", name: "settings.blink", desc: "settings.blinkDesc", ctl: () => pick("blink", (v) => t("settings.blink_" + v)) },
   { group: "settings.look", name: "settings.ws", desc: "settings.wsDesc", ctl: () => pick("ws", (v) => t("settings.ws_" + v)) },
   { group: "settings.look", name: "settings.streak", desc: "settings.streakDesc", ctl: () => onOff("streak", S.settings.streak) },
-  { group: "settings.look", name: "settings.background", desc: "settings.backgroundDesc", ctl: () => seg(BGS.map((id) =>
-    choice("bg", id, t(BG_NAMES[id]), S.settings.bg === id))) },
+  { group: "settings.look", name: "settings.background", desc: "settings.backgroundDesc", ctl: () => onOff("bg", S.settings.bg !== "off") },
   { group: "settings.look", name: "settings.theme", ctl: () => seg([
     choice("theme", "dark", t("settings.dark"), S.settings.theme === "dark"),
     choice("theme", "light", t("settings.light"), S.settings.theme === "light")]) },
@@ -300,8 +297,8 @@ function apply(key, value) {
     S.settings.streak = value === "1";
     store.set("tt.streak.free", value === "1" ? "1" : "0");
   } else if (key === "bg") {
-    S.settings.bg = value;
-    store.set("tt.bg", value);
+    S.settings.bg = value ? "keys" : "off";
+    store.set("tt.bg", S.settings.bg);
     bgListener();
   } else if (key === "caret") {
     S.settings.caret = value;

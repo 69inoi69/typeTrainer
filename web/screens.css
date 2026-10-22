@@ -25,8 +25,9 @@
    hidden, so the whole result fits on one screen without scrolling (owner,
    2026-10-16). They come back with the next round. */
 #view-type:has(> .text-box.resulting) > .keyboard { display: none; }
-/* nothing to stop on the result: "esc Stop" leaves the shortcut line */
-body:has(.text-box.resulting) .hints .stop-hint { display: none; }
+/* no round on the result: its keys leave the shortcut line (Tab is on the
+   Next round button there) */
+body:has(.text-box.resulting) .hints .round-only { display: none; }
 /* desktop: the result, with the letters on top of it, stands in the middle
    of the free room (owner, 2026-10-16; the letters joined it 2026-10-18);
    the view takes all the height, equal room above and below */
@@ -280,23 +281,13 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .splash-logo b { color: var(--text); font-weight: inherit; }
 /* typewriter: the letters appear one by one (each its own <i>, --i its
    turn; the logo font is not monospace, so a growing width would cut
-   letters in half). A caret stands after the newest letter: each letter
-   has its own, shown only until the next letter comes; the last one
-   stays and blinks. Only opacity, on layers of their own, with a real
+   letters in half). Only opacity, on layers of their own, with a real
    duration (40 ms, not 0 s): such animations run on the compositor, so the
    page loading underneath cannot make the typing stutter (measured with
-   the CPU slowed 6 times, 2026-10-22) */
+   the CPU slowed 6 times, 2026-10-22). No caret (owner, 2026-10-22). */
 .splash-type { display: inline-block; white-space: nowrap; vertical-align: bottom; }
-.splash-type i { position: relative; font-style: normal; opacity: 0; will-change: opacity; animation: splash-letter 40ms linear calc(var(--t0) + var(--i) * var(--step)) forwards; }
-.splash-type i::after {
-  content: ""; position: absolute; right: -.08em; top: .14em; bottom: .1em; width: .07em;
-  border-radius: 1px; background: var(--accent); opacity: 0; will-change: opacity;
-  animation: splash-caret var(--step) calc(var(--t0) + var(--i) * var(--step));
-}
-.splash-type b i:last-child::after { animation: splash-blink 1s steps(1) calc(var(--t0) + var(--i) * var(--step)) infinite; }
+.splash-type i { font-style: normal; opacity: 0; will-change: opacity; animation: splash-letter 40ms linear calc(var(--t0) + var(--i) * var(--step)) forwards; }
 @keyframes splash-letter { to { opacity: 1; } }
-@keyframes splash-caret { from, to { opacity: 1; } }
-@keyframes splash-blink { 0% { opacity: 1; } 50% { opacity: 0; } }
 body.splashing .top .logo { visibility: hidden; }  /* shown as the splash fades away */
 
 .letters-caption .begin + .begin::before { content: "·"; margin-right: 10px; color: var(--sub); }
@@ -379,29 +370,33 @@ body.live-off .live .metric.num { display: none; }
 .cs.outline { width: 8px; background: none; box-shadow: inset 0 0 0 1.5px currentColor; }
 
 /* ---------- the quiet background (ambient.js) ---------- */
-/* Things falling slowly in the empty fields, behind everything (z-index -1:
+/* Keycaps falling slowly in the empty fields, behind everything (z-index -1:
    above the page colour, under the page), on every screen; so slow it does
-   not distract. What falls is a setting (data-kind: keys, letters, words;
-   "off" draws nothing); the fall itself is started in ambient.js. They keep
-   moving while you type. A running animation makes the browser update its
-   element's style on every frame it draws (one per key during a round), so
-   the moving <i> is a bare wrapper (as wide as its lane, the piece centred
-   in it) and the look sits on the <b> inside (measured, 2026-10-20,
+   not distract. A setting turns it off (data-kind="off" draws nothing);
+   the fall itself is started in ambient.js. They keep moving while you
+   type. A running animation makes the browser update its element's style
+   on every frame it draws (one per key during a round), so the moving <i>
+   is a bare wrapper (as wide as its lane, the keycap centred in it) and
+   the look sits on the <b> inside (measured, 2026-10-20,
    docs/ARCHITECTURE.md). */
 .ambient { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; --boost: 1; }
 .ambient > i { position: absolute; top: -12vh; display: flex; justify-content: center; will-change: transform; }
+/* a keycap: its outline, a thicker lower edge, the letter; --w is its width
+   (1 = square, more for a blank wide key such as Shift) */
 .ambient > i > b {
-  display: grid; place-items: center; white-space: nowrap;
+  position: relative; display: grid; place-items: center; white-space: nowrap;
+  width: calc(var(--size) * var(--w, 1)); height: var(--size); border-radius: calc(var(--size) * .22);
   font-family: "Geist Mono Keys", var(--mono); font-style: normal; font-weight: 600;
-  line-height: 1; color: var(--sub);
+  font-size: calc(var(--size) * .38); text-transform: uppercase; line-height: 1; color: var(--sub);
   opacity: calc(var(--o) * .34 * var(--boost));
-}
-.ambient[data-kind="keys"] > i > b {      /* the outline of a keycap with its letter */
-  width: var(--size); height: var(--size); border-radius: 22%; font-size: calc(var(--size) * .38); text-transform: uppercase;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 55%, transparent), inset 0 calc(var(--size) * -.08) 0 color-mix(in srgb, var(--sub) 25%, transparent);
 }
-.ambient[data-kind="letters"] > i > b { font-size: calc(var(--size) * .75); }   /* the letter alone, bigger */
-.ambient[data-kind="words"] > i > b { font-size: calc(var(--size) * .4); font-weight: 500; }   /* a short word */
+.ambient > i > b.fill { background: color-mix(in srgb, var(--sub) 12%, transparent); }   /* some are filled a little */
+/* F and J: the bump the index fingers find without looking */
+.ambient > i > b.bump::after {
+  content: ""; position: absolute; left: 50%; bottom: calc(var(--size) * .2); width: calc(var(--size) * .22); height: 1px;
+  translate: -50% 0; background: color-mix(in srgb, var(--sub) 70%, transparent);
+}
 /* the screen saver: a minute with no key and no mouse (ambient.js) */
 body.afk .ambient { --boost: 1.7; }
 .top, .views, .bottom { transition: opacity 1.2s var(--ease); }

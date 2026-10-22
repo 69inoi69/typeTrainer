@@ -130,13 +130,12 @@
         <!-- a round paused because the window lost focus (typing.js pauseRound):
              a slowly breathing pause sign, the word, how to go on and what
              happened to the time -->
-        <div class="pause-note" aria-live="polite"><span class="pause-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg></span><b data-i18n="pause.title">Paused</b><span class="pause-go"><kbd data-i18n="pause.key">any key</kbd> <span data-i18n="pause.go">to go on</span></span><small data-i18n="pause.away">Time spent paused doesn't count.</small></div>
+        <div class="pause-note" aria-live="polite"><span class="pause-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg></span><b data-i18n="pause.title">Paused</b><span class="pause-go"><span data-i18n="pause.press">Press</span> <kbd data-i18n="pause.key">any key</kbd> <span data-i18n="pause.go">to go on</span></span><small data-i18n="pause.away">Time spent paused doesn't count.</small></div>
         <!-- the result screen takes the place of the text when typing stops (result.js) -->
         <div id="result" class="result" role="status" aria-live="polite" hidden></div>
       </div>
       <!-- touch screens have no Esc: a small "stop" under the card (as the
            restart button under the words on monkeytype) -->
-      <button id="btn-new" type="button" class="stop-btn touch-only" data-tip="tip.new"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/></svg><span data-i18n="hint.new">Stop</span></button>
       <!-- Invisible input: lets phone keyboards open and send characters. -->
       <input id="hidden-input" class="hidden-input" autocomplete="off" autocapitalize="off"
              autocorrect="off" spellcheck="false" aria-hidden="true">
@@ -279,10 +278,12 @@
        there is a real keyboard (layout.css hides them on touch screens). -->
   <footer class="bottom">
     <div class="hints" aria-label="Shortcuts">
-      <span class="type-only stop-hint"><kbd>esc</kbd> <span data-i18n="hint.esc">Stop / settings</span></span>
-      <span><kbd>shift</kbd> + <kbd>tab</kbd> <span data-i18n="hint.view">Typing / stats</span></span>
+      <span class="round-only"><kbd>tab</kbd> <span data-i18n="hint.tab">New round</span></span>
+      <span><kbd>esc</kbd> <span data-i18n="hint.settings">Settings</span></span>
+      <span><kbd>shift</kbd> + <kbd>tab</kbd> <span class="type-only" data-i18n="hint.stats">Stats</span><span class="stats-hint" data-i18n="hint.typing">Typing</span></span>
       <span class="lang-hint"><kbd>alt</kbd> + <kbd>1</kbd>…<kbd>4</kbd> <span data-i18n="hint.lang">Language</span></span>
-      <span class="type-only"><kbd>alt</kbd> + <kbd>k</kbd> <span data-i18n="hint.kb">Keyboard</span></span>
+      <span class="round-only"><kbd>alt</kbd> + <kbd>k</kbd> <span data-i18n="hint.kb">Keyboard</span></span>
+      <span class="round-only"><kbd>ctrl</kbd> + <kbd>backspace</kbd> <span data-i18n="hint.word">Delete word</span></span>
     </div>
   </footer>
 

@@ -12,7 +12,7 @@
 // Layer: middle. Imports the bottom layer, keyboard.js, stats.js, result.js,
 // letters.js, learnpanel.js, modes.js, modebar.js, settings.js, sound.js,
 // customtext.js, caret.js, streak.js and warn.js.
-// Called by: input.js (handleChar, backspace, restartRound, stopRound and the rest
+// Called by: input.js (handleChar, backspace, restartRound and the rest
 // on keys and clicks) and languages.js (loadExercise when the language
 // changes).
 //
@@ -151,8 +151,8 @@ function keepTextInView() {
 // already see never change. A round has the length chosen in the settings
 // (settings.js): N words, or N seconds. A words round ends with the last
 // letter of its last word (no space needed after it); a time round when the
-// time is up. Either ends earlier with Esc, see finishRound(). A long pause
-// pauses it (IDLE_PAUSE_MS), the same as leaving the window.
+// time is up (finishRound()). A long pause pauses it (IDLE_PAUSE_MS), the
+// same as leaving the window.
 const IDLE_PAUSE_MS = 10000; // no key for this long during a round = the user stepped away: paused
 const RECENT_SENT = 40;      // words of the round sent as "recent" (the server uses the last RecentWords)
 let portions = [];           // {start, end, focus}: positions of each portion; end = its last space
@@ -791,21 +791,12 @@ function resumeRound(now) {
   el.textBox.classList.remove("snap", "paused");   // coming back fades in as usual
 }
 
-// Esc: ends the round early (or, before the first key, just gives a new text).
-export function stopRound() {
-  if (S.busy) return;
-  if (startTime === null) {
-    el.live.classList.remove("final");
-    loadExercise().catch(console.error);
-  } else finishRound();
-}
-
-// The round is over (the last letter of its last word, the end of the time,
-// or Esc): the numbers of the round go to the history, then the next round
+// The round is over (the last letter of its last word, or the end of the
+// time): the numbers of the round go to the history, then the next round
 // starts: in Learn at once, with what changed on the Learn panel
 // (learnpanel.js; owner, 2026-10-20: no result screen in Learn), in Climb
 // and Freetype after their result screen. The time of the round ends at
-// its last keypress, so a stop with Esc does not lower the WPM.
+// its last keypress, so a quiet end of a time round does not lower the WPM.
 // byLastKey: it ended with its last letter; the finished text then stays
 // for FEEL.resultHoldMs (the last letter turns white, the caret arrives).
 // Before a result screen it also fades out in its second half (class

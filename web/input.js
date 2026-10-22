@@ -12,7 +12,7 @@
 import { $, el, S, introOpen, isTouch, focusText } from "./state.js";
 import { applyKb, requestFit } from "./keyboard.js";
 import { refreshStats, renderStats, resetStatsPick } from "./stats.js";
-import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, stopRound, loadExercise, roundStarted, pauseRound, checkLayout, lightNext } from "./typing.js";
+import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, loadExercise, roundStarted, pauseRound, checkLayout, lightNext } from "./typing.js";
 import { checkCaps } from "./warn.js";
 import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
@@ -180,15 +180,17 @@ document.addEventListener("keydown", (e) => {
   }
   if (document.body.classList.contains("splashing")) return;
   // Esc opens the settings, on every screen (as on monkeytype). A round
-  // being typed stops first, the same as before (owner, 2026-10-17): its
-  // result waits behind the window.
+  // being typed pauses behind the window and goes on with the first key
+  // after it (owner, 2026-10-22: Esc used to end the round, which nobody
+  // could tell from "settings").
   if (e.key === "Escape") {
     e.preventDefault();
-    if (S.view === "type" && !resultOpen() && roundStarted()) stopRound();
+    if (S.view === "type" && !resultOpen() && roundStarted()) pauseRound();
     openSettings();
     return;
   }
   // shortcuts: Shift+Tab = type <-> stats, Alt+1...4 = language, Alt+K = keyboard on / off
+  // (the line at the bottom of the page, index.html .hints, lists them)
   if (e.key === "Tab" && e.shiftKey) {
     e.preventDefault();
     setView(S.view === "type" ? "stats" : "type");
@@ -286,4 +288,3 @@ el.textBox.addEventListener("click", () => {
 });
 el.input.addEventListener("blur", () => { if (isTouch()) el.textBox.classList.add("blurred"); });
 
-el.btnNew.addEventListener("click", (e) => { e.currentTarget.blur(); stopRound(); });
