@@ -4,8 +4,8 @@
 // The CSS reads the same values as custom properties (--feel-*), set below.
 // None of this changes what is measured or sent to the server.
 // Layer: bottom. Imports nothing.
-// Used by: keyboard.js (red tint, hand size), typing.js (caret kick, trail, flinch and
-// breath, line scroll), and the stylesheets (caret glide, the lift and dip of the
+// Used by: keyboard.js (red tint, hand size), caret.js (caret flinch, breath and
+// pulse, line scroll), and the stylesheets (caret glide, the lift and dip of the
 // next key, the lift of the finger) through the --feel-* properties.
 // Speed rule (owner, 2026-10-18, "as smooth as monkeytype"): what moves on
 // every key only moves (translate, transform, opacity of a whole element),
@@ -53,19 +53,6 @@ export const FEEL = {
   keyMissMs: 200,           // duration of the tint
   keyMissAlpha: 0.4,        // strength of the red at the start (0..1)
 
-  // The caret answers every right key, so it reads as moved by the press,
-  // not sliding over the letters (owner, 2026-10-20: "it just slips along").
-  // Both start in the frame of the key press, together with the glide, and
-  // only move or fade the caret's own layers (scale, opacity): nothing waits
-  // for them and nothing is painted again.
-  // A kick: the caret starts a little bigger and settles back as it glides.
-  caretKickMs: 110,         // duration of the kick (0 = none)
-  caretKickScale: 1.22,     // its size at the start (1 = none)
-  // A trail: a short streak of the caret's colour behind it, from where it
-  // was, that shrinks into it as it glides. Not on a new line or going back.
-  caretTrailMs: 0,          // how long the trail lasts (0 = none; try 90)
-  caretTrailAlpha: 0.45,    // its strength at the start (0..1)
-
   // The streak number (Freetype, when on) hops on every clean word.
   streakHopMs: 180,         // duration of the hop (0 = none)
   streakHopPx: 4,           // how far up it starts
@@ -76,10 +63,14 @@ export const FEEL = {
   caretFlinchMs: 120,       // duration (about 7 frames)
   caretFlinchScale: 0.7,    // height at the start of the flinch (1 = none)
   caretShakePx: 2,          // how far it shakes to each side (0 = no shake)
-  // At rest the caret breathes (fades out and in, softly) instead of a hard
-  // blink; it starts this long after the last key, so it is solid while you type.
-  caretBreathMs: 1100,      // one breath, out and in
-  caretBreathDelayMs: 650,  // quiet time before it starts
+  // At rest the caret breathes or pulses (a setting: settings.js "blink",
+  // owner, 2026-10-22, who also dropped the kick on every key); it starts
+  // this long after the last key, so it is solid while you type.
+  caretRestDelayMs: 650,    // quiet time before it starts
+  caretBreathMs: 2000,      // one breath, out and in: slow, so it never nags
+  caretBreathLow: 0.35,     // how far it fades (1 = not at all)
+  caretPulseMs: 1000,       // one pulse of the thick caret: quicker and deeper
+  caretPulseLow: 0.15,
 
   // How the three kinds of mistake look (typing.css .bad / .miss / .extra):
   // wrong = red letter; skipped = dim with a dotted underline;
@@ -104,6 +95,10 @@ export const FEEL = {
 function applyFeel() {
   const root = document.documentElement.style;
   root.setProperty("--feel-caret-ms", FEEL.caretGlideMs + "ms");
+  root.setProperty("--feel-breath-ms", FEEL.caretBreathMs + "ms");
+  root.setProperty("--feel-breath-low", String(FEEL.caretBreathLow));
+  root.setProperty("--feel-pulse-ms", FEEL.caretPulseMs + "ms");
+  root.setProperty("--feel-pulse-low", String(FEEL.caretPulseLow));
   root.setProperty("--caret-curve", FEEL.caretCurve);
   root.setProperty("--feel-result-hold", FEEL.resultHoldMs + "ms");
   root.setProperty("--feel-result-in", FEEL.resultInMs + "ms");

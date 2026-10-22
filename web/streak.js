@@ -52,7 +52,7 @@ function popStreak() {
 }
 // One more clean word: the number hops up a little and settles. Once a word,
 // never per key; only "transform" of the number, so nothing is laid out or
-// painted again. One Web Animation, kept and rewound (as caret.js kickCaret).
+// painted again. One Web Animation, kept and rewound (as caret.js breathe).
 let hopAnim = null;
 function hopStreak() {
   if (!streakOn() || !FEEL.streakHopMs || !el.streakN.animate || reducedMotion()) return;

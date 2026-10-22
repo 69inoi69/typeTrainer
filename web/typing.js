@@ -38,7 +38,7 @@ import { renderModeBar } from "./modebar.js";
 import { lengthOf, firstRoundDone } from "./settings.js";
 import { keySound } from "./sound.js";
 import { customPortions, customRoundDone } from "./customtext.js";
-import { flinchCaret, kickCaret, breathe, scrollText, stopScroll } from "./caret.js";
+import { flinchCaret, breathe, scrollText, stopScroll } from "./caret.js";
 import { STREAK_RISE, streakOn, cleanWord, breakStreak } from "./streak.js";
 import { showWarn, hideWarn, warnShowing, foreignKey, layoutCheck } from "./warn.js";
 
@@ -74,9 +74,11 @@ let fixedWords = new Set(); // starts of words that were gone back into and rety
 // line height once and starts at the top.
 const TEXT_LINES = 3;
 let lineH = 0;
+let caretTop = 0;    // the caret's gap above its letter, px (typing.css .caret top), for the streak badge
 export function fitText() {
   if (S.view !== "type") return;
   lineH = parseFloat(getComputedStyle(el.text).lineHeight) || 0;
+  caretTop = el.caret.offsetTop || caretTop;   // 0 while the text is hidden (the result)
   stopScroll();
   el.text.scrollTop = 0;                     // a new text starts at the top at once
 }
@@ -89,9 +91,12 @@ export function fitText() {
 // last = true: the round's last key; the caret goes just past the letter
 // typed, and the text does not scroll (the stream may already hold the next
 // words on a line below, which would scroll the finished text away).
+// The caret's height and its gap above the letter are in em of the text
+// (typing.css .caret), never read from the letter: a space where a line
+// wraps, with a mark on every space (body[data-ws]), is drawn on both
+// lines, so its offsetHeight is two lines and the caret took it (owner,
+// 2026-10-22: "it suddenly gets super long").
 let caretFrame = 0;
-let kick = false;            // a right key since the last frame: the caret answers it (kickCaret)
-let caretX = 0, caretY = 0;  // where the caret went last time, for the trail's length
 export function placeCaret(jump, last = false) {
   cancelAnimationFrame(caretFrame);
   caretFrame = requestAnimationFrame(() => {
@@ -102,14 +107,10 @@ export function placeCaret(jump, last = false) {
     const s = last ? spans[Math.max(0, S.pos - 1)] : extra || spans[Math.min(S.pos, spans.length - 1)];
     breathe(el.textBox.classList.contains("typing"));
     const x = s.offsetLeft + (atEnd ? s.offsetWidth : 0);
-    const h = s.offsetHeight;
     if (jump) el.caret.classList.add("jump");
-    el.caret.style.height = Math.round(h * 0.82) + "px";
     // position in the separate CSS "translate" property, so an animation of
     // "scale" never multiplies the position (the caret flew away once)
-    el.caret.style.translate = `${x - 1}px ${s.offsetTop + h * 0.09}px`;
-    if (kick && !jump) kickCaret(x - caretX, s.offsetTop === caretY);
-    kick = false; caretX = x; caretY = s.offsetTop;
+    el.caret.style.translate = `${x - 1}px ${s.offsetTop}px`;
     // keep the current line in view: from the third line on, scroll so that
     // it is the second one
     let top = el.text.scrollTop;
@@ -125,7 +126,7 @@ export function placeCaret(jump, last = false) {
     if (jump) requestAnimationFrame(() => el.caret.classList.remove("jump"));
     if (!streakOn()) return;
     if (jump) el.streak.classList.add("jump");
-    el.streak.style.translate = `${el.text.offsetLeft + x + 4}px ${el.text.offsetTop + s.offsetTop - top + h * 0.09 - STREAK_RISE}px`;
+    el.streak.style.translate = `${el.text.offsetLeft + x + 4}px ${el.text.offsetTop + s.offsetTop - top + caretTop - STREAK_RISE}px`;
     if (jump) requestAnimationFrame(() => el.streak.classList.remove("jump"));
   });
 }
@@ -552,7 +553,7 @@ export function handleChar(ch) {
       const ok = ch === S.text[S.pos];
       record(S.pos, !ok, now, ch);
       setState(S.pos, ok ? 1 : 2);
-      if (ok) { correctPresses++; kick = true; keySound(true); }
+      if (ok) { correctPresses++; keySound(true); }
       else mistake();
       pulseKey(ch, ok);
       const space = S.text[S.pos] === " ";

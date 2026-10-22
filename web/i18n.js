@@ -36,6 +36,8 @@ const I18N = {
     "settings.size": "Text size", "settings.size_s": "Small", "settings.size_m": "Normal", "settings.size_l": "Large",
     "settings.glide": "Caret movement", "settings.glide_smooth": "Smooth", "settings.glide_jump": "Jump",
     "settings.glideDesc": "Choose whether the caret glides to each letter or jumps there instantly. Jump may be easier to follow when you type fast",
+    "settings.blink": "Caret at rest", "settings.blink_off": "Still", "settings.blink_breathe": "Breathe", "settings.blink_pulse": "Pulse",
+    "settings.blinkDesc": "What the caret does when you stop typing. Still: a steady line. Breathe: it slowly fades in and out. Pulse: a thicker caret that blinks faster, easier to spot. While you type it is always steady",
     "settings.ws": "Space marks", "settings.ws_none": "Off", "settings.ws_dot": "Dot", "settings.ws_bar": "Bar",
     "settings.wsDesc": "Show a dot or bar between words to make each space easier to spot",
     "settings.streakDesc": "A number above the caret counts the words you type in a row without a mistake. One mistake resets it to zero",
