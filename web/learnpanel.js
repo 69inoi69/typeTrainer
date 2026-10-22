@@ -1,11 +1,16 @@
-// The Learn panel: two short lines between the letters row and the text,
-// in place of a result screen (owner, 2026-10-20: "the result screen is not
+// The Learn panel: two lines between the letters row and the text, in
+// place of a result screen (owner, 2026-10-20: "the result screen is not
 // needed"; the model is keybr's lines above its text). A Learn round ends
 // and the next one starts at once; what the round did is read here:
-//   line 1: the last round (speed and accuracy, each with its difference
-//           from your recent average), about how many rounds to the next
-//           letter (the forecast), the lap after Learn complete, an accuracy streak (rounds in a row
-//           at 95% or better) and today's practice against the daily goal;
+//   line 1: four fixed columns, each a small grey label over a bright
+//           value (owner, 2026-10-22: every item in its own place, nothing
+//           shifting or running off the edge): the last round (speed and
+//           accuracy, each with its difference from your recent average),
+//           about how many rounds to the next letter (the forecast; after
+//           Learn complete the lap and when it ends), the accuracy streak
+//           (rounds in a row at 95% or better) and today's practice against
+//           the daily goal. A column with nothing to say yet shows "—";
+//           its tooltip says when it fills;
 //   line 2: the gold letter (the focus of the words being typed): how far
 //           it is on the way to mastered and what it still needs, in plain
 //           words. Right after a round with news (a new letter, letters
@@ -21,8 +26,9 @@
 // Called by: typing.js (renderPanel with the letters row; roundNews and
 // refreshActivity at the end of a round), input.js (renderPanel after a
 // change of the daily goal), languages.js (refreshActivity).
-// To add an item to line 1: a function that returns its HTML (or "" when it
-// has nothing to say), called in renderPanel, its texts in i18n.js ("lp.*").
+// To add a column to line 1: a function that returns cell(...), called in
+// renderPanel, one more track in .lp-cols (typing.css), its texts in
+// i18n.js ("lp.*").
 
 import { t } from "./i18n.js";
 import { $, S, store } from "./state.js";
@@ -91,7 +97,7 @@ export function roundNews(r) {
     store.set(`tt.milestone.${S.lang}`, "open");
     news = { text: t("news.allOpen"), tip: t("news.allOpenTip", { list: waiting.join(" ") }), big: true };
   } else if (r.newLetter) {
-    news = { text: t("news.newLetter", { l: `<b>${r.newLetter}</b>` }), tip: t("news.newLetterTip") };
+    news = { text: t("news.newLetter", { l: `<b>${r.newLetter}</b>` }), tip: t("news.newLetterTip", { l: r.newLetter }) };
   } else if (r.mastered?.length) {
     news = { text: t("news.mastered", { list: `<b>${r.mastered.join(" ")}</b>` }), tip: masteredTip() };
   } else if (r.best) {
@@ -116,9 +122,9 @@ export function renderPanel() {
   box.hidden = !show;
   if (!show) { drawn = ""; return; }
   if (news && news.lang !== S.lang) news = null;   // the news of another language
-  const top = [lastRound(), forecast(), lap(), accStreak(), dailyGoal()].join("");
+  const top = [lastRound(), forecast(), accStreak(), dailyGoal()].join("");
   const letter = letterLine();
-  const html = `<div class="lp-row">${top}</div>` +
+  const html = `<div class="lp-cols">${top}</div>` +
     `<div class="lp-row lp-stack${news ? " has-news" : ""}">` +
     (news ? `<p class="lp-news${news.big ? " big" : ""}"${news.tip ? ` tabindex="0" data-tip-text="${news.tip}"` : ""}>${news.text}</p>` : "") +
     `<p class="lp-letter">${letter}</p></div>`;
@@ -127,13 +133,13 @@ export function renderPanel() {
   box.innerHTML = html;
 }
 
-// "Last round 54 wpm ↑3 · 97% ↓1": the newest round of this length and its
+// "Last round / 54 wpm ↑3 97% Acc ↓1": the newest round of this length and its
 // difference from the average of the rounds before it (rounded; no arrow
 // when it rounds to 0).
 function lastRound() {
   const list = S.lastStats.sessions ?? [];          // newest first
   const last = list[0];
-  if (!last) return item("lp-last", t("lp.last"), `<span class="lp-dim">${t("lp.first")}</span>`);
+  if (!last) return cell("lp-last", t("lp.last"), NONE, t("lp.first"));
   const before = list.slice(1, 1 + AVG_ROUNDS);
   const avg = before.length >= AVG_MIN ? {
     wpm: before.reduce((a, x) => a + x.wpm, 0) / before.length,
@@ -146,46 +152,45 @@ function lastRound() {
     const tip = t(d > 0 ? up : down, { d: Math.abs(d), n: before.length, avg: Math.round(was) });
     return `<span class="lp-delta ${d > 0 ? "up" : "down"}" tabindex="0" data-tip-text="${tip}">${d > 0 ? "↑" : "↓"}${Math.abs(d)}${unit}</span>`;
   };
-  return item("lp-last", t("lp.last"),
+  return cell("lp-last", t("lp.last"),
     `<b>${Math.round(last.wpm)}</b><small>wpm</small>${delta(last.wpm, avg?.wpm, "", "lp.faster", "lp.slower")}` +
-    `<b class="lp-gap">${Math.round(last.accuracy)}%</b>${delta(last.accuracy, avg?.acc, "%", "lp.accUp", "lp.accDown")}`);
+    `<b class="lp-gap">${Math.round(last.accuracy)}%</b><small>${t("metric.acc")}</small>${delta(last.accuracy, avg?.acc, "%", "lp.accUp", "lp.accDown")}`);
 }
 
-// "Next letter ≈ 6 rounds": the forecast (letters.js forecastText).
+// "Next letter / ≈ 6 rounds": the forecast (letters.js forecastText). After
+// Learn complete the label is the lap instead ("Lap 2 of 7 / ≈ 6 rounds":
+// the lap ends in about 6 rounds; docs/ALGORITHM.md 6.1).
 function forecast() {
-  const f = forecastText(S.lastStats.forecast, S.exercise.locked.length === 0);
-  if (!f) return "";
-  return `<span class="lp-item lp-fc" tabindex="0" data-tip-text="${f.tip}"><span class="lp-lbl">${f.label}</span><b>${f.value}</b></span>`;
-}
-
-// "Lap 2 of 7": after Learn complete the letters are learned again at a
-// higher goal (docs/ALGORITHM.md 6.1); nothing on the first lap.
-function lap() {
   const s = S.lastStats;
-  if (!s.lap) return "";
-  return item("lp-lap", t("lp.lap"), `<b tabindex="0" data-tip-text="${t("lp.lapTip", { w: s.targetWpm })}">${t("lp.lapOf", { n: s.lap + 1, all: s.lastLap + 1 })}</b>`);
+  const f = forecastText(s.forecast, S.exercise.locked.length === 0);
+  const label = s.lap ? `${t("lp.lap")} ${t("lp.lapOf", { n: s.lap + 1, all: s.lastLap + 1 })}` : t("fc.next");
+  const tip = [s.lap ? t("lp.lapTip", { w: s.targetWpm }) : "", f ? f.tip : t("fc.none")].filter(Boolean).join(". ");
+  return cell("lp-fc", label, f ? `<b>${f.value}</b>` : NONE, tip);
 }
 
-// "4 rounds in a row at 97% or better": the highest level that the newest
-// rounds reached two times or more in a row; nothing without one.
+// "Clean streak / 4 rounds at 97%+": the highest level that the newest
+// rounds reached two times or more in a row; "—" without one.
 function accStreak() {
   const list = S.lastStats.sessions ?? [];
   for (const level of STREAK_LEVELS) {
     let n = 0;
     while (n < list.length && list[n].accuracy >= level) n++;
     if (n >= 2) {
-      return `<span class="lp-item lp-streak" tabindex="0" data-tip-text="${t("lp.streakTip")}">` +
-        `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>${t("lp.streak", { n, a: level })}</span>`;
+      return cell("lp-streak", t("lp.streakLbl"), `<b>${n}</b><small>${t("lp.streakOf", { a: level })}</small>`,
+        `${t("lp.streak", { n, a: level })}. ${t("lp.streakTip")}`);
     }
   }
-  return "";
+  return cell("lp-streak", t("lp.streakLbl"), NONE, t("lp.streakTip"));
 }
 
-// "Today ▬▬▬── 12 of 15 min": today's typing time in every mode against
-// the daily goal (settings), and the days in a row the goal was met.
+// "Today / ▬▬▬── 12 of 15 min": today's typing time in every mode against
+// the daily goal (settings), and the days in a row the goal was met (in
+// the label, from 2). With the goal off the column stays, empty, so the
+// others keep their places.
 function dailyGoal() {
   const goal = S.settings.daily;
-  if (!goal || activityLang !== S.lang || !activity) return "";
+  if (!goal) return `<span class="lp-cell lp-goal"></span>`;
+  if (activityLang !== S.lang || !activity) return cell("lp-goal", t("lp.today"), NONE);
   const byDate = Object.fromEntries(activity.map((d) => [d.date, d.seconds]));
   const day = (back) => {
     const d = new Date();
@@ -198,10 +203,10 @@ function dailyGoal() {
   let streak = 0;
   for (let back = met ? 0 : 1; (byDate[day(back)] ?? 0) >= need; back++) streak++;
   const min = Math.floor(today / 60);
-  const text = met ? t("lp.goalMet", { m: min }) : t("lp.goalLeft", { m: min, g: goal });
-  const days = streak >= 2 ? `<span class="lp-dim">${t("lp.days", { n: streak })}</span>` : "";
-  return `<span class="lp-item lp-goal${met ? " met" : ""}" tabindex="0" data-tip-text="${t("lp.goalTip", { g: goal })}">` +
-    `<span class="lp-lbl">${t("lp.today")}</span><span class="lp-bar" style="--g:${Math.min(1, today / need).toFixed(3)}"><i></i></span>${text}${days}</span>`;
+  const label = streak >= 2 ? t("lp.todayDays", { n: streak }) : t("lp.today");
+  const value = `<span class="lp-bar" style="--g:${Math.min(1, today / need).toFixed(3)}"><i></i></span>` +
+    `<b>${min}</b><small>${met ? t("lp.goalMet") : t("lp.goalOf", { g: goal })}</small>`;
+  return cell(`lp-goal${met ? " met" : ""}`, label, value, t("lp.goalTip", { g: goal }));
 }
 
 // Line 2: the gold letter, how far it is (the weakest of the three parts of
@@ -233,5 +238,9 @@ function letterLine() {
   return `${head}<span class="lp-text" data-tip-text="${text}">${text}</span>`;
 }
 
-// One item of line 1: a quiet label, then its value.
-const item = (cls, label, value) => `<span class="lp-item ${cls}"><span class="lp-lbl">${label}</span>${value}</span>`;
+// One column of line 1: a small grey label over its value; the tooltip, if
+// any, on the whole column.
+const NONE = `<b class="lp-none">—</b>`;
+const cell = (cls, label, value, tip = "") =>
+  `<span class="lp-cell ${cls}"${tip ? ` tabindex="0" data-tip-text="${tip}"` : ""}>` +
+  `<span class="lp-lbl">${label}</span><span class="lp-val">${value}</span></span>`;

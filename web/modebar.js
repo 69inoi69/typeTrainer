@@ -1,8 +1,11 @@
 // The round bar above the text: what a round of the current mode is, set
 // right where you type (as monkeytype's bar; owner, 2026-10-19: the round
 // settings belong to each mode's screen, not to the settings window).
-//   learn    - short (15 words) or normal (30): two choices, nothing to
-//              weigh up for a beginner;
+//   learn    - 15 or 30 words: two choices, nothing to weigh up for a
+//              beginner. They sit apart, at the right end of the line
+//              above the text (#round-switch, next to the word counter they
+//              change): above the letters they looked like an extra line
+//              with no purpose (owner, 2026-10-22);
 //   climb    - the level (1..10; a pick starts the count on it from none),
 //              then words or time, and how many;
 //   freetype - the kind of text (long words, real sentences or your own
@@ -23,7 +26,7 @@ import { $, S, listLabel, levelWords, listless } from "./state.js";
 import { LENGTHS, LEARN_LENGTHS, lengthOf, lengthLabel } from "./settings.js";
 import { hasCustomText } from "./customtext.js";
 
-const bar = $("mode-bar");
+const bar = $("mode-bar"), learnBar = $("round-switch");
 
 // one button; "on" is the chosen one
 const btn = (data, label, on, tip = "") =>
@@ -35,33 +38,38 @@ const group = (label, buttons) => `<span class="mb-group" role="group" aria-labe
 export function renderModeBar() {
   const cur = S.settings.length;
   const parts = [];
-  if (S.mode === "learn") {
-    parts.push(group(t("bar.round"), LEARN_LENGTHS.map((id) =>
-      btn(`data-length="${id}"`, t(id === LEARN_LENGTHS[0] ? "bar.short" : "bar.normal"), id === cur, lengthLabel(id)))));
-  } else {
-    if (S.mode === "climb" && S.climb?.levels) {
-      const at = S.climbLevel ?? S.climb.place?.level;
-      // a visible name: "1 2 ... 10" next to the lengths "10 20 30" would read as one more length
-      parts.push(group(t("climb.level"), [`<span class="mb-lbl" aria-hidden="true">${t("climb.level")}</span>`,
-        ...S.climb.levels.map((_, i) => btn(`data-level="${i + 1}"`, String(i + 1), i + 1 === at, t("climb.levelTip", { words: levelWords(i + 1) })))]));
-    }
-    if (S.mode === "freetype") {
-      // switches: a click turns a kind on (and the others off), or off again
-      const v = S.freetypeVariant;
-      const kinds = ["long", ...(S.freetype?.sentences ? ["sentences"] : []), "custom"].map((k) =>
-        btn(`data-toggle="${k}"`, t(`ft.${k}`), v === k, t(`ft.${k}Tip`)));
-      if (v === "custom" && hasCustomText()) kinds.push(btn(`data-edit="1"`, t("ft.edit"), false, t("ft.editTip")));
-      parts.push(group(t("ft.kind"), kinds));
-      if (!listless(v)) parts.push(group(t("freetype.list"), (S.freetype?.lists ?? []).map((n) =>
-        btn(`data-list="${n}"`, listLabel(n), n === S.freetypeList, t("freetype.listN", { n })))));
-    }
-    const kind = lengthOf(cur).kind;
-    // words or time: a click on the other kind picks its 30
-    parts.push(group(t("bar.kind"), ["words", "time"].map((k) =>
-      btn(`data-length="${k}-30"`, t(k === "words" ? "settings.words" : "settings.time"), k === kind))));
-    parts.push(group(t("bar.length"), LENGTHS.filter((id) => lengthOf(id).kind === kind).map((id) =>
-      btn(`data-length="${id}"`, String(lengthOf(id).n), id === cur, lengthLabel(id)))));
+  const learn = S.mode === "learn";
+  bar.hidden = learn;
+  learnBar.hidden = !learn;
+  if (learn) {
+    bar.innerHTML = "";
+    learnBar.innerHTML = group(t("bar.round"), LEARN_LENGTHS.map((id) =>
+      btn(`data-length="${id}"`, lengthLabel(id), id === cur)));
+    return;
   }
+  learnBar.innerHTML = "";
+  if (S.mode === "climb" && S.climb?.levels) {
+    const at = S.climbLevel ?? S.climb.place?.level;
+    // a visible name: "1 2 ... 10" next to the lengths "10 20 30" would read as one more length
+    parts.push(group(t("climb.level"), [`<span class="mb-lbl" aria-hidden="true">${t("climb.level")}</span>`,
+      ...S.climb.levels.map((_, i) => btn(`data-level="${i + 1}"`, String(i + 1), i + 1 === at, t("climb.levelTip", { words: levelWords(i + 1) })))]));
+  }
+  if (S.mode === "freetype") {
+    // switches: a click turns a kind on (and the others off), or off again
+    const v = S.freetypeVariant;
+    const kinds = ["long", ...(S.freetype?.sentences ? ["sentences"] : []), "custom"].map((k) =>
+      btn(`data-toggle="${k}"`, t(`ft.${k}`), v === k, t(`ft.${k}Tip`)));
+    if (v === "custom" && hasCustomText()) kinds.push(btn(`data-edit="1"`, t("ft.edit"), false, t("ft.editTip")));
+    parts.push(group(t("ft.kind"), kinds));
+    if (!listless(v)) parts.push(group(t("freetype.list"), (S.freetype?.lists ?? []).map((n) =>
+      btn(`data-list="${n}"`, listLabel(n), n === S.freetypeList, t("freetype.listN", { n })))));
+  }
+  const kind = lengthOf(cur).kind;
+  // words or time: a click on the other kind picks its 30
+  parts.push(group(t("bar.kind"), ["words", "time"].map((k) =>
+    btn(`data-length="${k}-30"`, t(k === "words" ? "settings.words" : "settings.time"), k === kind))));
+  parts.push(group(t("bar.length"), LENGTHS.filter((id) => lengthOf(id).kind === kind).map((id) =>
+    btn(`data-length="${id}"`, String(lengthOf(id).n), id === cur, lengthLabel(id)))));
   bar.innerHTML = parts.join("");
 }
 
@@ -69,7 +77,7 @@ export function renderModeBar() {
 // kinds of text, on or off) or {edit: true} (your own text). input.js does the rest.
 let pickListener = () => {};
 export function onBarPick(fn) { pickListener = fn; }
-bar.addEventListener("click", (e) => {
+const onClick = (e) => {
   const b = e.target.closest("button");
   if (!b) return;
   b.blur();
@@ -79,4 +87,6 @@ bar.addEventListener("click", (e) => {
   if (b.dataset.list) pickListener({ list: Number(b.dataset.list) });
   else if (b.dataset.level) pickListener({ level: Number(b.dataset.level) });
   else if (b.dataset.length) pickListener({ length: b.dataset.length });
-});
+};
+bar.addEventListener("click", onClick);
+learnBar.addEventListener("click", onClick);

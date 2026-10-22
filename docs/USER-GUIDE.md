@@ -133,7 +133,8 @@ the normal server, it shows yours.
   has its own rounds and bests.
 - **The round bar** above the text says what a round of this mode is; a
   click starts a new round with it, and each mode remembers its own:
-  - Learn: **short** (15 words) or **normal** (30 words);
+  - Learn: **15 words** or **30 words**, at the right end of the line just
+    above the text, next to the word counter;
   - Climb: **Words** or **Time**, then 10, 20, 30, 40 or 50 words or 15, 30,
     60 or 90 seconds (default 30 words);
   - Freetype: the kind of text and the word list (200 to 25k), then the same as Climb.
@@ -267,7 +268,9 @@ the normal server, it shows yours.
   number is) and the Time of the round, from the first to the last press.
   **Learn has no result screen** (owner, 2026-10-20): the next round
   starts at once, and the **Learn panel**, two lines under the letters,
-  tells what the round did. The first line: the last round's speed and
+  tells what the round did. The first line is four fixed columns, each a
+  small grey label over its value ("—" while it has nothing yet; hover
+  for when it fills): **Last round**, the last round's speed and
   accuracy, each with an arrow when it differs from your average of the
   10 rounds before it (from 3 rounds on, the same round length only; hover
   the arrow for the average); **Next letter ≈ 6 rounds**, a guess of how
@@ -277,11 +280,12 @@ the normal server, it shows yours.
   rather than a wild guess: while a letter has fewer than 3 rounds, or
   is not getting better (its recent mistakes are not under 5%, or it is
   not getting faster);
-  after Learn complete, the **Lap** ("2 of 7"); an accuracy streak ("4 rounds in a row at 97%
-  or better", the highest of 100, 98, 97, 95 and 90% reached two rounds in
-  a row or more); and **Today**, your typing time today in every mode
-  against the **daily goal** (15 minutes unless you change it in Settings;
-  Off hides it), with the days in a row you met it. The second line is the
+  after Learn complete the column is the **Lap** ("Lap 2 of 7 ≈ 6 rounds",
+  when the lap ends); **Clean streak** ("4 rounds at 97%+": the highest of
+  100, 98, 97, 95 and 90% reached two rounds in a row or more); and
+  **Today**, your typing time today in every mode against the **daily
+  goal** (15 minutes unless you change it in Settings; Off leaves the
+  column empty), with the days in a row you met it in its label. The second line is the
   letter in focus: how far it is on the way to mastered (the weakest of the
   three parts of the rule, as on its chip) and what it still needs, with
   the numbers ("It still needs fewer mistakes (8%, aim under 5%) and more
