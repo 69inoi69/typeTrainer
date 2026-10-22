@@ -9,7 +9,7 @@
 //           about how many rounds to the next letter (the forecast; after
 //           Learn complete the lap and when it ends), the accuracy streak
 //           (rounds in a row at 95% or better) and today's practice against
-//           the daily goal. A column with nothing to say yet shows "—";
+//           the daily goal, on a ring (mm:ss while you type, tickGoal). A column with nothing to say yet shows "—";
 //           its tooltip says when it fills;
 //   the gold letter (the focus of the words being typed), in the same
 //           label-over-value style, sits apart: in the line just above
@@ -24,9 +24,11 @@
 // Everything here follows you as you type (owner, 2026-10-22: the whole
 // Learn screen is live): it is drawn again after every portion, when the
 // server has learned from its presses (POST /portion, then /stats), and a
-// value that changed lights up once (redraw). The forecast, the gold
-// letter and Today (with the round so far, S.roundSeconds) move while you
-// type; Last round and the streak at the end of a round. The panel steps
+// number that changed counts to its new value (redraw). "Round 48" over
+// the word counter counts Learn's rounds, which follow each other by
+// themselves. The forecast, the gold
+// letter and the daily goal (with the round so far, S.roundSeconds) move
+// while you type; Last round and the streak at the end of a round. The panel steps
 // back a little while you type (typing.css); the live numbers show on the
 // right of the line above the text.
 // The news and the columns sit in one grid cell and swap by opacity only,
@@ -47,7 +49,7 @@ import { getJSON } from "./api.js";
 import { letterProgress, rule, forecastText } from "./letters.js";
 import { learning } from "./modes.js";
 
-const box = $("learn-panel"), focusBox = $("focus-box");
+const box = $("learn-panel"), focusBox = $("focus-box"), roundNo = $("round-no");
 
 // The average to compare a round with: the AVG_ROUNDS rounds before it,
 // and none with fewer than AVG_MIN (an average of one or two rounds says
@@ -130,8 +132,14 @@ let drawn = "", drawnFocus = "";
 export function renderPanel() {
   if (!box) return;
   const show = learning() && !!S.lastStats && !!S.exercise;
-  box.hidden = focusBox.hidden = !show;
+  box.hidden = focusBox.hidden = roundNo.hidden = !show;
   if (!show) { drawn = drawnFocus = ""; return; }
+  // "Round 48" above the word counter: Learn starts the next round by
+  // itself, so this tells how many there were (owner, 2026-10-22); every
+  // length counts, the one being typed too
+  const n = (S.lastStats.learnRounds ?? 0) + 1;
+  roundNo.textContent = t("lp.round", { n });
+  roundNo.dataset.tipText = t("lp.roundTip", { n });
   if (news && news.lang !== S.lang) news = null;   // the news of another language
   const top = [lastRound(), forecast(), accStreak(), dailyGoal()].join("");
   const html = `<div class="lp-cols">${top}</div>`;
@@ -142,17 +150,41 @@ export function renderPanel() {
   if (focus !== drawnFocus) { drawnFocus = focus; redraw(focusBox, ".fb-cols .lp-val", focus); }
 }
 
-// Puts new HTML in el; while you type, a value (sel) that changed lights up
-// once so the eye catches it (opacity only: the compositor's work, nothing
-// to lay out). Runs per portion, never per key.
+// Puts new HTML in el, and lets what changed show it (owner, 2026-10-22:
+// nicer movement in the live values): a number counts from its old value
+// to the new one, as the live wpm does (layout.css .live-n), and lights
+// up gold for a moment; a part of the rule just met gets its tick with a
+// small pop. Runs per portion and at the end of a round, never per key;
+// the counting is the CSS property --v animated by the browser (WAAPI).
 function redraw(el, sel, html) {
-  const before = [...el.querySelectorAll(sel)].map((v) => v.textContent);
+  const nums = (root) => [...root.querySelectorAll(`${sel} .lp-n`)];
+  const before = nums(el).map((v) => +v.dataset.n);
+  const metBefore = [...el.querySelectorAll(".lp-cell")].map((c) => c.classList.contains("met"));
   el.innerHTML = html;
-  if (!document.body.classList.contains("typing-now")) return;
-  el.querySelectorAll(sel).forEach((v, i) => {
-    if (before[i] !== undefined && before[i] !== v.textContent) v.animate([{ opacity: 0.25 }, { opacity: 1 }], { duration: 450, easing: "ease-out" });
+  if (!before.length) return;                       // the first drawing: nothing to compare
+  nums(el).forEach((v, i) => {
+    const was = before[i], now = +v.dataset.n;
+    if (was === undefined || was === now) return;
+    v.animate([{ "--v": was }, { "--v": now }], { duration: 700, easing: "cubic-bezier(.2, .7, .3, 1)" });
+    v.animate([{ color: gold() }, {}], { duration: 1200, easing: "ease-out" });
+  });
+  [...el.querySelectorAll(".lp-cell")].forEach((c, i) => {
+    if (c.classList.contains("met") && metBefore[i] === false) {
+      c.querySelector(".fb-tick")?.animate([{ transform: "scale(.2)", opacity: 0 }, { transform: "scale(1.35)", opacity: 1, offset: .6 }, { transform: "scale(1)" }],
+        { duration: 500, easing: "ease-out" });
+    }
   });
 }
+
+const gold = () => getComputedStyle(document.body).getPropertyValue("--accent-text").trim();
+
+// A whole number that counts to its new value (redraw); the digits (and
+// the unit, "%" or "") are drawn by CSS from --v and data-u (typing.css
+// .lp-n), the text is in aria-label. cls: one more class.
+const num = (x, unit = "", cls = "") => {
+  const n = Math.round(x);
+  return `<b class="lp-n${cls ? ` ${cls}` : ""}" data-n="${n}" data-u="${unit}" style="--v:${n}" aria-label="${n}${unit}"></b>`;
+};
 
 // "Last round / 54 wpm ↑3 97% Acc ↓1": the newest round of this length and its
 // difference from the average of the rounds before it (rounded; no arrow
@@ -174,8 +206,8 @@ function lastRound() {
     return `<span class="lp-delta ${d > 0 ? "up" : "down"}" tabindex="0" data-tip-text="${tip}">${d > 0 ? "↑" : "↓"}${Math.abs(d)}${unit}</span>`;
   };
   return cell("lp-last", t("lp.last"),
-    `<b>${Math.round(last.wpm)}</b><small>wpm</small>${delta(last.wpm, avg?.wpm, "", "lp.faster", "lp.slower")}` +
-    `<b class="lp-gap">${Math.round(last.accuracy)}%</b><small>${t("metric.acc")}</small>${delta(last.accuracy, avg?.acc, "%", "lp.accUp", "lp.accDown")}`);
+    `${num(last.wpm)}<small>wpm</small>${delta(last.wpm, avg?.wpm, "", "lp.faster", "lp.slower")}` +
+    `${num(last.accuracy, "%", "lp-gap")}<small>${t("metric.acc")}</small>${delta(last.accuracy, avg?.acc, "%", "lp.accUp", "lp.accDown")}`);
 }
 
 // "Next letter / ≈ 6 rounds": the forecast (letters.js forecastText). After
@@ -197,40 +229,72 @@ function accStreak() {
     let n = 0;
     while (n < list.length && list[n].accuracy >= level) n++;
     if (n >= 2) {
-      return cell("lp-streak", t("lp.streakLbl"), `<b>${n}</b><small>${t("lp.streakOf", { a: level })}</small>`,
+      return cell("lp-streak", t("lp.streakLbl"), `${num(n)}<small>${t("lp.streakOf", { a: level })}</small>`,
         `${t("lp.streak", { n, a: level })}. ${t("lp.streakTip")}`);
     }
   }
   return cell("lp-streak", t("lp.streakLbl"), NONE, t("lp.streakTip"));
 }
 
-// "Today / ▬▬▬── 12 of 15 min": today's typing time in every mode against
-// the daily goal (settings), and the days in a row the goal was met (in
-// the label, from 2). With the goal off the column stays, empty, so the
-// others keep their places.
+// "Daily goal / ◔ 12 of 15 min": today's typing time in every mode
+// against the daily goal (settings), on a ring that fills as the time
+// passes, and the days in a row the goal was met (in the label, from 2).
+// While you type the time shows seconds too ("12:34") and ticks every half
+// second with the round (tickGoal), so you see it run; at rest whole
+// minutes (owner, 2026-10-22). With the goal off the column stays, empty,
+// so the others keep their places.
+let goalNow = null;           // {base, need}: what tickGoal needs, or null
+let goalTyping = false;       // drawn while typing (mm:ss), or at rest
 function dailyGoal() {
+  goalNow = null;
+  goalTyping = document.body.classList.contains("typing-now");
   const goal = S.settings.daily;
   if (!goal) return `<span class="lp-cell lp-goal"></span>`;
-  if (activityLang !== S.lang || !activity) return cell("lp-goal", t("lp.today"), NONE);
+  if (activityLang !== S.lang || !activity) return cell("lp-goal", t("lp.today"), NONE, t("lp.goalTip", { g: goal }));
   const byDate = Object.fromEntries(activity.map((d) => [d.date, d.seconds]));
   const day = (back) => {
     const d = new Date();
     d.setDate(d.getDate() - back);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   };
-  // while you type, the round so far counts too (as of the last portion;
-  // /activity has it once the round is saved)
-  const now = document.body.classList.contains("typing-now") ? S.roundSeconds : 0;
-  const need = goal * 60, today = (byDate[day(0)] ?? 0) + now;
+  // while you type, the round so far counts too (/activity has it once
+  // the round is saved)
+  const typing = document.body.classList.contains("typing-now");
+  const need = goal * 60, base = byDate[day(0)] ?? 0, today = base + (typing ? S.roundSeconds : 0);
   const met = today >= need;
   // the days in a row: from today if it is met already, else from yesterday
   let streak = 0;
   for (let back = met ? 0 : 1; (byDate[day(back)] ?? 0) >= need; back++) streak++;
-  const min = Math.floor(today / 60);
+  if (typing && !met) goalNow = { base, need };
   const label = streak >= 2 ? t("lp.todayDays", { n: streak }) : t("lp.today");
-  const value = `<span class="lp-bar" style="--g:${Math.min(1, today / need).toFixed(3)}"><i></i></span>` +
-    `<b>${min}</b><small>${met ? t("lp.goalMet") : t("lp.goalOf", { g: goal })}</small>`;
+  const value = ring(today / need) +
+    `<b class="lp-clock">${clock(today, typing && !met)}</b><small>${met ? t("lp.goalMet") : t("lp.goalOf", { g: goal })}</small>`;
   return cell(`lp-goal${met ? " met" : ""}`, label, value, t("lp.goalTip", { g: goal }));
+}
+// The ring: a circle whose stroke fills clockwise from the top (share 0..1).
+const ring = (share) =>
+  `<svg class="lp-ring" viewBox="0 0 20 20" aria-hidden="true" style="--g:${Math.min(1, share).toFixed(3)}">` +
+  `<circle cx="10" cy="10" r="8"/><circle class="fill" cx="10" cy="10" r="8" pathLength="100"/></svg>`;
+// 754 s: "12:34" while you type, "12" at rest
+const clock = (sec, typing) => {
+  const s = Math.floor(sec);
+  return typing ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : `${Math.floor(s / 60)}`;
+};
+// Twice a second while a Learn round is typed (typing.js, its clock, which
+// stops on a pause): the daily goal's time and ring move on with the
+// round. Touches two nodes, never per key; the goal reached redraws the
+// panel (its column turns green) and returns true: typing.js pauses the
+// round with a note that says why (once: then the goal is met).
+export function tickGoal() {
+  if (!box || box.hidden) return false;
+  if (!goalTyping) renderPanel();   // the first tick of a round: the panel was drawn at rest
+  if (!goalNow) return false;
+  const today = goalNow.base + S.roundSeconds;
+  if (today >= goalNow.need) { renderPanel(); return true; }
+  const c = box.querySelector(".lp-clock"), r = box.querySelector(".lp-ring");
+  if (c) c.textContent = clock(today, true);
+  if (r) r.style.setProperty("--g", (today / goalNow.need).toFixed(3));
+  return false;
 }
 
 // The gold letter in four columns: "Gold letter / 62% to mastered",
@@ -249,15 +313,15 @@ function focusCells() {
   // which letter it is (owner, 2026-10-22: a second one read as a double)
   const gold = !typed ? NONE
     : k.mastered ? `<b class="ok">${t("lp.fMastered")}</b>`
-      : `<b>${Math.round(letterProgress(k) * 100)}%</b><small>${t("lp.fToGo")}</small>`;
+      : `${num(letterProgress(k) * 100, "%")}<small class="opt">${t("lp.fToGo")}</small>`;
   const tick = (ok) => ok ? `<span class="fb-tick" aria-hidden="true">✓</span>` : "";
   const part = (cls, label, ok, value) =>
     cell(`fb-${cls}${ok ? " met" : ""}`, label, typed ? value + tick(ok) : NONE);
   const wpm = k?.avgMs ? Math.round(12000 / k.avgMs) : 0;
   return cell("fb-gold", t("lp.fGold"), gold, pctTip) +
-    part("presses", t("lp.fPresses"), k?.count >= r.min, `<b>${k?.count ?? 0}</b><small>${t("lp.fOf", { n: r.min })}</small>`) +
-    part("mistakes", t("lp.fMistakes"), typed && k.errorRate <= r.err, `<b>${Math.round((k?.errorRate ?? 0) * 100)}%</b><small>${t("lp.fUnder", { n: err })}</small>`) +
-    part("speed", t("lp.fSpeed"), !!k?.avgMs && k.avgMs <= r.ms, `<b>${wpm}</b><small>${t("lp.fOfWpm", { n: s.targetWpm })}</small>`);
+    part("presses", t("lp.fPresses"), k?.count >= r.min, `${num(k?.count ?? 0)}<small>${t("lp.fOf", { n: r.min })}</small>`) +
+    part("mistakes", t("lp.fMistakes"), typed && k.errorRate <= r.err, `${num((k?.errorRate ?? 0) * 100, "%")}<small>${t("lp.fUnder", { n: err })}</small>`) +
+    part("speed", t("lp.fSpeed"), !!k?.avgMs && k.avgMs <= r.ms, `${num(wpm)}<small>${t("lp.fOf", { n: s.targetWpm })}<span class="opt"> wpm</span></small>`);
 }
 
 // One column (the panel's and the gold letter's): a small grey label over its

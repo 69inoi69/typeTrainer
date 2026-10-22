@@ -32,7 +32,7 @@ import { highlightNextKey, pulseKey, glowKey, requestFit } from "./keyboard.js";
 import { refreshStats } from "./stats.js";
 import { showResult } from "./result.js";
 import { renderLetters, markNewLetter, markMastered } from "./letters.js";
-import { renderPanel, roundNews, compareStats, refreshActivity } from "./learnpanel.js";
+import { renderPanel, roundNews, compareStats, refreshActivity, tickGoal } from "./learnpanel.js";
 import { learning, refreshFreeplay } from "./modes.js";
 import { renderModeBar } from "./modebar.js";
 import { lengthOf, firstRoundDone } from "./settings.js";
@@ -748,7 +748,8 @@ export function setTyping(on) {
 }
 
 // Twice a second: the end of the time in a time round (whose counter shows
-// the seconds left) ends it, and a long pause pauses it. A long pause used
+// the seconds left) ends it, a long pause pauses it, and Learn's daily
+// goal shows the round's time so far (learnpanel.js tickGoal). A long pause used
 // to END the round (owner, 2026-10-18: "it ends by itself, at random"): it
 // is now the pause screen, from the last key on, so none of the time away
 // counts. A timer is fine here: it is a clock, not an animation, and it
@@ -758,6 +759,10 @@ setInterval(() => {
   if (startTime === null || S.busy || pausedAt !== null) return;
   const now = performance.now();
   if (limit.kind === "time") renderProgress();
+  S.roundSeconds = (now - startTime) / 1000;
+  // the daily goal's time runs on with the round (Learn); reached, it
+  // pauses the round and says why (owner, 2026-10-22)
+  if (tickGoal()) { pauseRound(now, "goal"); return; }
   if (timeUp(now)) finishRound();
   else if (now - lastTime > IDLE_PAUSE_MS) pauseRound(lastTime);
 }, 500);
@@ -772,11 +777,12 @@ setInterval(() => {
 // when you come back (owner: "the text shows for a second, then blurs").
 // The letter model is safe either way (the engine ignores gaps over
 // MaxIntervalMs). since: when the pause began (default: now).
-export function pauseRound(since) {
+export function pauseRound(since, why) {
   if (pausedAt !== null || S.busy || !S.text) return;
   if (S.view !== "type" || el.textBox.classList.contains("resulting")) return;   // nothing being typed
   pausedAt = typeof since === "number" ? since : performance.now();
   el.textBox.classList.add("snap", "paused");
+  el.textBox.classList.toggle("goal", why === "goal");   // the note says why: the daily goal reached
 }
 // The first key after a pause goes on with the round: the time away is
 // taken out (the start and the last key move forward by it, as if it never
@@ -790,7 +796,7 @@ function resumeRound(now) {
     afterPause = true;
   }
   pausedAt = null;
-  el.textBox.classList.remove("snap", "paused");   // coming back fades in as usual
+  el.textBox.classList.remove("snap", "paused", "goal");   // coming back fades in as usual
 }
 
 // The round is over (the last letter of its last word, or the end of the
