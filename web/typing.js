@@ -38,7 +38,7 @@ import { renderModeBar } from "./modebar.js";
 import { lengthOf, firstRoundDone } from "./settings.js";
 import { keySound } from "./sound.js";
 import { customPortions, customRoundDone } from "./customtext.js";
-import { flinchCaret, breathe, scrollText, stopScroll } from "./caret.js";
+import { flinchCaret, breathe, paceGlide, resetGlide, scrollText, stopScroll } from "./caret.js";
 import { STREAK_RISE, streakOn, cleanWord, breakStreak } from "./streak.js";
 import { showWarn, hideWarn, warnShowing, foreignKey, layoutCheck } from "./warn.js";
 
@@ -354,6 +354,7 @@ function resetStream() {
   pausedAt = null; el.textBox.classList.remove("snap", "paused");
   backWord = -1; backErrors = 0; fixedWords = new Set();
   startTime = null; lastTime = null; presses = 0; correctPresses = 0; perSecond = [];
+  resetGlide();                               // a new round starts at the full glide
   el.text.replaceChildren(el.caret);          // the caret lives inside the text
 }
 
@@ -504,6 +505,7 @@ export function handleChar(ch) {
   if (ch === " " && expected !== " " && S.pos === wordStart(S.pos)) return;
   const now = performance.now();
   if (timeUp(now)) { finishRound(); return; }   // a key after the time is up does not count
+  paceGlide(now);                              // the caret's glide follows the pace (caret.js)
 
   // Not a typing mistake but a wrong keyboard setting: Caps Lock, or the
   // system layout is set to another language. Not counted, just explained.

@@ -29,6 +29,14 @@ export const FEEL = {
   // owner's own pick (2026-10-20). A new key starts a new glide
   // from where the caret is, so fast typing reads as one steady movement.
   caretGlideMs: 65,         // the caret sliding to the next letter (0 = jumps)
+  // The glide follows your pace (caret.js paceGlide; owner, 2026-10-23: "can
+  // the caret go faster when I type fast?"): with keys closer than the
+  // glide, it takes this part of the average time between them instead.
+  caretGlidePace: 0.6,      // part of the time between keys (0 = always caretGlideMs)
+  caretGlideMinMs: 25,      // never shorter (about one and a half frames)
+  caretPaceKeys: 4,         // the average follows about this many last keys
+  caretPaceResetMs: 400,    // a longer gap is a pause: the average starts again
+  caretGlideStepMs: 5,      // the duration changes only in steps this big
   // the shape of that glide (CSS timing function): monkeytype's inOut(1.25),
   // matched within 0.2%, almost even; also carries the streak badge
   caretCurve: "cubic-bezier(.31, .16, .69, .84)",

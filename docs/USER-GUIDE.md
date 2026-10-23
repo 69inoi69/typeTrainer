@@ -159,7 +159,8 @@ the normal server, it shows yours.
   - **text size**: small, normal (default) or large text on a computer
     screen.
   - **caret movement**: smooth (default: the caret glides to the next
-    letter) or jump (it moves at once).
+    letter, quicker when you type fast, so it keeps up with your keys) or
+    jump (it moves at once).
   - **caret at rest**: what the caret does when you stop typing: still (a
     steady line), breathe (default: it slowly fades out and in) or pulse (a
     thicker caret that blinks faster). While you type it is always steady.
