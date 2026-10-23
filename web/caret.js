@@ -1,5 +1,5 @@
 // The caret's own movements, apart from where it goes (typing.js
-// placeCaret decides that): the flinch on a mistake, the breathing or
+// placeCaret decides that): the flinch on a mistake, the glide's pace, the breathing or
 // pulsing while a round waits for a key, and the scroll of the text window
 // to the next line.
 // Layer: middle. Imports the bottom layer only. Called by: typing.js.
@@ -25,6 +25,37 @@ export function flinchCaret() {
     { transform: `translateX(${px}px)`, offset: .6 },
     { scale: "1 1", transform: "none", backgroundColor: red },
   ], { duration: FEEL.caretFlinchMs, easing: "ease-out" });
+}
+
+// The glide keeps up with your hands (owner, 2026-10-23): at a slow pace
+// the caret slides in FEEL.caretGlideMs; when keys come faster than that
+// it would always be behind the letters, so the glide shrinks to a part
+// (FEEL.caretGlidePace) of the time between your last few keys, never below
+// FEEL.caretGlideMinMs. Called on every typed key (typing.js handleChar),
+// before the frame that moves the caret. It writes the duration only when
+// it changes by a whole step, on the caret and the streak badge alone (a
+// variable on the text box would restyle every letter). Off when the
+// glide is off (body[data-glide="jump"]) or the knob is 0.
+let lastKey = 0, gap = 0, glideNow = 0;
+export function paceGlide(now) {
+  const since = now - lastKey;
+  lastKey = now;
+  if (!FEEL.caretGlidePace || document.body.dataset.glide === "jump") return;
+  // a pause starts the average again: one slow key after a break says
+  // nothing about the pace
+  gap = since > FEEL.caretPaceResetMs || !gap ? Math.min(since, FEEL.caretPaceResetMs) : gap + (since - gap) / FEEL.caretPaceKeys;
+  const step = FEEL.caretGlideStepMs;
+  const ms = Math.round(Math.max(FEEL.caretGlideMinMs, Math.min(FEEL.caretGlideMs, gap * FEEL.caretGlidePace)) / step) * step;
+  if (ms === glideNow) return;
+  glideNow = ms;
+  el.caret.style.setProperty("--feel-caret-ms", ms + "ms");
+  el.streak.style.setProperty("--feel-caret-ms", ms + "ms");
+}
+// Back to the full glide (a new round, the glide setting changed).
+export function resetGlide() {
+  gap = 0; glideNow = 0;
+  el.caret.style.removeProperty("--feel-caret-ms");
+  el.streak.style.removeProperty("--feel-caret-ms");
 }
 
 // While a round waits for the next key, the caret breathes or pulses (a

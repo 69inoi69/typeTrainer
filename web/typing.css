@@ -160,8 +160,9 @@ body.typing-now .lp-news { opacity: 0; pointer-events: none; }
 body[data-size="s"] { --text-size: 1.75rem; }
 body[data-size="l"] { --text-size: 2.6rem; }
 /* the caret jumps instead of gliding: no transition, the streak badge
-   riding on it too */
-body[data-glide="jump"] { --feel-caret-ms: 0ms; }
+   riding on it too (!important: caret.js paceGlide may have left its own
+   duration on them) */
+body[data-glide="jump"], body[data-glide="jump"] :is(.caret, .streak) { --feel-caret-ms: 0ms !important; }
 /* a mark on every space (typing.js gives space spans data-sp): a faint dot
    in the middle or a short bar at the bottom, in the letter's own colour */
 body:is([data-ws="dot"], [data-ws="bar"]) .text span[data-sp] { position: relative; }
