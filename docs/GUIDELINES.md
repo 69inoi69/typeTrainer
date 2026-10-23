@@ -127,6 +127,11 @@ consequences, the same word for the same thing. All text lives in
   frame and ease out; they animate colour, opacity, filter or transform only
   (nothing that moves the layout). Colours for JavaScript animations come
   from the theme (`themeColor` in `state.js`), never hard-coded.
+- No `:has()` over a big part of the page (`body`, `#view-type`): any text
+  that changes inside it (the hint, a counter) makes the browser restyle
+  the whole typing screen on every key; on a slow laptop that held the
+  caret back by about 90 ms (2026-10-23). A state other parts follow goes
+  on `<body>` as a class instead (`boxState` in `state.js`).
 - A screen that opens (the result, the stats) does it as one short
   sequence of small rises (`rise` in `stats.css`), not as scattered effects;
   a redraw on resize does not replay it.

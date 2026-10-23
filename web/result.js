@@ -26,7 +26,7 @@
 // To add a fact: another cell in the row in showResult, its text in i18n.js.
 
 import { t, variantLabel } from "./i18n.js";
-import { $, el, S, isTouch, reducedMotion, levelWords, listLabel } from "./state.js";
+import { $, el, S, isTouch, reducedMotion, levelWords, listLabel, boxState } from "./state.js";
 import { FEEL } from "./feel.js";
 import { showTip } from "./tools.js";
 
@@ -206,8 +206,8 @@ function open(body, btn) {
   const from = lettersTop();
   box.hidden = false;
   el.viewType.classList.remove("settled");   // a new result plays its entrance
-  el.textBox.classList.add("resulting");
-  el.textBox.classList.remove("ending");   // the faded text (typing.js finishRound) is hidden now anyway
+  boxState(true, "resulting");
+  boxState(false, "ending");   // the faded text (typing.js finishRound) is hidden now anyway
   glideLetters(from);
   // phone: the round is over, so its keyboard closes and the whole result
   // is in view (owner, 2026-10-16); "Next round" opens it again
@@ -233,7 +233,7 @@ export function closeResult() {
   const from = lettersTop();
   box.hidden = true;
   el.viewType.classList.remove("settled");
-  el.textBox.classList.remove("resulting");
+  boxState(false, "resulting");
   glideLetters(from);
   resolve();
 }
