@@ -7,9 +7,16 @@ and teaches like keybr: it tracks every letter's mistakes and speed and
 builds the next words around your weak letters. Real words only. It aims to
 be a real alternative to both, not a demo.
 
-It started as an engineering thesis; the notes the thesis needs live in
-`docs/thesis/`. They record history and ideas, they do not limit what we
-build. If the code and a thesis note disagree, the code and `docs/` win.
+The product comes first. It is also an engineering thesis (2027), a side
+quest: its material collects in `docs/thesis/`, one file per item of the
+thesis plan (`01-...md` to `08-...md`, issue #146). A PR that yields
+material for an item (a number, a measurement, a decision) adds a few lines
+to that item's file. Product docs stay where they are; thesis files link to
+them instead of copying. Thesis notes do not limit what we build: if the
+code and a thesis note disagree, the code and `docs/` win. What the thesis
+needs does limit what we cut: the adaptive algorithm, the keyboard with the
+finger layout, input latency, PostgreSQL and the adaptive-vs-random check
+are thesis items and stay.
 
 ## Who you are working with
 
@@ -22,6 +29,45 @@ build. If the code and a thesis note disagree, the code and `docs/` win.
 - `main` is protected: changes reach it only through a pull request. When I ask
   you to commit, work in a separate branch, push it and open a pull request;
   I merge it myself. Never push to `main` directly.
+
+## Current phase: cleanup
+
+We are not adding features. We subtract, clean up and add checks, in small
+pull requests. The queue lives in GitHub issues, in order, without dates.
+
+1. **One PR = one issue.** Nothing beyond the issue, silently.
+2. **An idea outside the issue is a proposal, not an action.** Write it as
+   a comment or a draft issue and wait for my OK. Going a step further is
+   allowed only marked "proposed beyond the task", only if it breaks
+   nothing and is the natural next step.
+3. **Every PR description answers three things:** (a) what changed;
+   (b) what else it affects (other modes, themes, combinations of
+   settings); (c) how it was checked: what was run, on what, with which
+   numbers. "Checked" without that list does not count.
+4. **A change to the typing screen is measured before and after**, with
+   the numbers in the PR, and must not be worse than before. The canonical
+   measurement: the script in `tools/perf/` (issue #144; until it exists,
+   the same metrics by hand), CPU slowed 6×, metrics: style recalc per
+   key, key → caret start, share of slow frames. The goal of the
+   performance work (issue #148), not a per-PR budget: under 2 ms of
+   style recalc per key, caret start ≤ 40 ms, slow frames ≤ 15%.
+5. **Measure first, then change numbers.** No tuning without a measurement.
+6. **Comments never retell me.** Link the issue instead. A comment explains
+   the current value; history lives in git and
+   `docs/thesis/DEVELOPMENT-LOG.md`.
+7. **I merge**, with green CI and point (c) of rule 3 filled in.
+8. **No tool for a needed check is not a reason to skip the check.** Say
+   so in the PR: "no tool for this, add one?"
+9. **Docs do not multiply.** No new files in `docs/` or the repo root
+   without my decision; information goes into the existing files. One
+   rule, one home; other places link to it. If a new file seems needed,
+   propose it first. The exception I decided: the thesis files 01–08 in
+   `docs/thesis/`.
+
+Beyond orders I expect an engineer's position: point out when a change has
+consequences outside its issue, offer simpler paths, say no with reasons
+when a task leads somewhere worse. Initiative means a proposal; the scope
+is always my decision.
 
 ## Guidelines
 
@@ -37,7 +83,9 @@ to apply with judgment; the rules in this file win where they differ.
   (`github.com/jackc/pgx/v5`), used only through the standard `database/sql`.
   Ask before adding any other module.
 - Frontend: plain HTML + CSS + vanilla JavaScript. **No frameworks, no npm,
-  no build step.** Files in `web/` are served by the Go server.
+  no build step.** Files in `web/` are served by the Go server. "No npm" is
+  about the app: Node is allowed in `tools/` and CI (browser tests,
+  latency measuring), never in what the app serves.
 - Storage: behind the `storage.Store` interface. `MemoryStore` by default,
   `PostgresStore` when `DATABASE_URL` is set. Both pass the same tests
   (`internal/storage/store_test.go`); a new `Store` method needs both and a
@@ -63,7 +111,8 @@ to apply with judgment; the rules in this file win where they differ.
   letters that changed. The only layout read is the caret position, done once
   per animation frame (`requestAnimationFrame`). Animations use CSS transitions
   or the Web Animations API (`element.animate`), never JS timers. Typing
-  latency is the product: measure it after touching this path.
+  latency is the product: measure it after touching this path (rule 4 of
+  "Current phase").
 - The frontend is native ES modules with a three-layer import rule (top of
   `web/state.js`, checked by `webmodules_test.go`): imports only go down, no
   cycles. State shared by several modules lives in the object `S`.
@@ -101,6 +150,11 @@ Details: `docs/ARCHITECTURE.md`.
 
 ## Product principles (ask before changing)
 
+- **Beginners first.** Learn is the main screen.
+- **The server with PostgreSQL is the main version.** GitHub Pages is a demo
+  snapshot and need not have every feature.
+- **The keyboard with the hands stays.** It is part of the thesis: make it
+  cheap, hide it where it is not needed, never cut it.
 - **Real words only.** No generated letter combinations like keybr's.
 - **A computer keyboard is needed to practise.** Phones and tablets show only
   the stats and the account: thumbs on glass would skew the letter model.
@@ -125,7 +179,8 @@ Details: `docs/ARCHITECTURE.md`.
   instead of using the algorithm, so the algorithm can be compared against
   it on real people (`docs/thesis/EVALUATION.md`). Every round stores its
   group. It is never shown or offered in the interface.
-- **Try things freely.** Build an idea, I test it, we keep it or drop it.
+- **Try things freely**, outside the cleanup phase: build an idea, I test
+  it, we keep it or drop it.
 - If the algorithm's behaviour changes, update `docs/ALGORITHM.md` and the
   tests in the same task. The docs always describe what the code really does.
 
