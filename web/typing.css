@@ -401,13 +401,13 @@ body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; }
 .text-box.paused::before { opacity: .25; }
 /* put on at once (typing.js pauseRound): a window out of sight draws
    nothing, so a fade would only start when you come back */
-.text-box.snap, .text-box.snap *, .text-box.snap::before, #view-type:has(> .text-box.snap) > :not(.text-box) { transition: none; }
+.text-box.snap, .text-box.snap *, .text-box.snap::before, body.tb-snap #view-type > :not(.text-box) { transition: none; }
 /* everything between the header and the shortcuts blurs like the text:
    the letters row, the panel, the keyboard (owner, 2026-10-22: a sharp
    keyboard under a blurred text looked still in use; then "the pause
    should blur everything except the header"; the shortcuts stay sharp,
    they say what to press) */
-#view-type:has(> .text-box.paused) > :not(.text-box) { filter: blur(5px); opacity: .25; }
+body.tb-paused #view-type > :not(.text-box) { filter: blur(5px); opacity: .25; }
 .text-box.paused :is(.caret, .focus-hint) { opacity: 0; }
 
 /* A typed letter turns white at the key press: one change, no fade,

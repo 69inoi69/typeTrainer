@@ -105,6 +105,19 @@ export function themeColor(name) {
   const key = (document.documentElement.dataset.theme || "dark") + name;
   return themeColors[key] ??= getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
+// The states of the text box that other parts of the page follow (the
+// result open, the round ending, paused, a snap without transitions): a
+// class on the text box and the same one on <body> ("tb-resulting"), so the
+// stylesheets never need ":has(.text-box...)". A ":has()" over <body> or
+// #view-type made the browser restyle the whole typing screen on every key
+// (any text changed inside them: the hint, the counters), which on a slow
+// laptop held the caret back by a hundred milliseconds (2026-10-23).
+export function boxState(on, ...names) {
+  for (const n of names) {
+    el.textBox.classList.toggle(n, on);
+    document.body.classList.toggle("tb-" + n, on);
+  }
+}
 // Gets the text ready for keys. On a phone the hidden <input> must have the
 // focus, or the phone's keyboard does not open; preventScroll stops the page
 // jumping to that invisible input.

@@ -26,7 +26,7 @@
 import { FEEL } from "./feel.js";
 import { t } from "./i18n.js";
 import { FX } from "./fx.js";
-import { el, S, introOpen, isTouch, roundList } from "./state.js";
+import { el, S, introOpen, isTouch, roundList, boxState } from "./state.js";
 import { postJSON } from "./api.js";
 import { highlightNextKey, pulseKey, glowKey, requestFit } from "./keyboard.js";
 import { refreshStats } from "./stats.js";
@@ -351,7 +351,7 @@ function resetStream() {
   portions = []; sentUpTo = 0; current = 0; roundNewLetter = ""; roundNewLap = 0; wordsLoaded = 0; endAt = -1;
   wordOf = new Int32Array(0); revealAt = 0; shownWords = 0;
   extras = new Map(); correctChars = 0; afterBackspace = false; afterPause = false;
-  pausedAt = null; el.textBox.classList.remove("snap", "paused");
+  pausedAt = null; boxState(false, "snap", "paused");
   backWord = -1; backErrors = 0; fixedWords = new Set();
   startTime = null; lastTime = null; presses = 0; correctPresses = 0; perSecond = [];
   resetGlide();                               // a new round starts at the full glide
@@ -783,7 +783,7 @@ export function pauseRound(since, why) {
   if (pausedAt !== null || S.busy || !S.text) return;
   if (S.view !== "type" || el.textBox.classList.contains("resulting")) return;   // nothing being typed
   pausedAt = typeof since === "number" ? since : performance.now();
-  el.textBox.classList.add("snap", "paused");
+  boxState(true, "snap", "paused");
   el.textBox.classList.toggle("goal", why === "goal");   // the note says why: the daily goal reached
 }
 // The first key after a pause goes on with the round: the time away is
@@ -798,7 +798,8 @@ function resumeRound(now) {
     afterPause = true;
   }
   pausedAt = null;
-  el.textBox.classList.remove("snap", "paused", "goal");   // coming back fades in as usual
+  boxState(false, "snap", "paused");
+  el.textBox.classList.remove("goal");   // coming back fades in as usual
 }
 
 // The round is over (the last letter of its last word, or the end of the
@@ -819,7 +820,7 @@ async function finishRound(byLastKey = false) {
   S.busy = true;
   const end = lastTime;
   if (byLastKey && FEEL.resultHoldMs > 0) {
-    if (!learning()) el.textBox.classList.add("ending");
+    if (!learning()) boxState(true, "ending");
     await new Promise((r) => setTimeout(r, FEEL.resultHoldMs));
   }
   const wpm = Math.round(currentWpm(end) * 10) / 10;
@@ -865,7 +866,7 @@ async function finishRound(byLastKey = false) {
     FX.toast(t("err.save"));
     loadExercise().catch(console.error);
   } finally {
-    el.textBox.classList.remove("ending");
+    boxState(false, "ending");
     S.busy = false;
   }
 }
