@@ -161,7 +161,7 @@ function showHandPic(side, ids) {
   }
   const img = el.hands.querySelector(side === "l" ? ".hand.left > img" : ".hand.right > img");
   const url = handPicture(side, ids);
-  if (img && img.getAttribute("src") !== url) img.src = url;
+  if (img && img.getAttribute("src") !== url) { img.src = url; img.dataset.f = ids.join(" "); }
 }
 
 // The lit look of a key (the next key to press), drawn once, under the
