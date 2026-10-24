@@ -599,7 +599,7 @@ func WeightedPick(weights []float64, r float64) int {
 }
 
 // RandomPortion is the word choice of the control group of a user study
-// (docs/thesis/EVALUATION.md): PortionWords open words drawn uniformly
+// (docs/thesis/08-testing-and-verification.md): PortionWords open words drawn uniformly
 // at random, never the same word twice in a row (last = the word before the
 // portion). Everything else stays as in learning (the same open letters,
 // the same statistics and unlocking), so a study compares only the word

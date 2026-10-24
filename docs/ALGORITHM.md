@@ -31,7 +31,7 @@ rule, section 12, and never feeds this model; see docs/ARCHITECTURE.md,
 | Decision | Alternative | Why this one |
 |---|---|---|
 | Real words only | Generated letter combinations (pseudo-words), as in keybr.com | Words are what people type in real life, they are easier to read and read faster, and they keep motivation up. Cost: early lessons have fewer possible texts. Handled by the unlock order and the `MinWords` rule (section 6). |
-| Statistics per letter | Per key pair (bigram), per word | Simplest unit that can be explained and shown on the keyboard. Climb already tracks pairs (section 12.1); pairs in Learn are an open idea (`docs/thesis/EVALUATION.md`). |
+| Statistics per letter | Per key pair (bigram), per word | Simplest unit that can be explained and shown on the keyboard. Climb already tracks pairs (section 12.1); pairs in Learn are an open idea (`docs/thesis/08-testing-and-verification.md`). |
 | Smoothed recent statistics (EMA) | Lifetime totals | Skill changes. A lifetime error rate remembers mistakes from weeks ago forever. |
 | Probabilistic choice (softmax) | Always train the single worst letter | Always drilling one letter is boring and over-fits; probabilities give focus *and* variety. |
 | Gradual unlocking | All 26 letters from the start | A beginner cannot learn 26 finger positions at once. Experienced typists go through the same steps, only much faster. |
@@ -632,7 +632,7 @@ All in `internal/config/config.go`.
 | `Forecast.Window` / `MinRounds` / `MaxRounds` | 10 / 3 / 50 | the forecast reads a letter's last 10 rounds, needs 3, says "50+" beyond 50 (section 6.2) | 10 rounds of a few presses are about what the EMA remembers (20 presses); with the simulation (section 10), 3 rounds answered more often than 5 at about the same error |
 
 The values were chosen by reasoning and the simulation (section 10), not
-fitted to real data; `docs/thesis/EVALUATION.md` says how they could be.
+fitted to real data; `docs/thesis/08-testing-and-verification.md` says how they could be.
 
 ## 9. Known simplifications
 

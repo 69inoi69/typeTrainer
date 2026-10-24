@@ -177,7 +177,7 @@ Details: `docs/ARCHITECTURE.md`.
   in the simulation (`go run ./tools/sim`) and ask.
 - **A hidden A/B switch.** `?group=random` makes Learn draw random open words
   instead of using the algorithm, so the algorithm can be compared against
-  it on real people (`docs/thesis/EVALUATION.md`). Every round stores its
+  it on real people (`docs/thesis/08-testing-and-verification.md`). Every round stores its
   group. It is never shown or offered in the interface.
 - **Try things freely**, outside the cleanup phase: build an idea, I test
   it, we keep it or drop it.

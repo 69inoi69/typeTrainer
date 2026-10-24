@@ -1,3 +1,22 @@
+# 1. Existing systems and literature
+
+Thesis item 1: analysis of existing systems and the literature. The
+reading list below was `LITERATURE.md`; the comparison of existing
+products is to be written here as the work brings material.
+
+## Existing systems
+
+To fill: what each does for learning, what it measures, what it lacks.
+
+- **Monkeytype** (<https://github.com/monkeytypegame/monkeytype>): the look
+  and feel this project follows; plain typing tests, no adaptive teaching
+  (its "weakspot" mode is simulated as "best of 20" in ALGORITHM.md
+  section 10).
+- **keybr** (<https://github.com/aradzie/keybr.com>): adaptive teaching,
+  letters opened one by one, but generated letter combinations instead of
+  real words (the main difference of this project, AGENTS.md "Real words
+  only").
+
 # Reading list
 
 Grouped by the thesis chapter where each source is useful. Start with the ones

@@ -254,7 +254,7 @@ mistakes and its time, exactly as the browser measured it (a skipped letter
 has no entry). Climb and Freetype rounds keep their keys too; they are never
 learned from. The letter model can be rebuilt from the keys by running
 `engine.Apply` over them round by round, so other parameter values can be
-tried on real data (docs/thesis/EVALUATION.md). A round with its keys is
+tried on real data (docs/thesis/08-testing-and-verification.md). A round with its keys is
 5-7 KB of JSON; `MaxImportBytes` allows about 10 000 rounds in one import.
 History from before this has no keys (the field is missing). `device`
 says what the round was typed on (`keyboard` or `touch`; missing in older

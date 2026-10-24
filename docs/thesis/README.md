@@ -1,17 +1,26 @@
 # Thesis notes
 
-typeTrainer started as the practical part of an engineering thesis at the
-Lublin University of Technology (2027). This folder keeps what the thesis
-needs and the app does not: nothing here describes how the app works today
-(that is [docs/ALGORITHM.md](../ALGORITHM.md) and
-[docs/ARCHITECTURE.md](../ARCHITECTURE.md)).
+typeTrainer is also the practical part of an engineering thesis at the
+Lublin University of Technology (2027), a side quest of the product. This
+folder keeps what the thesis needs and the app does not: one file per item
+of the thesis plan. A pull request that yields material for an item (a
+number, a measurement, a decision) adds a few lines to its file. Product
+docs ([docs/ALGORITHM.md](../ALGORITHM.md),
+[docs/ARCHITECTURE.md](../ARCHITECTURE.md)) stay where they are; these
+files link to them.
 
-- [EVALUATION.md](EVALUATION.md): how to show that Learn works, the hidden
-  control group for a user study, and where the model could go next.
+1. [01-existing-systems-and-literature.md](01-existing-systems-and-literature.md): existing systems and the reading list.
+2. [02-requirements.md](02-requirements.md): functional and non-functional requirements.
+3. [03-architecture-database-use-cases.md](03-architecture-database-use-cases.md): architecture, database schema, use cases.
+4. [04-adaptive-algorithm.md](04-adaptive-algorithm.md): the model of the adaptive algorithm.
+5. [05-go-server.md](05-go-server.md): the Go server, test coverage.
+6. [06-interface-finger-layout-latency.md](06-interface-finger-layout-latency.md): interface, finger layout, input latency.
+7. [07-postgresql.md](07-postgresql.md): profiles, round history, statistics.
+8. [08-testing-and-verification.md](08-testing-and-verification.md): tests, the adaptive-vs-random check, a user study.
+
+Also here:
+
 - [ALGORITHM-AUDIT.md](ALGORITHM-AUDIT.md): an outside audit of the Learn
-  algorithm as it was on 2026-10-16: what is measured, what is assumed,
-  known weak points.
-- [LITERATURE.md](LITERATURE.md): the research the algorithm builds on,
-  grouped by thesis chapter.
+  algorithm as it was on 2026-10-16 (linked from item 4).
 - [DEVELOPMENT-LOG.md](DEVELOPMENT-LOG.md): how the project was built,
-  3-17 October 2026, decision by decision.
+  decision by decision.
