@@ -3,8 +3,9 @@
 // the practice; the model is keybr's lines above its text). A Learn round ends
 // and the next one starts at once; what the round did is read here, at
 // rest: before the first key of a round the panel shows, with the first
-// key it goes, so while you type the screen holds only the letters row,
-// the word counter and the letter being learned (issue #150, variant C).
+// key it goes, so while you type the screen holds only the letters row
+// (the gold chip is the letter being learned), the word counter and the
+// live numbers (issue #150, variant C).
 //   the panel: four fixed columns, each a small grey label over a bright
 //           value (every item in its own place, nothing shifting or
 //           running off the edge): the last round (speed and
@@ -14,21 +15,18 @@
 //           (rounds in a row at 95% or better) and today's practice against
 //           the daily goal, on a ring. A column with nothing to say yet shows "—";
 //           its tooltip says when it fills;
-//   "Learning now [d]": the focus letter of the words being typed, in the
-//           line just above the text, between the word counter and the
-//           round switch (#focus-box); its tooltip has the mastery rule
-//           (each letter's own numbers are on its chip's tooltip). Right
-//           after a round with news (a new letter, letters mastered, a
-//           record, every letter open, a new lap, the last lap done) the
-//           news takes its place until you start typing.
+//   the news: right after a round with news (a new letter, letters
+//           mastered, a record, every letter open, a new lap, the last lap
+//           done), in the line just above the text, between the word
+//           counter and the round switch (#focus-box), until you start
+//           typing; the live numbers take that place while you type.
 // It is drawn again after every portion, when the server has learned from
 // its presses (POST /portion, then /stats), and a number that changed
 // counts to its new value (redraw). The panel keeps its room while
-// hidden, so the first key changes no layout; the news and "Learning now"
-// sit in one grid cell and swap by opacity only.
+// hidden, so the first key changes no layout; the news and the live
+// numbers sit in one grid cell and swap by opacity only.
 // Display only: nothing here changes what is measured or sent.
-// Layer: middle. Imports the bottom layer, letters.js (the mastery rule,
-// the forecast) and modes.js.
+// Layer: middle. Imports the bottom layer, letters.js (the forecast) and modes.js.
 // Called by: typing.js (renderPanel with the letters row; roundNews and
 // refreshActivity at the end of a round, tickGoal on its clock), input.js
 // (renderPanel after a change of the daily goal), languages.js
@@ -40,7 +38,7 @@
 import { t } from "./i18n.js";
 import { $, S, store } from "./state.js";
 import { getJSON } from "./api.js";
-import { rule, forecastText } from "./letters.js";
+import { forecastText } from "./letters.js";
 import { learning } from "./modes.js";
 
 const box = $("learn-panel"), focusBox = $("focus-box");
@@ -78,7 +76,7 @@ export function compareStats(before, after) {
 
 // ---------- news of the round ----------
 // What the round that just ended brought, most important first; shown on
-// the place of "Learning now" until the next round is begun. The two milestones of Learn are
+// the line above the text until the next round is begun. The two milestones of Learn are
 // told once per language (tt.milestone.<lang>: "open", then "complete").
 // A new lap (r.newLap, its goal in wpm) is a milestone every time; the end
 // of the last lap is told once ("final").
@@ -132,9 +130,7 @@ export function renderPanel() {
   const top = [lastRound(), forecast(), accStreak(), dailyGoal()].join("");
   const html = `<div class="lp-cols">${top}</div>`;
   if (html !== drawn) { drawn = html; redraw(box, ".lp-val", html); }
-  const focus = `<div class="fb-stack${news ? " has-news" : ""}">` +
-    (news ? `<p class="lp-news${news.big ? " big" : ""}"${news.tip ? ` tabindex="0" data-tip-text="${news.tip}"` : ""}>${news.text}</p>` : "") +
-    `<div class="fb-cols">${learningNow()}</div></div>`;
+  const focus = news ? `<p class="lp-news${news.big ? " big" : ""}"${news.tip ? ` tabindex="0" data-tip-text="${news.tip}"` : ""}>${news.text}</p>` : "";
   if (focus !== drawnFocus) { drawnFocus = focus; focusBox.innerHTML = focus; }
 }
 
@@ -273,16 +269,6 @@ export function tickGoal() {
   const today = goalNow.base + S.roundSeconds;
   if (today >= goalNow.need) { renderPanel(); return true; }
   return false;
-}
-
-// "Learning now [d]": the focus letter (the gold chip in the row above);
-// the tooltip says what mastered takes. Nothing once no letter is in focus.
-function learningNow() {
-  const c = S.exercise.focus;
-  if (!c) return "";
-  const s = S.lastStats;
-  const tip = t("lp.nowTip", { l: c, min: s.masteryMin, err: Math.round(s.masteryErr), target: s.targetWpm });
-  return `<span class="lp-now" tabindex="0" data-tip-text="${tip}">${t("lp.now")}<b>${c}</b></span>`;
 }
 
 // One column of the panel: a small grey label over its

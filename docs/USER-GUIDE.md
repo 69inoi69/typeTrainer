@@ -297,17 +297,16 @@ the normal server, it shows yours.
   rounds: it shows before the first key of a round and goes with the
   first key, so while you type the screen holds only the letters row
   (it slides down into the panel's place, closer to the text), the word
-  counter, **Learning now [d]** and the text. The line just above the text uses
-  the same six columns as the panel, so their dividers line up: the word
-  counter, then **Learning now** and the letter in focus (the gold chip
-  in the row above; hover for what mastered takes; each letter's own
-  numbers are on its chip's tooltip), and on the right the round switch
-  (the live numbers while you type).
-  After every line of words the letters row, the forecast, the focus
-  letter and the daily goal are drawn again, and a number that changed
-  counts to its new value and glows gold for a moment. Right
-  after a round with news, the news takes the place of Learning now until
-  you start typing: a new letter, the letters you
+  counter, the live numbers (if they are on in Settings) and the text;
+  the letter being learned is the gold chip in the row. The line just
+  above the text uses the same six columns as the panel, so their
+  dividers line up: the word counter, then the news of the last round at
+  rest or the live numbers right after the counter while you type, and on
+  the right the round switch (at rest).
+  After every line of words the letters row, the forecast and the daily
+  goal are drawn again, and a number that changed counts to its new value
+  and glows gold for a moment. The news shows right after a round with
+  news, until you start typing: a new letter, the letters you
   mastered, your fastest round of this length, once per language
   "Every letter is open", and a new lap. **Laps** (after keybr): when every
   letter is mastered at 30 wpm, Learn is complete and the next lap starts
