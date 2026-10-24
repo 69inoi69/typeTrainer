@@ -206,8 +206,9 @@ consequences, the same word for the same thing. All text lives in
 ## 10. Testing and verification
 
 **Established**
-- `gofmt -w .`, `go vet ./...`, `go test ./...` and the WebAssembly build pass
-  before a task is done; CI runs them on every pull request.
+- `gofmt -w .`, `go vet ./...`, `go test ./...`, the WebAssembly build and
+  the browser checks (`tools/browser`, CONTRIBUTING.md) pass before a task
+  is done; CI runs them on every pull request.
 - New engine logic gets unit tests, including empty and zero cases.
 
 **Recommended**
