@@ -4,7 +4,7 @@
 // a result or stats screen that does not open. To add a check: a test()
 // here; shared steps (opening the app, typing a round) live in app.mjs.
 import { test, expect } from "@playwright/test";
-import { openApp, typeRound, waitForText } from "./app.mjs";
+import { openApp, typeRound, waitForText, nextChar } from "./app.mjs";
 
 // Every test fails on a JavaScript error or a failed API request, even if
 // the screen looks right: a silent 400 once hid a missing result screen.
@@ -74,6 +74,31 @@ for (const mode of MODES) {
     await waitForText(page);
   });
 }
+
+// The hand over the keyboard is a picture per finger (keyboard.js
+// handPicture); its <img> says which fingers it shows (data-f). After every
+// key the shown hands must be the ones of the next key's fingers, as the
+// layout data says: the thumbs for a space, both hands then.
+test("the hand over the keyboard shows the finger of the next key", async ({ page }) => {
+  await openApp(page, { "tt.mode.en": "learn" });
+  const fingerOf = await page.evaluate(async () => {
+    const layout = await (await fetch("/api/v1/layout?lang=en")).json();
+    return Object.fromEntries(layout.rows.flat().map((k) => [k.char, k.finger]));
+  });
+  const side = (id) => (id === "thl" || id[0] === "l" ? "l" : "r");
+  for (let i = 0; i < 25; i++) {
+    const ch = await nextChar(page);
+    if (!ch) break;
+    const ids = fingerOf[ch] === "th" ? ["thl", "thr"] : [fingerOf[ch]];
+    const sides = [...new Set(ids.map(side))];
+    await expect(page.locator("#hands")).toHaveAttribute("data-show", sides.length === 2 ? "lr" : sides[0]);
+    for (const s of sides) {
+      await expect(page.locator(`.keyboard .hand.${s === "l" ? "left" : "right"} > img`))
+        .toHaveAttribute("data-f", ids.filter((id) => side(id) === s).join(" "));
+    }
+    await page.keyboard.type(ch);
+  }
+});
 
 test("the caret stays one line tall with space marks across line wraps", async ({ page }) => {
   // 30 words fill several lines, so the caret passes spaces at line wraps
