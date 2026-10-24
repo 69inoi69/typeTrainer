@@ -553,16 +553,16 @@ body[data-blink="pulse"][data-caret="outline"] .caret { box-shadow: inset 0 0 0 
    go to the hands first, then to the keys; a card standing on the key
    above covers that key). Only the hand of that side;
    both when both are used (space, Shift, AltGr). keyboard.js sets the
-   middle of the key in keys (--kx); the card moves there by "translate"
-   (the graphics card, no layout). left: the keyboard's padding, where the
-   rows start. */
+   middle of the key in keys (--kx); the card stands there at once, by
+   "translate" (no layout): no glide, so nothing slides across the keyboard
+   under the eyes while you type (#148). left: the keyboard's padding,
+   where the rows start. */
 .keyboard > .hands {
   position: absolute; left: 12px; top: 0; z-index: 2; margin: 0;
   gap: calc(var(--u) * .08); padding: 4px 5px 0; border-radius: 8px;
   background: var(--panel); box-shadow: var(--ring), 0 6px 16px -8px rgba(0, 0, 0, .5);
   translate: calc(var(--kx, 0) * var(--u) - 50%) calc(-100% - 4px);
   will-change: translate;
-  transition: translate var(--fast) var(--ease);
 }
 .keyboard > .hands[data-show=""] { visibility: hidden; }
 .keyboard > .hands[data-show="l"] .hand.right, .keyboard > .hands[data-show="r"] .hand.left { display: none; }
