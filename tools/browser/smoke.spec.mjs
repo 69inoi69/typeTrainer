@@ -102,6 +102,24 @@ test("Climb: an unsaved round still shows its result and can be saved again", as
   expectedOnly(info, "/freeplay/results");
 });
 
+test("Climb: a round whose answer was lost is sent again and kept once", async ({ page }, info) => {
+  await openApp(page, { "tt.mode.en": "climb", "tt.length.climb": "words-10" });
+  let tries = 0;
+  // the first try reaches the server, but its answer never comes back
+  await page.route("**/api/v1/freeplay/results*", async (route) => {
+    if (++tries === 1) { await route.fetch(); return route.abort(); }
+    return route.continue();
+  });
+  await typeRound(page);
+  await expectResult(page);
+  await expect(page.locator("#result .r-climb")).toBeVisible();
+  expect(tries).toBe(2);
+  const count = await page.evaluate(async () =>
+    (await (await fetch("/api/v1/freeplay/stats?lang=en&length=words-10")).json()).sessionCount);
+  expect(count, "rounds in the Climb history").toBe(1);
+  expectedOnly(info, "/freeplay/results");
+});
+
 test("Freetype: a round the server turns down says so and is not tried again", async ({ page }, info) => {
   await openApp(page, { "tt.mode.en": "freetype", "tt.length.freetype": "words-10" });
   let tries = 0;

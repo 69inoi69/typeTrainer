@@ -229,11 +229,23 @@ func (p *PostgresStore) addSession(user, lang, mode string, s Session) error {
 		}
 	}
 	s = s.WithLength()
+	// a round id seen before (sessions_round_id, migration 011) inserts nothing
 	_, err := p.db.Exec(`INSERT INTO sessions
-		(user_id, lang, mode, wpm, accuracy, chars, consistency, unlocked, keys, finished_at, length, study_group, device, level, lap)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
-		user, lang, mode, s.WPM, s.Accuracy, s.Chars, s.Consistency, s.Unlocked, keys, s.FinishedAt, s.Length, s.Group, s.Device, s.Level, s.Lap)
+		(user_id, lang, mode, wpm, accuracy, chars, consistency, unlocked, keys, finished_at, length, study_group, device, level, lap, round_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NULLIF($16, ''))
+		ON CONFLICT DO NOTHING`,
+		user, lang, mode, s.WPM, s.Accuracy, s.Chars, s.Consistency, s.Unlocked, keys, s.FinishedAt, s.Length, s.Group, s.Device, s.Level, s.Lap, s.Round)
 	return err
+}
+
+func (p *PostgresStore) HasRound(user, lang, round string) (bool, error) {
+	if round == "" {
+		return false, nil
+	}
+	var found bool
+	err := p.db.QueryRow(`SELECT EXISTS (SELECT 1 FROM sessions WHERE user_id = $1 AND lang = $2 AND round_id = $3)`,
+		user, lang, round).Scan(&found)
+	return found, err
 }
 
 // recentSessions reads up to limit rounds of one mode, newest first (by id,

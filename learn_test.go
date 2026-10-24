@@ -87,6 +87,36 @@ func TestApp_ResultsConsistency(t *testing.T) {
 	}
 }
 
+// A round sent twice with the same id (the page tries again when the
+// answer was lost, issue #149) is stored once and its samples are learned
+// once; a round id must be a short plain string.
+func TestApp_ResultsSentTwice(t *testing.T) {
+	h, _, _ := newApp()
+	body := `{"samples":[{"char":"a","errors":0,"ms":300},{"char":"s","errors":1,"ms":400}],"wpm":30,"accuracy":90,"round":"5f0c2a9e-1"}`
+	for i := range 2 {
+		if code, out := call(t, h, "POST", "/api/v1/results?lang=en", body); code != 200 {
+			t.Fatalf("send %d: %d %v", i+1, code, out)
+		}
+	}
+	_, st := call(t, h, "GET", "/api/v1/stats?lang=en", "")
+	if n := st["sessionCount"].(float64); n != 1 {
+		t.Fatalf("%v rounds, want 1", n)
+	}
+	for _, k := range st["keys"].([]any) {
+		if k := k.(map[string]any); (k["char"] == "a" || k["char"] == "s") && k["count"].(float64) != 1 {
+			t.Fatalf("%v learned %v times, want 1", k["char"], k["count"])
+		}
+	}
+	// another round (another id) counts as usual
+	call(t, h, "POST", "/api/v1/results?lang=en", strings.Replace(body, "5f0c2a9e-1", "5f0c2a9e-2", 1))
+	if _, st = call(t, h, "GET", "/api/v1/stats?lang=en", ""); st["sessionCount"].(float64) != 2 {
+		t.Fatalf("a new id: %v rounds, want 2", st["sessionCount"])
+	}
+	if code, _ := call(t, h, "POST", "/api/v1/results?lang=en", strings.Replace(body, "5f0c2a9e-1", "a b", 1)); code != 400 {
+		t.Fatalf("round id with a space: %d, want 400", code)
+	}
+}
+
 // Rare words come in only after the whole alphabet is open, and only as the
 // user keeps typing (engine.MaxRank): the letters of learning rounds finished
 // with every letter open move the limit; free practice does not.
