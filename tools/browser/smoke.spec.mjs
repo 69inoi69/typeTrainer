@@ -58,23 +58,25 @@ test("Learn: a round can be typed to the end and is saved", async ({ page }) => 
 
 // Learn's summary is read between rounds (issue #150): the panel shows
 // before the first key and goes with it (opacity only, the room stays),
-// the letters row slides down into its place; "Learning now" names the
-// gold letter throughout.
+// the letters row slides down into its place; the live numbers stand
+// right after the word counter while you type.
 test("Learn: the panel shows at rest and goes while typing", async ({ page }) => {
-  await openApp(page, { "tt.mode.en": "learn", "tt.length.learn": "words-15" });
+  await openApp(page, { "tt.mode.en": "learn", "tt.length.learn": "words-15", "tt.live": "1" });
   const panel = page.locator("#learn-panel");
-  const now = page.locator("#focus-box .lp-now");
   await expect(panel).toBeVisible();
   await expect(panel).toHaveCSS("opacity", "1");
-  const gold = await page.locator(".letters .focus").first().textContent();
-  await expect(now).toBeVisible();
-  await expect(now.locator("b")).toHaveText(gold.trim());
   const room = await panel.boundingBox();
   const row = page.locator("#letters");
   const rowAt = (await row.boundingBox()).y;
   await page.keyboard.type(await nextChar(page));
   await expect(panel).toHaveCSS("opacity", "0");
-  await expect(now).toBeVisible();
+  const wpm = page.locator(".live > .metric.num").first();
+  await expect(wpm).toHaveCSS("opacity", "1");
+  const counter = await page.locator("#progress").boundingBox();
+  const lastCol = await page.locator("#learn-panel .lp-goal").boundingBox();
+  const speed = await wpm.boundingBox();
+  expect(speed.x, "the speed right after the word counter").toBeGreaterThan(counter.x + counter.width);
+  expect(speed.x, "not in the last column").toBeLessThan(lastCol.x);
   expect(await panel.boundingBox(), "the panel keeps its room").toEqual(room);
   await expect.poll(async () => (await row.boundingBox()).y, "the letters row in the panel's place")
     .toBeCloseTo(room.y + room.height / 2 - (await row.boundingBox()).height / 2, -1);

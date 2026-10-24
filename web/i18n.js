@@ -241,10 +241,7 @@ const I18N = {
     "fc.next": "Next letter", "fc.none": "Appears once your recent rounds give enough to make a fair guess", "fc.lap": "Lap done in",
     "fc.rounds": "≈ {n} rounds", "fc.one": "≈ 1 round", "fc.more": "{n}+ rounds",
     "fc.tip": "This estimate uses your last 10 rounds to guess when each letter will reach its goal. The slowest is {l}; the estimate appears only when there's enough data to be useful",
-    // the gold letter (the focus) in the line above the text, and what mastered takes
-    "lp.now": "Learning now",
-    "lp.nowTip": "Most of the words you're typing now contain {l}. A letter is mastered after at least {min} presses with fewer than {err}% mistakes at {target} wpm or faster. Hover a letter in the row above to see its own numbers",
-    // the news of the round that just ended (in the "Learning now" place until you start typing)
+    // the news of the round that just ended (in the line above the text until you start typing)
     "news.newLetter": "New letter: {l}. It'll show up often for a while, so take your time",
     "news.newLetterTip": "You've mastered the earlier letters, so {l} is now open. Look for it in gold in the next words",
     "news.mastered": "You've mastered {list}",
