@@ -1,7 +1,7 @@
 // The caret's own movements, apart from where it goes (typing.js
-// placeCaret decides that): the flinch on a mistake, the glide's pace, the breathing or
-// pulsing while a round waits for a key, and the scroll of the text window
-// to the next line.
+// placeCaret decides that): the flinch on a mistake, the glide's pace and
+// the scroll of the text window to the next line. At rest the caret stands
+// still (issue #167).
 // Layer: middle. Imports the bottom layer only. Called by: typing.js.
 //
 // Speed rule (AGENTS.md): every one of these runs on a keypress or in the
@@ -56,29 +56,6 @@ export function resetGlide() {
   gap = 0; glideNow = 0;
   el.caret.style.removeProperty("--feel-caret-ms");
   el.streak.style.removeProperty("--feel-caret-ms");
-}
-
-// While a round waits for the next key, the caret breathes or pulses (a
-// setting, body[data-blink]: "off", "breathe", "pulse"; settings.js) after
-// FEEL.caretRestDelayMs of quiet; every key starts the wait again, so it
-// stays solid while you type. One Web Animation for the whole round: a key
-// only rewinds it to its start (placeCaret, once per frame at most); making a
-// new one on every key cost the browser a new animation each time. A new
-// choice in the settings makes a new one. It animates "filter", not
-// "opacity": a hidden caret (opacity 0, text not in focus) stays hidden.
-// Outside a round the CSS animations (typing.css, .caret) do the same.
-let rest = null, restKind = "";
-export function breathe(on) {
-  const kind = document.body.dataset.blink || "breathe";
-  if (rest && (!on || kind !== restKind)) { rest.cancel(); rest = null; }
-  if (!on || kind === "off" || !el.caret.animate || reducedMotion()) return;
-  if (rest) { rest.currentTime = 0; return; }
-  const low = kind === "pulse" ? FEEL.caretPulseLow : FEEL.caretBreathLow;
-  rest = el.caret.animate([{ filter: "opacity(1)" }, { filter: `opacity(${low})` }, { filter: "opacity(1)" }], {
-    duration: kind === "pulse" ? FEEL.caretPulseMs : FEEL.caretBreathMs,
-    delay: FEEL.caretRestDelayMs, iterations: Infinity, easing: "ease-in-out",
-  });
-  restKind = kind;
 }
 
 // Moves the text window to scrollTop = top in FEEL.lineScrollMs, fast at the

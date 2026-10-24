@@ -5,7 +5,7 @@
 // None of this changes what is measured or sent to the server.
 // Layer: bottom. Imports nothing.
 // Used by: keyboard.js (red tint, hand size, the lift of the finger in the
-// hand's pictures), caret.js (caret flinch, breath and pulse, line scroll),
+// hand's pictures), caret.js (caret flinch, line scroll),
 // and the stylesheets (caret glide, the lift and dip of the next key)
 // through the --feel-* properties.
 // Speed rule (as smooth as monkeytype): what moves on
@@ -66,14 +66,6 @@ export const FEEL = {
   caretFlinchMs: 120,       // duration (about 7 frames)
   caretFlinchScale: 0.7,    // height at the start of the flinch (1 = none)
   caretShakePx: 2,          // how far it shakes to each side (0 = no shake)
-  // At rest the caret breathes or pulses (a setting: settings.js "blink");
-  // it starts
-  // this long after the last key, so it is solid while you type.
-  caretRestDelayMs: 650,    // quiet time before it starts
-  caretBreathMs: 2000,      // one breath, out and in: slow, so it never nags
-  caretBreathLow: 0.35,     // how far it fades (1 = not at all)
-  caretPulseMs: 1000,       // one pulse of the thick caret: quicker and deeper
-  caretPulseLow: 0.15,
 
   // How the three kinds of mistake look (typing.css .bad / .miss / .extra):
   // wrong = red letter; skipped = dim with a dotted underline;
@@ -94,10 +86,6 @@ export const FEEL = {
 function applyFeel() {
   const root = document.documentElement.style;
   root.setProperty("--feel-caret-ms", FEEL.caretGlideMs + "ms");
-  root.setProperty("--feel-breath-ms", FEEL.caretBreathMs + "ms");
-  root.setProperty("--feel-breath-low", String(FEEL.caretBreathLow));
-  root.setProperty("--feel-pulse-ms", FEEL.caretPulseMs + "ms");
-  root.setProperty("--feel-pulse-low", String(FEEL.caretPulseLow));
   root.setProperty("--caret-curve", FEEL.caretCurve);
   root.setProperty("--feel-result-hold", FEEL.resultHoldMs + "ms");
   root.setProperty("--feel-result-in", FEEL.resultInMs + "ms");

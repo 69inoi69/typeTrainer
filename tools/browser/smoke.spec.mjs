@@ -20,7 +20,7 @@ test.afterEach(async ({}, info) => {
 });
 
 // The caret is one line tall and inside the text box. It once grew to two
-// lines when space marks were on and a space sat at a line wrap.
+// lines when a marked space sat at a line wrap (every space has its dot now).
 async function expectCaretInLine(page) {
   const m = await page.evaluate(() => {
     const caret = document.getElementById("caret").getBoundingClientRect();
@@ -159,6 +159,28 @@ test("the background is off by default and on when chosen", async ({ page }) => 
   await expect(page.locator(".ambient > *").first()).toBeAttached();
 });
 
+// At rest the caret stands still, every space shows its dot, and the
+// settings offer two carets and no "caret at rest" or "space marks"
+// (issue #167). An old saved caret falls back to the line.
+test("the caret is still at rest, spaces have a dot, the settings are fewer", async ({ page }) => {
+  await openApp(page, { "tt.caret": "outline", "tt.blink": "pulse", "tt.ws": "none" });
+  await expect(page.locator("body")).toHaveAttribute("data-caret", "line");
+  await page.waitForTimeout(1500);   // longer than the old wait before it started to breathe
+  const caretAnims = await page.evaluate(() => document.getElementById("caret").getAnimations().length);
+  expect(caretAnims, "animations on the caret at rest").toBe(0);
+  const dot = await page.evaluate(() => {
+    const sp = document.querySelector("#text span[data-sp]");
+    const a = getComputedStyle(sp, "::after");
+    return { content: a.content, w: parseFloat(a.width) };
+  });
+  expect(dot.content).not.toBe("none");
+  expect(dot.w).toBeGreaterThan(0);
+  await page.keyboard.press("Escape");
+  await expect(page.getByText("Caret movement")).toBeVisible();
+  await expect(page.getByText("Caret at rest")).toHaveCount(0);
+  await expect(page.getByText("Space marks")).toHaveCount(0);
+});
+
 // The hand over the keyboard is a picture per finger (keyboard.js
 // handPicture); its <img> says which fingers it shows (data-f). After every
 // key the shown hands must be the ones of the next key's fingers, as the
@@ -186,7 +208,7 @@ test("the hand over the keyboard shows the finger of the next key", async ({ pag
 
 test("the caret stays one line tall with space marks across line wraps", async ({ page }) => {
   // 30 words fill several lines, so the caret passes spaces at line wraps
-  await openApp(page, { "tt.mode.en": "freetype", "tt.length.freetype": "words-30", "tt.ws": "dot" });
+  await openApp(page, { "tt.mode.en": "freetype", "tt.length.freetype": "words-30" });
   await typeRound(page, { afterKey: () => expectCaretInLine(page) });
   await expectResult(page);
 });
