@@ -68,12 +68,100 @@ export function drawKeyboard() {
   });
   el.keyboard.appendChild(el.hands);
   // the hands take the finger colors of this layout (both thumbs: "th")
-  handFingers = {};
   for (const f of el.hands.querySelectorAll("[data-f]")) {
     const id = f.dataset.f;
     f.style.setProperty("--fc", S.layout.fingers[id.startsWith("th") ? "th" : id].color);
-    handFingers[id] = f;
   }
+  for (const url of handPics.values()) if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+  handPics.clear();
+  for (const hand of el.hands.querySelectorAll(".hand")) {
+    if (!hand.querySelector("img")) hand.appendChild(Object.assign(document.createElement("img"), { alt: "" }));
+  }
+}
+
+// ---------- the hand as pictures ----------
+// The hand over the keyboard is not a live drawing: for every finger (or
+// fingers) to light, one picture of the whole hand is drawn once, with
+// that finger already lifted and in its colour, and a keypress only swaps
+// the picture of an <img>. The live hand (ten fingers, each a layer that
+// lifts) cost the browser ~1 ms of restyling on every key (#148). The
+// drawing stays in index.html: it is the model the pictures are made from
+// (and the intro's moving copy). The pictures follow the theme and the
+// layout's finger colours; a new keyboard (drawKeyboard) draws them again.
+const handPics = new Map();   // "theme side ids" -> data: URL
+const PIC_TOP = 12;           // room above the drawing for a lifted finger, in its units
+let colorProbe = null;
+function solidColor(css) {   // a colour as the browser resolves it (color-mix, variables)
+  if (!colorProbe) { colorProbe = document.createElement("i"); colorProbe.hidden = true; document.body.appendChild(colorProbe); }
+  colorProbe.style.color = css;
+  return getComputedStyle(colorProbe).color;
+}
+// The picture of one hand ("l" or "r") with the fingers ids lit.
+function handPicture(side, ids) {
+  const theme = document.documentElement.dataset.theme || "dark";
+  const key = `${theme} ${side} ${ids.join(",")}`;
+  let url = handPics.get(key);
+  if (url) return url;
+  const hand = el.hands.querySelector(side === "l" ? ".hand.left" : ".hand.right");
+  const lift = FEEL.fingerLiftPx;
+  let body = "";
+  for (const f of hand.querySelectorAll("[data-f]")) {
+    const p = f.querySelector("path");
+    const lit = ids.includes(f.dataset.f);
+    const st = getComputedStyle(f);
+    const fill = lit ? solidColor(st.getPropertyValue("--fcd").trim() || st.getPropertyValue("--fc")) : getComputedStyle(p).fill;
+    const move = lit ? ` transform="translate(${(-parseFloat(f.style.getPropertyValue("--dx")) * lift).toFixed(2)} ${(-parseFloat(f.style.getPropertyValue("--dy")) * lift).toFixed(2)})"` : "";
+    body += `<g${move}><path transform="${p.getAttribute("transform")}" d="${p.getAttribute("d")}" fill="${fill}"/></g>`;
+  }
+  const palm = hand.querySelector(".palm");
+  body += `<path transform="${palm.getAttribute("transform")}" d="${palm.getAttribute("d")}" fill="${getComputedStyle(palm).fill}"/>`;
+  // the wrist fades out at the bottom (the last quarter of the drawing)
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 ${-PIC_TOP} 100 ${84 + PIC_TOP}">` +
+    `<defs><linearGradient id="f" gradientUnits="userSpaceOnUse" x1="0" y1="62" x2="0" y2="84"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#000"/></linearGradient>` +
+    `<mask id="m"><rect x="0" y="${-PIC_TOP}" width="100" height="${84 + PIC_TOP}" fill="url(#f)"/></mask></defs>` +
+    `<g mask="url(#m)">${body}</g></svg>`;
+  url = "data:image/svg+xml," + encodeURIComponent(svg);
+  handPics.set(key, url);
+  toPixels(key, url, side);
+  return url;
+}
+// The picture turned into plain pixels once (a PNG at three times the
+// hand's size, so zoom and sharp screens stay crisp): an SVG picture is
+// drawn again each time an <img> switches to it, a PNG is only shown.
+// Until it is ready the SVG picture stands in.
+const PIC_SCALE = 3;
+function toPixels(key, svgUrl, side) {
+  const hand = el.hands.querySelector(side === "l" ? ".hand.left" : ".hand.right");
+  const w = Math.round((parseFloat(getComputedStyle(hand).width) || 60) * PIC_SCALE * (devicePixelRatio || 1));
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement("canvas");
+    c.width = w; c.height = Math.round(w * (84 + PIC_TOP) / 100);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    c.toBlob((blob) => {
+      if (!blob || handPics.get(key) !== svgUrl) return;   // a new keyboard drew its own meanwhile
+      const png = URL.createObjectURL(blob);
+      handPics.set(key, png);
+      new Image().src = png;   // decoded now, so the first switch to it shows at once
+      for (const shown of el.hands.querySelectorAll(".hand > img")) if (shown.getAttribute("src") === svgUrl) shown.src = png;
+    });
+  };
+  img.src = svgUrl;
+}
+// Shows the picture of a hand; nothing is touched when it is the same.
+// The first time after a new keyboard or theme, the pictures of every
+// single finger are made at once, so they are pixels by the next keys.
+function showHandPic(side, ids) {
+  const theme = document.documentElement.dataset.theme || "dark";
+  if (![...handPics.keys()].some((k) => k.startsWith(theme + " "))) {
+    for (const f of el.hands.querySelectorAll("[data-f]")) {
+      const id = f.dataset.f;
+      handPicture(id === "thl" || id[0] === "l" ? "l" : "r", [id]);
+    }
+  }
+  const img = el.hands.querySelector(side === "l" ? ".hand.left > img" : ".hand.right > img");
+  const url = handPicture(side, ids);
+  if (img && img.getAttribute("src") !== url) img.src = url;
 }
 
 // The lit look of a key (the next key to press), drawn once, under the
@@ -111,19 +199,14 @@ const keyFor = (ch) => S.keyEls[ch] || S.keyEls[baseOf(ch)] || null;
 // holds Shift (the touch typing rule). The same thing is also written as a
 // sentence, but only for screen readers.
 let nextKeyEl = null;
-let handFingers = {};      // finger id ("lp", ..., "thl", "thr") -> <i> on the hands
-let litFingers = [];       // fingers that are lit now
 export function highlightNextKey() {
   if (nextKeyEl) nextKeyEl.classList.remove("next");
   if (S.altgrEl) S.altgrEl.classList.remove("next");
-  for (const f of litFingers) f.classList.remove("on");
-  litFingers = [];
   S.nextFc = "";
-  el.hands.dataset.show = "";
   const ch = S.text[S.pos];
   const base = ch === undefined ? ch : baseOf(ch);   // "ą" is typed on the "a" key, "A" too
   nextKeyEl = S.keyEls[base] || null;
-  if (!nextKeyEl) { el.hint.innerHTML = "&nbsp;"; return; }
+  if (!nextKeyEl) { el.hint.innerHTML = "&nbsp;"; showHands(""); return; }
   // "Next key" off (a setting): find it from memory; the sentence for
   // screen readers still says it
   const lit = S.settings.nextKey, hand = S.settings.hand;
@@ -140,16 +223,18 @@ export function highlightNextKey() {
     el.hint.innerHTML = t("hint.press", vars);
   }
   S.nextFc = S.layout.fingers[fingerId].color;   // the next letter in the text (typing.js lightNext)
-  if (!hand) return;
-  for (const id of ids) {
-    const f = handFingers[id];
-    if (f) { f.classList.add("on"); litFingers.push(f); }
-  }
+  if (!hand) { showHands(""); return; }
+  // each hand shows the picture with its own fingers lit
+  const sideOf = (id) => (id === "thl" || id[0] === "l" ? "l" : "r");
+  const sides = [...new Set(ids.map(sideOf))];
+  for (const side of sides) showHandPic(side, ids.filter((id) => sideOf(id) === side).sort());
+  showHands(sides.length === 2 ? "lr" : sides[0]);
   // above the key's column: a custom property, the hand moves by
   // "translate" (typing.css .keyboard > .hands); no layout is read
-  const sides = new Set(ids.map((id) => (id === "thl" || id[0] === "l" ? "l" : "r")));
-  el.hands.dataset.show = sides.size === 2 ? "lr" : [...sides][0];
   el.hands.style.setProperty("--kx", nextKeyEl.dataset.x);
+}
+function showHands(show) {
+  if (el.hands.dataset.show !== show) el.hands.dataset.show = show;
 }
 
 // A wrong key gets a quick red tint in the theme's --error (FEEL.keyMiss*,

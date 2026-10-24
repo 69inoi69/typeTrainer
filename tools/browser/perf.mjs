@@ -4,7 +4,7 @@
 //   style recalc per key  the time the browser spent restyling the page
 //                         while typing, divided by the keys (CDP Performance
 //                         metrics); at full CPU speed, where the goal is
-//                         under 2 ms
+//                         under 2 ms for the screen itself (--bare)
 //   key -> caret start    from the keydown to the caret starting to move
 //                         (the first change of its style), median; CPU
 //                         slowed 6x, a weak laptop
@@ -15,6 +15,9 @@
 // after every change):
 //   node perf.mjs                      Learn, 80 ms between keys
 //   node perf.mjs --mode climb --runs 5 --slow 4
+//   node perf.mjs --bare               the screen itself: no falling
+//                                      background, no keyboard (the
+//                                      2 ms goal is for this)
 // Numbers depend on the machine: compare before/after on the same one.
 // To add a metric: collect it in the page in setupProbes, print it in report.
 import { chromium } from "@playwright/test";
@@ -29,6 +32,7 @@ const opt = {
   delay: Number(args.delay ?? 80),     // ms between keys (80 ms = 150 wpm)
   keys: Number(args.keys ?? 50),       // keys typed per run
   runs: Number(args.runs ?? 3),        // the median of the runs is printed
+  bare: "bare" in args,                // background and keyboard off
 };
 
 // In the page: the keydown times, the caret's style changes and the frame
@@ -48,7 +52,8 @@ const median = (a) => { const s = [...a].sort((x, y) => x - y); return s.length 
 async function oneRun(browser, cpu) {
   const ctx = await browser.newContext({ baseURL: opt.url, viewport: { width: 1920, height: 1080 } });
   const page = await ctx.newPage();
-  await openApp(page, { "tt.mode.en": opt.mode, "tt.length.learn": "words-30", [`tt.length.${opt.mode}`]: "words-30" });
+  const bare = opt.bare ? { "tt.bg": "off", "tt.kbHidden": "1", "tt.kbHidden.free": "1" } : {};
+  await openApp(page, { "tt.mode.en": opt.mode, "tt.length.learn": "words-30", [`tt.length.${opt.mode}`]: "words-30", ...bare });
   await page.waitForFunction((n) => document.querySelectorAll("#text > span").length > n, opt.keys + 1, { timeout: 20_000 });
   await page.waitForTimeout(800);   // let the first round's entrance settle
   const text = await page.evaluate(() => [...document.querySelectorAll("#text > span")].map((s) => s.textContent).join(""));
@@ -90,7 +95,7 @@ for (let i = 0; i < opt.runs; i++) slow.push(await oneRun(browser, opt.slow));
 await browser.close();
 
 const fmt = (x, d = 1) => x.toFixed(d);
-console.log(`mode ${opt.mode}, ${opt.keys} keys every ${opt.delay} ms, median of ${opt.runs} runs`);
+console.log(`mode ${opt.mode}${opt.bare ? " (bare: no background, no keyboard)" : ""}, ${opt.keys} keys every ${opt.delay} ms, median of ${opt.runs} runs`);
 console.log(`  style recalc per key   ${fmt(median(fast.map((r) => r.recalc)))} ms   (full speed)`);
 console.log(`  key -> caret start     ${fmt(median(slow.map((r) => r.caret)), 0)} ms    (CPU ${opt.slow}x slower)`);
 console.log(`  slow frames (>25 ms)   ${fmt(median(slow.map((r) => r.slow)) * 100, 0)}%    (CPU ${opt.slow}x slower)`);
