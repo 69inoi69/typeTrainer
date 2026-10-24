@@ -1,11 +1,12 @@
 // The round bar above the text: what a round of the current mode is, set
-// right where you type (as monkeytype's bar; owner, 2026-10-19: the round
-// settings belong to each mode's screen, not to the settings window).
+// right where you type (as monkeytype's bar: the round settings belong to
+// each mode's screen, not to the settings window).
 //   learn    - 15 or 30 words: two choices, nothing to weigh up for a
 //              beginner. They sit apart, at the right end of the line
 //              above the text (#round-switch, next to the word counter they
 //              change): above the letters they looked like an extra line
-//              with no purpose (owner, 2026-10-22);
+//              with no purpose;
+
 //   climb    - the level (1..10; a pick starts the count on it from none),
 //              then words or time, and how many;
 //   freetype - the kind of text (long words, real sentences or your own

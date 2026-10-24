@@ -12,8 +12,8 @@ let wrongScript = 0;       // presses in a row that came from another keyboard l
 let capsOn = false;        // Caps Lock was on at the last key or mouse move
 
 // The warning card: an icon, what is wrong and how to fix it. For a wrong
-// layout, the usual way to switch it on this system (owner, 2026-10-18: it
-// always said Windows); a phone or an unknown system gets no keys.
+// layout, the usual way to switch it on this system, not always Windows'; a
+// phone or an unknown system gets no keys.
 const WARN_ICON = {
   caps: '<path d="M12 4 5 11h4v5h6v-5h4z"/><path d="M9 20h6"/>',
   layout: '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/>',
@@ -54,8 +54,8 @@ export function foreignKey() {
   if (++wrongScript >= 2) showWarn("layout");
 }
 
-// A wrong system layout before the first key (owner, 2026-10-18: "it should
-// show at once, not after I press keys"). Chromium browsers (Chrome, Edge)
+// A wrong system layout before the first key: a warning after the presses
+// comes too late. Chromium browsers (Chrome, Edge)
 // can say what the home-row keys type in the current layout (the Keyboard
 // API); Firefox and Safari cannot, and some browsers hide it (Brave, against
 // fingerprinting), so there the first keys still tell (typing.js handleChar).
@@ -76,8 +76,9 @@ export async function layoutCheck() {
   else if (el.warn.dataset.kind === "layout") hideWarn();
 }
 
-// Caps Lock before the first letter (owner, 2026-10-18: it showed only after
-// letters were typed). Every key and mouse event says whether Caps Lock is on
+// Caps Lock before the first letter, not after letters were typed. Every
+// key and mouse event says whether Caps Lock is on
+
 // (getModifierState), so the warning comes with the first mouse move or any
 // key (Shift, the Caps Lock key itself) and goes as soon as it is off.
 // Called by input.js on keys and mouse moves; it acts only on a change.

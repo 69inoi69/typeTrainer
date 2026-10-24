@@ -1,9 +1,9 @@
 // Package freeplay is the two modes outside learning. Mostly Climb, the
 // second mode: for people who can already type. There are no letters to
 // unlock; one number, the level (1..10), says which words come, and
-// nothing else: lower-case words only, no capitals, no punctuation (owner,
-// 2026-10-20: Climb trains the words themselves; a comma in a list of
-// random words only breaks the rhythm).
+// nothing else: lower-case words only, no capitals, no punctuation (Climb
+// trains the words themselves; a comma in a list of random words only
+// breaks the rhythm).
 //
 // Level n draws from the Levels[n-1] most common words of a long list
 // (free.txt, 25 000 words in English): 200 at level 1 to all 25 000 at 10
@@ -11,7 +11,7 @@
 // exam with a clear answer. After it (Standing): a round typed cleanly
 // (accuracy >= PassAccuracy) passes, one typed badly (< FailAccuracy)
 // fails; PassesUp passes take the typist one level up, FailsDown fails in
-// a row one level down. Speed never counts (owner, 2026-10-20). The
+// a row one level down. Speed never counts. The
 // counts are not stored: they come from the history, where every round
 // keeps the level it was typed at (docs/ALGORITHM.md section 12).
 //
@@ -188,8 +188,9 @@ func NewPicker(words []string, rng *rand.Rand) *Picker {
 }
 
 // Longer returns the words with at least min letters, in their order: the
-// list of Climb (owner, 2026-10-20: "a" and "i" are not words worth
-// typing). Freetype keeps the whole list, as on monkeytype.
+// list of Climb ("a" and "i" are not words worth typing). Freetype keeps
+// the whole list, as on monkeytype.
+
 func Longer(words []string, min int) []string {
 	out := make([]string, 0, len(words))
 	for _, w := range words {

@@ -48,7 +48,7 @@
   .metric:has(#progress) { min-width: 5.6rem; }
   .metric.raw { display: none; }          /* phone: no room, wpm + acc are enough */
   /* five tiles in two columns, the round count across both: three even
-     rows (rows of three left a hole after the fifth tile, owner, 2026-10-18) */
+     rows (rows of three leave a hole after the fifth tile) */
   .tiles { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 100%; }
   .tiles > .tile:first-child:nth-last-child(odd) { grid-column: 1 / -1; }   /* an odd count: the first across, the rest in pairs */
   .tile { padding: 10px 10px 9px; }
@@ -56,8 +56,9 @@
   /* phone: one row would make the chips tiny, so two rows of 13 (26
      letters; a plain wrap gave 15 + 11) */
   .letter-row { display: grid; grid-template-columns: repeat(13, auto); justify-content: center; gap: 4px; }
-  /* no drawn keyboard on a phone, so the letters and the text take the room
-     (owner, 2026-10-16). The text stays at the top: while you type, the
+  /* no drawn keyboard on a phone, so the letters and the text take the
+     room. The text stays at the top: while you type, the
+
      phone's own keyboard covers the bottom half of the screen. */
   .chip { font-size: clamp(.8rem, 3.6vw, .95rem); flex: none; width: 1.6em; height: 1.6em; }
   /* Climb: the note goes under the level (one line more: nothing jumps,

@@ -1,4 +1,5 @@
-// Learn's laps (owner, 2026-10-21, after keybr): when every letter is open
+// Learn's laps (after keybr): when every letter is open
+
 // and mastered (Learn complete), the goal speed goes up by StepWPM and the
 // letters are learned again at it, up to MaxWPM. The model itself does not
 // change: a lap only hands it another TargetWPM (Params.ForLap), so every

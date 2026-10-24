@@ -105,8 +105,9 @@ func loadLanguage(info language.Language, cfg config.Config, seed int64) (*api.L
 	gen.SetWordParams(cfg.Words)
 	// The long list (tools/wordlists/free.py), for Climb and Freetype: Climb
 	// climbs from its 200 most common words to all of them in 10 levels
-	// (owner, 2026-10-20: words.txt, 2000 words, ended easier than
-	// Freetype's 5k list). A language without one uses words.txt for both.
+	// (words.txt, 2000 words, would end easier than Freetype's 5k list). A
+	// language without one uses words.txt for both.
+
 	long := words
 	if data, err := files.ReadFile("data/langs/" + info.ID + "/free.txt"); err == nil {
 		long = info.Words(string(data))

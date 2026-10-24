@@ -34,12 +34,11 @@ import { $, S, store, isTouch } from "./state.js";
 // Round lengths: "words-N" ends after N words, "time-N" after N seconds.
 // Each round keeps its length on the server (storage.Session.Length), and
 // the stats screen shows one length at a time.
-// (owner, 2026-10-18: 10 to 50 words in steps of 10, and 15 to 90 seconds;
-// 60 words went. Rounds of 60 words already played keep their own button on
-// the stats screen.)
+// 10 to 50 words in steps of 10, and 15 to 90 seconds. Rounds of a length
+// no longer offered (60 words) keep their own button on the stats screen.
 export const LENGTHS = ["words-10", "words-20", "words-30", "words-40", "words-50", "time-15", "time-30", "time-60", "time-90"];
 const DEFAULT_LENGTH = "words-30";   // the same as storage.DefaultLength
-// Learning offers two only (owner, 2026-10-19): short and normal, nothing
+// Learning offers two only: short and normal, nothing
 // to weigh up for a beginner, and no rounds on time (15 seconds at a
 // beginner's 10-15 wpm would be 3 words, too few to learn from).
 export const LEARN_LENGTHS = ["words-15", "words-30"];
@@ -66,17 +65,17 @@ export function setLength(mode, id) {
 // To add one: its id here, its look in typing.css (body[data-caret="id"]
 // .caret and a small picture .cs.id) and its name in i18n.js ("settings.id").
 const CARETS = ["line", "block", "underline", "outline"];
-// A personal speed goal, WPM (0 = none; owner, 2026-10-18). Only the stats
+// A personal speed goal, WPM (0 = none). Only the stats
 // screen shows it (a tile, the line on the chart): the algorithm never sees
 // it, letters open at the trainer's own target as before (AGENTS.md: a
 // setting never changes what is practised).
-const GOALS = [0, 30, 40, 50, 75, 100, 125, 150, 200];   // 30 and 40: a goal a beginner can reach (2026-10-21)
-// A daily goal, minutes of typing in any mode (0 = none; owner, 2026-10-20,
-// after keybr). The Learn panel shows today against it (learnpanel.js).
+const GOALS = [0, 30, 40, 50, 75, 100, 125, 150, 200];   // 30 and 40: a goal a beginner can reach
+// A daily goal, minutes of typing in any mode (0 = none; after keybr). The
+// Learn panel shows today against it (learnpanel.js).
 // 15 by default: a beginner's honest daily dose; more is a choice.
 const DAILY = [0, 5, 10, 15, 20, 30, 45, 60];
 const DAILY_DEFAULT = 15;
-// Plain choices (owner, 2026-10-20, after keybr): S.settings[name] is one of
+// Plain choices (after keybr): S.settings[name] is one of
 // values (in the order of the buttons), def when nothing valid is saved,
 // kept in localStorage under key.
 // What each does: caret glide (typing.css body[data-glide]), what the
@@ -102,7 +101,7 @@ const CHOICES = {
 // finger (keyboard.js); fingerText: the next letter in the text in its
 // finger's colour (typing.js lightNext). Each works without the others. The keys are always in
 // their finger colours: without them the keyboard says nothing about which
-// finger to use (owner, 2026-10-22, the switch was removed).
+// finger to use, so there is no switch for them.
 const SWITCHES = {
   stop: { key: "tt.stop", on: false },
   nextKey: { key: "tt.nextKey", on: true },
@@ -127,13 +126,12 @@ export function lengthLabel(id) {
 export function loadSettings() {
   S.settings.length = lengthFor(S.mode);               // modes.js sets it again for the mode restored
   S.settings.live = store.get("tt.live") === "1";      // never chosen: hidden (see firstRoundDone)
-  // the streak badge, in Freetype only, off unless turned on (owner,
-  // 2026-10-20: it says little, and every extra thing on the text slows
-  // typing). A new key: the old tt.streak was on by default.
+  // the streak badge, in Freetype only, off unless turned on (it says
+  // little, and every extra thing on the text slows typing). A new key:
+  // the old tt.streak was on by default.
   S.settings.streak = store.get("tt.streak.free") === "1";
-  // the background: falling keycaps or nothing (ambient.js). Letters and
-  // words were choices too until 2026-10-22 (owner: keycaps only, on or
-  // off); a browser that chose one of them keeps a background of keycaps.
+  // the background: falling keycaps or nothing (ambient.js). A browser that
+  // saved an older choice (letters, words) gets keycaps.
   S.settings.bg = store.get("tt.bg") === "off" ? "off" : "keys";
   const caret = store.get("tt.caret");
   S.settings.caret = CARETS.includes(caret) ? caret : "line";
@@ -217,8 +215,9 @@ const action = (id, icon, label, cls = "btn") => `<button type="button" class="$
 // The rows, top to bottom. group: the small heading above (null: a line
 // instead); name: the i18n key of its name (also what search looks in);
 // desc: the i18n key of what it does and why you might want it, shown in
-// a tooltip over the name (owner, 2026-10-20: a line under every row took
-// too much room); ctl: its buttons; show: whether it is there at all.
+// a tooltip over the name (a line under every row takes too much room);
+// ctl: its buttons; show: whether it is there at all.
+
 // To add a setting: one entry here (and its key in CHOICES / SWITCHES or
 // the click handler below, its default in S.settings, its texts in i18n.js).
 const pick = (name, label) => seg(CHOICES[name].values.map((v) => choice(name, v, label(v), S.settings[name] === v)));

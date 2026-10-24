@@ -25,7 +25,7 @@
 /* the key legends on the drawn keyboard only: a family of its own, so the
    bold text elsewhere keeps Medium */
 @font-face { font-family: "Geist Mono Keys"; src: url("fonts/GeistMono-SemiBold.woff2") format("woff2"); font-weight: 600; font-display: swap; }
-/* the logo only (owner, 2026-10-18: Sora SemiBold, picked from eight).
+/* the logo only (Sora SemiBold).
    The file holds just the letters of "typeTrainer" (1.5 KB), cut by
    Google Fonts' "text=" option: fonts.googleapis.com/css2?family=
    Sora:wght@600&text=typeTrain. Another word in the logo needs a new cut.
@@ -54,7 +54,7 @@
   --error: #e5484d;
   --ok: #8fd17c;        /* mastered letter */
   --mono: "Geist Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
-  --ui: var(--mono);     /* labels and panels use the same font as everything (owner, 2026-10-16) */
+  --ui: var(--mono);     /* labels and panels use the same font as everything */
   --logo: "Sora Logo", var(--mono);   /* the word "typeTrainer" only */
 
   /* one key unit: the keyboard size is not a setting, it is always the largest
@@ -102,7 +102,7 @@
    highlights do not), the gold kept for fills, and text in the accent colour
    a brighter amber. The text to type is large (about 34px), so 3:1 is the
    contrast it needs: that leaves room for a cool slate and a vivid amber
-   instead of a dull grey and brown (owner, 2026-10-18: "too dull"). */
+   instead of a dull grey and brown. */
 :root[data-theme="light"] {
   color-scheme: light;
   --bg: #f1f2f4;
@@ -113,7 +113,7 @@
   --sub: #6b7186;       /* untyped text: cool slate, 4.3:1 on the page */
   --text: #1a1d24;
   --accent: #f2c230;
-  --accent-text: #d49a00;  /* gold as text, for the big numbers and short labels: a clean amber (owner, 2026-10-18: #b97c00 looked dark and dull, #e0a800 began to melt into the page) */
+  --accent-text: #d49a00;  /* gold as text, for the big numbers and short labels: a clean amber (#b97c00 looks dark and dull, #e0a800 begins to melt into the page) */
   --accent-glow: 0 0 0 1px rgba(200, 150, 20, .35), 0 6px 18px -6px rgba(220, 160, 20, .5);
   --on-accent: #17130a;
   --error: #d93a40;
@@ -140,7 +140,7 @@ html, body { min-height: 100%; }
    up, not in one jump at a fixed height: the jump made everything a step
    bigger in windows just over the line (820-880px, a laptop at 100%), where
    the taller text then left the keyboard too little height to be as wide as
-   the text (owner, 2026-10-18: "at 90% fine, at 100% not") */
+   the text */
 @media (min-width: 1000px) and (pointer: fine) { html { font-size: clamp(16px, calc(100vh / 50), 18px); } }
 /* no scrollbar: the typing screen always fits; the stats screen still scrolls with the wheel */
 html { scrollbar-width: none; }
@@ -155,7 +155,7 @@ body {
   font-feature-settings: "zero";  /* a slashed zero: 0 and O never look alike in the numbers */
 }
 /* the page is one flat colour: a faint warm light behind the text read as a
-   patch of another colour (owner, 2026-10-18) */
+   patch of another colour */
 button, input { font: inherit; }
 /* Nothing is selected by dragging the mouse or a long press, anywhere: it
    looks broken. Text fields stay selectable; the stats screen has its own
@@ -171,7 +171,7 @@ input, textarea { user-select: text; -webkit-user-select: text; }
    frame around the content. So the eye tells them apart at a glance.
    .lbl-ui is the look of a fixed label: small and grey, in sentence case
    like every other text (all capitals read as template chrome and are
-   harder to read; owner, 2026-10-16: capitals only at the start). */
+   harder to read: capitals only at the start). */
 .lbl-ui, .metric small, .stat .lbl, .tile small, .r-lbl,
 .panel-note, .profile-field small, .profile-label, .intro-kicker {
   font-family: var(--ui); font-size: .75rem; font-weight: 500; color: var(--sub);
@@ -278,7 +278,8 @@ dialog.settings-win:focus { outline: none; }
 }
 .sw-foot { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 14px; border-top: 1px solid var(--line); color: var(--sub); font-size: .72rem; }
 .sw-foot kbd { background: var(--track); box-shadow: var(--ring); color: var(--text); border-radius: 4px; padding: 0 5px; margin-right: 3px; font-family: var(--mono); }
-/* desktop (owner, 2026-10-18: "too small"): the same window, about a
+/* desktop: the same window, about a
+
    quarter bigger, with more room around every row */
 @media (min-width: 1000px) and (pointer: fine) {
   dialog.settings-win { inset-block-start: 11vh; min-width: 34rem; }

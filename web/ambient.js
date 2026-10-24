@@ -1,13 +1,13 @@
-// The quiet background (owner, 2026-10-18): in the empty fields left and
+// The quiet background: in the empty fields left and
 // right of the page, keycaps fall slowly from the top to the bottom,
 // turning a little. A setting turns them off (settings.js S.settings.bg:
-// "keys" or "off"; owner, 2026-10-22: keycaps only, letters and words were
-// choices before). They are of a few kinds so the field does not look
+// "keys" or "off"). They are of a few kinds so the field does not look
 // stamped: most are square keys with an open letter (F and J with their
-// bump), some are wide keys with their name (Shift, Tab, Enter; owner,
-// 2026-10-22: blank ones did not read as keys), some are filled a little.
-// They keep moving while you type (owner, 2026-10-20: about 2 ms of a
-// keypress, "that is nothing"). After a minute with no key and no mouse
+// bump), some are wide keys with their name (Shift, Tab, Enter: blank ones
+// do not read as keys), some are filled a little.
+// They keep moving while you type: they cost about 2 ms of a keypress
+// (#148 measures it again). After a minute with no key and no mouse
+
 // the page dims a little and the background grows a little stronger: a
 // screen saver, any key or mouse move ends it.
 // Decoration only, like fx.js: it never changes what is measured.
@@ -84,8 +84,9 @@ function keycap(size, letters) {
 // (Re)builds the pieces for the current window and the current setting: only
 // in the empty fields next to the header's width, none if those fields are
 // too narrow or the setting is "off".
-// The pieces never run into each other (owner, 2026-10-18: overlapping ones
-// looked messy): each field is cut into lanes as wide as the largest turned
+// The pieces never run into each other (overlapping ones look messy): each
+// field is cut into lanes as wide as the largest turned
+
 // keycap, every lane has its own speed, and the pieces of one lane fall at
 // that same speed an equal share of the way apart, so they keep their
 // distance all the way down.

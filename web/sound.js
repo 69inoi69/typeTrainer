@@ -1,4 +1,5 @@
-// Key sounds (a setting, off by default; owner, 2026-10-20, after keybr):
+// Key sounds (a setting, off by default; after keybr):
+
 // a soft click on every key, and a low tone on a mistake. Made by the
 // browser's Web Audio on the spot, so there are no sound files to load: a
 // click is 12 ms of noise through a band filter (it sounds like a key, not

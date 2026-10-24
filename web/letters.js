@@ -1,15 +1,15 @@
 // The letters bar above the text: learning's progress, made plain for a
-// beginner (owner, 2026-10-19: no stats in learning, but the user must see
-// what is mastered, what still needs work, and why). One chip per letter
+// beginner (no stats in learning, but the user must see what is mastered,
+// what still needs work, and why). One chip per letter
 // of the language: open (its colour goes from red to green as it gets
-// closer to mastered, as on keybr; owner, 2026-10-20), mastered (green,
+// closer to mastered, as on keybr), mastered (green,
 // with a tick), the focus of the portion being typed (gold), still locked
 // (crossed out);
 // each chip's tooltip says its numbers and what it still needs. On the
 // keyboard, the keys of locked letters are dimmed and the letters you have
 // mastered fade from their keys: the fingers know them, the eyes need not
 // look (touch typing is not looking down). Learn has no status line under
-// the text: this row shows the open letters (owner, 2026-10-22).
+// the text: this row shows the open letters.
 // In Climb and Freetype there are no letters to learn: the bar is hidden
 // and every key is open; in Climb the status line shows the level, how far
 // the typist is on it, and which words it draws. (Freetype's word lists are in the round bar, modebar.js.)
@@ -51,10 +51,10 @@ export function renderLetters() {
   if (!S.exercise) return;
   const info = {};
   for (const k of S.lastStats?.keys ?? []) info[k.char] = k;
-  // The focus is shown as soon as the portion has one, data or not: it
-  // used to wait for data about the letter, so a letter just opened (the
-  // next focus, with no presses yet) lit up, went out and came back only
-  // after the next portion was sent (owner, 2026-10-18: "it shows late").
+  // The focus is shown as soon as the portion has one, data or not:
+  // waiting for data about the letter, a letter just opened (the next
+  // focus, with no presses yet) would light up, go out and come back only
+  // after the next portion was sent.
   const focus = S.exercise.focus;
 
   const set = JSON.stringify([S.lang, S.exercise.unlocked, S.exercise.locked,
@@ -74,8 +74,8 @@ export function renderLetters() {
       frag.appendChild(chip);
     };
     for (const c of S.exercise.unlocked) add(c, info[c]?.mastered ? "mastered" : "");
-    // the letter that opens next: marked in the row itself (owner,
-    // 2026-10-18: no "next letter" line under it)
+    // the letter that opens next: marked in the row itself (no "next
+    // letter" line under it)
     for (const c of S.exercise.locked) add(c, c === S.exercise.locked[0] ? "locked next" : "locked");
     el.letters.replaceChildren(frag);
 
@@ -112,7 +112,8 @@ export function renderLetters() {
     chipOf[c]?.classList.toggle("focus", c === focus);
   }
 
-  // No status line in Learn (owner, 2026-10-22): the row above already
+  // No status line in Learn: the row above already
+
   // shows which letters are open, and the panel's letter line says what to
   // type. Climb draws its level here (renderClimb).
   if (el.lettersCaption.firstChild) el.lettersCaption.replaceChildren();

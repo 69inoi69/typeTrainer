@@ -77,7 +77,7 @@ export const FX = (() => {
   // opacity) or unfold it, then the class "off" (display: none) is set or
   // removed. The content around it slides instead of jumping. The padding
   // folds too: left out, it stayed until display: none and the page jumped
-  // by it at the end (the keyboard panel, owner, 2026-10-18). Clicks only.
+  // by it at the end (the keyboard panel). Clicks only.
   async function collapse(node, hide, ms = 240) {
     if (reduced() || !node.animate) { node.classList.toggle("off", hide); return; }
     node.getAnimations().forEach((a) => a.cancel());
@@ -160,10 +160,10 @@ export const FX = (() => {
 // loaded. The splash stays at least MIN_MS so the word can type itself out
 // (screens.css, .splash-type), and any key or click skips the rest. Then
 // the splash fades away over the page, which is already drawn under it.
-// It used to fly the logo into the header while the page rose in piece by
-// piece; the owner wanted a calm fade (2026-10-22), and the rise-in
-// restyled the whole page at the moment the fade began, which stuttered
-// on a slow laptop. Only opacity is animated, so the compositor runs it
+// A calm fade, and nothing else moves: a page rising in piece by piece
+// would restyle the whole page at the moment the fade begins, which
+// stutters on a slow laptop. Only opacity is animated, so the compositor runs it
+
 // even while the page is still busy loading.
 export const Splash = (() => {
   // the icon, 11 letters at --step 85 ms from --t0 320 ms (screens.css),
