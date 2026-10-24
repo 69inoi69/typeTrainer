@@ -161,17 +161,12 @@ the normal server, it shows yours.
   - **caret movement**: smooth (default: the caret glides to the next
     letter, quicker when you type fast, so it keeps up with your keys) or
     jump (it moves at once).
-  - **caret at rest**: what the caret does when you stop typing: still (a
-    steady line), breathe (default: it slowly fades out and in) or pulse (a
-    thicker caret that blinks faster). While you type it is always steady.
-  - **space marks**: off (default), a faint dot or a short bar on every space
-    between words, in the colour of the letters around it.
   - **clean words in Freetype**: the bolt and number above the caret (clean
     words in a row), on or off (default). Learn and Climb never show it.
   - **background**: keycaps falling slowly in the empty fields at the
     sides, on or off (default).
-  - **caret**: a thin line (default), a block over the letter, a bar under
-    it (underline) or a frame around it (outline).
+  - **caret**: a thin line (default) or a block over the letter. It stands
+    still when you stop typing.
   - **theme**: dark (default) or light: a warm paper page with white cards,
     its own colours rather than the dark theme turned inside out.
   **Typing**
@@ -261,7 +256,7 @@ the normal server, it shows yours.
   on monkeytype, nothing to slow the page down); a mistake makes the caret shrink, turn red
   and shake for a tenth of a second. The lit key on the drawn keyboard dips
   a little as its light goes out, and the next key and finger light up. While you pause, the caret
-  breathes, pulses or stays still (the setting "caret at rest").
+  stands still. Every space shows a faint dot, so it reads as a key too.
 - **The result** (Climb and Freetype) comes about a tenth of a second after
   the last letter: the caret reaches the end, the finished text fades out
   (this wait is not in the speed), and the whole result fades in at once

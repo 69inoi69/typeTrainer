@@ -64,7 +64,7 @@ export function setLength(mode, id) {
 // The caret styles, in the order of the buttons ("line" is the default).
 // To add one: its id here, its look in typing.css (body[data-caret="id"]
 // .caret and a small picture .cs.id) and its name in i18n.js ("settings.id").
-const CARETS = ["line", "block", "underline", "outline"];
+const CARETS = ["line", "block"];   // two only (issue #167); a saved older one falls back to "line"
 // A personal speed goal, WPM (0 = none). Only the stats
 // screen shows it (a tile, the line on the chart): the algorithm never sees
 // it, letters open at the trainer's own target as before (AGENTS.md: a
@@ -78,9 +78,8 @@ const DAILY_DEFAULT = 15;
 // Plain choices (after keybr): S.settings[name] is one of
 // values (in the order of the buttons), def when nothing valid is saved,
 // kept in localStorage under key.
-// What each does: caret glide (typing.css body[data-glide]), what the
-// caret does at rest (typing.css body[data-blink], caret.js breathe), text size
-// (body[data-size]), a mark on every space (body[data-ws]), sounds
+// What each does: caret glide (typing.css body[data-glide]), text size
+// (body[data-size]), sounds
 // (sound.js), their volume, the rest reminder (typing.js restCheck,
 // minutes, "0" = off).
 // To add one: an entry here, a row in ROWS, its look in the stylesheets (the
@@ -88,9 +87,7 @@ const DAILY_DEFAULT = 15;
 // use in the code, and its texts in i18n.js.
 const CHOICES = {
   glide: { key: "tt.glide", values: ["smooth", "jump"], def: "smooth" },
-  blink: { key: "tt.blink", values: ["off", "breathe", "pulse"], def: "breathe" },
   size: { key: "tt.size", values: ["s", "m", "l"], def: "m" },
-  ws: { key: "tt.ws", values: ["none", "dot", "bar"], def: "none" },
   sound: { key: "tt.sound", values: ["off", "errors", "keys"], def: "off" },
   volume: { key: "tt.volume", values: ["25", "50", "75", "100"], def: "50" },
   rest: { key: "tt.rest", values: ["0", "20", "30", "45", "60"], def: "0" },
@@ -228,8 +225,6 @@ const ROWS = [
   { group: "settings.look", name: "settings.caret", ctl: () => seg(CARETS.map((id) =>
     choice("caret", id, `<i class="cs ${id}"></i>${t("settings." + id)}`, S.settings.caret === id))) },
   { group: "settings.look", name: "settings.glide", desc: "settings.glideDesc", ctl: () => pick("glide", (v) => t("settings.glide_" + v)) },
-  { group: "settings.look", name: "settings.blink", desc: "settings.blinkDesc", ctl: () => pick("blink", (v) => t("settings.blink_" + v)) },
-  { group: "settings.look", name: "settings.ws", desc: "settings.wsDesc", ctl: () => pick("ws", (v) => t("settings.ws_" + v)) },
   { group: "settings.look", name: "settings.streak", desc: "settings.streakDesc", ctl: () => onOff("streak", S.settings.streak) },
   { group: "settings.look", name: "settings.background", desc: "settings.backgroundDesc", ctl: () => onOff("bg", S.settings.bg !== "off") },
   { group: "settings.look", name: "settings.theme", ctl: () => seg([

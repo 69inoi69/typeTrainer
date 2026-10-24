@@ -38,7 +38,7 @@ import { renderModeBar } from "./modebar.js";
 import { lengthOf, firstRoundDone } from "./settings.js";
 import { keySound } from "./sound.js";
 import { customPortions, customRoundDone } from "./customtext.js";
-import { flinchCaret, breathe, paceGlide, resetGlide, scrollText, stopScroll } from "./caret.js";
+import { flinchCaret, paceGlide, resetGlide, scrollText, stopScroll } from "./caret.js";
 import { STREAK_RISE, streakOn, cleanWord, breakStreak } from "./streak.js";
 import { showWarn, hideWarn, warnShowing, foreignKey, layoutCheck } from "./warn.js";
 
@@ -93,7 +93,7 @@ export function fitText() {
 // words on a line below, which would scroll the finished text away).
 // The caret's height and its gap above the letter are in em of the text
 // (typing.css .caret), never read from the letter: a space where a line
-// wraps, with a mark on every space (body[data-ws]), is drawn on both
+// wraps, with its mark (typing.css span[data-sp]), is drawn on both
 // lines, so its offsetHeight is two lines and the caret would take it.
 let caretFrame = 0;
 export function placeCaret(jump, last = false) {
@@ -104,7 +104,6 @@ export function placeCaret(jump, last = false) {
     const extra = last ? null : extras.get(S.pos)?.at(-1);
     const atEnd = last || S.pos >= spans.length || !!extra;
     const s = last ? spans[Math.max(0, S.pos - 1)] : extra || spans[Math.min(S.pos, spans.length - 1)];
-    breathe(el.textBox.classList.contains("typing"));
     const x = s.offsetLeft + (atEnd ? s.offsetWidth : 0);
     if (jump) el.caret.classList.add("jump");
     // position in the separate CSS "translate" property, so an animation of
@@ -216,7 +215,7 @@ function appendPortions(list) {
     sp.className = (focusMask[i] ? "fx" : "") + " later" + (endAt >= 0 && i >= endAt ? " beyond" : "");
     // a gold letter says why it is gold (tools.js shows it only while you are not typing)
     if (focusMask[i]) sp.dataset.tipText = t("tip.fx", { l: S.text[i] });
-    else if (S.text[i] === " ") sp.dataset.sp = "";   // a space: typing.css can mark it (the setting body[data-ws])
+    else if (S.text[i] === " ") sp.dataset.sp = "";   // a space: typing.css marks it with a dot
     frag.appendChild(sp);
     spans.push(sp);
   }
