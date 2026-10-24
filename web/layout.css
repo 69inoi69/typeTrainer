@@ -293,6 +293,11 @@ button:disabled:active { transform: none; }
 @keyframes note-out { to { opacity: 0; transform: translateY(4px); } }
 .note b { color: var(--accent-text) !important; font-weight: 500; }
 .note-body { line-height: 1.35; }
+/* a button inside a message ("Save again"): it reads as a link in the pill */
+.note-act {
+  margin-left: 6px; padding: 0; border: 0; background: none; cursor: pointer;
+  font: inherit; color: var(--accent-text); text-decoration: underline; text-underline-offset: 3px;
+}
 /* the round mark on the left: an icon, or the new letter itself */
 .note-mark {
   width: 20px; height: 20px; flex: none; border-radius: 50%; display: grid; place-items: center;

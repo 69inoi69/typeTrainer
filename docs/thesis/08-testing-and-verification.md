@@ -27,7 +27,8 @@ guard the claim.
 **Automated checks.** `go test ./...` (engine, storage on memory and on a
 real PostgreSQL in CI, the whole app through HTTP) and browser checks in a
 real Chromium (`tools/browser`, PR #156: a round in each mode, the caret,
-the result and stats screens). Coverage per package:
+the result and stats screens; issue #149: a save that fails, by a lost
+connection or by the server turning the round down). Coverage per package:
 [05-go-server.md](05-go-server.md).
 
 ## What is already built

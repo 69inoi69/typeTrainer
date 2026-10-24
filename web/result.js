@@ -50,7 +50,10 @@ export const resultOpen = () => done !== null;
 //      list: the word list in Freetype (0 with your own text),
 //      variant: Freetype's kind of text ("" plain words, "long", "sentences", "custom"),
 //      words: [{letters: [{c, bad}], wpm}] (typing.js typedWords),
-//      chars: {correct, wrong, extra, missed}, seconds (typing.js roundFacts) }
+//      chars: {correct, wrong, extra, missed}, seconds (typing.js roundFacts),
+//      unsaved: {text, retry} when the server did not keep the round
+//             (issue #149): why, and a retry (null: no use trying) that
+//             resolves with what Climb shows once saved {verdict, place, weak} }
 export function showResult(r) {
 
   // 1. the top: speed and accuracy big on the left, the speed the biggest
@@ -94,7 +97,9 @@ export function showResult(r) {
   // line) or the arrow of a move; the sentence after the row says what
   // this round counted for (climbNote)
   let note = "";
-  if (r.climb) {
+  if (r.climb && !r.climb.place) {   // not saved: the round counted for nothing yet
+    row.push(`<span class="r-num mid" tabindex="0" data-tip-text="${t("tip.level")}"><span class="r-lbl">${t("climb.level")}</span><b>${r.climb.level}</b></span>`);
+  } else if (r.climb) {
     const p = r.climb.place, c = S.climb;
     const move = p.moved ? ` <span class="trend ${p.moved > 0 ? "up" : "down"}">${p.moved > 0 ? "↑" : "↓"}</span>` : "";
     const pips = p.moved || !c ? "" : `<span class="pips">${Array.from({ length: c.passesUp }, (_, i) => `<i${i < p.passes ? ' class="on"' : ""}></i>`).join("")}</span>`;
@@ -107,9 +112,40 @@ export function showResult(r) {
   if (r.list) row.push(num(listLabel(r.list), "", "freetype.list", "mid", "freetype.listTip"));
   if (r.variant) row.push(num(variantLabel(r.variant), "", "ft.text", "mid", "ft.textTip"));
 
+  if (r.unsaved) note = `<p class="r-unsaved" role="status"><span>${r.unsaved.text}</span>` +
+    (r.unsaved.retry ? ` <button type="button" class="btn r-again">${t("save.again")}</button>` : "") + `</p>`;
+
   const body = `<div class="r-top${graph ? "" : " solo"}">${hero}${graph}</div>` +
     (row.length ? `<div class="r-row">${row.join("")}</div>` : "") + note + list;
-  return open(body, "result.nextBtn");
+  const shown = open(body, "result.nextBtn");
+  if (r.unsaved?.retry) saveAgain(r);
+  return shown;
+}
+
+// "Save again" on a round the server did not keep: one more try. Saved,
+// the line becomes what the round counted for (Climb) or "Saved"; failed,
+// it says why, and the button stays while trying again makes sense.
+function saveAgain(r) {
+  const line = box.querySelector(".r-unsaved"), btn = line.querySelector(".r-again");
+  btn.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    el.input.focus({ preventScroll: true });   // Enter and Tab go on working
+    btn.disabled = true;
+    try {
+      const climb = await r.unsaved.retry();
+      line.className = "r-climb";
+      line.textContent = t("save.done");
+      if (r.climb && S.climb) {
+        const cl = { ...r.climb, ...climb };
+        line.className = `r-climb ${cl.verdict}`;
+        line.innerHTML = climbNote(cl, S.climb);
+      }
+    } catch (err) {
+      line.firstChild.textContent = err.message;
+      btn.disabled = false;
+      if (!err.retryable) btn.remove();
+    }
+  });
 }
 
 // What a Climb round counted for, in one sentence: a level reached or

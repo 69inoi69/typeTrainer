@@ -118,9 +118,10 @@ export const FX = (() => {
   const INFO_ICON = '<circle cx="12" cy="12" r="8"/><path d="M12 11v5M12 8h.01"/>';
   const queue = [];
   let current = null;        // the message on screen, or null
-  // toast(html): queue a message
-  function toast(html) {
-    queue.push({ html });
+  // toast(html, act): queue a message; act: what its button (a
+  // button.note-act inside html) does when pressed
+  function toast(html, act) {
+    queue.push({ html, act });
     if (!current) showNext();
   }
   function showNext() {
@@ -141,6 +142,7 @@ export const FX = (() => {
     node.innerHTML = `<span class="note-body">${item.html}</span><i class="note-bar"></i>`;
     node.prepend(mark);
     node.querySelector(".note-bar").addEventListener("animationend", () => closeNote(node));
+    if (item.act) node.querySelector(".note-act")?.addEventListener("click", item.act);
     node.addEventListener("click", () => closeNote(node));
     box.replaceChildren(node);
     current = node;

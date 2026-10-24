@@ -224,6 +224,9 @@ language or a space, `errors >= 0`, `ms >= 0`; `keys` follows the same rules. `/
 `chars >= 1` (something was typed; 0 means "the number of samples"), WPM 0–400,
 accuracy 0–100, and `perSecond` with at most 5000 entries, each between 0 and 5000. `recent` and `retry` hold at most 5000 words; a word that
 is not in the list or has a locked letter is simply ignored. Body limit 1 MB.
+The page sends the end of a round (`/results`, `/freeplay/results`,
+`/freetype/results`) again twice when the server was not reached or
+answered 5xx, never after a 4xx (`web/api.js` `saveRound`, issue #149).
 
 **Round length** (`length` on `/results`, `/freeplay/results` and
 `/freetype/results`, and

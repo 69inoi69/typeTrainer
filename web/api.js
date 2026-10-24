@@ -31,12 +31,39 @@ export async function sendAuth(method, path, body) {
   return { status: res.status, data: await res.json().catch(() => ({})) };
 }
 // lang: another language than the current one (the study link sets all).
+// A failed call throws an Error with .status: the HTTP status, or 0 when
+// the server was not reached at all.
 export async function postJSON(path, body, lang = S.lang) {
-  const res = await fetch(API + withLang(path, lang), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(path + " -> " + res.status);
+  let res;
+  try {
+    res = await fetch(API + withLang(path, lang), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    throw Object.assign(new Error(path + " -> no connection: " + err.message), { status: 0 });
+  }
+  if (!res.ok) throw Object.assign(new Error(path + " -> " + res.status), { status: res.status });
   return res.json();
+}
+
+// Worth trying again: the server was not reached or failed on its side. A
+// 4xx is the server turning the request down; the same request gets the
+// same answer.
+export const retryable = (err) => !(err.status >= 400 && err.status < 500);
+
+// Saving a finished round (issue #149): postJSON, tried again after each
+// pause of SAVE_RETRY_MS while the failure is retryable, so a short drop
+// of the connection does not lose the round. Throws the last error.
+const SAVE_RETRY_MS = [1000, 3000];
+export async function saveRound(path, body) {
+  for (let i = 0; ; i++) {
+    try {
+      return await postJSON(path, body);
+    } catch (err) {
+      if (i >= SAVE_RETRY_MS.length || !retryable(err)) throw err;
+      await new Promise((r) => setTimeout(r, SAVE_RETRY_MS[i]));
+    }
+  }
 }

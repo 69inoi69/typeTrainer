@@ -27,7 +27,7 @@ import { FEEL } from "./feel.js";
 import { t } from "./i18n.js";
 import { FX } from "./fx.js";
 import { el, S, introOpen, isTouch, roundList, boxState } from "./state.js";
-import { postJSON } from "./api.js";
+import { postJSON, saveRound, retryable } from "./api.js";
 import { highlightNextKey, pulseKey, glowKey, requestFit } from "./keyboard.js";
 import { refreshStats } from "./stats.js";
 import { showResult } from "./result.js";
@@ -841,9 +841,17 @@ async function finishRound(byLastKey = false) {
     if (S.mode === "climb") { await finishFree(wpm, accuracy, typed, fullSeconds(end)); return; }
     if (S.mode === "freetype") { await finishFreetype(wpm, accuracy, typed, fullSeconds(end)); return; }
     // keys: the whole round, kept by the server as its raw record (it learns only from samples)
-    const res = await postJSON("/results", {
-      samples, keys: typed, chars: typed.length, wpm, accuracy, perSecond: fullSeconds(end), length: S.settings.length, device: device(),
-    });
+    const body = { samples, keys: typed, chars: typed.length, wpm, accuracy, perSecond: fullSeconds(end), length: S.settings.length, device: device() };
+    learnRound++;
+    let res;
+    try {
+      res = await saveRound("/results", body);
+    } catch (err) {
+      learnUnsaved(err, body);
+      el.live.classList.remove("final");
+      await loadExercise();
+      return;
+    }
     firstRoundDone();
     await refreshStats();
     if (res.newLetter) newLetter(res.newLetter);
@@ -858,15 +866,38 @@ async function finishRound(byLastKey = false) {
     el.live.classList.remove("final");
     await loadExercise();   // built from the UPDATED model
   } catch (err) {
-    // said where the eyes are (it used to go only to the screen-reader
-    // line), and a fresh round starts, so the screen never stays frozen
+    // the round is saved (a failed save is handled above); what failed is
+    // reading the new state. Said where the eyes are, and a fresh round
+    // starts, so the screen never stays frozen
     console.error(err);
-    FX.toast(t("err.save"));
+    FX.toast(t("err.load"));
     loadExercise().catch(console.error);
   } finally {
     boxState(false, "ending");
     S.busy = false;
   }
+}
+
+// A Learn round the server did not keep (issue #149). The portions sent
+// during the round are learned already (as with Tab); only the record of
+// the round is missing. The message offers to send it once more, until the
+// next round ends: sent after that one it would land out of order. A round
+// the server turned down (4xx) gets no offer: it would be turned down again.
+let learnRound = 0;   // finished Learn rounds; an offer is for its own round only
+function learnUnsaved(err, body) {
+  console.error(err);
+  if (!retryable(err)) { FX.toast(t("save.impossible")); return; }
+  const round = learnRound;
+  FX.toast(`${t("save.learnFailed")} <button type="button" class="note-act">${t("save.again")}</button>`, () => {
+    if (round !== learnRound) { FX.toast(t("save.late")); return; }
+    saveRound("/results", body).then((res) => {
+      firstRoundDone();
+      refreshStats().catch(console.error);
+      refreshActivity();
+      if (res.newLetter) newLetter(res.newLetter);
+      FX.toast(t("save.done"));
+    }, (again) => learnUnsaved(again, body));
+  });
 }
 
 // The rest reminder (a setting, S.settings.rest minutes, "0" = off): after
@@ -898,16 +929,48 @@ const device = () => (isTouch() ? "touch" : "keyboard");
 async function finishFree(wpm, accuracy, keys, perSecond) {
   const before = S.climb?.sessions ?? [];
   const level = S.climbLevel;
-  const res = await postJSON("/freeplay/results", { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length, device: device(), level });
-  firstRoundDone();
-  S.climbLevel = res.place.level;                // the next round
-  refreshActivity();        // the daily goal counts every mode
-  await refreshFreeplay();
-  renderLetters();
-  const best = before.length > 0 && wpm > Math.max(...before.map((x) => x.wpm));
-  if (best) FX.burstFrom(el.wpm, 80);
-  await showResult({ wpm, accuracy, consistency: res.consistency, best, climb: { level, verdict: res.verdict, place: res.place, weak: res.weak }, words: typedWords(), ...roundFacts() });
+  const body = { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length, device: device(), level };
+  // what a saved round changes: the level of the next round comes only
+  // from the server's answer, so an unsaved round moves nothing
+  const saved = async (res) => {
+    firstRoundDone();
+    S.climbLevel = res.place.level;                // the next round
+    refreshActivity();        // the daily goal counts every mode
+    await refreshFreeplay();
+    renderLetters();
+    return { verdict: res.verdict, place: res.place, weak: res.weak };
+  };
+  const shown = { wpm, accuracy, words: typedWords(), ...roundFacts() };
+  const { res, unsaved } = await trySave("/freeplay/results", body, saved);
+  if (res) {
+    const best = before.length > 0 && wpm > Math.max(...before.map((x) => x.wpm));
+    if (best) FX.burstFrom(el.wpm, 80);
+    await showResult({ ...shown, consistency: res.consistency, best, climb: { level, ...(await saved(res)) } });
+  } else {
+    await showResult({ ...shown, consistency: null, climb: { level }, unsaved });
+  }
   await loadExercise();
+}
+
+// Saves a Climb or Freetype round (issue #149). -> {res} when it is saved,
+// or {unsaved} for the result screen: why not (text) and, when trying
+// again makes sense, a retry that resolves with saved(res) (what the
+// screen shows then) or rejects with the next text. The result screen
+// shows the round either way; leaving it without saving drops the round.
+async function trySave(path, body, saved) {
+  const why = (err) => { console.error(err); return t(retryable(err) ? "save.failed" : "save.impossible"); };
+  try {
+    return { res: await saveRound(path, body) };
+  } catch (err) {
+    const retry = async () => {
+      try {
+        return await saved(await saveRound(path, body));
+      } catch (again) {
+        throw Object.assign(new Error(why(again)), { retryable: retryable(again) });
+      }
+    };
+    return { unsaved: { text: why(err), retry: retryable(err) ? retry : null } };
+  }
 }
 
 // The end of a Freetype round: it goes to the history of its word list and
@@ -916,13 +979,24 @@ async function finishFree(wpm, accuracy, keys, perSecond) {
 async function finishFreetype(wpm, accuracy, keys, perSecond) {
   const variant = S.freetypeVariant, list = roundList();
   const before = S.freetype?.sessions ?? [];
-  const res = await postJSON("/freetype/results", { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length, device: device(), list, variant });
-  if (variant === "custom") customRoundDone(wordsTyped);    // saved: the next round goes on from here
-  firstRoundDone();
-  refreshActivity();        // the daily goal counts every mode
-  await refreshFreeplay();
-  const best = before.length > 0 && wpm > Math.max(...before.map((x) => x.wpm));
-  if (best) FX.burstFrom(el.wpm, 80);
-  await showResult({ wpm, accuracy, consistency: res.consistency, best, list, variant, words: typedWords(), ...roundFacts() });
+  const body = { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length, device: device(), list, variant };
+  const done = wordsTyped;
+  const saved = async () => {
+    if (variant === "custom") customRoundDone(done);    // saved: the next round goes on from here
+    firstRoundDone();
+    refreshActivity();        // the daily goal counts every mode
+    await refreshFreeplay();
+    return {};
+  };
+  const shown = { wpm, accuracy, list, variant, words: typedWords(), ...roundFacts() };
+  const { res, unsaved } = await trySave("/freetype/results", body, saved);
+  if (res) {
+    await saved();
+    const best = before.length > 0 && wpm > Math.max(...before.map((x) => x.wpm));
+    if (best) FX.burstFrom(el.wpm, 80);
+    await showResult({ ...shown, consistency: res.consistency, best });
+  } else {
+    await showResult({ ...shown, consistency: null, unsaved });
+  }
   await loadExercise();
 }

@@ -75,6 +75,59 @@ for (const mode of MODES) {
   });
 }
 
+// A round the server does not keep (issue #149). A lost connection is
+// tried again twice, then the result screen still shows the round with
+// "Save again"; a round the server turns down (4xx) is not tried again.
+// Climb's level moves only once the round is saved. The failed requests
+// and their console errors are expected here, so they are taken out of
+// the list the afterEach checks.
+const expectedOnly = (info, path) => {
+  const rest = info.problems.filter((p) => !p.includes(path) && !p.startsWith("console:"));
+  info.problems.splice(0, info.problems.length, ...rest);
+};
+
+test("Climb: an unsaved round still shows its result and can be saved again", async ({ page }, info) => {
+  await openApp(page, { "tt.mode.en": "climb", "tt.length.climb": "words-10" });
+  let tries = 0;
+  await page.route("**/api/v1/freeplay/results*", (route) => { tries++; return route.abort(); });
+  await typeRound(page);
+  await expectResult(page);
+  const line = page.locator("#result .r-unsaved");
+  await expect(line).toContainText("Not saved: no connection");
+  expect(tries, "the save and its two retries").toBe(3);
+  await page.unroute("**/api/v1/freeplay/results*");
+  await line.getByRole("button", { name: "Save again" }).click();
+  await expect(line).toHaveCount(0);
+  await expect(page.locator("#result .r-climb")).toBeVisible();   // what the round counted for
+  expectedOnly(info, "/freeplay/results");
+});
+
+test("Freetype: a round the server turns down says so and is not tried again", async ({ page }, info) => {
+  await openApp(page, { "tt.mode.en": "freetype", "tt.length.freetype": "words-10" });
+  let tries = 0;
+  await page.route("**/api/v1/freetype/results*", (route) => {
+    tries++;
+    return route.fulfill({ status: 400, contentType: "application/json", body: '{"error":"wpm or accuracy out of range"}' });
+  });
+  await typeRound(page);
+  await expectResult(page);
+  const line = page.locator("#result .r-unsaved");
+  await expect(line).toContainText("looks impossible");
+  await expect(line.getByRole("button")).toHaveCount(0);
+  expect(tries).toBe(1);
+  expectedOnly(info, "/freetype/results");
+});
+
+test("Learn: an unsaved round offers to save it again", async ({ page }, info) => {
+  await openApp(page, { "tt.mode.en": "learn", "tt.length.learn": "words-15" });
+  await page.route("**/api/v1/results*", (route) => route.abort());
+  await typeRound(page, { done: async () => page.locator("#notice .note-act").isVisible() });
+  await page.unroute("**/api/v1/results*");
+  await page.locator("#notice .note-act").click();
+  await expect(page.locator("#notice")).toContainText("Saved");
+  expectedOnly(info, "/api/v1/results");
+});
+
 // The hand over the keyboard is a picture per finger (keyboard.js
 // handPicture); its <img> says which fingers it shows (data-f). After every
 // key the shown hands must be the ones of the next key's fingers, as the
