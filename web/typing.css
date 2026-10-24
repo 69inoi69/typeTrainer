@@ -780,4 +780,7 @@ body.kb-nofit #keyboard { display: none; }
 .r-climb { margin: 0; font-size: 1.25rem; color: var(--text); }
 .r-climb.pass { color: var(--ok); }
 .r-climb.fail { color: var(--error); }
+/* a round the server did not keep (issue #149): the line in the error colour, the button beside it */
+.r-unsaved { margin: 0; font-size: 1.25rem; color: var(--error); display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; }
+.r-unsaved .btn { font-size: 1rem; }
 .letters-caption .mode-note.slip { color: var(--error); }

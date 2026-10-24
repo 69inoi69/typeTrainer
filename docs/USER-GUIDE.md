@@ -227,6 +227,13 @@ the normal server, it shows yours.
   is dropped and not saved; the keypresses already sent on the way stay with
   your letters. `Esc` pauses the round and opens the settings; the first key
   after them goes on with it.
+- **A round that could not be saved** (no connection) is tried again
+  twice by itself. If it still fails, Climb and Freetype show the result
+  anyway with **Save again**; leaving that screen drops the round, and an
+  unsaved Climb round does not move your level. In Learn a message offers
+  the same button; the letters of that round are counted either way. A
+  round the server turns down as impossible (for example faster than
+  400 WPM) is not tried again.
 - **Rounds of 30 words, picked while you type.** The text is not ready in
   advance: it grows a few words at a time (a portion of 6 words around one
   focus letter), and every new portion is chosen from your newest statistics.
