@@ -65,7 +65,7 @@ export const S = {
   freetypeList: 0,        // Freetype: the chosen word list (its n most common words; 0 = not known yet)
   freetypeVariant: "",    // Freetype: the kind of text, "" (plain words), "long", "sentences" or "custom" (modes.js)
   climbLevel: null,       // Climb: the level of this round and the next, 1..10 (typing.js); null = not known yet in this language
-  settings: { length: "words-30", live: false, caret: "line", theme: "dark", streak: false, bg: "keys", goal: 0, daily: 15,
+  settings: { length: "words-30", live: false, caret: "line", theme: "dark", streak: false, bg: "off", goal: 0, daily: 15,
     glide: "smooth", blink: "breathe", size: "m", ws: "none", sound: "off", volume: "50", rest: "0",
     stop: false, nextKey: true, hand: true, fingerText: true },   // settings.js
   kbHidden: false,        // keyboard switched off

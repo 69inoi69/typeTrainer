@@ -146,6 +146,19 @@ test("Learn: an unsaved round offers to save it again", async ({ page }, info) =
   expectedOnly(info, "/api/v1/results");
 });
 
+// The falling background is off for a new visitor (issue #150) and shows
+// once it is turned on (an older choice, "letters", counts as on).
+test("the background is off by default and on when chosen", async ({ page }) => {
+  await openApp(page);
+  await expect(page.locator(".ambient")).toHaveAttribute("data-kind", "off");
+  await expect(page.locator(".ambient > *")).toHaveCount(0);
+  await page.evaluate(() => localStorage.setItem("tt.bg", "letters"));
+  await page.reload();
+  await waitForText(page);
+  await expect(page.locator(".ambient")).toHaveAttribute("data-kind", "keys");
+  await expect(page.locator(".ambient > *").first()).toBeAttached();
+});
+
 // The hand over the keyboard is a picture per finger (keyboard.js
 // handPicture); its <img> says which fingers it shows (data-f). After every
 // key the shown hands must be the ones of the next key's fingers, as the

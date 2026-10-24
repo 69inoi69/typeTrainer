@@ -168,9 +168,8 @@ the normal server, it shows yours.
     between words, in the colour of the letters around it.
   - **clean words in Freetype**: the bolt and number above the caret (clean
     words in a row), on or off (default). Learn and Climb never show it.
-  - **background**: what falls slowly in the empty fields at the sides:
-    keycaps with the open letters (default), the letters alone, short words
-    of the text, or nothing (off).
+  - **background**: keycaps falling slowly in the empty fields at the
+    sides, on or off (default).
   - **caret**: a thin line (default), a block over the letter, a bar under
     it (underline) or a frame around it (outline).
   - **theme**: dark (default) or light: a warm paper page with white cards,

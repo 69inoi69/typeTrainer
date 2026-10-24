@@ -130,9 +130,11 @@ export function loadSettings() {
   // little, and every extra thing on the text slows typing). A new key:
   // the old tt.streak was on by default.
   S.settings.streak = store.get("tt.streak.free") === "1";
-  // the background: falling keycaps or nothing (ambient.js). A browser that
-  // saved an older choice (letters, words) gets keycaps.
-  S.settings.bg = store.get("tt.bg") === "off" ? "off" : "keys";
+  // the background: falling keycaps or nothing (ambient.js), nothing
+  // unless turned on (issue #150). A browser that saved an older choice
+  // (letters, words) gets keycaps.
+  const bg = store.get("tt.bg");
+  S.settings.bg = bg && bg !== "off" ? "keys" : "off";
   const caret = store.get("tt.caret");
   S.settings.caret = CARETS.includes(caret) ? caret : "line";
   S.settings.theme = store.get("tt.theme") === "light" ? "light" : "dark";
