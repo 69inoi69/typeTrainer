@@ -34,7 +34,7 @@ Code: [github.com/69inoi69/typeTrainer](https://github.com/69inoi69/typeTrainer)
 - [5. Working through pull requests](#5-working-through-pull-requests) (13–14 Oct)
 - [6. Testing the algorithm and choosing words](#6-testing-the-algorithm-and-choosing-words) (14–15 Oct)
 - [7. Modes, settings, accounts and a database](#7-modes-settings-accounts-and-a-database) (15 Oct)
-- [8. Polishing the interface](#8-polishing-the-interface) (16–17 Oct)
+- [8. Polishing the interface](#8-polishing-the-interface) (16–23 Oct)
 - [9. The algorithm audit](#9-the-algorithm-audit) (16 Oct)
 - [10. Key decisions and why](#10-key-decisions-and-why)
 - [11. How the AI-assisted workflow worked](#11-how-the-ai-assisted-workflow-worked)
@@ -687,6 +687,30 @@ these iterations the student set the strongest working rule so far: **first
 say what you understood and what you plan to change, wait for agreement, and
 only then change code** (16 October, late evening). He also checked
 Monkeytype himself and corrected an answer the agent had given from memory.
+
+### 8.7 Tuning by feel (18–23 Oct)
+
+After 17 October many values were set by eye: the student typed, said what
+felt wrong, and one number or rule changed. The code comments used to retell
+each of these talks; issue #147 moved the reasons into plain comments and
+kept here only what the student confirmed.
+
+- **The caret glide** (`web/feel.js` caretGlideMs). Tried in turn: 70 ms on
+  a very steep curve (73% of the way in the first frame, then a crawl: it
+  read as a low frame rate); Monkeytype's "medium", 100 ms even (too soft);
+  a step-and-settle curve at 80 and 55 ms (behind the letters); Monkeytype's
+  "smooth caret: fast", 85 ms on an almost even in-out curve (still behind);
+  that curve in 60 ms; finally 65 ms, the student's own pick (20 Oct).
+- **The caret at fast typing** (23 Oct, confirmed): the student asked
+  whether the caret could go faster when typing fast. The glide now takes
+  a part of the average time between keys (PR #141).
+- **The long caret** (22 Oct, confirmed): with a mark on every space, the
+  caret suddenly grew two lines tall where a line wraps. Its height now
+  comes from the font size, never from the letter (PR #126); the browser
+  check in `tools/browser` guards it (PR #156).
+- **The zoom** (18 Oct, confirmed, more than once): at 90% browser zoom the
+  page fit, at 100% the keyboard got too little height. The root font size
+  now grows smoothly with the window height (`web/base.css`).
 
 ## 9. The algorithm audit
 

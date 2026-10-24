@@ -143,10 +143,10 @@ func Default() Config {
 			MinWords:      30,  // ...and at least 30 real words to choose from
 			RepeatPenalty: 0.3, // each earlier use in the exercise multiplies weight by 0.3
 			// "a" and "i" are the most common words but nothing to practise:
-			// the owner found them filler (2026-10-20)
+			// they only fill the round
 			MinWordLetters: 2,
 			// a word at most twice in a round of 30: the penalty alone let a
-			// rare letter's 10 words come back 5-6 times (owner, 2026-10-20)
+			// rare letter's 10 words come back 5-6 times
 			MaxRepeats:    2,
 			ExerciseWords: 20, // short exercises -> the model updates more often
 
@@ -180,8 +180,8 @@ func Default() Config {
 			RecentWords:   20,  // "do not repeat" looks at the last 20 words
 			RepeatPenalty: 0.3, // a word used recently is rarer, as in learning
 
-			// The levels (docs/ALGORITHM.md section 12; owner, 2026-10-20: ten
-			// levels, words only, speed never counts). Each level brings
+			// The levels (docs/ALGORITHM.md section 12): ten levels, words
+			// only, speed never counts. Each level brings
 			// rarer, longer words: the average word grows from 4.0 letters
 			// (200) to 7.3 (25 000). Levels 1, 3, 6, 8 and 10 are monkeytype's
 			// lists (200, 1k, 5k, 10k, 25k), so a typist can compare.
@@ -207,8 +207,9 @@ func Default() Config {
 			// Freetype: the lists of monkeytype's English (200, 1k, 5k, 10k,
 			// 25k most common words); data/langs/en/free.txt has 25 000.
 			FreetypeLists: []int{200, 1000, 5000, 10000, 25000},
-			// Freetype's kinds of text (owner, 2026-10-21, after keybr and
-			// monkeytype). Long words: 6+ letters, a quarter of the 1000
+			// Freetype's kinds of text (after keybr and monkeytype). Long
+			// words: 6+ letters, a quarter of the 1000
+
 			// most common English words and most of the rarer ones.
 			LongMin: 6,
 			// Real sentences and your own text: letters, capitals and these

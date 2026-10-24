@@ -266,8 +266,8 @@ export function summary(s) {
 // ---------- the mode, the list and the length shown ----------
 // Shows the pick: the answer is asked for first when it is not the typing
 // screen's own. Only the parts below change: no opening animation of the
-// whole screen again (owner, 2026-10-18: everything vanished and came
-// back), just a short fade of the parts that show the new pick.
+// whole screen again (everything would vanish and come back), just a short
+// fade of the parts that show the new pick.
 async function choose(change) {
   Object.assign(pick, change);
   const key = keyOf(pick);
@@ -317,8 +317,8 @@ pickEl.addEventListener("click", (e) => {
 
 // ---------- one round length at a time ----------
 // The personal bests, as on monkeytype's account page: a cell for every
-// round length, always, in the settings' order (owner, 2026-10-16: the row
-// must not change with the history or the settings), plus any older length
+// round length, always, in the settings' order (the row must not change
+// with the history or the settings), plus any older length
 // found in the history that the settings no longer offer. A cell: the
 // length, its best WPM big, the accuracy of that round under it ("—" before
 // the first round). The cells are also the switch of the length shown
@@ -331,8 +331,9 @@ function renderLengthFilter(have, shown, bests = {}) {
       `<small>${lengthLabel(id)}</small><b>${b ? Math.round(b.wpm) : "—"}</b>` +
       `<span>${b ? Math.round(b.accuracy) + "%" : "&nbsp;"}</span></button>`;
   };
-  // two groups: rounds of N words, rounds of N seconds (owner, 2026-10-16:
-  // they are different kinds of round, not one row)
+  // two groups: rounds of N words, rounds of N seconds (they are different
+  // kinds of round, not one row)
+
   const isTime = (id) => id.startsWith("time");
   const words = ids.filter((id) => !isTime(id)), time = ids.filter(isTime);
   el.lengthFilter.innerHTML = [words, time].filter((g) => g.length)

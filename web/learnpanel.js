@@ -1,10 +1,10 @@
 // The Learn panel: a line of columns between the letters row and the text, in
-// place of a result screen (owner, 2026-10-20: "the result screen is not
-// needed"; the model is keybr's lines above its text). A Learn round ends
+// place of a result screen (a stop after every short round only breaks
+// the practice; the model is keybr's lines above its text). A Learn round ends
 // and the next one starts at once; what the round did is read here:
 //   the panel: four fixed columns, each a small grey label over a bright
-//           value (owner, 2026-10-22: every item in its own place, nothing
-//           shifting or running off the edge): the last round (speed and
+//           value (every item in its own place, nothing shifting or
+//           running off the edge): the last round (speed and
 //           accuracy, each with its difference from your recent average),
 //           about how many rounds to the next letter (the forecast; after
 //           Learn complete the lap and when it ends), the accuracy streak
@@ -14,15 +14,15 @@
 //   the gold letter (the focus of the words being typed), in the same
 //           label-over-value style, sits apart: in the line just above
 //           the text, between the word counter and the round switch
-//           (#focus-box; owner, 2026-10-22: a sentence there said little,
-//           columns read at a glance): how far it is on the way to
+//           (#focus-box; columns read at a glance, a sentence does
+//           not): how far it is on the way to
 //           mastered, then the three parts of the mastery rule, each
 //           green once met. Right after a round with news (a new
 //           letter, letters mastered, a record, every letter open, a new
 //           lap, the last lap done) the news takes its place until you
 //           start typing.
-// Everything here follows you as you type (owner, 2026-10-22: the whole
-// Learn screen is live): it is drawn again after every portion, when the
+// Everything here follows you as you type (the whole Learn screen is
+// live): it is drawn again after every portion, when the
 // server has learned from its presses (POST /portion, then /stats), and a
 // number that changed counts to its new value (redraw). "Round 48" over
 // the word counter counts Learn's rounds, which follow each other by
@@ -135,7 +135,7 @@ export function renderPanel() {
   box.hidden = focusBox.hidden = roundNo.hidden = !show;
   if (!show) { drawn = drawnFocus = ""; return; }
   // "Round 48" above the word counter: Learn starts the next round by
-  // itself, so this tells how many there were (owner, 2026-10-22); every
+  // itself, so this tells how many there were; every
   // length counts, the one being typed too
   const n = (S.lastStats.learnRounds ?? 0) + 1;
   roundNo.textContent = t("lp.round", { n });
@@ -150,8 +150,8 @@ export function renderPanel() {
   if (focus !== drawnFocus) { drawnFocus = focus; redraw(focusBox, ".fb-cols .lp-val", focus); }
 }
 
-// Puts new HTML in el, and lets what changed show it (owner, 2026-10-22:
-// nicer movement in the live values): a number counts from its old value
+// Puts new HTML in el, and lets what changed show it (a live value that
+// only swaps is easy to miss): a number counts from its old value
 // to the new one, as the live wpm does (layout.css .live-n), and lights
 // up gold for a moment; a part of the rule just met turns green with a
 // small pop. Runs per portion and at the end of a round, never per key;
@@ -241,7 +241,7 @@ function accStreak() {
 // passes, and the days in a row the goal was met (in the label, from 2).
 // While you type the time shows seconds too ("12:34") and ticks every half
 // second with the round (tickGoal), so you see it run; at rest whole
-// minutes (owner, 2026-10-22). With the goal off the column stays, empty,
+// minutes. With the goal off the column stays, empty,
 // so the others keep their places.
 let goalNow = null;           // {base, need}: what tickGoal needs, or null
 let goalTyping = false;       // drawn while typing (mm:ss), or at rest
@@ -311,7 +311,8 @@ function focusCells() {
   const typed = !!k?.count;
   const pctTip = t("lp.pctTip", { l: c, min: s.masteryMin, err, target: s.targetWpm });
   // no letter chip here: the gold chip in the row above already shows
-  // which letter it is (owner, 2026-10-22: a second one read as a double)
+  // which letter it is (a second one reads as a double)
+
   const gold = !typed ? NONE
     : k.mastered ? `<b class="ok">${t("lp.fMastered")}</b>`
       : `${num(letterProgress(k) * 100, "%")}<small class="opt">${t("lp.fToGo")}</small>`;

@@ -94,8 +94,7 @@ export function fitText() {
 // The caret's height and its gap above the letter are in em of the text
 // (typing.css .caret), never read from the letter: a space where a line
 // wraps, with a mark on every space (body[data-ws]), is drawn on both
-// lines, so its offsetHeight is two lines and the caret took it (owner,
-// 2026-10-22: "it suddenly gets super long").
+// lines, so its offsetHeight is two lines and the caret would take it.
 let caretFrame = 0;
 export function placeCaret(jump, last = false) {
   cancelAnimationFrame(caretFrame);
@@ -229,7 +228,7 @@ function appendPortions(list) {
 
 // Shows the words up to SHOWN_AHEAD after the current one (never hides one
 // again). They appear at once: a fade-in made the browser paint the text
-// again for a few frames on every word (owner, 2026-10-18: smoothness first).
+// again for a few frames on every word (smoothness first).
 function reveal() {
   shownWords = Math.max(shownWords, wordsTyped + SHOWN_AHEAD);
   for (; revealAt < spans.length && wordOf[revealAt] < shownWords; revealAt++) spans[revealAt].classList.remove("later");
@@ -420,7 +419,7 @@ function setState(i, s) {
 }
 // The next key on the keyboard (keyboard.js) and the next letter in the
 // colour of its finger (a setting, on while the keyboard is shown): the
-// finger is seen without looking down from the text (owner, 2026-10-22).
+// finger is seen without looking down from the text.
 // Only the old and the new letter change.
 let tinted = null;
 export function lightNext() {
@@ -509,9 +508,9 @@ export function handleChar(ch) {
 
   // Not a typing mistake but a wrong keyboard setting: Caps Lock, or the
   // system layout is set to another language. Not counted, just explained.
-  // Checked before the round starts: such a key must not start it (it did,
-  // with no time of a last key, so the pause check ended the empty round at
-  // once and loaded a new text on every key; owner, 2026-10-18).
+  // Checked before the round starts: such a key must not start it (with no
+  // time of a last key, the pause check would end the empty round at once
+  // and load a new text on every key).
   if (ch !== expected && /\p{L}/u.test(ch)) {
     if (ch.toLowerCase() === expected) { showWarn("caps"); return; }
     if (!S.alphabet.has(ch.toLowerCase())) {
@@ -672,8 +671,7 @@ function renderProgress() {
   }
 }
 // ---------- Tab: start the round again ----------
-// As on monkeytype (owner, 2026-10-16, reversing the earlier "no restart"
-// rule): Tab drops the round being typed and starts a fresh one. The dropped
+// As on monkeytype: Tab drops the round being typed and starts a fresh one. The dropped
 // round is not saved as a round (no history, no result). The keypresses
 // already sent with its portions stay with the letter model: they were
 // real presses, and the server learned them on the way (/portion).
@@ -722,8 +720,8 @@ function updateLive() {
   setLive(el.raw, Math.round(currentRaw()));
   setLive(el.acc, Math.round(currentAccuracy()));
 }
-// A live number counts smoothly to its new value (owner, 2026-10-18: the
-// jump once per word looked choppy): the value is the CSS property --v,
+// A live number counts smoothly to its new value (a jump once per word
+// looks choppy): the value is the CSS property --v,
 // registered as an integer, and a transition counts through the numbers in
 // between (layout.css .metric > span::after). instant: no counting (a new
 // round starting from 0). A browser without @property shows the new number
@@ -751,9 +749,9 @@ export function setTyping(on) {
 
 // Twice a second: the end of the time in a time round (whose counter shows
 // the seconds left) ends it, a long pause pauses it, and Learn's daily
-// goal shows the round's time so far (learnpanel.js tickGoal). A long pause used
-// to END the round (owner, 2026-10-18: "it ends by itself, at random"): it
-// is now the pause screen, from the last key on, so none of the time away
+// goal shows the round's time so far (learnpanel.js tickGoal). A long pause
+// does not end the round (that would look random): it brings the pause
+// screen, from the last key on, so none of the time away
 // counts. A timer is fine here: it is a clock, not an animation, and it
 // never runs per keypress. It also catches a time round that ends while no
 // key is pressed.
@@ -763,7 +761,7 @@ setInterval(() => {
   if (limit.kind === "time") renderProgress();
   S.roundSeconds = (now - startTime) / 1000;
   // the daily goal's time runs on with the round (Learn); reached, it
-  // pauses the round and says why (owner, 2026-10-22)
+  // pauses the round and says why
   if (tickGoal()) { pauseRound(now, "goal"); return; }
   if (timeUp(now)) finishRound();
   else if (now - lastTime > IDLE_PAUSE_MS) pauseRound(lastTime);
@@ -771,12 +769,12 @@ setInterval(() => {
 
 // Leaving the window (Alt+Tab, another app, a hidden tab; input.js) or a
 // long pause pauses the round: its clock stops, so a time round does not
-// run out and the pause is not in the round's speed (owner, 2026-10-18).
-// Before the first key too (owner: "at the start it does not pause"):
-// then there is no clock yet, only the pause screen. The text blurs under a
+// run out and the pause is not in the round's speed.
+// Before the first key too: then there is no clock yet, only the pause
+// screen. The text blurs under a
 // "paused" note (typing.css .text-box.paused). It is put on at once, with no
 // fade: a window out of sight draws nothing, so a fade would only start
-// when you come back (owner: "the text shows for a second, then blurs").
+// when you come back (the text would show for a second, then blur).
 // The letter model is safe either way (the engine ignores gaps over
 // MaxIntervalMs). since: when the pause began (default: now).
 export function pauseRound(since, why) {
@@ -805,7 +803,8 @@ function resumeRound(now) {
 // The round is over (the last letter of its last word, or the end of the
 // time): the numbers of the round go to the history, then the next round
 // starts: in Learn at once, with what changed on the Learn panel
-// (learnpanel.js; owner, 2026-10-20: no result screen in Learn), in Climb
+// (learnpanel.js; no result screen in Learn), in Climb
+
 // and Freetype after their result screen. The time of the round ends at
 // its last keypress, so a quiet end of a time round does not lower the WPM.
 // byLastKey: it ended with its last letter; the finished text then stays

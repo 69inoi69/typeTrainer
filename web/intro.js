@@ -1,8 +1,7 @@
 // The intro, "touch typing basics": what touch typing is, the home row, the
-// space bar, eyes up. It opens by itself on the very first visit only (the
-// Help menu and the tour of the page went, owner, 2026-10-18: the site
-// still changes too often for a guide to it; this one is about the hands,
-// not the site). Everyone starts from the first letters: there is no "open
+// space bar, eyes up. It opens by itself on the very first visit only. It
+// is about the hands, not the site: the site still changes too often for
+// a guide to it. Everyone starts from the first letters: there is no "open
 // all letters".
 // Layer: middle. Imports the bottom layer and keyboard.js (to draw keys).
 // Called by: app.js (showIntro on the first visit), languages.js
@@ -97,7 +96,8 @@ function advanceAfter(node) {
 // Key presses while the intro is open.
 export function introKey(e) {
   if (e.key === "Escape") { e.preventDefault(); closeIntro(); return; }
-  // ← → (and A / D, by the physical key) go back and on (owner, 2026-10-18);
+  // ← → (and A / D, by the physical key) go back and on;
+
   // on the home row step A and D are keys to press, so there only the
   // arrows. At the first and the last step nothing moves (preventDefault:
   // no scrolling of the page behind either).

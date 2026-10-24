@@ -27,7 +27,8 @@ export function flinchCaret() {
   ], { duration: FEEL.caretFlinchMs, easing: "ease-out" });
 }
 
-// The glide keeps up with your hands (owner, 2026-10-23): at a slow pace
+// The glide keeps up with your hands (#141): at a slow pace
+
 // the caret slides in FEEL.caretGlideMs; when keys come faster than that
 // it would always be behind the letters, so the glide shrinks to a part
 // (FEEL.caretGlidePace) of the time between your last few keys, never below

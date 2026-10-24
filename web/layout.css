@@ -13,7 +13,7 @@
 }
 .top-side { display: flex; align-items: center; gap: 14px; min-width: 0; }
 /* While you type, everything around the text steps back (as on monkeytype):
-   the logo turns grey (it does not fade, owner, 2026-10-18), the controls
+   the logo turns grey (it does not fade), the controls
    fade to a third, the letters bar (it changes only between rounds) and
    the keys line at the bottom (help before a round) step back too. Moving
    the mouse over a control brings it back. */
@@ -23,8 +23,8 @@ body.typing-now .top .logo-name, body.typing-now .top .logo-name span { color: v
 body.typing-now .top .logo-key { filter: grayscale(1) brightness(.7); }
 body.typing-now .lang-switch, body.typing-now .profile, body.typing-now .rail { opacity: .35; }
 /* the letters step back chip by chip, all but the focus letter: the one
-   being practised stays bright (owner, 2026-10-18: it went dim with the rest) */
-body.typing-now #letters .chip:not(.focus, .next) { opacity: .4; }   /* the next letter stays bright too (owner, 2026-10-18) */
+   being practised stays bright */
+body.typing-now #letters .chip:not(.focus, .next) { opacity: .4; }   /* the next letter stays bright too */
 body.typing-now .bottom { opacity: .15; }
 body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.typing-now .rail:hover { opacity: 1; }
 .logo { display: flex; align-items: center; gap: 10px; min-width: 0; }
@@ -44,7 +44,7 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
   display: flex; gap: 6px 18px; align-items: center; height: 44px; margin: 0 0 6px; min-width: 0;
 }
 /* the numbers are as bright before the first key as while typing: dim at
-   rest they looked switched off (owner, 2026-10-18) */
+   rest they look switched off */
 .live > .metric { transition: opacity .4s var(--ease), transform var(--med) var(--ease); }
 .metric { display: flex; align-items: baseline; }
 .metric.raw span { color: color-mix(in srgb, var(--accent-text) 55%, var(--sub)); }   /* secondary number */
@@ -84,7 +84,7 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
 .streak.jump { transition: none; }
 #streak-n { display: inline-block; will-change: transform; }   /* it hops (typing.js hopStreak) */
 .streak .bolt { width: 13px; height: 13px; flex: none; fill: color-mix(in srgb, var(--sc) 35%, transparent); stroke: var(--sc); stroke-width: 2; stroke-linejoin: round; }
-/* the longer the streak, the warmer (owner, 2026-10-18): gold from the
+/* the longer the streak, the warmer: gold from the
    start (grey read as "nothing", and 3 clean words are already something),
    then orange, rose, violet at 10 / 25 / 50 clean words (typing.js
    STREAK_TIERS); a soft glow that grows with it, no flicker */
@@ -172,8 +172,8 @@ body:is([data-mode="climb"], [data-mode="freetype"]) .letter-row { visibility: h
 @media (min-width: 1000px) {
   :root { --side: 96px; }
   /* the navigation is a row in the header, between the logo and the
-     account (owner, 2026-10-16: the small column at the left edge looked
-     like it did not belong): icon and label side by side, big enough to
+     account (a small column at the left edge looks like it does not
+     belong): icon and label side by side, big enough to
      see; the accent bar slides under the chosen screen */
   .rail {
     /* right after the logo (about 14rem wide), on the header's line */
@@ -186,7 +186,8 @@ body:is([data-mode="climb"], [data-mode="freetype"]) .letter-row { visibility: h
   .rail-group + .rail-group { padding-left: 8px; border-left: 1px solid var(--line); }
   .rail .switch-thumb { top: auto; bottom: -2px; left: 0; width: calc(100% / var(--n)); height: 2px; transform: translateX(calc(var(--i) * 100%)); }
   .rail .switch-thumb::after { top: 0; left: calc(50% - 14px); width: 28px; height: 2px; }
-  /* icons only (owner, 2026-10-16): the labels stay for screen readers,
+  /* icons only: the labels stay for screen readers,
+
      the tooltips name them */
   .rail .switch button, .rail-btn { flex-direction: row; width: auto; height: 44px; padding: 0 11px; }
   .rail .switch button svg, .rail-btn svg { width: 24px; height: 24px; }

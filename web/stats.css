@@ -131,8 +131,9 @@
 /* the chart, the keyboard and the letters: one kind of card */
 .panel { background: var(--panel); border-radius: var(--r-lg); box-shadow: var(--lift); padding: 16px 18px; }
 .chart { height: clamp(180px, 32vh, 300px); }
-/* The stats screen scrolls like a page (owner, 2026-10-18: fitting it all
-   in one window was not worth it): the chart has a height of its own. */
+/* The stats screen scrolls like a page (fitting it all in one window is not
+   worth it): the chart has a height of its own. */
+
 .chart:has(> .empty) { height: auto; }   /* no rounds yet: one line of text, not an empty half screen */
 /* the chart is the main thing below the tiles: it gets real height */
 .chart { height: clamp(200px, 50vh, 520px); }

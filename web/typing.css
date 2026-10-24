@@ -43,7 +43,7 @@
 .chip.focus .prog::after { background: var(--on-accent); }
 /* mastered: a small green tick in a dark round badge at the top right
    corner, so it stays visible on any chip, the yellow focus one too
-   (owner, 2026-10-16: the plain green dot vanished on yellow).
+   (a plain green dot vanishes on yellow).
    ::before is the badge, ::after the tick (a mask, so it takes var(--ok)). */
 .chip.mastered::before {
   content: ""; position: absolute; top: -4px; right: -4px; width: 11px; height: 11px;
@@ -58,7 +58,7 @@
 /* three states at a glance: open = a raised chip, focus = lit gold,
    locked = only an outline */
 .chip.focus { background: var(--accent-fill); color: var(--on-accent); box-shadow: var(--accent-glow); }
-/* locked: crossed out, as on keybr (owner, 2026-10-20) */
+/* locked: crossed out, as on keybr */
 .chip.locked {
   background: linear-gradient(to top right, transparent calc(50% - .5px), color-mix(in srgb, var(--sub) 40%, transparent) 50%, transparent calc(50% + .5px));
   color: color-mix(in srgb, var(--sub) 55%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 25%, transparent);
@@ -86,7 +86,7 @@
 .learn-panel { display: grid; height: 3.6em; margin-top: 12px; font-size: .9rem; color: color-mix(in srgb, var(--text) 80%, var(--sub)); transition: opacity .4s var(--ease); }
 /* Hidden (Climb, Freetype, Learn before its first stats) it keeps its
    room: the text and the keyboard stand at the same place and size in
-   every mode (owner, 2026-10-22: "the same everywhere"). Climb's and
+   every mode. Climb's and
    Freetype's round bar sits at the bottom of that room, right above the
    text, as it does when it takes the panel's place. */
 .learn-panel[hidden] { visibility: hidden; }
@@ -94,8 +94,8 @@
 body:not([data-mode="learn"]) #view-type > .letters > .mode-bar { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; }
 body.typing-now .learn-panel { opacity: .75; }   /* a step back, still readable: it follows you as you type */
 .lp-row { display: flex; align-items: center; gap: 30px; min-height: 1.9em; white-space: nowrap; min-width: 0; }
-/* One grid for both lines (owner, 2026-10-22: one size for everything,
-   clean alignment across and down): the panel under the letters and
+/* One grid for both lines (one size for everything, clean alignment across
+   and down): the panel under the letters and
    Learn's line above the text share these six tracks, so their dividers
    line up. Line 1 spans them as Last round (1-2), Next letter (3), Clean
    streak (4-5), Daily goal (6); line 2 is the word counter (1), the gold
@@ -186,7 +186,7 @@ body[data-ws="bar"] .text span[data-sp]::after { bottom: .32em; width: .55em; he
 body.typing-now .mode-bar { opacity: 0; pointer-events: none; }
 /* Learn's round length, at the right end of the line above the text: two
    quiet words, the chosen one gold with a gold line under it, as the mode
-   under the icon in the header (owner, 2026-10-22, variant C) */
+   under the icon in the header */
 .round-switch { position: absolute; top: 0; right: 0; bottom: 0; display: flex; align-items: center; transition: opacity .4s var(--ease); }
 .round-switch .mb-group { gap: 20px; padding: 0; }
 .round-switch button { position: relative; padding: 3px 2px; border: 0; background: none; color: var(--sub); font: inherit; font-size: .9rem; cursor: pointer; transition: color .15s; }
@@ -242,12 +242,12 @@ body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; }
 }
 /* The status line (focus, next letter, letters open): in the top line of
    the text card, right after the word counter, behind a thin divider
-   (owner, 2026-10-18: under the text it sat far from it, next to the
-   hands). With the numbers hidden it moves up to the word counter. The
+   (under the text it would sit far from it, next to the hands). With the
+   numbers hidden it moves up to the word counter. The
    focus letter is the same gold square as the tinted letters in the text,
    so the row also reads as their legend. Hidden on the result (with the
    whole line), which has its own news. It keeps its brightness while you
-   type (owner, 2026-10-18), so it must not move: the numbers before it have
+   type, so it must not move: the numbers before it have
    fixed room (.metric min-width, below). */
 .letters-caption {
   display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-start; gap: 18px; white-space: nowrap;
@@ -270,7 +270,7 @@ body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; }
 .letters-caption .begin { padding: 0; font-size: .8rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: left; }
 .text-box.typing .letters-caption .begin { display: none; }   /* "type the text to begin": you have begun */
 /* desktop: one bigger scale for the whole page instead of single parts
-   made bigger (owner, 2026-10-16: sizes jumped around); here only what is
+   made bigger (single parts make sizes jump around); here only what is
    not in rem, and some room to breathe */
 @media (min-width: 1000px) and (pointer: fine) {
   .letters { margin-bottom: 12px; }   /* room between the letters and the text block */
@@ -323,24 +323,23 @@ body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; }
 /* words added while you type (typing.js, reveal): a short fade-in,
    opacity only, so nothing on the screen moves (length: web/feel.js) */
 .text span.later { visibility: hidden; }   /* a word not shown yet: keeps its place (typing.js reveal) */
-/* Desktop (owner, 2026-10-16, variant "T1", after monkeytype): no card,
+/* Desktop (after monkeytype): no card,
    the text stands on the page, bigger; the keyboard on its panel as wide
-   as the text (owner, 2026-10-18; it used to be a bit smaller), as big as
+   as the text, as big as
    the height allows; the letters, text, hands and keyboard together in the
    middle of the free height. The width no longer follows the keyboard, so
    the header, the letters and the text keep one width. The letters sit
-   right on top of the text block (owner, 2026-10-18: they are its legend;
-   alone at the top of the page they looked unrelated), so they move with
+   right on top of the text block (they are its legend; alone at the top of
+   the page they look unrelated), so they move with
    it when the result takes the text's place. Centred by two equal auto
    margins, above the letters and after the last element (::after, so it
    works with the keyboard off).
    --view-centred tells fitKeyboard (keyboard.js) that those margins are
    only centring, not room taken. */
 @media (min-width: 1000px) and (pointer: fine) {
-  /* the keyboard (with its panel) as wide as the text block (owner,
-     2026-10-18); fitKeyboard still caps the unit so the page fits */
-  /* 56rem: a little wider than the 48rem it was (owner, 2026-10-18: the
-     middle asked for more room), on every screen: header, text, result, stats */
+  /* the keyboard (with its panel) as wide as the text block; fitKeyboard
+     still caps the unit so the page fits */
+  /* 56rem: room for the middle, on every screen: header, text, result, stats */
   :root { --tw: min(100vw - 32px - 2 * var(--side), 56rem); --u-max: calc((var(--tw) - 24px) / 13.4); }
   .text-box, .text-box:focus-within, .text-box:focus { background: none; box-shadow: none; padding: 0 0 0 40px; }
   /* Learn's line above the text starts at the card's edge, not the text's,
@@ -403,10 +402,9 @@ body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; }
    nothing, so a fade would only start when you come back */
 .text-box.snap, .text-box.snap *, .text-box.snap::before, body.tb-snap #view-type > :not(.text-box) { transition: none; }
 /* everything between the header and the shortcuts blurs like the text:
-   the letters row, the panel, the keyboard (owner, 2026-10-22: a sharp
-   keyboard under a blurred text looked still in use; then "the pause
-   should blur everything except the header"; the shortcuts stay sharp,
-   they say what to press) */
+   the letters row, the panel, the keyboard (a sharp keyboard under a
+   blurred text looks still in use); the header and the shortcuts stay
+   sharp, they say what to press */
 body.tb-paused #view-type > :not(.text-box) { filter: blur(5px); opacity: .25; }
 .text-box.paused :is(.caret, .focus-hint) { opacity: 0; }
 
@@ -415,16 +413,15 @@ body.tb-paused #view-type > :not(.text-box) { filter: blur(5px); opacity: .25; }
    dropped for that: it painted the whole text again on every frame). */
 .text span.ok { color: var(--text); }
 /* No highlight on the letter under the caret: the caret marks it already,
-   and a lit next letter jumped ahead of the gliding caret (owner,
-   2026-10-19: "why is the next letter lit? remove it"). */
+   and a lit next letter jumps ahead of the gliding caret. */
 /* the focus letter (the one being practised) is tinted until it is typed:
-   a muted gold, half way to the grey of the text (owner, 2026-10-18: the
-   brighter tint pulled the eye away from the words) */
+   a muted gold, half way to the grey of the text (a brighter tint pulls
+   the eye away from the words) */
 .text span.fx { color: color-mix(in srgb, var(--accent) 46%, var(--sub)); }
 /* the next letter in the colour of its finger (typing.js lightNext, a
    setting): the finger is seen without looking down. Light theme: the
    finger colours are pastels, so a deeper shade.
-   Only the colour: the caret already marks the place (owner, 2026-10-22). */
+   Only the colour: the caret already marks the place. */
 .text span.fnext { color: var(--fc); }
 :root[data-theme="light"] .text span.fnext { color: color-mix(in oklab, var(--fc) 60%, #1d1428); }
 :root[data-theme="light"] .text span.fx { color: color-mix(in srgb, var(--accent-text) 80%, var(--sub)); }
@@ -462,7 +459,7 @@ body.tb-paused #view-type > :not(.text-box) { filter: blur(5px); opacity: .25; }
   /* a block caret, one character wide (the font is monospace, so 1ch is
      exactly one letter), drawn over the letter in a see-through accent:
      light enough that the letter under it stays easy to read, and no bar
-     under it (owner, 2026-10-16: the yellow underline looked odd) */
+     under it (a yellow underline looks odd) */
   position: absolute; left: 1px; top: .117em; width: calc(1ch + .02em); height: 1.07em;
   background: color-mix(in srgb, var(--accent) 38%, transparent);
   border-radius: 3px; pointer-events: none;
@@ -515,7 +512,7 @@ body[data-blink="pulse"][data-caret="outline"] .caret { box-shadow: inset 0 0 0 
 /* ---------- Caps Lock / wrong layout warning ---------- */
 /* Caps Lock / wrong layout: sits on top of the status line, so the page
    never moves. Fades in and slides down a little. */
-/* a card (owner, 2026-10-18: "redo it, make it better"): a gold icon, what
+/* a card: a gold icon, what
    is wrong, and the keys that fix it drawn as small keycaps */
 .warn {
   position: absolute; left: 0; top: -4px; max-width: 100%; z-index: 2;
@@ -552,9 +549,9 @@ body[data-blink="pulse"][data-caret="outline"] .caret { box-shadow: inset 0 0 0 
 }
 /* On the typing screen a small hand rides on a little card along the top
    edge of the keyboard, right above the column of the next key, so key and
-   finger are seen in one place (owner, 2026-10-22: with big hands above
-   the keyboard the eyes went to the hands first, then to the keys; a card
-   standing on the key above covered that key). Only the hand of that side;
+   finger are seen in one place (with big hands above the keyboard the eyes
+   go to the hands first, then to the keys; a card standing on the key
+   above covers that key). Only the hand of that side;
    both when both are used (space, Shift, AltGr). keyboard.js sets the
    middle of the key in keys (--kx); the card moves there by "translate"
    (the graphics card, no layout). left: the keyboard's padding, where the
@@ -580,8 +577,8 @@ body[data-blink="pulse"][data-caret="outline"] .caret { box-shadow: inset 0 0 0 
   mask-image: linear-gradient(to bottom, #000 74%, transparent);
 }
 /* the hands are plain grey silhouettes and only the finger to use takes its
-   colour, so it is the one coloured thing in them in both themes (owner,
-   2026-10-22: tinted fingers hid the right one in the light theme).
+   colour, so it is the one coloured thing in them in both themes (tinted
+   fingers hide the right one in the light theme).
    No outlines, no shadow on the knuckle line. */
 .hand > svg, .hand > .finger { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .hand .finger > svg { display: block; width: 100%; height: 100%; overflow: visible; }
@@ -596,8 +593,8 @@ body[data-blink="pulse"][data-caret="outline"] .caret { box-shadow: inset 0 0 0 
 /* the colour changes at once: a fade of "fill" cannot run on the graphics
    card, so it painted the hands again on every frame of every key */
 .hand .finger .skin { fill: var(--skin); }
-/* the finger to use: fills with its full colour and lifts, no glow (owner,
-   2026-10-18: a blurred edge looked like double vision). It is the main
+/* the finger to use: fills with its full colour and lifts, no glow (a
+   blurred edge looks like double vision). It is the main
    "which finger" signal; the key below is only hinted (.key.next).
    Knobs: --feel-finger-* (web/feel.js). */
 .hand .finger.on {
@@ -653,7 +650,7 @@ body.kb-nofit #keyboard { display: none; }
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 1px 2px rgba(0, 0, 0, .4);
   /* the next key's colour switches at once (a 120 ms fade of the colour and
      the glow made the browser paint the keys again for several frames on
-     every key, owner, 2026-10-18); only its lift glides, which the
+     every key); only its lift glides, which the
      graphics card does on its own */
   transition: transform var(--fast) var(--ease), translate 120ms ease-out, opacity var(--med);
   overflow: hidden;
@@ -677,17 +674,17 @@ body.kb-nofit #keyboard { display: none; }
   border-bottom-color: color-mix(in srgb, var(--fc) 22%, transparent);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .03);
 }
-/* Keycaps on the drawn keyboard (owner, 2026-10-18: "like custom keycaps
-   on a good mechanical board"): a top face with a soft spot of light, the
+/* Keycaps on the drawn keyboard (like custom keycaps on a good mechanical
+   board): a top face with a soft spot of light, the
    front skirt in the finger colour (a thick inset shadow at the bottom), a
    short drop under the key, and a bigger semibold legend. The keys of the
-   intro look the same (owner, 2026-10-18: they still had the old look);
+   intro look the same;
    the stats map keeps the plain look. */
 .keyboard .key, .intro .key {
   --skirt: calc(var(--u) * .09);
   padding-bottom: var(--skirt);              /* the legend sits on the top face */
   border-bottom: 0; border-radius: calc(var(--u) * .18);
-  /* capitals, as on the keycaps of real keyboards (owner, 2026-10-18) */
+  /* capitals, as on the keycaps of real keyboards */
   font-family: "Geist Mono Keys", var(--mono); font-weight: 600; font-size: calc(var(--u) * .34); text-transform: uppercase;
   color: color-mix(in srgb, var(--text) 88%, var(--bg));
   background:
@@ -707,7 +704,7 @@ body.kb-nofit #keyboard { display: none; }
    So it is the one key in its full finger colour: much brighter than the
    dark keys around it (deeper than the pale ones on the light page),
    raised a little (FEEL.nextKeyLiftPx) and glowing in the same colour as
-   the finger above (owner, 2026-10-18: a white key showed no colour).
+   the finger above (a white key shows no colour).
    That look is drawn once on every key, in a layer of its own over it
    (.lit, keyboard.js addLit), and only shown on the next key: switching
    it is a change of opacity the graphics card does alone, the keys are
@@ -745,8 +742,9 @@ body.kb-nofit #keyboard { display: none; }
     0 2px 0 rgba(0, 0, 0, .35);
 }
 /* Light theme: the finger colours (data/layouts) are pastels made for the
-   dark page; mixed in at 12% they all faded to white (owner, 2026-10-17:
-   "looks washed out"). Here every key gets more of its colour, a frame and
+   dark page; mixed in at 12% they all fade to white. Here every key gets
+   more of its colour, a frame and
+
    a shadow, and --fcd, a deeper shade of the same colour, draws the edges
    and the finger to use. The layout data stays the same. */
 :root[data-theme="light"] :is(.keyboard, .intro) .key, :root[data-theme="light"] .hand .finger {

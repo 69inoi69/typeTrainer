@@ -66,7 +66,8 @@ async function joinStudy() {
   startView();      // a phone or tablet opens on the stats
   // now the letters bar is drawn: the background uses its open letters. It
   // starts under the start screen, so the keys are already falling as the
-  // splash fades (owner, 2026-10-22)
+  // splash fades
+
   buildAmbient();
   await splash.done();
   const flash = store.get("tt.flash");                     // set by a finished import

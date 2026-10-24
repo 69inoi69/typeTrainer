@@ -48,7 +48,7 @@ window.addEventListener("resize", () => {
 
 // ---------- screens: typing / stats ----------
 // Phones and tablets (a touch screen, no mouse) get only the stats and the
-// account (owner, 2026-10-18): the trainer teaches ten-finger typing on a
+// account: the trainer teaches ten-finger typing on a
 // real keyboard, and thumbs on glass would only skew the letter model. The
 // typing screen and the navigation are not shown there (layout.css
 // body.stats-only), and every way to the typing screen lands on the stats.
@@ -61,8 +61,7 @@ export function startView() {
 }
 // The stats open with their animation (stats.css #view-stats.grow) only
 // when they have something new since they were last shown (a round, another
-// mode or length); switching back and forth plays nothing again (owner,
-// 2026-10-18).
+// mode or length); switching back and forth plays nothing again.
 let statsSeen = "";
 function setView(name) {
   if (statsOnly) name = "stats";
@@ -86,7 +85,7 @@ function setView(name) {
     requestFit();
     placeCaret(true);
     // back on a result that is still open: no phone keyboard until "Next
-    // round" (owner, 2026-10-16)
+    // round"
     if (!resultOpen()) focusText();
   }
 }
@@ -181,8 +180,7 @@ document.addEventListener("keydown", (e) => {
   if (document.body.classList.contains("splashing")) return;
   // Esc opens the settings, on every screen (as on monkeytype). A round
   // being typed pauses behind the window and goes on with the first key
-  // after it (owner, 2026-10-22: Esc used to end the round, which nobody
-  // could tell from "settings").
+  // after it (ending the round on Esc could not be told from "settings").
   if (e.key === "Escape") {
     e.preventDefault();
     if (S.view === "type" && !resultOpen() && roundStarted()) pauseRound();
@@ -209,7 +207,8 @@ document.addEventListener("keydown", (e) => {
   }
   // the result screen stays until you go on on purpose: Enter or Tab (Tab
   // starts a new round everywhere, as on monkeytype). Esc opens the settings
-  // (above), never "next round" (owner, 2026-10-16: that was confusing);
+  // (above), never "next round" (one key for both is confusing);
+
   // letters do nothing either, so a word typed past the end never skips the
   // result.
   if (resultOpen()) {

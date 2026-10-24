@@ -101,9 +101,9 @@ const keyFor = (ch) => S.keyEls[ch] || S.keyEls[baseOf(ch)] || null;
 
 // Which finger presses the next key: a small hand rides along the top edge
 // of the keyboard, right above the column of the next key, and that finger
-// lights up on it, so the eyes find key and finger in one place (owner,
-// 2026-10-22: with big hands above the keyboard you looked at the hands
-// first, then at the keys; a hand standing on the key above covered it).
+// lights up on it, so the eyes find key and finger in one place (big hands
+// above the keyboard draw the eyes to the hands first, then to the keys; a
+// hand standing on the key above covers it).
 // The hand of that side; both hands when both are used. Three separate
 // settings: the lit key, the hand, the letter's colour in the text. Space = both thumbs; an AltGr letter = the right
 // thumb (holding AltGr) plus the finger of the base key; a capital (Climb)
@@ -189,7 +189,7 @@ const kbKey = () => (S.mode === "learn" ? "tt.kbHidden" : "tt.kbHidden.free");
 
 // Read the saved choice of the current mode and show / hide the keyboard.
 // Touch screens never show it: you type with your thumbs on the phone's own
-// keyboard, which also covers this part of the screen (owner, 2026-10-16).
+// keyboard, which also covers this part of the screen.
 // Never chosen yet: learning shows it, Climb and Freetype hide it.
 // animate = true when the user switches the mode: it folds away smoothly.
 export function restoreKb(animate = false) {
@@ -213,9 +213,9 @@ export function applyKb(animate = false) {
   }
 }
 
-// The keyboard goes or comes with the graphics card only (owner,
-// 2026-10-22: the old fold stuttered; it animated the height, which lays
-// out the page on every frame). Going: it fades and sinks a little, then
+// The keyboard goes or comes with the graphics card only (animating the
+// height would lay out the page on every frame and stutter). Going: it
+// fades and sinks a little, then
 // leaves the page. Coming: it is put in at once at its final size and
 // fades in. Either way the letters and the text jump to their new place
 // and are moved back by "transform", which then glides to nothing (FLIP),
@@ -268,8 +268,8 @@ const lettersBar = document.querySelector("#view-type > .letters");   // carries
 // A zoom changes devicePixelRatio, not the window: then the keys keep this
 // size in CSS px, so they shrink and grow with the zoom like the text
 // does. Fitted again at every zoom, the keyboard grew while zooming out
-// (the text above it shrank and left more room) and then shrank (owner,
-// 2026-10-22: from 100 % to 75 % it first grew). Zooming in still makes it
+// (the text above it shrank and left more room) and then shrank (from
+// 100 % to 75 % it first grew). Zooming in still makes it
 // smaller when it no longer fits.
 let baseU = 0, baseDpr = 0;
 function fitKeyboard() {
@@ -293,7 +293,8 @@ function fitKeyboard() {
   const above = away ? 0 : parseFloat(kb.marginTop) || 0;
   // Every mode has the same room above the text (typing.css: the hidden
   // Learn panel keeps its place), so the keyboard is the same size in all
-  // three (owner, 2026-10-22).
+  // three.
+
   const rest = document.querySelector(".top").offsetHeight + el.viewType.offsetHeight
     - el.keyboard.offsetHeight - above + kbFrame
     // desktop (typing.css --view-centred): the view takes all the height and

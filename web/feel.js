@@ -1,13 +1,13 @@
 // How typing FEELS: every knob of the small responses to a keypress, in one
 // place. Tuning the feel means changing a number here, not a redesign
-// (issue #18: the owner types, says "more" or "less", one number changes).
+// (issue #18: type, say "more" or "less", change one number).
 // The CSS reads the same values as custom properties (--feel-*), set below.
 // None of this changes what is measured or sent to the server.
 // Layer: bottom. Imports nothing.
 // Used by: keyboard.js (red tint, hand size), caret.js (caret flinch, breath and
 // pulse, line scroll), and the stylesheets (caret glide, the lift and dip of the
 // next key, the lift of the finger) through the --feel-* properties.
-// Speed rule (owner, 2026-10-18, "as smooth as monkeytype"): what moves on
+// Speed rule (as smooth as monkeytype): what moves on
 // every key only moves (translate, transform, opacity of a whole element),
 // which the graphics card does without the page being painted again; no
 // glows or colour fades on every key.
@@ -17,21 +17,15 @@
 
 export const FEEL = {
   // Everything that moves while you type: smooth, but it starts moving at
-  // once (owner, 2026-10-16: first "honey", then "smooth, but as responsive
-  // as possible"). Lower = snappier.
-  // The caret, tried in turn (owner, 2026-10-18): 70 ms on a very steep
-  // curve (73% of the way in the first frame, then a crawl: it read as a low
-  // frame rate); monkeytype's "medium", 100 ms even ("oily"); a step-and-
-  // settle curve at 80 and 55 ms ("it lags behind the letters"); then
-  // monkeytype's "smooth caret: fast", 85 ms on its almost even in-out
-  // curve (the CSS variable --caret-curve): smooth, but still behind the typed
-  // letters (owner, 2026-10-18). Then that curve in 60 ms; now 65 ms, the
-  // owner's own pick (2026-10-20). A new key starts a new glide
+  // once. Lower = snappier.
+  // The caret: 65 ms on monkeytype's almost even in-out curve (the CSS
+  // variable --caret-curve), picked by eye; what was tried before it:
+  // docs/thesis/DEVELOPMENT-LOG.md, section 8.7. A new key starts a new glide
   // from where the caret is, so fast typing reads as one steady movement.
   caretGlideMs: 65,         // the caret sliding to the next letter (0 = jumps)
-  // The glide follows your pace (caret.js paceGlide; owner, 2026-10-23: "can
-  // the caret go faster when I type fast?"): with keys closer than the
-  // glide, it takes this part of the average time between them instead.
+  // The glide follows your pace (caret.js paceGlide, #141): with keys
+  // closer than the glide, it takes this part of the average time between
+  // them instead, so the caret never trails fast hands.
   caretGlidePace: 0.6,      // part of the time between keys (0 = always caretGlideMs)
   caretGlideMinMs: 25,      // never shorter (about one and a half frames)
   caretPaceKeys: 4,         // the average follows about this many last keys
@@ -43,14 +37,14 @@ export const FEEL = {
   lineScrollMs: 120,        // the text moving up a line (0 = at once)
   // After the last letter of a round, the finished text stays this long
   // before the result comes: the caret reaches the end and the last letter
-  // turns white first (owner, 2026-10-19: "the result starts before the last
-  // letter shows"). The round's time still ends at that key: this wait is
-  // not in the speed. 120 ms: the owner's pick (2026-10-20).
+  // turns white first, so the result never starts before the last letter
+  // shows. The round's time still ends at that key: this wait is
+  // not in the speed. 120 ms: picked by eye.
   resultHoldMs: 120,
   // During that wait the finished text fades out (its last part, after the
   // caret has arrived), then the result comes in: it fades in while rising
-  // a little (owner, 2026-10-19: a plain 200 ms fade read as no transition).
-  resultInMs: 120,          // the result coming in (0 = at once; owner's pick, 2026-10-20)
+  // a little (a plain fade reads as no transition).
+  resultInMs: 120,          // the result coming in (0 = at once; picked by eye)
   resultRisePx: 12,         // how far it rises while it comes in (0 = only fades)
 
   // The key on the virtual keyboard answers a press: as its light goes
@@ -71,8 +65,9 @@ export const FEEL = {
   caretFlinchMs: 120,       // duration (about 7 frames)
   caretFlinchScale: 0.7,    // height at the start of the flinch (1 = none)
   caretShakePx: 2,          // how far it shakes to each side (0 = no shake)
-  // At rest the caret breathes or pulses (a setting: settings.js "blink",
-  // owner, 2026-10-22, who also dropped the kick on every key); it starts
+  // At rest the caret breathes or pulses (a setting: settings.js "blink");
+  // it starts
+
   // this long after the last key, so it is solid while you type.
   caretRestDelayMs: 650,    // quiet time before it starts
   caretBreathMs: 2000,      // one breath, out and in: slow, so it never nags
@@ -90,9 +85,10 @@ export const FEEL = {
   handScale: 0.55,          // hand width in keys: 2 * handScale
   handRoom: 1.05,           // room above the keyboard for the hand, in keys
   fingerLiftPx: 8,          // how far the finger to use lifts, in units of the hand drawing (100 = its width)
-  fingerGlowPx: 0,          // a see-through outline around it, in the hand drawing's units (0 = none; owner, 2026-10-18: it looked like double vision)
+  fingerGlowPx: 0,          // a see-through outline around it, in the hand drawing's units (0 = none: it looks like double vision)
   // The next key stands out by brightness, not by colour: side vision sees
-  // light and movement, not hues (owner, 2026-10-18: it got lost while typing).
+  // light and movement, not hues: a coloured key gets lost while typing.
+
   nextKeyLiftPx: 3,         // how far the next key rises above the others (0 = stays flat)
 };
 

@@ -1,12 +1,11 @@
 // The result screen: when typing stops, the text window shows what just
 // happened instead of the text. The layout follows monkeytype, but is our
-// own (owner, 2026-10-16, variant "A"): on top, the two main numbers big on
+// own: on top, the two main numbers big on
 // the left (speed, accuracy) and a wide chart of each word's speed on the
 // right; under them one row of smaller facts (consistency, time, the
 // characters, Climb's level, Freetype's list); then the words themselves,
 // coloured by speed,
-// each with its own speed on hover or tap. No jokes or tips: the owner wants
-// plain results here (2026-10-16); fun lines may come back later on their word.
+// each with its own speed on hover or tap. No jokes or tips: plain results.
 // It sits in the same fixed window as the text, so the page never moves.
 // The "next round" button has its own row at the bottom, centred (full width
 // on a phone), under everything else.
@@ -14,9 +13,9 @@
 // showResult(r) shows it and resolves when it is closed, and only on purpose
 // (as on monkeytype): Enter, Tab or the "new round" button. There is no
 // timer and typing a letter does not close it, so a round that ends in the
-// middle of a word never skips the result (owner, 2026-10-16). It does not care WHY typing stopped (the end
+// middle of a word never skips the result. It does not care WHY typing stopped (the end
 // of the round, or Esc): the caller passes what to show.
-// Learn has no result screen (owner, 2026-10-20): its rounds follow one
+// Learn has no result screen: its rounds follow one
 // another, and the Learn panel (learnpanel.js) tells what each one did.
 // Display only: nothing here changes what is measured or sent.
 // Layer: middle. Imports the bottom layer (feel.js for the timings) and
@@ -35,7 +34,7 @@ const box = $("result");
 
 // A number: a fixed label on top, the value under it; size "big" (the two
 // main numbers) or "mid" (the row of facts). Shown as it is: no count up
-// from 0 (owner, 2026-10-19: "just show the result at once").
+// from 0: the result is there at once.
 const num = (value, unit, label, size, tip) =>
   `<span class="r-num ${size}"${tip ? ` tabindex="0" data-tip-text="${t(tip)}"` : ""}><span class="r-lbl">${t(label)}</span><b>${value}<small>${unit}</small></b></span>`;
 let done = null;           // resolves the promise of the open result
@@ -55,9 +54,9 @@ export const resultOpen = () => done !== null;
 export function showResult(r) {
 
   // 1. the top: speed and accuracy big on the left, the speed the biggest
-  // ("hero": the one number to see first). No "new best" tag (owner,
-  // 2026-10-18: it widened the column and left a gap; a record still gets
-  // its confetti, typing.js)
+  // ("hero": the one number to see first). No "new best" tag (it would
+  // widen the column and leave a gap; a record still gets its confetti,
+  // typing.js)
   const hero = `<div class="r-hero">${num(Math.round(r.wpm), "", "result.wpm", "big hero")}` +
     `${num(Math.round(r.accuracy), "%", "result.acc", "big")}</div>`;
   // ... and on the right the speed of each word (as on monkeytype): the
@@ -210,15 +209,15 @@ function open(body, btn) {
   boxState(false, "ending");   // the faded text (typing.js finishRound) is hidden now anyway
   glideLetters(from);
   // phone: the round is over, so its keyboard closes and the whole result
-  // is in view (owner, 2026-10-16); "Next round" opens it again
+  // is in view; "Next round" opens it again
   if (isTouch()) el.input.blur();
   return new Promise((resolve) => { done = resolve; });
 }
 
 // The typing screen goes out of sight (the stats): the result and the
 // letters row keep their final look, so coming back does not play their
-// entrance again (owner, 2026-10-18: the WPM counted up and the chart drew
-// itself again). A browser restarts a CSS animation on an element that is
+// entrance again (the chart would draw itself again). A browser restarts a
+// CSS animation on an element that is
 // shown again; .settled turns them off (screens.css) until the next result.
 export function settleResult() {
   if (done) el.viewType.classList.add("settled");
@@ -240,8 +239,9 @@ export function closeResult() {
 
 // The letters row sits above the text while typing and above the result,
 // which stands in the middle of the screen: when one screen changes into
-// the other, the row moves. It glides there instead of jumping (owner,
-// 2026-10-19): read where it was, change the screen, then animate from the
+// the other, the row moves. It glides there instead of jumping: read where
+// it was, change the screen, then animate from the
+
 // old place to the new one ("FLIP"). Two layout reads per screen change,
 // never per keypress.
 const lettersRow = document.querySelector("#view-type > .letters");
