@@ -1,15 +1,15 @@
 // The on-screen keyboard and the small hand over its next key: drawing them
 // from the layout data (data/layouts/*.json, from /api/v1/layout), lighting
-// the next key and its finger, keyboard on / off, and fitting the keyboard
-// into the window.
+// the next key and its finger, showing the keyboard only while Learn is
+// still opening letters, and fitting the keyboard into the window.
 // Layer: middle. Imports only the bottom layer.
 // Called by: typing.js (highlightNextKey, pulseKey, glowKey on keys),
 // languages.js (drawKeyboard for a new layout), intro.js (makeKey),
-// modes.js and app.js (restoreKb), input.js (applyKb, requestFit).
+// modes.js, app.js and typing.js (autoKb), input.js (requestFit).
 
 import { FEEL } from "./feel.js";
 import { t } from "./i18n.js";
-import { el, S, store, isTouch, themeColor, reducedMotion } from "./state.js";
+import { el, S, isTouch, themeColor, reducedMotion } from "./state.js";
 
 // ---------- keyboard ----------
 let fingerOf = {};         // char -> finger id
@@ -263,34 +263,25 @@ export function glowKey(ch) {
     { duration: 380, easing: "ease-out" });
 }
 
-// Keyboard on / off (the choice in the settings panel, or Alt+K; both go
-// through input.js): the hand is inside the keyboard and goes with it. Its size is not a
-// setting: it is always the largest that fits the window (fitKeyboard
-// below). Remembered in localStorage, separately
-// for learning (tt.kbHidden) and for Climb and Freetype together
-// (tt.kbHidden.free): someone who comes to them can already type without
-// looking, so there the keyboard starts hidden.
-const kbKey = () => (S.mode === "learn" ? "tt.kbHidden" : "tt.kbHidden.free");
+let applied = false;          // the first call always applies
 
-// Read the saved choice of the current mode and show / hide the keyboard.
-// Touch screens never show it: you type with your thumbs on the phone's own
-// keyboard, which also covers this part of the screen.
-// Never chosen yet: learning shows it, Climb and Freetype hide it.
-// animate = true when the user switches the mode: it folds away smoothly.
-export function restoreKb(animate = false) {
-  const saved = store.get(kbKey());
-  const was = S.kbHidden;
-  if (isTouch()) S.kbHidden = true;
-  else if (S.mode === "learn") S.kbHidden = saved === "1";
-  else S.kbHidden = saved === null || saved === "1";
-  applyKb(animate && was !== S.kbHidden);
-}
-
-// animate = true on a click: the keyboard fades away / in and the text
-// glides to its new place (fold below)
-export function applyKb(animate = false) {
+// The keyboard is not a setting (issue #150): it shows in Learn while
+// letters are still locked, when you are learning where the keys are, and
+// is hidden in Climb and Freetype and once every letter is open: by then
+// you type without looking. The hand is inside the keyboard and goes with
+// it. Its size is always the largest that fits the window (fitKeyboard
+// below). Touch screens never show it: you type with your thumbs on the
+// phone's own keyboard, which also covers this part of the screen.
+// Called on a mode change and whenever the letters are drawn; does
+// nothing unless the answer changes. animate = true: it folds away or in
+// smoothly (a mode switch, the last letter opened).
+export function autoKb(animate = false) {
+  const allOpen = S.exercise?.locked?.length === 0;
+  const hide = isTouch() || S.mode !== "learn" || allOpen;
+  if (hide === S.kbHidden && applied) return;
+  applied = true;
+  S.kbHidden = hide;
   document.body.classList.toggle("kb-hidden", S.kbHidden);   // phone CSS centres the text then
-  if (!isTouch()) store.set(kbKey(), S.kbHidden ? "1" : "");   // a phone never chose it
   if (animate && !reducedMotion() && el.keyboard.animate) fold(S.kbHidden);
   else {
     el.keyboard.classList.toggle("off", S.kbHidden);

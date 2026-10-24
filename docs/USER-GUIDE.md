@@ -70,10 +70,12 @@ the normal server, it shows yours.
   capital = the finger + the other hand's little finger on Shift). The next
   letter in the text takes the colour of that finger, so you can see the
   finger without looking down.
-- The keyboard is the same size and at the same place in Learn, Climb and
-  Freetype; no setting but the text size changes it. Browser zoom makes it
-  smaller or bigger together with the rest of the page. `Alt + K` fades it
-  away or in, and the text glides to its new place.
+- The keyboard shows only in Learn, while letters are still opening: that
+  is when you learn where the keys are. Once every letter is open, and in
+  Climb and Freetype, it is hidden: by then you type without looking. It
+  is not a setting. When it goes or comes it fades, and the text glides to
+  its new place. No setting but the text size changes its size; browser
+  zoom makes it smaller or bigger together with the rest of the page.
 - The screen has three fixed places, as in a real app:
   - **the header**: the logo on the left, the account on the right ("log in"
     with a person icon until you are logged in, then your picture and name);
@@ -181,14 +183,9 @@ the normal server, it shows yours.
     much typing with no break (a gap of 5 minutes between rounds is a break)
     a calm message at the end of a round suggests a rest.
   **Keyboard**
-  - **keyboard** (the keys and the hand above them): on or off (same as `Alt + K`; remembered
-    in your browser, separately for Learn and for Climb and Freetype, where they start
-    hidden). Not on a phone or tablet: there you type
-    on the device's own keyboard, so the option is not shown. There
-    is no size setting: the keyboard is always as big as the window allows
-    without making the page scroll.
   - **next key**, **hand above the keys** and **finger colour in the text**
-    are shown only while the keyboard is on. Each works on its own, in any
+    act while the keyboard shows (in Learn, until every letter is open);
+    not on a phone or tablet. Each works on its own, in any
     combination. The keys are always in their finger colours.
   - **next key**: on (default) or off. Off, the next key does not light up:
     you find every key from memory.
@@ -352,7 +349,7 @@ the normal server, it shows yours.
 - Behind Settings the page dims.
 - Shortcuts, also listed small at the bottom of the page (each screen lists
   only the keys that work on it): `Tab` new round · `Esc` settings ·
-  `Shift + Tab` typing / stats · `Alt + K` keyboard on / off ·
+  `Shift + Tab` typing / stats ·
   `Ctrl + Backspace` delete the word.
 - **Stats**: nothing on the page can be selected by dragging; instead the
   stats screen has **image** (a PNG card with the five numbers and the speed

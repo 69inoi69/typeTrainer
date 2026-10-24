@@ -23,7 +23,7 @@
 
 import { el, S, store } from "./state.js";
 import { getJSON } from "./api.js";
-import { restoreKb } from "./keyboard.js";
+import { autoKb } from "./keyboard.js";
 import { lengthFor } from "./settings.js";
 import { renderModeBar } from "./modebar.js";
 import { hasCustomText } from "./customtext.js";
@@ -88,7 +88,7 @@ export function restoreMode() {
   S.mode = saved === "free" ? "climb" : MODES.includes(saved) ? saved : "learn";
   S.settings.length = lengthFor(S.mode);
   renderModeBar();
-  restoreKb();                                  // learning and the other modes each have their keyboard on / off
+  autoKb();                                     // the keyboard shows only in Learn
   renderNav();
 }
 
@@ -99,7 +99,7 @@ export function setMode(m) {
   S.settings.length = lengthFor(m);
   renderModeBar();
   store.set(`tt.mode.${S.lang}`, m);
-  restoreKb(true);
+  autoKb(true);
   renderNav();
 }
 

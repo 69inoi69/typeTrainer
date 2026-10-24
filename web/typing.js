@@ -28,7 +28,7 @@ import { t } from "./i18n.js";
 import { FX } from "./fx.js";
 import { el, S, introOpen, isTouch, roundList, boxState } from "./state.js";
 import { postJSON, saveRound, retryable } from "./api.js";
-import { highlightNextKey, pulseKey, glowKey, requestFit } from "./keyboard.js";
+import { highlightNextKey, pulseKey, glowKey, requestFit, autoKb } from "./keyboard.js";
 import { refreshStats } from "./stats.js";
 import { showResult } from "./result.js";
 import { renderLetters, markNewLetter, markMastered } from "./letters.js";
@@ -246,6 +246,7 @@ function renderTop() {
   S.roundSeconds = startTime === null ? 0 : (performance.now() - startTime) / 1000;
   renderLetters();
   renderPanel();
+  autoKb(true);   // the last letter opened: the keyboard folds away
 }
 
 // The words of the round so far (the server avoids repeating them).

@@ -206,6 +206,33 @@ test("the caret is still at rest, spaces have a dot, the settings are fewer", as
   await expect(page.getByText("Space marks")).toHaveCount(0);
 });
 
+// The keyboard is not a setting (issue #150): Learn shows it while
+// letters are locked, Climb hides it, and so does Learn once every letter
+// is open (even with an old "keyboard off" choice saved, Learn shows it).
+// The hand stands on the keyboard with no card around it.
+test("the keyboard shows only while Learn opens letters", async ({ page }) => {
+  await openApp(page, { "tt.mode.en": "learn", "tt.kbHidden": "1" });
+  const kb = page.locator("#keyboard");
+  await expect(kb).toBeVisible();
+  const card = await page.locator(".keyboard > .hands").evaluate((h) => {
+    const c = getComputedStyle(h);
+    return { bg: c.backgroundColor, shadow: c.boxShadow };
+  });
+  expect(card, "no card around the hand").toEqual({ bg: "rgba(0, 0, 0, 0)", shadow: "none" });
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".sw-name", { hasText: /^Next key$/ })).toBeVisible();
+  await expect(page.locator(".sw-name", { hasText: /^Keyboard$/ })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await page.locator("#tab-climb").click();
+  await expect(kb).toBeHidden();
+  await page.locator("#tab-learn").click();
+  await expect(kb).toBeVisible();
+  await page.request.post("/api/v1/progress?lang=en", { data: { unlockAll: true } });
+  await page.reload();
+  await waitForText(page);
+  await expect(kb).toBeHidden();
+});
+
 // The hand over the keyboard is a picture per finger (keyboard.js
 // handPicture); its <img> says which fingers it shows (data-f). After every
 // key the shown hands must be the ones of the next key's fingers, as the

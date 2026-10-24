@@ -16,7 +16,7 @@ import { FX, Splash } from "./fx.js";
 import { el, S, store, isTouch } from "./state.js";
 import { getJSON, postJSON } from "./api.js";
 import { labelTips } from "./tools.js";
-import { restoreKb } from "./keyboard.js";
+import { autoKb } from "./keyboard.js";
 import { showIntro } from "./intro.js";
 import { renderProfile, loadAccount } from "./profile.js";
 import { buildLangSwitch, initialLanguage, loadLanguage } from "./languages.js";
@@ -50,7 +50,7 @@ async function joinStudy() {
   renderProfile();
   const splash = Splash.start();
   loadSettings();   // round length, live numbers, caret (settings.js)
-  restoreKb();   // keyboard on or off from last time (learning until the mode is known)
+  autoKb();   // the keyboard of learning until the mode is known
   labelTips();
   if (isTouch()) el.textBox.classList.add("blurred"); // phone: tap to open the keyboard
   try {
