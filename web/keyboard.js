@@ -294,7 +294,6 @@ function fitKeyboard() {
   // Every mode has the same room above the text (typing.css: the hidden
   // Learn panel keeps its place), so the keyboard is the same size in all
   // three.
-
   const rest = document.querySelector(".top").offsetHeight + el.viewType.offsetHeight
     - el.keyboard.offsetHeight - above + kbFrame
     // desktop (typing.css --view-centred): the view takes all the height and

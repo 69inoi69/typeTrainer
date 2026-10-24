@@ -67,7 +67,6 @@ async function joinStudy() {
   // now the letters bar is drawn: the background uses its open letters. It
   // starts under the start screen, so the keys are already falling as the
   // splash fades
-
   buildAmbient();
   await splash.done();
   const flash = store.get("tt.flash");                     // set by a finished import

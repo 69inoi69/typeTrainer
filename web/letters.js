@@ -113,7 +113,6 @@ export function renderLetters() {
   }
 
   // No status line in Learn: the row above already
-
   // shows which letters are open, and the panel's letter line says what to
   // type. Climb draws its level here (renderClimb).
   if (el.lettersCaption.firstChild) el.lettersCaption.replaceChildren();

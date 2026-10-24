@@ -67,7 +67,6 @@ export const FEEL = {
   caretShakePx: 2,          // how far it shakes to each side (0 = no shake)
   // At rest the caret breathes or pulses (a setting: settings.js "blink");
   // it starts
-
   // this long after the last key, so it is solid while you type.
   caretRestDelayMs: 650,    // quiet time before it starts
   caretBreathMs: 2000,      // one breath, out and in: slow, so it never nags
@@ -88,7 +87,6 @@ export const FEEL = {
   fingerGlowPx: 0,          // a see-through outline around it, in the hand drawing's units (0 = none: it looks like double vision)
   // The next key stands out by brightness, not by colour: side vision sees
   // light and movement, not hues: a coloured key gets lost while typing.
-
   nextKeyLiftPx: 3,         // how far the next key rises above the others (0 = stays flat)
 };
 

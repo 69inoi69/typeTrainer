@@ -312,7 +312,6 @@ function focusCells() {
   const pctTip = t("lp.pctTip", { l: c, min: s.masteryMin, err, target: s.targetWpm });
   // no letter chip here: the gold chip in the row above already shows
   // which letter it is (a second one reads as a double)
-
   const gold = !typed ? NONE
     : k.mastered ? `<b class="ok">${t("lp.fMastered")}</b>`
       : `${num(letterProgress(k) * 100, "%")}<small class="opt">${t("lp.fToGo")}</small>`;

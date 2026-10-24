@@ -1,7 +1,6 @@
 // Freetype's real sentences (the kind of text "sentences": punctuation and
 // capitals belong in real sentences, not on random words). The sentences
 // come from Tatoeba (tools/sentences/build.py
-
 // writes data/langs/<id>/sentences.txt, one per line), are drawn evenly,
 // and are cut into portions like any other text: the round still ends
 // after the words or the time the typist chose.

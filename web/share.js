@@ -4,7 +4,6 @@
 // there, stats.js shownStats). Nothing on the stats screen can be selected by dragging
 // (the CSS): this button is the way to take the numbers with you. The
 // picture is enough: there is no "copy as text".
-
 // Layer: middle. Imports the bottom layer, stats.js and settings.js.
 // Called by: nobody; it wires its own button (#btn-image). input.js loads it.
 // To add another way to share: a button next to it in index.html, its

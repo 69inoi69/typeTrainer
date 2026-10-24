@@ -187,7 +187,6 @@ body:is([data-mode="climb"], [data-mode="freetype"]) .letter-row { visibility: h
   .rail .switch-thumb { top: auto; bottom: -2px; left: 0; width: calc(100% / var(--n)); height: 2px; transform: translateX(calc(var(--i) * 100%)); }
   .rail .switch-thumb::after { top: 0; left: calc(50% - 14px); width: 28px; height: 2px; }
   /* icons only: the labels stay for screen readers,
-
      the tooltips name them */
   .rail .switch button, .rail-btn { flex-direction: row; width: auto; height: 44px; padding: 0 11px; }
   .rail .switch button svg, .rail-btn svg { width: 24px; height: 24px; }

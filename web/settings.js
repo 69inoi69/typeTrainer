@@ -217,7 +217,6 @@ const action = (id, icon, label, cls = "btn") => `<button type="button" class="$
 // desc: the i18n key of what it does and why you might want it, shown in
 // a tooltip over the name (a line under every row takes too much room);
 // ctl: its buttons; show: whether it is there at all.
-
 // To add a setting: one entry here (and its key in CHOICES / SWITCHES or
 // the click handler below, its default in S.settings, its texts in i18n.js).
 const pick = (name, label) => seg(CHOICES[name].values.map((v) => choice(name, v, label(v), S.settings[name] === v)));

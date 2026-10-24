@@ -58,7 +58,6 @@
   .letter-row { display: grid; grid-template-columns: repeat(13, auto); justify-content: center; gap: 4px; }
   /* no drawn keyboard on a phone, so the letters and the text take the
      room. The text stays at the top: while you type, the
-
      phone's own keyboard covers the bottom half of the screen. */
   .chip { font-size: clamp(.8rem, 3.6vw, .95rem); flex: none; width: 1.6em; height: 1.6em; }
   /* Climb: the note goes under the level (one line more: nothing jumps,

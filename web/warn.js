@@ -78,7 +78,6 @@ export async function layoutCheck() {
 
 // Caps Lock before the first letter, not after letters were typed. Every
 // key and mouse event says whether Caps Lock is on
-
 // (getModifierState), so the warning comes with the first mouse move or any
 // key (Shift, the Caps Lock key itself) and goes as soon as it is off.
 // Called by input.js on keys and mouse moves; it acts only on a change.

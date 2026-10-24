@@ -208,7 +208,6 @@ document.addEventListener("keydown", (e) => {
   // the result screen stays until you go on on purpose: Enter or Tab (Tab
   // starts a new round everywhere, as on monkeytype). Esc opens the settings
   // (above), never "next round" (one key for both is confusing);
-
   // letters do nothing either, so a word typed past the end never skips the
   // result.
   if (resultOpen()) {

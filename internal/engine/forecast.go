@@ -1,5 +1,4 @@
 // The forecast of the Learn panel (after keybr): about
-
 // how many rounds a letter still needs to be mastered. It reads only the
 // letter's numbers after each of its last rounds: its pace of presses, its
 // recent mistakes, and a straight line through its speed (least squares).

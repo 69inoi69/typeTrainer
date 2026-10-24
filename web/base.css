@@ -279,7 +279,6 @@ dialog.settings-win:focus { outline: none; }
 .sw-foot { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 14px; border-top: 1px solid var(--line); color: var(--sub); font-size: .72rem; }
 .sw-foot kbd { background: var(--track); box-shadow: var(--ring); color: var(--text); border-radius: 4px; padding: 0 5px; margin-right: 3px; font-family: var(--mono); }
 /* desktop: the same window, about a
-
    quarter bigger, with more room around every row */
 @media (min-width: 1000px) and (pointer: fine) {
   dialog.settings-win { inset-block-start: 11vh; min-width: 34rem; }

@@ -744,7 +744,6 @@ body.kb-nofit #keyboard { display: none; }
 /* Light theme: the finger colours (data/layouts) are pastels made for the
    dark page; mixed in at 12% they all fade to white. Here every key gets
    more of its colour, a frame and
-
    a shadow, and --fcd, a deeper shade of the same colour, draws the edges
    and the finger to use. The layout data stays the same. */
 :root[data-theme="light"] :is(.keyboard, .intro) .key, :root[data-theme="light"] .hand .finger {
