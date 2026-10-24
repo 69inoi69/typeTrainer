@@ -68,7 +68,7 @@ export const S = {
   settings: { length: "words-30", live: false, caret: "line", theme: "dark", streak: false, bg: "off", goal: 0, daily: 15,
     glide: "smooth", size: "m", sound: "off", volume: "50", rest: "0",
     stop: false, nextKey: true, hand: true, fingerText: true },   // settings.js
-  kbHidden: false,        // keyboard switched off
+  kbHidden: false,        // keyboard hidden (keyboard.js autoKb: outside Learn's opening letters)
   nextFc: "",             // the colour of the finger for the next key, "" = none lit (keyboard.js)
 };
 

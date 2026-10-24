@@ -3,9 +3,10 @@
 // look and glide), marks on the spaces, the streak badge of Freetype on or
 // off, what falls in the background, the colour theme; how typing answers
 // (the caret stops on a mistake, sounds and their volume, a break
-// reminder); the on-screen keyboard (on or off, and while it is on: the
-// next key lit, the hand above the keys, the finger colour of the next
-// letter in the text); the goals (a daily goal in minutes
+// reminder); the on-screen keyboard (not a setting itself: it shows in
+// Learn until every letter is open, keyboard.js autoKb; here the next key
+// lit, the hand above the keys, the finger colour of the next letter in
+// the text); the goals (a daily goal in minutes
 // for the Learn panel, a speed goal for the stats screen); and exporting, importing
 // and resetting the progress (tools.js does those three). Settings change
 // HOW IT LOOKS, never WHAT is practised. How long a round is belongs to
@@ -16,7 +17,7 @@
 // is blocked, the defaults are used and the app works the same.
 // Layer: middle. Imports only the bottom layer.
 // Called by: app.js (loadSettings at start), input.js (settingsOpen,
-// openSettings, onSettingsClose, onKbToggle, setLength),
+// openSettings, onSettingsClose, setLength),
 // modes.js (lengthFor), modebar.js, typing.js and stats.js (the lengths,
 // lengthOf, lengthLabel, firstRoundDone).
 // To add a setting: a plain choice or an on/off switch is one entry in
@@ -174,10 +175,6 @@ export function firstRoundDone() {
   if (win.open) render();
 }
 
-// The keyboard choice is carried out by input.js (the same as Alt+K), so
-// this module does not need the keyboard module.
-let kbListener = () => {};
-export function onKbToggle(fn) { kbListener = fn; }
 // A new speed or daily goal: the stats screen and the Learn panel draw
 // themselves again (input.js).
 let goalListener = () => {};
@@ -234,10 +231,9 @@ const ROWS = [
   { group: "settings.typing", name: "settings.sound", desc: "settings.soundDesc", ctl: () => pick("sound", (v) => t("settings.sound_" + v)) },
   { group: "settings.typing", name: "settings.volume", ctl: () => pick("volume", (v) => v + "%"), show: () => S.settings.sound !== "off" },
   { group: "settings.typing", name: "settings.rest", desc: "settings.restDesc", ctl: () => pick("rest", (v) => (v === "0" ? t("settings.off") : v)) },
-  { group: "settings.kbGroup", name: "settings.keyboard", desc: "settings.keyboardDesc", ctl: () => onOff("kb", !S.kbHidden), show: () => !isTouch() },   // no keyboard on touch screens
-  { group: "settings.kbGroup", name: "settings.nextKey", desc: "settings.nextKeyDesc", ctl: () => onOff("nextKey", S.settings.nextKey), show: () => !isTouch() && !S.kbHidden },   // nothing to light without the keyboard
-  { group: "settings.kbGroup", name: "settings.hand", desc: "settings.handDesc", ctl: () => onOff("hand", S.settings.hand), show: () => !isTouch() && !S.kbHidden },
-  { group: "settings.kbGroup", name: "settings.fingerText", desc: "settings.fingerTextDesc", ctl: () => onOff("fingerText", S.settings.fingerText), show: () => !isTouch() && !S.kbHidden },
+  { group: "settings.kbGroup", name: "settings.nextKey", desc: "settings.nextKeyDesc", ctl: () => onOff("nextKey", S.settings.nextKey), show: () => !isTouch() },   // no keyboard on touch screens
+  { group: "settings.kbGroup", name: "settings.hand", desc: "settings.handDesc", ctl: () => onOff("hand", S.settings.hand), show: () => !isTouch() },
+  { group: "settings.kbGroup", name: "settings.fingerText", desc: "settings.fingerTextDesc", ctl: () => onOff("fingerText", S.settings.fingerText), show: () => !isTouch() },
   { group: "settings.statsGroup", name: "settings.daily", desc: "settings.dailyDesc", ctl: () => seg(DAILY.map((m) =>
     choice("daily", String(m), m ? String(m) : t("settings.off"), S.settings.daily === m))) },
   { group: "settings.statsGroup", name: "settings.goal", desc: "settings.goalDesc", ctl: () => seg(GOALS.map((g) =>
@@ -309,8 +305,6 @@ function apply(key, value) {
     S.settings.daily = Number(value);
     store.set("tt.daily", value);
     goalListener();
-  } else if (key === "kb") {
-    if (S.kbHidden === (value === "1")) kbListener();   // only a real change
   }
   applySettings();
   render();

@@ -523,20 +523,19 @@ body:not([data-caret]) .caret, body[data-caret="line"] .caret {
   display: flex; justify-content: center; align-items: flex-end; gap: calc(var(--u) * .9 * var(--feel-hand, 1));
   margin: 6px 0 8px; user-select: none; pointer-events: none;
 }
-/* On the typing screen a small hand rides on a little card along the top
-   edge of the keyboard, right above the column of the next key, so key and
+/* On the typing screen a small hand rides along the top edge of the
+   keyboard, with no card around it (issue #150), right above the column of the next key, so key and
    finger are seen in one place (with big hands above the keyboard the eyes
    go to the hands first, then to the keys; a card standing on the key
    above covers that key). Only the hand of that side;
    both when both are used (space, Shift, AltGr). keyboard.js sets the
-   middle of the key in keys (--kx); the card stands there at once, by
+   middle of the key in keys (--kx); the hand stands there at once, by
    "translate" (no layout): no glide, so nothing slides across the keyboard
    under the eyes while you type (#148). left: the keyboard's padding,
    where the rows start. */
 .keyboard > .hands {
   position: absolute; left: 12px; top: 0; z-index: 2; margin: 0;
-  gap: calc(var(--u) * .08); padding: 4px 5px 0; border-radius: 8px;
-  background: var(--panel); box-shadow: var(--ring), 0 6px 16px -8px rgba(0, 0, 0, .5);
+  gap: calc(var(--u) * .08); padding: 4px 5px 0;
   translate: calc(var(--kx, 0) * var(--u) - 50%) calc(-100% - 4px);
   will-change: translate;
 }

@@ -10,7 +10,7 @@ import { FX } from "./fx.js";
 import { el, S, store } from "./state.js";
 import { getJSON } from "./api.js";
 import { labelTips } from "./tools.js";
-import { drawKeyboard, applyKb } from "./keyboard.js";
+import { drawKeyboard } from "./keyboard.js";
 import { refreshStats, renderStats } from "./stats.js";
 import { loadExercise } from "./typing.js";
 import { hideWarn } from "./warn.js";
@@ -85,7 +85,6 @@ export async function loadLanguage(id) {
     applyI18n();
     renderProfile();                        // "guest" in the new language
     labelTips();
-    applyKb();                              // re-translates "off"
     await refreshStats();
     await refreshFreeplay();
     refreshActivity();                      // today's practice, for the daily goal (not waited for)

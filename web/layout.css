@@ -234,7 +234,7 @@ body.stats-only .stats-only-note {
   background: var(--panel); box-shadow: var(--ring); color: var(--sub); font-size: .85rem; line-height: 1.45;
 }
 /* Each screen lists only the keys that work on it: the round keys (Tab,
-   Alt+K, Ctrl+Backspace) only while a round is on screen, and Shift+Tab
+   Ctrl+Backspace) only while a round is on screen, and Shift+Tab
    names the screen it goes to. The result hides the round keys in screens.css. */
 .hints .stats-hint { display: none; }
 body[data-view="stats"] .hints :is(.type-only, .round-only) { display: none; }

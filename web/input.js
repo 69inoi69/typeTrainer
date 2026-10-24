@@ -1,7 +1,6 @@
 // Everything the user does with keys and buttons, sent to the module that
 // handles it: keydown and the phone input, the navigation (Type / Stats,
-// learn / climb / freetype, the round bar), the keyboard on / off choice of
-// the settings, window resize, the "stop" button of touch screens.
+// learn / climb / freetype, the round bar), window resize, the "stop" button of touch screens.
 // Layer: top. Imports anything; nothing imports it (app.js only loads it).
 // It holds almost no logic of its own: it decides WHO gets an action (an
 // open guide, a card, the result screen, or typing) and calls that module.
@@ -10,7 +9,7 @@
 // (the "views" and "modes" sections below are the pattern).
 
 import { $, el, S, introOpen, isTouch, focusText } from "./state.js";
-import { applyKb, requestFit } from "./keyboard.js";
+import { requestFit } from "./keyboard.js";
 import { refreshStats, renderStats, resetStatsPick } from "./stats.js";
 import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, loadExercise, roundStarted, pauseRound, checkLayout, lightNext } from "./typing.js";
 import { checkCaps } from "./warn.js";
@@ -18,7 +17,7 @@ import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
 import { resultOpen, closeResult, settleResult } from "./result.js";
-import { settingsOpen, openSettings, onSettingsClose, onKbToggle, onGoalChange, onBgChange, onTypingLook, onSoundPick, setLength } from "./settings.js";
+import { settingsOpen, openSettings, onSettingsClose, onGoalChange, onBgChange, onTypingLook, onSoundPick, setLength } from "./settings.js";
 import { setMode, refreshFreeplay, renderNav, setFreetypeList, setFreetypeVariant, toggledVariant } from "./modes.js";
 import { openCustomText, hasCustomText } from "./customtext.js";
 import { onBarPick, renderModeBar } from "./modebar.js";
@@ -28,16 +27,6 @@ import { renderPanel } from "./learnpanel.js";
 import { keySound } from "./sound.js";
 import "./share.js";   // the copy / image buttons of the stats screen: it wires them itself
 
-// the keyboard choice in the settings and Alt+K: keyboard off, or
-// back on (never on a touch screen, see restoreKb)
-function toggleKb() {
-  if (isTouch()) return;
-  S.kbHidden = !S.kbHidden;
-  applyKb(true);
-  placeCaret(true);
-  lightNext();   // the finger colour in the text goes and comes with the keyboard
-}
-onKbToggle(toggleKb);
 window.addEventListener("resize", () => {
   buildAmbient();
   fitText();
@@ -187,7 +176,7 @@ document.addEventListener("keydown", (e) => {
     openSettings();
     return;
   }
-  // shortcuts: Shift+Tab = type <-> stats, Alt+1...4 = language, Alt+K = keyboard on / off
+  // shortcuts: Shift+Tab = type <-> stats, Alt+1...4 = language
   // (the line at the bottom of the page, index.html .hints, lists them)
   if (e.key === "Tab" && e.shiftKey) {
     e.preventDefault();
@@ -198,11 +187,6 @@ document.addEventListener("keydown", (e) => {
   if (e.altKey && !e.ctrlKey && !e.metaKey && !altGr && /^Digit[1-9]$/.test(e.code)) {
     const l = S.languages[Number(e.code.slice(5)) - 1];
     if (l) { e.preventDefault(); switchLanguage(l.id); }
-    return;
-  }
-  if (e.altKey && !e.ctrlKey && !e.metaKey && !altGr && e.code === "KeyK") {   // e.code: any system layout
-    e.preventDefault();
-    toggleKb();
     return;
   }
   // the result screen stays until you go on on purpose: Enter or Tab (Tab

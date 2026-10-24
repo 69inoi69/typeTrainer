@@ -17,11 +17,13 @@
 //   node perf.mjs --mode climb --runs 5 --slow 4
 //   node perf.mjs --bare               the screen itself: no falling
 //                                      background, no keyboard (the
-//                                      2 ms goal is for this)
+//                                      2 ms goal is for this; in Learn
+//                                      every letter is opened, which is
+//                                      when Learn hides the keyboard)
 // Numbers depend on the machine: compare before/after on the same one.
 // To add a metric: collect it in the page in setupProbes, print it in report.
 import { chromium } from "@playwright/test";
-import { openApp } from "./app.mjs";
+import { openApp, waitForText } from "./app.mjs";
 
 const args = Object.fromEntries(process.argv.slice(2).join(" ").split("--").filter(Boolean)
   .map((a) => a.trim().split(/\s+/)).map(([k, v]) => [k, v ?? "1"]));
@@ -54,8 +56,15 @@ async function oneRun(browser, cpu) {
   const page = await ctx.newPage();
   // everything on by default (the background is off for a new user, so
   // it is turned on here); --bare: the screen alone
+  // (tt.kbHidden: the keyboard switch of builds before issue #150, so
+  // the script measures them the same way)
   const bare = opt.bare ? { "tt.bg": "off", "tt.kbHidden": "1", "tt.kbHidden.free": "1" } : { "tt.bg": "keys" };
   await openApp(page, { "tt.mode.en": opt.mode, "tt.length.learn": "words-30", [`tt.length.${opt.mode}`]: "words-30", ...bare });
+  if (opt.bare && opt.mode === "learn") {
+    await page.request.post("/api/v1/progress?lang=en", { data: { unlockAll: true } });
+    await page.reload();
+    await waitForText(page);
+  }
   await page.waitForFunction((n) => document.querySelectorAll("#text > span").length > n, opt.keys + 1, { timeout: 20_000 });
   await page.waitForTimeout(800);   // let the first round's entrance settle
   const text = await page.evaluate(() => [...document.querySelectorAll("#text > span")].map((s) => s.textContent).join(""));
