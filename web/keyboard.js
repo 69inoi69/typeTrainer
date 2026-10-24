@@ -208,8 +208,10 @@ export function highlightNextKey() {
   nextKeyEl = S.keyEls[base] || null;
   if (!nextKeyEl) { el.hint.innerHTML = "&nbsp;"; showHands(""); return; }
   // "Next key" off (a setting): find it from memory; the sentence for
-  // screen readers still says it
-  const lit = S.settings.nextKey, hand = S.settings.hand;
+  // screen readers still says it. A hidden keyboard keeps its room
+  // (typing.css .keyboard.off) and so its styles: nothing in it changes
+  // per key, or every key restyles it (measured, issue #175)
+  const lit = S.settings.nextKey && !S.kbHidden, hand = S.settings.hand && !S.kbHidden;
   if (lit) nextKeyEl.classList.add("next");
   const fingerId = fingerOf[base];
   let ids = fingerId === "th" ? ["thl", "thr"] : [fingerId];
@@ -353,7 +355,9 @@ function fitKeyboard() {
   // phones: the on-screen keyboard of the phone changes the window height all
   // the time, and the page may scroll there; no cap
   if (isTouch()) { root.removeProperty("--u-fit"); return; }
-  if (S.kbHidden || S.view !== "type") return;
+  // hidden, the keyboard keeps its room (typing.css .keyboard.off), so it
+  // is measured the same: the text stands where it does with it
+  if (S.view !== "type") return;
   // the result hides the keyboard (screens.css): measure again with the next text
   if (el.textBox.classList.contains("resulting")) return;
   // while the keyboard folds / unfolds its height and the margins of the hands

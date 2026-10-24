@@ -73,8 +73,8 @@ the normal server, it shows yours.
 - The keyboard shows only in Learn, while letters are still opening: that
   is when you learn where the keys are. Once every letter is open, and in
   Climb and Freetype, it is hidden: by then you type without looking. It
-  is not a setting. When it goes or comes it fades, and the text glides to
-  its new place. No setting but the text size changes its size; browser
+  is not a setting. When it goes or comes it fades; its room stays, so the
+  letters and the text stand at the same place in all three modes. No setting but the text size changes its size; browser
   zoom makes it smaller or bigger together with the rest of the page.
 - The screen has three fixed places, as in a real app:
   - **the header**: the logo on the left, the account on the right ("log in"
