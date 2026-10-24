@@ -119,8 +119,38 @@ func (m *MemoryStore) AddSession(user, lang string, s Session) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	d := m.data(user, lang)
+	if d.hasRound(s.Round) {
+		return nil
+	}
 	d.sessions = append(d.sessions, s.WithLength())
 	return nil
+}
+
+func (m *MemoryStore) HasRound(user, lang, round string) (bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.data(user, lang).hasRound(round), nil
+}
+
+// hasRound looks through every history of the language: the same id may
+// not come back in another mode either (the UNIQUE index of PostgresStore).
+func (d *langData) hasRound(round string) bool {
+	if round == "" {
+		return false
+	}
+	for _, s := range d.sessions {
+		if s.Round == round {
+			return true
+		}
+	}
+	for _, list := range d.freeplay {
+		for _, s := range list {
+			if s.Round == round {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (m *MemoryStore) RecentSessions(user, lang, length string, limit int) ([]Session, error) {
@@ -256,6 +286,9 @@ func (m *MemoryStore) AddFreeplaySession(user, lang, mode string, s Session) err
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	d := m.data(user, lang)
+	if d.hasRound(s.Round) {
+		return nil
+	}
 	if d.freeplay == nil {
 		d.freeplay = map[string][]Session{}
 	}

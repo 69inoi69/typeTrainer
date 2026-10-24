@@ -841,7 +841,7 @@ async function finishRound(byLastKey = false) {
     if (S.mode === "climb") { await finishFree(wpm, accuracy, typed, fullSeconds(end)); return; }
     if (S.mode === "freetype") { await finishFreetype(wpm, accuracy, typed, fullSeconds(end)); return; }
     // keys: the whole round, kept by the server as its raw record (it learns only from samples)
-    const body = { samples, keys: typed, chars: typed.length, wpm, accuracy, perSecond: fullSeconds(end), length: S.settings.length, device: device() };
+    const body = { samples, keys: typed, chars: typed.length, wpm, accuracy, perSecond: fullSeconds(end), length: S.settings.length, device: device(), round: roundId() };
     learnRound++;
     let res;
     try {
@@ -925,11 +925,15 @@ function restCheck(seconds) {
 // What the round is typed on, stored with it (recorded only, for later:
 // phone rounds may later count differently, docs/ALGORITHM.md section 9)
 const device = () => (isTouch() ? "touch" : "keyboard");
+// A new id for every finished round, sent with each try of it: the server
+// keeps a round once however often it comes (issue #149).
+// getRandomValues, not randomUUID: it works on plain http too.
+const roundId = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
 
 async function finishFree(wpm, accuracy, keys, perSecond) {
   const before = S.climb?.sessions ?? [];
   const level = S.climbLevel;
-  const body = { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length, device: device(), level };
+  const body = { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length, device: device(), level, round: roundId() };
   // what a saved round changes: the level of the next round comes only
   // from the server's answer, so an unsaved round moves nothing
   const saved = async (res) => {
@@ -979,7 +983,7 @@ async function trySave(path, body, saved) {
 async function finishFreetype(wpm, accuracy, keys, perSecond) {
   const variant = S.freetypeVariant, list = roundList();
   const before = S.freetype?.sessions ?? [];
-  const body = { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length, device: device(), list, variant };
+  const body = { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length, device: device(), list, variant, round: roundId() };
   const done = wordsTyped;
   const saved = async () => {
     if (variant === "custom") customRoundDone(done);    // saved: the next round goes on from here

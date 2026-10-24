@@ -38,6 +38,47 @@ var storeTests = map[string]func(*testing.T, Store){
 	"Device":                    testDevice,
 	"PracticeDays":              testPracticeDays,
 	"BestRounds":                testBestRounds,
+	"RoundSentTwice":            testRoundSentTwice,
+}
+
+// A round sent twice with the same id (a retry after a lost answer, issue
+// #149) is kept once, in any mode; the id belongs to one user and one
+// language, and rounds without an id are always kept.
+func testRoundSentTwice(t *testing.T, m Store) {
+	if has, err := m.HasRound(u, "en", "r1"); err != nil || has {
+		t.Fatalf("empty store: HasRound = %v, %v", has, err)
+	}
+	for range 2 {
+		if err := m.AddSession(u, "en", Session{WPM: 40, Round: "r1"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if n, _ := m.SessionCount(u, "en", ""); n != 1 {
+		t.Fatalf("learning round sent twice: %d rounds, want 1", n)
+	}
+	m.AddFreeplaySession(u, "en", ModeClimb, Session{WPM: 50, Level: 1, Round: "r1"}) // the same id in another mode
+	m.AddFreeplaySession(u, "en", ModeClimb, Session{WPM: 50, Level: 1, Round: "r2"})
+	m.AddFreeplaySession(u, "en", ModeClimb, Session{WPM: 50, Level: 1, Round: "r2"})
+	if n, _ := m.FreeplaySessionCount(u, "en", ModeClimb, ""); n != 1 {
+		t.Fatalf("Climb: %d rounds, want 1 (r1 is taken, r2 once)", n)
+	}
+	if has, _ := m.HasRound(u, "en", "r2"); !has {
+		t.Fatal("HasRound(r2) = false after it was saved")
+	}
+	if has, _ := m.HasRound(u, "pl", "r1"); has {
+		t.Fatal("the id leaked into another language")
+	}
+	if has, _ := m.HasRound("someone-else", "en", "r1"); has {
+		t.Fatal("the id leaked to another user")
+	}
+	m.AddSession(u, "en", Session{WPM: 30})
+	m.AddSession(u, "en", Session{WPM: 30})
+	if n, _ := m.SessionCount(u, "en", ""); n != 3 {
+		t.Fatalf("rounds without an id: %d rounds, want 3", n)
+	}
+	if has, _ := m.HasRound(u, "en", ""); has {
+		t.Fatal(`HasRound("") must be false`)
+	}
 }
 
 // runStoreTests runs every test on a fresh, empty store from newStore.

@@ -64,6 +64,12 @@ type Session struct {
 	// now: the letter model learns from both alike. Kept so we can later
 	// check whether phone rounds should count differently.
 	Device string `json:"device,omitempty"`
+	// Round: the id the page gave the round (a random string), so a round
+	// sent twice (a retry after a lost answer, issue #149) is kept once:
+	// AddSession and AddFreeplaySession skip a round id the user already
+	// has in this language. "" = no id (older pages, imports): always kept.
+	// Not exported: it only matters while the page may still send again.
+	Round string `json:"-"`
 }
 
 // The histories outside learning (Store.AddFreeplaySession and the rest).
@@ -269,6 +275,10 @@ type Store interface {
 	FreeplaySessionCount(user, lang, mode, length string) (int, error)
 	FreeplaySessionLengths(user, lang, mode string) ([]string, error)
 	BestFreeplayRounds(user, lang, mode string) (map[string]Session, error) // as BestRounds
+
+	// HasRound: the user already has a round with this id in this
+	// language, in any mode (Session.Round). Always false for "".
+	HasRound(user, lang, round string) (bool, error)
 
 	// PracticeDays: every day with a finished round in this language,
 	// learning and free practice together, oldest first. tz is the user's

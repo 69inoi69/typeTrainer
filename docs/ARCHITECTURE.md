@@ -41,7 +41,7 @@ its own.
 | `internal/storage/store.go` | The `Store` interface. |
 | `internal/storage/memory.go` | In-memory `Store` (lost on restart). |
 | `internal/storage/postgres.go` | PostgreSQL `Store` through the standard `database/sql`; the pgx driver is only registered. Applies `migrations/*.sql` at start. Not in the WebAssembly build. |
-| `internal/storage/migrations/` | The database tables, one numbered SQL file per change (`001_init.sql` ... `005_letter_held.sql` (a letter's mastery is remembered), `006_round_level.sql` (Climb's level per round), `007_freetype_modes.sql` (a history per Freetype list), `008_climb_ten_levels.sql`, `009_freetype_variants.sql` (a history per Freetype kind of text), `010_learn_laps.sql` (Learn's lap per user and per round)). |
+| `internal/storage/migrations/` | The database tables, one numbered SQL file per change (`001_init.sql` ... `005_letter_held.sql` (a letter's mastery is remembered), `006_round_level.sql` (Climb's level per round), `007_freetype_modes.sql` (a history per Freetype list), `008_climb_ten_levels.sql`, `009_freetype_variants.sql` (a history per Freetype kind of text), `010_learn_laps.sql` (Learn's lap per user and per round), `011_round_id.sql` (a round sent twice is kept once)). |
 | `internal/storage/store_test.go` | The tests every `Store` must pass; run on memory always and on PostgreSQL when `TT_TEST_DATABASE_URL` is set (`postgres_test.go`). |
 | `internal/api/handlers.go` | The `Server`, the route list (`Register`), `?lang=`, JSON helpers, locking around read-modify-write. |
 | `internal/api/learning.go` | Learning routes: `/portion`, `/results`, `/stats`, `/activity`, `/progress`. |
@@ -227,6 +227,10 @@ is not in the list or has a locked letter is simply ignored. Body limit 1 MB.
 The page sends the end of a round (`/results`, `/freeplay/results`,
 `/freetype/results`) again twice when the server was not reached or
 answered 5xx, never after a 4xx (`web/api.js` `saveRound`, issue #149).
+Each try carries the same `round` id (up to 64 letters, digits and `-`),
+so a round whose first answer was lost is stored once and, in Learn, its
+samples are learned once (`Store.HasRound`, migration 011). A request
+without `round` is always stored.
 
 **Round length** (`length` on `/results`, `/freeplay/results` and
 `/freetype/results`, and
@@ -395,7 +399,9 @@ in git. How to install PostgreSQL on Windows: CONTRIBUTING.md.
   (the letter model) and `sessions` (the history of every mode, `mode`
   column: `learning`, `freeplay` for Climb, `freetype-<n>` for each
   Freetype list, `freetype-<n>-long` for its long words,
-  `freetype-sentences` and `freetype-custom` (migration 009); the raw keys as `JSONB`). Every data table is keyed by user and
+  `freetype-sentences` and `freetype-custom` (migration 009); the raw keys as `JSONB`;
+  `round_id`, unique per user and language, so a round sent twice is kept
+  once (migration 011)). Every data table is keyed by user and
   language. `user_id` is text and not a foreign key, because guests
   (`g...`, `local`) have data but no row in `users`; an account's id is
   `u` + `users.id`.

@@ -162,6 +162,7 @@ func (s *Server) handleFreetypeResults(w http.ResponseWriter, r *http.Request, u
 		Keys:   req.Keys, // kept as the raw record only, never learned from
 		Length: req.Length,
 		Device: req.Device,
+		Round:  req.Round, // sent again: not stored twice
 	})
 	if err != nil {
 		serverError(w, err)

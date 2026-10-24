@@ -198,6 +198,9 @@ type resultsRequest struct {
 	List int `json:"list"`
 	// Variant: Freetype only, the kind of round (storage.FreetypeVariants).
 	Variant string `json:"variant"`
+	// Round: the id the page gave this round (storage.Session.Round); the
+	// same id sent again is not stored or learned twice. "" = none.
+	Round string `json:"round"`
 }
 
 // POST /api/v1/results?lang= -> the round is over: stores it in the
@@ -226,6 +229,16 @@ func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, user stri
 
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
+	// a round sent again after a lost answer (issue #149) is stored
+	// already: its samples are not learned twice, and AddSession skips it
+	again, err := s.store.HasRound(user, l.Info.ID, req.Round)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	if again {
+		req.Samples = nil
+	}
 	done, err := s.learn(user, l, req.Samples)
 	if err != nil {
 		serverError(w, err)
@@ -243,7 +256,8 @@ func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, user stri
 	err = s.store.AddSession(user, l.Info.ID, storage.Session{
 		WPM: req.WPM, Accuracy: req.Accuracy, Chars: req.Chars, Consistency: consistency, FinishedAt: time.Now(),
 		Keys: req.Keys, Unlocked: done.unlocked, Length: req.Length, Group: group, Device: req.Device,
-		Lap: done.lap, // the lap the round was typed in, even when its last keys finished it
+		Lap:   done.lap, // the lap the round was typed in, even when its last keys finished it
+		Round: req.Round,
 	})
 	if err != nil {
 		serverError(w, err)

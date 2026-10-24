@@ -167,6 +167,7 @@ func (s *Server) handleFreeplayResults(w http.ResponseWriter, r *http.Request, u
 		Length: req.Length,
 		Device: req.Device,
 		Level:  req.Level,
+		Round:  req.Round, // sent again: not stored twice, the answer is the same
 	})
 	if err != nil {
 		serverError(w, err)
