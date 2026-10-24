@@ -83,7 +83,7 @@
 /* a fixed height (one line of columns): fitKeyboard
    (keyboard.js) keeps this room in every mode, so the keyboard has one
    size in all of them */
-.learn-panel { display: grid; height: 3.6em; margin-top: 12px; font-size: .9rem; color: color-mix(in srgb, var(--text) 80%, var(--sub)); transition: opacity .4s var(--ease); }
+.learn-panel { display: grid; height: var(--lp-room); margin-top: 12px; font-size: .9rem; color: color-mix(in srgb, var(--text) 80%, var(--sub)); transition: opacity .4s var(--ease); }
 /* Hidden (Climb, Freetype, Learn before its first stats) it keeps its
    room: the text and the keyboard stand at the same place and size in
    every mode. Climb's and
@@ -96,6 +96,13 @@ body:not([data-mode="learn"]) #view-type > .letters > .mode-bar { position: abso
    rounds. Opacity only, the room stays: the first key moves
    nothing. */
 body.typing-now .learn-panel { opacity: 0; pointer-events: none; }
+/* ...and the letters row slides down into its place (the middle of the
+   panel's room: 12px of margin, half the room, half the row's own height),
+   so the letter being learned sits closer to the text. Transform only:
+   no layout, the browser moves it on the compositor. */
+:root { --lp-room: calc(.9rem * 3.6); }
+#letters { transition: transform .4s var(--ease); }
+body.typing-now[data-mode="learn"] #letters { transform: translateY(calc(12px + var(--lp-room) / 2 + 50%)); }
 .lp-row { display: flex; align-items: center; gap: 30px; min-height: 1.9em; white-space: nowrap; min-width: 0; }
 /* One grid for both lines (one size for everything, clean alignment across
    and down): the panel under the letters and

@@ -295,9 +295,9 @@ the normal server, it shows yours.
   column empty), on a ring that fills as the time passes, with the days
   in a row you met it in its label. This line is the summary between
   rounds: it shows before the first key of a round and goes with the
-  first key, so while you type the screen holds only the letters row,
-  the word counter, **Learning now [d]** and the text (its room stays, so
-  nothing moves). The line just above the text uses
+  first key, so while you type the screen holds only the letters row
+  (it slides down into the panel's place, closer to the text), the word
+  counter, **Learning now [d]** and the text. The line just above the text uses
   the same six columns as the panel, so their dividers line up: the word
   counter, then **Learning now** and the letter in focus (the gold chip
   in the row above; hover for what mastered takes; each letter's own
