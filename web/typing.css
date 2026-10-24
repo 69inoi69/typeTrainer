@@ -583,29 +583,25 @@ body[data-blink="pulse"][data-caret="outline"] .caret { box-shadow: inset 0 0 0 
 .hand > svg, .hand > .finger { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .hand .finger > svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .hand.right { scale: -1 1; }   /* the left hand mirrored */
+/* Over the keyboard the hand is a picture (keyboard.js handPicture): the
+   live drawing stays as the model it is made from, out of sight; the
+   picture has room above for the lifted finger and its own faded wrist. */
+.hand > img { display: none; }
+.keyboard .hand > img { display: block; position: absolute; left: 0; width: 100%; top: calc(-12 * var(--hu)); height: calc(96 * var(--hu)); }
+.keyboard .hand > :not(img) { display: none; }
+.keyboard .hand { -webkit-mask-image: none; mask-image: none; }
 /* the palm a shade darker than the fingers, so they stand apart from it */
 .hand .palm { fill: color-mix(in srgb, var(--skin) 78%, #000); }
 .hand .finger {
   --fc: #888;
-  will-change: translate;      /* a layer of its own from the start: no repaint when it starts moving */
-  transition: translate var(--med) var(--ease);
+  will-change: translate;      /* a layer of its own: the intro lifts the fingers (screens.css demo-lift) */
 }
-/* the colour changes at once: a fade of "fill" cannot run on the graphics
-   card, so it painted the hands again on every frame of every key */
 .hand .finger .skin { fill: var(--skin); }
-/* the finger to use: fills with its full colour and lifts, no glow (a
-   blurred edge looks like double vision). It is the main
-   "which finger" signal; the key below is only hinted (.key.next).
-   Knobs: --feel-finger-* (web/feel.js). */
-.hand .finger.on {
-  /* along the finger: --dx/--dy is the way it points (index.html) */
-  translate: calc(var(--dx) * var(--feel-finger-lift, -6) * var(--hu)) calc(var(--dy) * var(--feel-finger-lift, -6) * var(--hu));
-}
-/* an optional see-through outline (--feel-finger-glow, 0 = none) */
-.hand .finger.on .skin {
-  fill: var(--fc); paint-order: stroke;
-  stroke: color-mix(in srgb, var(--fc) 30%, transparent); stroke-width: var(--feel-finger-glow, 0);
-}
+/* The finger to use, in the pictures over the keyboard (keyboard.js
+   handPicture): lifted along the way it points (--dx/--dy, index.html) by
+   FEEL.fingerLiftPx, in its full colour (--fc; the light theme a deeper
+   --fcd), no glow (a blurred edge looks like double vision). It is the
+   main "which finger" signal; the key below is only hinted (.key.next). */
 
 /* visually hidden, still read by screen readers (the finger sentence) */
 .sr-only {
@@ -771,7 +767,6 @@ body.kb-nofit #keyboard { display: none; }
     0 8px 18px -6px color-mix(in srgb, var(--fcd) 70%, transparent);
 }
 :root[data-theme="light"] .hand .palm { fill: color-mix(in srgb, var(--skin) 82%, var(--text)); }
-:root[data-theme="light"] .hand .finger.on .skin { fill: var(--fcd); stroke: color-mix(in srgb, var(--fc) 40%, transparent); }
 
 /* Climb: one dot per pass a level needs, filled when passed (letters.js
    status line, result.js level). The sentence after the result row says

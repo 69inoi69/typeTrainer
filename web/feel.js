@@ -4,9 +4,10 @@
 // The CSS reads the same values as custom properties (--feel-*), set below.
 // None of this changes what is measured or sent to the server.
 // Layer: bottom. Imports nothing.
-// Used by: keyboard.js (red tint, hand size), caret.js (caret flinch, breath and
-// pulse, line scroll), and the stylesheets (caret glide, the lift and dip of the
-// next key, the lift of the finger) through the --feel-* properties.
+// Used by: keyboard.js (red tint, hand size, the lift of the finger in the
+// hand's pictures), caret.js (caret flinch, breath and pulse, line scroll),
+// and the stylesheets (caret glide, the lift and dip of the next key)
+// through the --feel-* properties.
 // Speed rule (as smooth as monkeytype): what moves on
 // every key only moves (translate, transform, opacity of a whole element),
 // which the graphics card does without the page being painted again; no
@@ -83,8 +84,7 @@ export const FEEL = {
   // (keyboard.js highlightNextKey): the finger to use lights up on it.
   handScale: 0.55,          // hand width in keys: 2 * handScale
   handRoom: 1.05,           // room above the keyboard for the hand, in keys
-  fingerLiftPx: 8,          // how far the finger to use lifts, in units of the hand drawing (100 = its width)
-  fingerGlowPx: 0,          // a see-through outline around it, in the hand drawing's units (0 = none: it looks like double vision)
+  fingerLiftPx: 8,          // how far the finger to use stands lifted, in units of the hand drawing (100 = its width)
   // The next key stands out by brightness, not by colour: side vision sees
   // light and movement, not hues: a coloured key gets lost while typing.
   nextKeyLiftPx: 3,         // how far the next key rises above the others (0 = stays flat)
@@ -104,8 +104,6 @@ function applyFeel() {
   root.setProperty("--feel-result-rise", FEEL.resultRisePx + "px");
   root.setProperty("--feel-mark-line", FEEL.markLine + "px");
   root.setProperty("--feel-hand", String(FEEL.handScale));
-  root.setProperty("--feel-finger-lift", String(-FEEL.fingerLiftPx));   // in units of the hand drawing (typing.css --hu)
-  root.setProperty("--feel-finger-glow", String(FEEL.fingerGlowPx));
   root.setProperty("--feel-next-lift", -FEEL.nextKeyLiftPx + "px");
   root.setProperty("--feel-key-press-ms", FEEL.keyPressMs + "ms");
   root.setProperty("--feel-key-press-scale", String(FEEL.keyPressScale));

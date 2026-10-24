@@ -80,7 +80,8 @@ screenshot under the job's artifacts.
 `node perf.mjs` in the same folder measures typing latency: style recalc
 per key, key to caret start and slow frames. It needs a running server.
 Run it before and after a change to the typing screen, on the same machine,
-and put both results in the pull request.
+and put both results in the pull request. `node perf.mjs --bare` measures the
+screen without the falling background and the keyboard.
 
 The website on GitHub Pages is the same Go code compiled to WebAssembly
 (`main_wasm.go`). Every merge to `main` rebuilds it.

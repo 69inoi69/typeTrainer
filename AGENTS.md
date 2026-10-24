@@ -49,8 +49,10 @@ pull requests. The queue lives in GitHub issues, in order, without dates.
    measurement: `node tools/browser/perf.mjs` (CONTRIBUTING.md): style
    recalc per key at full speed, key → caret start and the share of slow
    frames with the CPU slowed 6×. The goal of the performance work
-   (issue #148), not a per-PR budget: under 2 ms of style recalc per key,
-   caret start ≤ 40 ms, slow frames ≤ 15%.
+   (issue #148), not a per-PR budget: under 2 ms of style recalc per key
+   for the screen itself (`perf.mjs --bare`: no background, no keyboard;
+   the keyboard is a thesis item and costs on top of it), caret start
+   ≤ 40 ms and slow frames ≤ 15% with everything on.
 5. **Measure first, then change numbers.** No tuning without a measurement.
 6. **Comments never retell me.** Link the issue instead. A comment explains
    the current value; history lives in git and
