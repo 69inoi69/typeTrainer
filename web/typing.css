@@ -601,7 +601,11 @@ body:not([data-caret]) .caret, body[data-caret="line"] .caret {
    keyboard keeps its size and place */
 body.hand-off .keyboard > .hands { display: none; }
 :root[data-theme="light"] .keyboard { background: rgba(255, 255, 255, .55); box-shadow: var(--ring), 0 10px 30px -18px rgba(20, 24, 32, .25); }
-.keyboard.off { display: none; }
+/* Hidden (keyboard.js autoKb), the keyboard keeps its room on a computer:
+   the letters and the text stand at the same place in every mode (issue
+   #150, one layout). A phone has no room to spare: there it goes. */
+.keyboard.off { visibility: hidden; }
+@media not ((min-width: 1000px) and (pointer: fine)) { .keyboard.off { display: none; } }
 /* a window too small for usable keys (fitKeyboard): the keyboard steps
    aside for the text, without changing the saved choice */
 body.kb-nofit #keyboard { display: none; }

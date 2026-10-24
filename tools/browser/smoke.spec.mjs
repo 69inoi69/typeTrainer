@@ -235,6 +235,23 @@ test("the keyboard shows only while Learn opens letters", async ({ page }) => {
   await expect(kb).toBeHidden();
 });
 
+// One layout for the three modes (issue #150): the letters and the text
+// stand at the same place in Learn, Climb and Freetype; the hidden
+// keyboard keeps its room.
+test("the text stands at the same place in every mode", async ({ page }) => {
+  await openApp(page, { "tt.mode.en": "learn" });
+  const top = async () => Math.round((await page.locator("#text-box").boundingBox()).y);
+  const learn = await top();
+  for (const m of ["climb", "freetype", "learn"]) {
+    await page.locator(`#tab-${m}`).click();
+    await waitForText(page);
+    // the keyboard folds away or in first: measure once it is done
+    await expect(page.locator("#keyboard")).toHaveClass(m === "learn" ? /^(?!.*\boff\b)/ : /\boff\b/);
+    await page.waitForFunction(() => !document.getAnimations().some((a) => a.playState === "running" && a.effect?.target?.closest?.("#keyboard, #text-box, .letters")));
+    expect(await top(), `the text in ${m}`).toBe(learn);
+  }
+});
+
 // The hand over the keyboard is a picture per finger (keyboard.js
 // handPicture); its <img> says which fingers it shows (data-f). After every
 // key the shown hands must be the ones of the next key's fingers, as the
