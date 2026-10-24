@@ -668,7 +668,9 @@ fitted to real data; `docs/thesis/EVALUATION.md` says how they could be.
 
 Code: `internal/sim` (tests in `internal/sim/sim_test.go`), run with
 `go run ./tools/sim` (or `-lang en`) from the repository root. All numbers are
-in `internal/config/config.go` (`Sim`).
+in `internal/config/config.go` (`Sim`). `go test ./...` guards the main
+result: `tools/sim/main_test.go` runs three typists per language and fails
+if random words need less than 3 times the practice of the stream.
 
 **The simulated typist.** Every letter has a hidden error probability, drawn
 uniformly from 0.03..0.30, and a hidden time per press, drawn from
