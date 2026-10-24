@@ -1,7 +1,8 @@
 # Checks every pull request before it is merged (pages.yml checks main again
 # before publishing): formatting, static checks, tests (the storage tests
-# also against a real PostgreSQL), and that the WebAssembly version of the
-# site still compiles.
+# also against a real PostgreSQL), that the WebAssembly version of the
+# site still compiles, and the browser checks (tools/browser: real rounds
+# typed in Chromium against the real server).
 name: Tests
 
 on:
@@ -47,3 +48,40 @@ jobs:
 
       - name: WebAssembly build
         run: GOOS=js GOARCH=wasm go build -o /dev/null .
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tools/browser/package-lock.json
+
+      - name: Install Playwright
+        working-directory: tools/browser
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      # starts `go run .` itself (playwright.config.mjs)
+      - name: Browser checks
+        working-directory: tools/browser
+        run: npx playwright test
+
+      # the trace and screenshot of a failed check, to open with
+      # `npx playwright show-trace`
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-checks
+          path: |
+            tools/browser/test-results/
+            tools/browser/playwright-report/
+          retention-days: 7

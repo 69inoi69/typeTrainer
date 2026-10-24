@@ -46,11 +46,11 @@ pull requests. The queue lives in GitHub issues, in order, without dates.
    numbers. "Checked" without that list does not count.
 4. **A change to the typing screen is measured before and after**, with
    the numbers in the PR, and must not be worse than before. The canonical
-   measurement: the script in `tools/perf/` (issue #144; until it exists,
-   the same metrics by hand), CPU slowed 6×, metrics: style recalc per
-   key, key → caret start, share of slow frames. The goal of the
-   performance work (issue #148), not a per-PR budget: under 2 ms of
-   style recalc per key, caret start ≤ 40 ms, slow frames ≤ 15%.
+   measurement: `node tools/browser/perf.mjs` (CONTRIBUTING.md): style
+   recalc per key at full speed, key → caret start and the share of slow
+   frames with the CPU slowed 6×. The goal of the performance work
+   (issue #148), not a per-PR budget: under 2 ms of style recalc per key,
+   caret start ≤ 40 ms, slow frames ≤ 15%.
 5. **Measure first, then change numbers.** No tuning without a measurement.
 6. **Comments never retell me.** Link the issue instead. A comment explains
    the current value; history lives in git and
@@ -201,14 +201,18 @@ gofmt -w .          # format
 go vet ./...        # static checks
 ```
 
-Every pull request runs gofmt, vet, the tests and the WebAssembly build
-(`.github/workflows/tests.yml`). Every push to `main` runs the tests again and
+Browser checks and the latency script live in `tools/browser`
+(CONTRIBUTING.md, "Browser checks").
+
+Every pull request runs gofmt, vet, the tests, the WebAssembly build and the
+browser checks (`.github/workflows/tests.yml`). Every push to `main` runs the tests again and
 republishes GitHub Pages (`.github/workflows/pages.yml`). If that run fails,
 the site stays on the old version.
 
 ## Before you say a task is done
 
-1. `gofmt -w .`, `go vet ./...` and `go test ./...` all pass.
+1. `gofmt -w .`, `go vet ./...`, `go test ./...` and the browser checks
+   (`tools/browser`) all pass.
 2. New engine logic has unit tests, including edge cases (no data yet, zero values).
 3. Docs updated if behaviour or the API changed.
 4. An interface change is checked in a browser at desktop width, and the

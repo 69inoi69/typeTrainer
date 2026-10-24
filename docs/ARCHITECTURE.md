@@ -60,6 +60,7 @@ its own.
 | `internal/sim` | Simulation: a made-up typist and three word-choice strategies (docs/ALGORITHM.md, section 10). Not used by the app. |
 | `tools/sim/` | `go run ./tools/sim`: runs the simulation on the real word lists and prints the table. |
 | `tools/wordlists/` | Python script + block lists that build the word lists (not part of the app). |
+| `tools/browser/` | Browser checks (Playwright: a round in each mode, the caret, result and stats) and `perf.mjs`, the typing latency script. Node, not part of the app; how to run: CONTRIBUTING.md. |
 | `web/` | Static frontend: `index.html`, the stylesheets (`base.css` first, then `layout`, `typing`, `stats`, `screens`, `responsive`) and the JavaScript modules (see "Frontend modules" below). The interface language always follows the practice language. |
 | `webmodules_test.go` | Checks the import rule of the frontend modules. |
 

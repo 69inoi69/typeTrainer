@@ -2,7 +2,7 @@
 
 Thanks for looking. typeTrainer is small on purpose: Go's standard library
 on the server, plain HTML, CSS and JavaScript in the browser, no npm and no
-build step. If you can read Go and JavaScript, you can change any part of it.
+build step. (Node appears only in `tools/browser`, for the checks below.) If you can read Go and JavaScript, you can change any part of it.
 
 ## Run it
 
@@ -58,6 +58,29 @@ go test ./...
 Every pull request runs these and the WebAssembly build. The storage tests
 also run against a real PostgreSQL when `TT_TEST_DATABASE_URL` points to an
 empty database (its tables are emptied on every run).
+
+### Browser checks
+
+`tools/browser` types real rounds in a real browser (Playwright): a round
+in each mode finishes, the caret stays one line tall, the result and stats
+screens open. They start `go run .` themselves; stop your own server first,
+or they test whatever it is serving. You need [Node](https://nodejs.org/) 20
+or newer.
+
+```
+cd tools/browser
+npm ci
+npx playwright install chromium
+npx playwright test
+```
+
+Every pull request runs them too. A failed run on GitHub keeps a trace and a
+screenshot under the job's artifacts.
+
+`node perf.mjs` in the same folder measures typing latency: style recalc
+per key, key to caret start and slow frames. It needs a running server.
+Run it before and after a change to the typing screen, on the same machine,
+and put both results in the pull request.
 
 The website on GitHub Pages is the same Go code compiled to WebAssembly
 (`main_wasm.go`). Every merge to `main` rebuilds it.

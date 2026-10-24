@@ -1,0 +1,12 @@
+{
+  "name": "typetrainer-browser-tools",
+  "private": true,
+  "description": "Browser checks and the latency script for typeTrainer. A tool, not part of the app.",
+  "scripts": {
+    "test": "playwright test",
+    "perf": "node perf.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}

@@ -6,3 +6,7 @@ __pycache__/
 /typingtrainer
 /typingtrainer.exe
 *.wasm
+# browser checks (tools/browser): Node packages and Playwright's output
+node_modules/
+test-results/
+playwright-report/
