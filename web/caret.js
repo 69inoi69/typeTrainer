@@ -28,7 +28,6 @@ export function flinchCaret() {
 }
 
 // The glide keeps up with your hands (#141): at a slow pace
-
 // the caret slides in FEEL.caretGlideMs; when keys come faster than that
 // it would always be behind the letters, so the glide shrinks to a part
 // (FEEL.caretGlidePace) of the time between your last few keys, never below

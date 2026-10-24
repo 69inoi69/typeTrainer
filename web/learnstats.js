@@ -1,6 +1,5 @@
 // The Learn part of the stats screen (Learn gets its own stats, after
 // keybr's profile): under the tiles and the speed chart
-
 // that every mode has, three panels only Learn can have:
 //   - every letter, round by round: a row per letter in the order they
 //     open, a cell per round, coloured as the letters row colours it (red

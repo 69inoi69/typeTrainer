@@ -333,7 +333,6 @@ function renderLengthFilter(have, shown, bests = {}) {
   };
   // two groups: rounds of N words, rounds of N seconds (they are different
   // kinds of round, not one row)
-
   const isTime = (id) => id.startsWith("time");
   const words = ids.filter((id) => !isTime(id)), time = ids.filter(isTime);
   el.lengthFilter.innerHTML = [words, time].filter((g) => g.length)

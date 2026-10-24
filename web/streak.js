@@ -20,7 +20,6 @@ const STREAK_TIERS = [10, 25, 50];   // clean words where the colour changes
 const streakTier = (n) => STREAK_TIERS.filter((x) => n >= x).length;
 // px: how far above the caret's top the badge sits: close over it, away from
 // the line above
-
 export const STREAK_RISE = 14;
 const isMilestone = (n) => n === 10 || n === 25 || (n > 0 && n % 50 === 0);
 export const streakOn = () => S.settings.streak && S.mode === "freetype";

@@ -97,7 +97,6 @@ function advanceAfter(node) {
 export function introKey(e) {
   if (e.key === "Escape") { e.preventDefault(); closeIntro(); return; }
   // ← → (and A / D, by the physical key) go back and on;
-
   // on the home row step A and D are keys to press, so there only the
   // arrows. At the first and the last step nothing moves (preventDefault:
   // no scrolling of the page behind either).

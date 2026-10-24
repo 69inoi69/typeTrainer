@@ -241,7 +241,6 @@ export function closeResult() {
 // which stands in the middle of the screen: when one screen changes into
 // the other, the row moves. It glides there instead of jumping: read where
 // it was, change the screen, then animate from the
-
 // old place to the new one ("FLIP"). Two layout reads per screen change,
 // never per keypress.
 const lettersRow = document.querySelector("#view-type > .letters");

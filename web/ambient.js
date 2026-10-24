@@ -7,7 +7,6 @@
 // do not read as keys), some are filled a little.
 // They keep moving while you type: they cost about 2 ms of a keypress
 // (#148 measures it again). After a minute with no key and no mouse
-
 // the page dims a little and the background grows a little stronger: a
 // screen saver, any key or mouse move ends it.
 // Decoration only, like fx.js: it never changes what is measured.
@@ -86,7 +85,6 @@ function keycap(size, letters) {
 // too narrow or the setting is "off".
 // The pieces never run into each other (overlapping ones look messy): each
 // field is cut into lanes as wide as the largest turned
-
 // keycap, every lane has its own speed, and the pieces of one lane fall at
 // that same speed an equal share of the way apart, so they keep their
 // distance all the way down.

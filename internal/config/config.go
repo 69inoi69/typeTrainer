@@ -209,7 +209,6 @@ func Default() Config {
 			FreetypeLists: []int{200, 1000, 5000, 10000, 25000},
 			// Freetype's kinds of text (after keybr and monkeytype). Long
 			// words: 6+ letters, a quarter of the 1000
-
 			// most common English words and most of the rarer ones.
 			LongMin: 6,
 			// Real sentences and your own text: letters, capitals and these

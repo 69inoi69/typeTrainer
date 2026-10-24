@@ -163,7 +163,6 @@ export const FX = (() => {
 // A calm fade, and nothing else moves: a page rising in piece by piece
 // would restyle the whole page at the moment the fade begins, which
 // stutters on a slow laptop. Only opacity is animated, so the compositor runs it
-
 // even while the page is still busy loading.
 export const Splash = (() => {
   // the icon, 11 letters at --step 85 ms from --t0 320 ms (screens.css),

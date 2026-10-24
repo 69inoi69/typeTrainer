@@ -6,7 +6,6 @@
 //              above the text (#round-switch, next to the word counter they
 //              change): above the letters they looked like an extra line
 //              with no purpose;
-
 //   climb    - the level (1..10; a pick starts the count on it from none),
 //              then words or time, and how many;
 //   freetype - the kind of text (long words, real sentences or your own

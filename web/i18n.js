@@ -31,7 +31,6 @@ const I18N = {
     // the tooltips over the names of the settings (settings.js ROWS desc):
     // what you see or can do with it first, then, only when it matters,
     // what happens without it
-
     "settings.liveDesc": "See your WPM, raw speed and accuracy as you type. Hide them if they distract you; your results still appear after each round",
     "settings.size": "Text size", "settings.size_s": "Small", "settings.size_m": "Normal", "settings.size_l": "Large",
     "settings.glide": "Caret movement", "settings.glide_smooth": "Smooth", "settings.glide_jump": "Jump",

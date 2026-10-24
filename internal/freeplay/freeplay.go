@@ -190,7 +190,6 @@ func NewPicker(words []string, rng *rand.Rand) *Picker {
 // Longer returns the words with at least min letters, in their order: the
 // list of Climb ("a" and "i" are not words worth typing). Freetype keeps
 // the whole list, as on monkeytype.
-
 func Longer(words []string, min int) []string {
 	out := make([]string, 0, len(words))
 	for _, w := range words {

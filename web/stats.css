@@ -133,7 +133,6 @@
 .chart { height: clamp(180px, 32vh, 300px); }
 /* The stats screen scrolls like a page (fitting it all in one window is not
    worth it): the chart has a height of its own. */
-
 .chart:has(> .empty) { height: auto; }   /* no rounds yet: one line of text, not an empty half screen */
 /* the chart is the main thing below the tiles: it gets real height */
 .chart { height: clamp(200px, 50vh, 520px); }

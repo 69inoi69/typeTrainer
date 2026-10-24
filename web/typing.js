@@ -804,7 +804,6 @@ function resumeRound(now) {
 // time): the numbers of the round go to the history, then the next round
 // starts: in Learn at once, with what changed on the Learn panel
 // (learnpanel.js; no result screen in Learn), in Climb
-
 // and Freetype after their result screen. The time of the round ends at
 // its last keypress, so a quiet end of a time round does not lower the WPM.
 // byLastKey: it ended with its last letter; the finished text then stays

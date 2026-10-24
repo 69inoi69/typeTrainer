@@ -1,6 +1,5 @@
 // Your own text in Freetype (after keybr and monkeytype): you paste a text
 // and type it, word by word in its order.
-
 // The text stays in this browser (tt.custom.<lang>), it is never sent: the
 // words come from here, not from /freetype/portion, and only the round's
 // results go to the server (variant "custom", one history for every text
