@@ -16,7 +16,7 @@
 // Layer: middle. Imports the bottom layer and modes.js.
 // Called by: typing.js (renderLetters when a portion or round changes the
 // letters, or Climb's level; markNewLetter / markMastered just before),
-// learnpanel.js (letterProgress, rule: the gold letter's line).
+// learnpanel.js (forecastText: the panel's Next letter).
 
 import { t } from "./i18n.js";
 import { el, S, levelWords } from "./state.js";

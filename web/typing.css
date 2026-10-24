@@ -92,14 +92,17 @@
 .learn-panel[hidden] { visibility: hidden; }
 #view-type > .letters { position: relative; }
 body:not([data-mode="learn"]) #view-type > .letters > .mode-bar { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; }
-body.typing-now .learn-panel { opacity: .75; }   /* a step back, still readable: it follows you as you type */
+/* While you type the panel goes (issue #150): the summary is read between
+   rounds. Opacity only, the room stays: the first key moves
+   nothing. */
+body.typing-now .learn-panel { opacity: 0; pointer-events: none; }
 .lp-row { display: flex; align-items: center; gap: 30px; min-height: 1.9em; white-space: nowrap; min-width: 0; }
 /* One grid for both lines (one size for everything, clean alignment across
    and down): the panel under the letters and
    Learn's line above the text share these six tracks, so their dividers
    line up. Line 1 spans them as Last round (1-2), Next letter (3), Clean
-   streak (4-5), Daily goal (6); line 2 is the word counter (1), the gold
-   letter's four columns (2-5) and the round switch or the live numbers (6).
+   streak (4-5), Daily goal (6); line 2 is the word counter (1), "Learning
+   now" or the news (2-5) and the round switch or the live numbers (6).
    Every label is .75rem grey, every value .9rem, number and words alike
    (the number stands out by weight and colour, not size).
    To add a column: change the tracks here and the spans below together. */
@@ -134,11 +137,11 @@ body.typing-now .learn-panel { opacity: .75; }   /* a step back, still readable:
 .lp-ring circle { fill: none; stroke: color-mix(in srgb, var(--sub) 30%, transparent); stroke-width: 3; }
 .lp-ring .fill { stroke: var(--accent); stroke-dasharray: 100; stroke-dashoffset: calc(100 - var(--g) * 100); transition: stroke-dashoffset .5s linear, stroke .4s; }
 .lp-goal.met .lp-ring .fill { stroke: var(--ok); }
-/* the gold letter's columns (learnpanel.js focusCells), tracks 2-5 of the
-   line above the text (subgrid: the same edges as the panel's); the
-   news of a round shares their grid cell and they swap by opacity only, so
-   the first key changes no layout. While you type the columns stay (they
-   follow every portion) and the news gives way to them. */
+/* "Learning now [d]" (learnpanel.js learningNow), tracks 2-5 of the line
+   above the text (subgrid: the same edges as the panel's); the news of a
+   round shares its grid cell and they swap by opacity only, so the first
+   key changes no layout. While you type it stays (it follows every
+   portion) and the news gives way to it. */
 .focus-box { grid-column: 2 / 6; grid-row: 1; display: grid; grid-template-columns: subgrid; transition: opacity .3s var(--ease); }
 .focus-box[hidden] { display: none; }
 .fb-stack { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; align-items: end; }
@@ -147,7 +150,9 @@ body.typing-now .learn-panel { opacity: .75; }   /* a step back, still readable:
 body.typing-now .fb-stack.has-news .fb-cols { opacity: 1; pointer-events: auto; }
 body.typing-now .lp-news { opacity: 0; pointer-events: none; }
 .fb-cols { display: grid; grid-template-columns: subgrid; }
-.fb-gold .lp-val b.ok, .lp-cell.met .lp-val b { color: var(--ok); }
+.lp-cell.met .lp-val b { color: var(--ok); }
+.lp-now { grid-column: 1 / -1; justify-self: start; margin-left: var(--lp-pad); font-size: .9rem; line-height: 1.3; color: var(--sub); cursor: default; white-space: nowrap; }
+.lp-now b { margin-left: 1ch; color: var(--accent-text); font-weight: 600; }
 .lp-news { margin: 0 0 0 var(--lp-pad); align-self: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;   /* never under the round switch */
    font-size: .9rem; color: var(--text); cursor: default; }
 .lp-news.big { color: var(--accent-text); }
@@ -194,7 +199,7 @@ body.typing-now .mode-bar { opacity: 0; pointer-events: none; }
 .round-switch button[aria-pressed="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -3px; height: 2px; border-radius: 2px; background: var(--accent); }
 body.typing-now .round-switch { opacity: 0; pointer-events: none; }
 /* Learn's line above the text, on the panel's grid (--lp-grid): the word
-   counter with "Round 48" over it (track 1), the gold letter (2-5), the
+   counter (track 1), "Learning now" (2-5), the
    round switch at rest or the live numbers while you type (6, laid over
    each other; at rest the numbers would repeat the panel's "Last round"),
    all from the column's left edge like Daily goal above them.
@@ -209,25 +214,22 @@ body[data-mode="learn"] .live {
   container-type: inline-size;
 }
 body[data-mode="learn"] .live > * { grid-row: 1; }
-body[data-mode="learn"] .live > .metric:has(#round-no) { grid-column: 1; flex-direction: column; align-items: flex-start; gap: 2px; }
+body[data-mode="learn"] .live > .metric:has(#progress) { grid-column: 1; }
 body[data-mode="learn"] #progress-label, body[data-mode="learn"] .letters-caption { display: none; }
 body[data-mode="learn"] .live > .metric > span { font-size: .9rem; line-height: 1.3; font-weight: 600; letter-spacing: 0; }
-body[data-mode="learn"] .live > .metric small:not(.round-no) { font-size: .9rem; line-height: 1.3; margin-left: .5ch; }
+body[data-mode="learn"] .live > .metric small { font-size: .9rem; line-height: 1.3; margin-left: .5ch; }
 body[data-mode="learn"] .live > .metric > span.pct { margin-left: 0; }
 body[data-mode="learn"] .live > .metric.num { grid-column: 6; min-width: 0; padding-left: var(--lp-pad); }
 body[data-mode="learn"] .live > .metric.num:nth-child(2) { padding-left: calc(var(--lp-pad) + 5rem); }   /* after "188 wpm" */
 body[data-mode="learn"] .live > .metric.num:nth-child(3) { padding-left: calc(var(--lp-pad) + 10rem); }   /* after "188 Raw"; "100% Acc" still fits at 1366 */
 body[data-mode="learn"] .round-switch { position: static; grid-column: 6; justify-self: start; align-self: end; padding-left: var(--lp-pad); }
 body[data-mode="learn"] .round-switch .mb-group { gap: 2ch; }
-/* track 6's divider, as the gold letter's columns have */
+/* track 6's divider, as the panel's columns have */
 body[data-mode="learn"] .live::after { content: ""; grid-column: 6; grid-row: 1; align-self: stretch; border-left: 1px solid var(--line); pointer-events: none; }
 body[data-mode="learn"] .live:has(> .focus-box[hidden])::after { display: none; }
 @container (max-width: 920px) {
-  .fb-cols .lp-val .opt { display: none; }
   .lp-cell { --lp-pad: 9px; }
 }
-.metric > .round-no { margin: 0; font-size: .75rem; line-height: 1.3; color: var(--sub); cursor: default; }
-.round-no[hidden] { display: none; }
 body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; }
 .wl { padding: 2px 8px; border: 0; border-radius: 6px; background: none; color: var(--sub); font: inherit; font-size: .9rem; cursor: pointer; transition: color .15s, opacity .4s var(--ease); }
 .wl:hover { color: var(--text); }
