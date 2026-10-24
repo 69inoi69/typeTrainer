@@ -233,7 +233,6 @@ const I18N = {
     "lp.streak": "{n} rounds in a row at {a}% accuracy or better",
     "lp.streakLbl": "Clean streak", "lp.streakOf": "rounds at {a}%+",
     "lp.streakTip": "Aim for clean typing, not rushing. Mistakes can cost more time than slowing down a little",
-    "lp.round": "Round {n}", "lp.roundTip": "Your round {n} in Learn. When you finish a round, the next one starts by itself",
     "lp.today": "Daily goal",
     "lp.goalOf": "of {g} min", "lp.goalMet": "min, goal reached", "lp.todayDays": "Daily goal, {n} days in a row",
     "lp.goalTip": "Your typing time today in all modes, toward your goal of {g} minutes. You can change the goal or turn it off in Settings",
@@ -242,12 +241,10 @@ const I18N = {
     "fc.next": "Next letter", "fc.none": "Appears once your recent rounds give enough to make a fair guess", "fc.lap": "Lap done in",
     "fc.rounds": "≈ {n} rounds", "fc.one": "≈ 1 round", "fc.more": "{n}+ rounds",
     "fc.tip": "This estimate uses your last 10 rounds to guess when each letter will reach its goal. The slowest is {l}; the estimate appears only when there's enough data to be useful",
-    // the gold letter (the focus) in the line above the text: how far, and the three parts of the rule
-    "lp.fGold": "Gold letter", "lp.fToGo": "to mastered", "lp.fMastered": "mastered",
-    "lp.fPresses": "Presses", "lp.fOf": "of {n}", "lp.fMistakes": "Mistakes", "lp.fUnder": "under {n}%",
-    "lp.fSpeed": "Speed",
-    "lp.pctTip": "The percentage shows how close {l} is to mastered. You need at least {min} presses, fewer than {err}% mistakes, and a speed of {target} wpm or faster. Your weakest result sets the percentage",
-    // the news of the round that just ended (in the gold letter's place until you start typing)
+    // the gold letter (the focus) in the line above the text, and what mastered takes
+    "lp.now": "Learning now",
+    "lp.nowTip": "Most of the words you're typing now contain {l}. A letter is mastered after at least {min} presses with fewer than {err}% mistakes at {target} wpm or faster. Hover a letter in the row above to see its own numbers",
+    // the news of the round that just ended (in the "Learning now" place until you start typing)
     "news.newLetter": "New letter: {l}. It'll show up often for a while, so take your time",
     "news.newLetterTip": "You've mastered the earlier letters, so {l} is now open. Look for it in gold in the next words",
     "news.mastered": "You've mastered {list}",

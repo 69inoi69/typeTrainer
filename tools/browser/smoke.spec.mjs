@@ -56,6 +56,31 @@ test("Learn: a round can be typed to the end and is saved", async ({ page }) => 
   await expect(page.locator("#learn-panel .lp-last [data-n]").first()).toHaveAttribute("data-n", /^[1-9]/);
 });
 
+// Learn's summary is read between rounds (issue #150): the panel shows
+// before the first key and goes with it (opacity only, the room stays),
+// the letters row slides down into its place; "Learning now" names the
+// gold letter throughout.
+test("Learn: the panel shows at rest and goes while typing", async ({ page }) => {
+  await openApp(page, { "tt.mode.en": "learn", "tt.length.learn": "words-15" });
+  const panel = page.locator("#learn-panel");
+  const now = page.locator("#focus-box .lp-now");
+  await expect(panel).toBeVisible();
+  await expect(panel).toHaveCSS("opacity", "1");
+  const gold = await page.locator(".letters .focus").first().textContent();
+  await expect(now).toBeVisible();
+  await expect(now.locator("b")).toHaveText(gold.trim());
+  const room = await panel.boundingBox();
+  const row = page.locator("#letters");
+  const rowAt = (await row.boundingBox()).y;
+  await page.keyboard.type(await nextChar(page));
+  await expect(panel).toHaveCSS("opacity", "0");
+  await expect(now).toBeVisible();
+  expect(await panel.boundingBox(), "the panel keeps its room").toEqual(room);
+  await expect.poll(async () => (await row.boundingBox()).y, "the letters row in the panel's place")
+    .toBeCloseTo(room.y + room.height / 2 - (await row.boundingBox()).height / 2, -1);
+  expect(rowAt).toBeLessThan(room.y);
+});
+
 // Learn offers 15 or 30 words; Climb and Freetype 10 and up
 const MODES = [
   { name: "Climb", storage: { "tt.mode.en": "climb", "tt.length.climb": "words-10" } },

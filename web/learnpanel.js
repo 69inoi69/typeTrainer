@@ -1,7 +1,10 @@
 // The Learn panel: a line of columns between the letters row and the text, in
 // place of a result screen (a stop after every short round only breaks
 // the practice; the model is keybr's lines above its text). A Learn round ends
-// and the next one starts at once; what the round did is read here:
+// and the next one starts at once; what the round did is read here, at
+// rest: before the first key of a round the panel shows, with the first
+// key it goes, so while you type the screen holds only the letters row,
+// the word counter and the letter being learned (issue #150, variant C).
 //   the panel: four fixed columns, each a small grey label over a bright
 //           value (every item in its own place, nothing shifting or
 //           running off the edge): the last round (speed and
@@ -9,36 +12,27 @@
 //           about how many rounds to the next letter (the forecast; after
 //           Learn complete the lap and when it ends), the accuracy streak
 //           (rounds in a row at 95% or better) and today's practice against
-//           the daily goal, on a ring (mm:ss while you type, tickGoal). A column with nothing to say yet shows "—";
+//           the daily goal, on a ring. A column with nothing to say yet shows "—";
 //           its tooltip says when it fills;
-//   the gold letter (the focus of the words being typed), in the same
-//           label-over-value style, sits apart: in the line just above
-//           the text, between the word counter and the round switch
-//           (#focus-box; columns read at a glance, a sentence does
-//           not): how far it is on the way to
-//           mastered, then the three parts of the mastery rule, each
-//           green once met. Right after a round with news (a new
-//           letter, letters mastered, a record, every letter open, a new
-//           lap, the last lap done) the news takes its place until you
-//           start typing.
-// Everything here follows you as you type (the whole Learn screen is
-// live): it is drawn again after every portion, when the
-// server has learned from its presses (POST /portion, then /stats), and a
-// number that changed counts to its new value (redraw). "Round 48" over
-// the word counter counts Learn's rounds, which follow each other by
-// themselves. The forecast, the gold
-// letter and the daily goal (with the round so far, S.roundSeconds) move
-// while you type; Last round and the streak at the end of a round. The panel steps
-// back a little while you type (typing.css); the live numbers show on the
-// right of the line above the text.
-// The news and the columns sit in one grid cell and swap by opacity only,
-// so the first key changes no layout.
+//   "Learning now [d]": the focus letter of the words being typed, in the
+//           line just above the text, between the word counter and the
+//           round switch (#focus-box); its tooltip has the mastery rule
+//           (each letter's own numbers are on its chip's tooltip). Right
+//           after a round with news (a new letter, letters mastered, a
+//           record, every letter open, a new lap, the last lap done) the
+//           news takes its place until you start typing.
+// It is drawn again after every portion, when the server has learned from
+// its presses (POST /portion, then /stats), and a number that changed
+// counts to its new value (redraw). The panel keeps its room while
+// hidden, so the first key changes no layout; the news and "Learning now"
+// sit in one grid cell and swap by opacity only.
 // Display only: nothing here changes what is measured or sent.
-// Layer: middle. Imports the bottom layer, letters.js (a letter's progress)
-// and modes.js.
+// Layer: middle. Imports the bottom layer, letters.js (the mastery rule,
+// the forecast) and modes.js.
 // Called by: typing.js (renderPanel with the letters row; roundNews and
-// refreshActivity at the end of a round), input.js (renderPanel after a
-// change of the daily goal), languages.js (refreshActivity).
+// refreshActivity at the end of a round, tickGoal on its clock), input.js
+// (renderPanel after a change of the daily goal), languages.js
+// (refreshActivity).
 // To add a column to the panel: a function that returns cell(...), called in
 // renderPanel, one more track in .lp-cols (typing.css), its texts in
 // i18n.js ("lp.*").
@@ -46,10 +40,10 @@
 import { t } from "./i18n.js";
 import { $, S, store } from "./state.js";
 import { getJSON } from "./api.js";
-import { letterProgress, rule, forecastText } from "./letters.js";
+import { rule, forecastText } from "./letters.js";
 import { learning } from "./modes.js";
 
-const box = $("learn-panel"), focusBox = $("focus-box"), roundNo = $("round-no");
+const box = $("learn-panel"), focusBox = $("focus-box");
 
 // The average to compare a round with: the AVG_ROUNDS rounds before it,
 // and none with fewer than AVG_MIN (an average of one or two rounds says
@@ -84,7 +78,7 @@ export function compareStats(before, after) {
 
 // ---------- news of the round ----------
 // What the round that just ended brought, most important first; shown on
-// the gold letter's place until the next round is begun. The two milestones of Learn are
+// the place of "Learning now" until the next round is begun. The two milestones of Learn are
 // told once per language (tt.milestone.<lang>: "open", then "complete").
 // A new lap (r.newLap, its goal in wpm) is a milestone every time; the end
 // of the last lap is told once ("final").
@@ -132,29 +126,22 @@ let drawn = "", drawnFocus = "";
 export function renderPanel() {
   if (!box) return;
   const show = learning() && !!S.lastStats && !!S.exercise;
-  box.hidden = focusBox.hidden = roundNo.hidden = !show;
+  box.hidden = focusBox.hidden = !show;
   if (!show) { drawn = drawnFocus = ""; return; }
-  // "Round 48" above the word counter: Learn starts the next round by
-  // itself, so this tells how many there were; every
-  // length counts, the one being typed too
-  const n = (S.lastStats.learnRounds ?? 0) + 1;
-  roundNo.textContent = t("lp.round", { n });
-  roundNo.dataset.tipText = t("lp.roundTip", { n });
   if (news && news.lang !== S.lang) news = null;   // the news of another language
   const top = [lastRound(), forecast(), accStreak(), dailyGoal()].join("");
   const html = `<div class="lp-cols">${top}</div>`;
   if (html !== drawn) { drawn = html; redraw(box, ".lp-val", html); }
   const focus = `<div class="fb-stack${news ? " has-news" : ""}">` +
     (news ? `<p class="lp-news${news.big ? " big" : ""}"${news.tip ? ` tabindex="0" data-tip-text="${news.tip}"` : ""}>${news.text}</p>` : "") +
-    `<div class="fb-cols">${focusCells()}</div></div>`;
-  if (focus !== drawnFocus) { drawnFocus = focus; redraw(focusBox, ".fb-cols .lp-val", focus); }
+    `<div class="fb-cols">${learningNow()}</div></div>`;
+  if (focus !== drawnFocus) { drawnFocus = focus; focusBox.innerHTML = focus; }
 }
 
 // Puts new HTML in el, and lets what changed show it (a live value that
 // only swaps is easy to miss): a number counts from its old value
 // to the new one, as the live wpm does (layout.css .live-n), and lights
-// up gold for a moment; a part of the rule just met turns green with a
-// small pop. Runs per portion and at the end of a round, never per key;
+// up gold for a moment; a goal just met turns green with a small pop. Runs per portion and at the end of a round, never per key;
 // the counting is the CSS property --v animated by the browser (WAAPI).
 function redraw(el, sel, html) {
   const nums = (root) => [...root.querySelectorAll(`${sel} .lp-n`)];
@@ -239,12 +226,11 @@ function accStreak() {
 // "Daily goal / ◔ 12 of 15 min": today's typing time in every mode
 // against the daily goal (settings), on a ring that fills as the time
 // passes, and the days in a row the goal was met (in the label, from 2).
-// While you type the time shows seconds too ("12:34") and ticks every half
-// second with the round (tickGoal), so you see it run; at rest whole
-// minutes. With the goal off the column stays, empty,
+// Whole minutes: the panel is read between rounds; within a round tickGoal
+// only watches for the goal being reached. With the goal off the column stays, empty,
 // so the others keep their places.
 let goalNow = null;           // {base, need}: what tickGoal needs, or null
-let goalTyping = false;       // drawn while typing (mm:ss), or at rest
+let goalTyping = false;       // drawn while typing (the round counts), or at rest
 function dailyGoal() {
   goalNow = null;
   goalTyping = document.body.classList.contains("typing-now");
@@ -268,63 +254,38 @@ function dailyGoal() {
   if (typing && !met) goalNow = { base, need };
   const label = streak >= 2 ? t("lp.todayDays", { n: streak }) : t("lp.today");
   const value = ring(today / need) +
-    `<b class="lp-clock">${clock(today, typing && !met)}</b><small>${met ? t("lp.goalMet") : t("lp.goalOf", { g: goal })}</small>`;
+    `<b>${Math.floor(today / 60)}</b><small>${met ? t("lp.goalMet") : t("lp.goalOf", { g: goal })}</small>`;
   return cell(`lp-goal${met ? " met" : ""}`, label, value, t("lp.goalTip", { g: goal }));
 }
 // The ring: a circle whose stroke fills clockwise from the top (share 0..1).
 const ring = (share) =>
   `<svg class="lp-ring" viewBox="0 0 20 20" aria-hidden="true" style="--g:${Math.min(1, share).toFixed(3)}">` +
   `<circle cx="10" cy="10" r="8"/><circle class="fill" cx="10" cy="10" r="8" pathLength="100"/></svg>`;
-// 754 s: "12:34" while you type, "12" at rest
-const clock = (sec, typing) => {
-  const s = Math.floor(sec);
-  return typing ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : `${Math.floor(s / 60)}`;
-};
 // Twice a second while a Learn round is typed (typing.js, its clock, which
-// stops on a pause): the daily goal's time and ring move on with the
-// round. Touches two nodes, never per key; the goal reached redraws the
-// panel (its column turns green) and returns true: typing.js pauses the
-// round with a note that says why (once: then the goal is met).
+// stops on a pause): the round so far counts toward the daily goal. The
+// goal reached redraws the panel (its column turns green) and returns
+// true: typing.js pauses the round with a note that says why (once: then
+// the goal is met). Touches the page only then, never per key.
 export function tickGoal() {
   if (!box || box.hidden) return false;
   if (!goalTyping) renderPanel();   // the first tick of a round: the panel was drawn at rest
   if (!goalNow) return false;
   const today = goalNow.base + S.roundSeconds;
   if (today >= goalNow.need) { renderPanel(); return true; }
-  const c = box.querySelector(".lp-clock"), r = box.querySelector(".lp-ring");
-  if (c) c.textContent = clock(today, true);
-  if (r) r.style.setProperty("--g", (today / goalNow.need).toFixed(3));
   return false;
 }
 
-// The gold letter in four columns: "Gold letter / 62% to mastered",
-// "Presses / 18 of 20", "Mistakes / 8% under 5%", "Speed / 24 of 30 wpm";
-// a part of the rule already met is green (no tick: one column, one
-// size, nothing extra to fit). A letter never
-// typed shows "—" (0% mistakes would read as a result). The percentage is
-// the weakest of the three parts, as on its chip.
-function focusCells() {
+// "Learning now [d]": the focus letter (the gold chip in the row above);
+// the tooltip says what mastered takes. Nothing once no letter is in focus.
+function learningNow() {
   const c = S.exercise.focus;
   if (!c) return "";
-  const k = (S.lastStats.keys ?? []).find((x) => x.char === c);
-  const s = S.lastStats, r = rule(), err = Math.round(s.masteryErr);
-  const typed = !!k?.count;
-  const pctTip = t("lp.pctTip", { l: c, min: s.masteryMin, err, target: s.targetWpm });
-  // no letter chip here: the gold chip in the row above already shows
-  // which letter it is (a second one reads as a double)
-  const gold = !typed ? NONE
-    : k.mastered ? `<b class="ok">${t("lp.fMastered")}</b>`
-      : `${num(letterProgress(k) * 100, "%")}<small class="opt">${t("lp.fToGo")}</small>`;
-  const part = (cls, label, ok, value) =>
-    cell(`fb-${cls}${ok ? " met" : ""}`, label, typed ? value : NONE);
-  const wpm = k?.avgMs ? Math.round(12000 / k.avgMs) : 0;
-  return cell("fb-gold", t("lp.fGold"), gold, pctTip) +
-    part("presses", t("lp.fPresses"), k?.count >= r.min, `${num(k?.count ?? 0)}<small>${t("lp.fOf", { n: r.min })}</small>`) +
-    part("mistakes", t("lp.fMistakes"), typed && k.errorRate <= r.err, `${num((k?.errorRate ?? 0) * 100, "%")}<small>${t("lp.fUnder", { n: err })}</small>`) +
-    part("speed", t("lp.fSpeed"), !!k?.avgMs && k.avgMs <= r.ms, `${num(wpm)}<small>${t("lp.fOf", { n: s.targetWpm })}<span class="opt"> wpm</span></small>`);
+  const s = S.lastStats;
+  const tip = t("lp.nowTip", { l: c, min: s.masteryMin, err: Math.round(s.masteryErr), target: s.targetWpm });
+  return `<span class="lp-now" tabindex="0" data-tip-text="${tip}">${t("lp.now")}<b>${c}</b></span>`;
 }
 
-// One column (the panel's and the gold letter's): a small grey label over its
+// One column of the panel: a small grey label over its
 // value; the tooltip, if any, on the whole column.
 const NONE = `<b class="lp-none">—</b>`;
 const cell = (cls, label, value, tip = "") =>
