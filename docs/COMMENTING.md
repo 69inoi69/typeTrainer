@@ -55,7 +55,7 @@ end.
 
 7. **Point to the source of an idea.** A formula, an algorithm, a borrowed
    trick: name where it comes from (a section of `docs/ALGORITHM.md`, a
-   paper in `docs/thesis/LITERATURE.md`, a link).
+   paper in `docs/thesis/01-existing-systems-and-literature.md`, a link).
 
 8. **Keep comments true.** A wrong comment is worse than none. When the code
    changes, its comments change in the same commit. If a comment is hard to

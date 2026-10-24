@@ -224,7 +224,7 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request, user strin
 // POST /api/v1/group?lang= {"group": "random"} -> puts the user into a group
 // of a user study for this language ("" = back to the normal app). Not in
 // the interface: the study link sets it (web/app.js, ?group=). See
-// docs/thesis/EVALUATION.md.
+// docs/thesis/08-testing-and-verification.md.
 func (s *Server) handleGroup(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	var req struct {
 		Group string `json:"group"`
