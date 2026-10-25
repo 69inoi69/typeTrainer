@@ -20,6 +20,7 @@ the same three typists for both strategies:
 | uk | 234 / 193 / 192 | 1959 / 1768 / 1962 | 8-10× more |
 | ru | 193 / 165 / 198 | not reached in 3000 / 2689 / 2391 | 12-16× more or never |
 
+Rerun on 2026-10-25 (issue #153): the same numbers to the exercise.
 The test fails if random words ever need less than 3 times the practice.
 With the engine made almost random (temperature 50) it fails, so it does
 guard the claim.

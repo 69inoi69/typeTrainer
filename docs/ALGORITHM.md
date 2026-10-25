@@ -939,6 +939,21 @@ a few windows (`Window` / `MinRounds`):
   can only be measured with real users: every round's numbers are in the
   history, so the same check could be run on them.
 
+**The numbers now (2026-10-25, issue #153).** `go run ./tools/sim` on the
+configured model; the tables above are dated and kept for the comparisons.
+Median exercises to the goal (20 typists), and the stream's variety:
+
+| Language | Random words | Best of 20 | Adaptive, T = 0.1 | Stream (the app) | Stream, no frequency penalty | Stream variety, first 30 | Stream variety, expert |
+|---|---|---|---|---|---|---|---|
+| en | 2179 | 280 | 144 | 134 | 132 | 79 / 40 / 86 | 97 / 5 / 67 |
+| pl | 1444 | 256 | 182 | 164 | 158 | 72 / 47 / 76 | 98 / 4 / 63 |
+| uk | 1772 | 268 | 184 | 172 | 172 | 73 / 46 / 77 | 98 / 4 / 61 |
+| ru | 2588 (19/20 reached) | 350 | 194 | 183 | 175 | 76 / 45 / 80 | 98 / 5 / 65 |
+
+The stream needs 8-16 times fewer exercises than random words and 1.6-2.1
+times fewer than best of 20, in every language. The forecast is within
+max(2, 25 %) in 79-87 % of cases (mean error 1.2-1.5 rounds).
+
 Limits: the typist is invented. Letters do not influence each other, there is
 no forgetting, and learning is the same exponential curve for every letter. The
 simulation compares strategies under the same assumptions; it does not predict

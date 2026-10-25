@@ -470,6 +470,94 @@ gofmt -w . ; go vet ./... ; go test ./...
 `tools/audittmp` was created only to run the experiments and is not part of
 the repository; its code is below.
 
+## 8. Recount (2026-10-25, issue #153)
+
+Sections 1-7 describe the code of 2026-10-16 and stay as they were. Since
+then the model changed: held letters (a mastered letter stays mastered up
+to `KeepErrorRate`), the bonus for unmastered letters, the home-row order,
+no one-letter words and at most two uses of a word per round
+(`docs/ALGORITHM.md` §6-7, §10). Every experiment was run again on main
+at `5dd45a6` with the same commands (section 7; appendix A unchanged, it
+still compiles), the same seeds and the same typists.
+
+**Official simulation** (`go run ./tools/sim -lang en`, median exercises
+of 20 words to the goal, section 4):
+
+| Strategy | 2026-10-16 | 2026-10-25 |
+|---|---|---|
+| random words | 2268 (19/20 reached) | 2179 (20/20) |
+| best of 20 (Monkeytype) | 302 | 280 |
+| adaptive, T = 0.1 | 182 | 144 |
+| stream, T = 0.1 (the app) | 166 | 134 (−19 %) |
+| stream, no frequency penalty | 164 | 132 |
+
+Repetition (§3.6), first 30 exercises: stream 79 % different words, 40 %
+repeated from the previous exercise (was 77 % / 42 %); random words 86 % /
+29 % (was 87 % / 28 %); expert 97 % / 5 % (was 98 % / 5 %).
+
+**A. Waiting after truly ready** (§3.1, §3.2, §3.4), 20 typists, 100
+unlocks per group:
+
+| Letters open | Mean wait, words: before → now | Opened before truly ready, now |
+|---|---|---|
+| 6-10 | 29 → 27 | 40 % |
+| 11-15 | 36 → 29 | 52 % |
+| 16-20 | 78 → 38 | 52 % |
+| 21-25 | 106 → 52 | 60 % |
+
+(Before, 36-51 % of unlocks came before truly ready, depending on the group.)
+
+The new letter reaches 20 presses after a median of 30 words, 90 % within
+36: unchanged.
+
+**B. Strictness for a steady typist** (§3.1), one chance per N words,
+before → now:
+
+| Hidden error rate | 6 open | 10 | 15 | 20 | 26 |
+|---|---|---|---|---|---|
+| 1 % | 9 → 9 | 11 → 10 | 14 → 12 | 17 → 13 | 19 → 13 |
+| 2 % | 15 → 14 | 22 → 19 | 38 → 26 | 49 → 32 | 86 → 35 |
+| 3 % | 24 → 23 | 44 → 35 | 105 → 61 | 189 → 80 | 331 → 104 |
+
+**D. Rare letters** (§3.5): unchanged, `x:23 j:22 z:10 q:10`.
+
+**E. One inaccurate letter** (§3.2, §3.3), focus share and whether the
+next letter opened in 10 runs:
+
+| Error rate of `d` | Focus: before → now | Next letter opened: before → now |
+|---|---|---|
+| 10 % | 45 % → 67 % | → 10/10 (after 27 words) |
+| 20 % | 73 % → 90 % | 10/10 after ~150 words → 10/10 after 184 |
+| 30 % | 90 % → 97 % | half → 4/10 (338 words) |
+
+**E2. One slow letter** (§3.3):
+
+| Time of `d` | Focus: before → now | Next letter opened: before → now |
+|---|---|---|
+| 420 ms | → 44 % | 10/10 after ~240 words → 10/10 after 39 |
+| 450 ms | 13 % → 45 % | 0/10 → 3/10 (mean 1198 words) |
+| 500 ms | → 52 % | 0/10 → 0/10 |
+
+**What the findings of section 6 are now:**
+
+1. *Slow letter*: **weaker, still there.** The unmastered bonus gives a
+   slow letter the focus in about half of the portions (was 13 %), and at
+   420 ms the next letter opens 6 times sooner. From about 450 ms on it
+   still blocks progress for the steady typist of E2, who never gets
+   faster; a real person does with practice.
+2. *Wait grows with open letters*: **halved, still there.** Held letters
+   stop one slip from un-mastering a letter, so with 21-25 letters open
+   the wait is 52 words instead of 106, and the steady 3 % typist waits
+   104 words for the 26th letter instead of 331.
+3. *Lenient for one letter*: **still there,** slightly more so (40-60 %
+   of unlocks before every letter is truly at the goal). A letter at 20 %
+   errors still lets the next one open, now after more practice on it
+   (90 % of portions).
+4. *New letter after 12 words*: unchanged (by design of the stream).
+5. *Stale comment*: fixed (no "saved round" left in `generator.go`).
+6. *No test guards adaptive beats random*: fixed, `TestAdaptiveBeatsRandom`
+   (PR #157, `08-testing-and-verification.md`).
+
 ## Appendix A. The experiment program
 
 Save as `tools/audittmp/main.go` and run from the repository root. It uses
