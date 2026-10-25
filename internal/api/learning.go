@@ -48,14 +48,21 @@ func (s *Server) handlePortion(w http.ResponseWriter, r *http.Request, user stri
 		return
 	}
 
-	// learn reads, changes and saves the statistics: writeMu makes that one
-	// step, so two quick calls cannot both start from the old numbers
+	// learn reads and changes the statistics, SaveLearned stores them:
+	// writeMu makes that one step, so two quick calls cannot both start
+	// from the old numbers
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 	done, err := s.learn(user, l, req.Samples)
 	if err != nil {
 		serverError(w, err)
 		return
+	}
+	if done.changed {
+		if err := s.store.SaveLearned(user, l.Info.ID, done.record(nil)); err != nil {
+			serverError(w, err)
+			return
+		}
 	}
 	stats, unlocked := done.stats, done.unlocked
 	p := s.cfg.Engine.ForLap(done.lapAfter, s.cfg.Laps) // the words of the next portions practise for the new goal
@@ -112,18 +119,31 @@ func (s *Server) lapParams(user, lang string) (engine.Params, int, error) {
 
 // learned is what learn did: the statistics after it, the letters open,
 // the letter it opened ("" = none), the lap the samples were typed in and
-// the lap after them (one more when they finished a lap).
+// the lap after them (one more when they finished a lap), and whether
+// anything was learned at all (changed: there were samples).
 type learned struct {
 	stats         map[string]engine.KeyStat
 	unlocked      int
 	newLetter     string
 	lap, lapAfter int
+	changed       bool
+}
+
+// record is what Store.SaveLearned stores for done, with the round that
+// ended (nil for a portion). Nothing learned leaves the statistics alone.
+func (done learned) record(round *storage.Session) storage.Learned {
+	out := storage.Learned{Unlocked: done.unlocked, Lap: done.lapAfter, Session: round}
+	if done.changed {
+		out.Stats = done.stats
+	}
+	return out
 }
 
 // learn applies samples to the statistics of the language and opens the next
 // letter if every open letter is mastered; with every letter open and
 // mastered it starts the next lap (engine.LapDone, StartLap), unless this
-// was the last. The caller holds writeMu.
+// was the last. It only computes: the caller stores the result with
+// SaveLearned in one step (issue #177), holding writeMu throughout.
 func (s *Server) learn(user string, l *Language, samples []engine.Sample) (out learned, err error) {
 	id := l.Info.ID
 	p, lap, err := s.lapParams(user, id)
@@ -143,6 +163,7 @@ func (s *Server) learn(user string, l *Language, samples []engine.Sample) (out l
 	if len(samples) == 0 {
 		return
 	}
+	out.changed = true
 	out.stats = engine.Apply(out.stats, samples, p)
 	out.unlocked = l.Gen.NextUnlocked(out.stats, before, p)
 	if out.unlocked > before {
@@ -150,14 +171,7 @@ func (s *Server) learn(user string, l *Language, samples []engine.Sample) (out l
 	}
 	if lap < s.cfg.Engine.LastLap(s.cfg.Laps) && engine.LapDone(out.stats, l.Gen.Order(), out.unlocked, p) {
 		out.stats, out.lapAfter = engine.StartLap(out.stats), lap+1
-		if err = s.store.SetLap(user, id, out.lapAfter); err != nil {
-			return
-		}
 	}
-	if err = s.store.SaveKeyStats(user, id, out.stats); err != nil {
-		return
-	}
-	err = s.store.SetUnlocked(user, id, out.unlocked)
 	return
 }
 
@@ -230,7 +244,9 @@ func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, user stri
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 	// a round sent again after a lost answer (issue #149) is stored
-	// already: its samples are not learned twice, and AddSession skips it
+	// already: its samples are not learned twice, and SaveLearned skips
+	// it. A round whose saving failed is not stored at all (SaveLearned is
+	// one step), so sending it again learns it once.
 	again, err := s.store.HasRound(user, l.Info.ID, req.Round)
 	if err != nil {
 		serverError(w, err)
@@ -253,12 +269,12 @@ func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, user stri
 		serverError(w, err)
 		return
 	}
-	err = s.store.AddSession(user, l.Info.ID, storage.Session{
+	err = s.store.SaveLearned(user, l.Info.ID, done.record(&storage.Session{
 		WPM: req.WPM, Accuracy: req.Accuracy, Chars: req.Chars, Consistency: consistency, FinishedAt: time.Now(),
 		Keys: req.Keys, Unlocked: done.unlocked, Length: req.Length, Group: group, Device: req.Device,
 		Lap:   done.lap, // the lap the round was typed in, even when its last keys finished it
 		Round: req.Round,
-	})
+	}))
 	if err != nil {
 		serverError(w, err)
 		return

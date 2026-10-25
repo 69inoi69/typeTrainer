@@ -230,6 +230,18 @@ var (
 // postgres.go, and add a test to storeTests in store_test.go, so the two
 // stores are checked against the same behaviour. If it needs a new table
 // or column, see migrations/.
+// Learned is what learning changed, written by SaveLearned in one step.
+type Learned struct {
+	// Stats nil: nothing was learned (no new presses, or a round sent
+	// again); the letter model, Unlocked and Lap stay as they are.
+	Stats    map[string]engine.KeyStat
+	Unlocked int
+	Lap      int
+	// Session: the round that ended (a round id seen before adds
+	// nothing, as AddSession); nil for a portion in the middle of a round.
+	Session *Session
+}
+
 type Store interface {
 	// KeyStats is the letter model (engine.KeyStat per letter); the caller
 	// may change the returned map freely. SaveKeyStats replaces the whole
@@ -279,6 +291,10 @@ type Store interface {
 	// HasRound: the user already has a round with this id in this
 	// language, in any mode (Session.Round). Always false for "".
 	HasRound(user, lang, round string) (bool, error)
+	// SaveLearned writes what learning changed as one step (Learned):
+	// either all of it is stored or nothing is, so a round sent again
+	// after a server error is learned once.
+	SaveLearned(user, lang string, l Learned) error
 
 	// PracticeDays: every day with a finished round in this language,
 	// learning and free practice together, oldest first. tz is the user's

@@ -148,19 +148,41 @@ func (p *PostgresStore) KeyStats(user, lang string) (map[string]engine.KeyStat, 
 
 // SaveKeyStats replaces the whole set for the language, like MemoryStore.
 func (p *PostgresStore) SaveKeyStats(user, lang string, stats map[string]engine.KeyStat) error {
-	return p.inTx(func(tx *sql.Tx) error {
-		if _, err := tx.Exec(`DELETE FROM key_stats WHERE user_id = $1 AND lang = $2`, user, lang); err != nil {
+	return p.inTx(func(tx *sql.Tx) error { return saveKeyStats(tx, user, lang, stats) })
+}
+
+func saveKeyStats(tx *sql.Tx, user, lang string, stats map[string]engine.KeyStat) error {
+	if _, err := tx.Exec(`DELETE FROM key_stats WHERE user_id = $1 AND lang = $2`, user, lang); err != nil {
+		return err
+	}
+	for ch, k := range stats {
+		if _, err := tx.Exec(`INSERT INTO key_stats
+			(user_id, lang, ch, count, mistakes, err_ema, time_ema, timed_count, held)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+			user, lang, ch, k.Count, k.Mistakes, k.ErrEMA, k.TimeEMA, k.TimedCount, k.Held); err != nil {
 			return err
 		}
-		for ch, k := range stats {
-			if _, err := tx.Exec(`INSERT INTO key_stats
-				(user_id, lang, ch, count, mistakes, err_ema, time_ema, timed_count, held)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-				user, lang, ch, k.Count, k.Mistakes, k.ErrEMA, k.TimeEMA, k.TimedCount, k.Held); err != nil {
+	}
+	return nil
+}
+
+// SaveLearned: one transaction, so a failure anywhere stores nothing.
+func (p *PostgresStore) SaveLearned(user, lang string, l Learned) error {
+	return p.inTx(func(tx *sql.Tx) error {
+		if l.Stats != nil {
+			if err := saveKeyStats(tx, user, lang, l.Stats); err != nil {
+				return err
+			}
+			if _, err := tx.Exec(`INSERT INTO progress (user_id, lang, unlocked, lap) VALUES ($1, $2, $3, $4)
+				ON CONFLICT (user_id, lang) DO UPDATE SET unlocked = EXCLUDED.unlocked, lap = EXCLUDED.lap`,
+				user, lang, l.Unlocked, l.Lap); err != nil {
 				return err
 			}
 		}
-		return nil
+		if l.Session == nil {
+			return nil
+		}
+		return addSession(tx, user, lang, modeLearning, *l.Session)
 	})
 }
 
@@ -219,8 +241,17 @@ func (p *PostgresStore) SetGroup(user, lang, group string) error {
 // ModeClimb or FreetypeMode(n, variant) (migrations 007 and 009 allow them).
 const modeLearning = "learning"
 
+// execer: the database or a transaction (SaveLearned).
+type execer interface {
+	Exec(query string, args ...any) (sql.Result, error)
+}
+
 // addSession stores one round in the history of one mode.
 func (p *PostgresStore) addSession(user, lang, mode string, s Session) error {
+	return addSession(p.db, user, lang, mode, s)
+}
+
+func addSession(db execer, user, lang, mode string, s Session) error {
 	var keys []byte // nil -> NULL: no raw record
 	if len(s.Keys) > 0 {
 		var err error
@@ -230,7 +261,7 @@ func (p *PostgresStore) addSession(user, lang, mode string, s Session) error {
 	}
 	s = s.WithLength()
 	// a round id seen before (sessions_round_id, migration 011) inserts nothing
-	_, err := p.db.Exec(`INSERT INTO sessions
+	_, err := db.Exec(`INSERT INTO sessions
 		(user_id, lang, mode, wpm, accuracy, chars, consistency, unlocked, keys, finished_at, length, study_group, device, level, lap, round_id)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NULLIF($16, ''))
 		ON CONFLICT DO NOTHING`,

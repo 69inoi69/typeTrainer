@@ -184,7 +184,9 @@ is `RoundPortions` portions (30 words).
    keypresses per second; the handler learns from the samples the same way
    (never from `keys`, so nothing is counted twice), computes the consistency
    (`engine.Consistency`) and stores the round: its numbers plus its raw
-   keys (see "Raw round records" below). Then the next round starts (step 1).
+   keys (see "Raw round records" below). The letters, the open letters, the
+   lap and the round are written in one step (`Store.SaveLearned`, issue
+   #177): a failed save keeps none of them. Then the next round starts (step 1).
 5. After each portion and each round the browser calls `GET /api/v1/stats`
    (letter chips, heatmap, history).
 
@@ -229,8 +231,9 @@ The page sends the end of a round (`/results`, `/freeplay/results`,
 answered 5xx, never after a 4xx (`web/api.js` `saveRound`, issue #149).
 Each try carries the same `round` id (up to 64 letters, digits and `-`),
 so a round whose first answer was lost is stored once and, in Learn, its
-samples are learned once (`Store.HasRound`, migration 011). A request
-without `round` is always stored.
+samples are learned once (`Store.HasRound`, migration 011). A try that
+failed with a 5xx stored nothing (`Store.SaveLearned`), so the next try
+learns it once. A request without `round` is always stored.
 
 **Round length** (`length` on `/results`, `/freeplay/results` and
 `/freetype/results`, and
@@ -410,7 +413,8 @@ in git. How to install PostgreSQL on Windows: CONTRIBUTING.md.
   each in a transaction. A new version of the app updates an old database by
   itself; a change to the tables is a new file (`002_...sql`), never an edit
   of an old one.
-- **Transactions**: `SaveKeyStats` (delete + insert the letters) and `Reset`
+- **Transactions**: `SaveKeyStats` (delete + insert the letters),
+  `SaveLearned` (the letters, the progress and the Learn round) and `Reset`
   (three tables) are all-or-nothing.
 - **Tests**: the same tests run on both stores (`store_test.go`). The
   PostgreSQL run needs `TT_TEST_DATABASE_URL` (it empties the tables, so use a

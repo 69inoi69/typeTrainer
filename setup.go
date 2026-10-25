@@ -26,6 +26,7 @@ import (
 	"typingtrainer/internal/freeplay"
 	"typingtrainer/internal/language"
 	"typingtrainer/internal/layout"
+	"typingtrainer/internal/storage"
 )
 
 // The web/ and data/ folders are baked into the program at build time,
@@ -36,7 +37,11 @@ var files embed.FS
 
 // newApp loads the data files and wires the packages together.
 // It returns the HTTP handler (API + web files) and the config.
-func newApp() (http.Handler, config.Config, error) {
+func newApp() (http.Handler, config.Config, error) { return newAppWith(openStore) }
+
+// newAppWith is newApp with the store from open: tests pass a store that
+// fails on purpose.
+func newAppWith(open func() (storage.Store, error)) (http.Handler, config.Config, error) {
 	cfg := config.Default()
 	cfg.Accounts = accountsOn // off in the WebAssembly build (build_wasm.go)
 	cfg.BehindProxy = behindProxy()
@@ -63,7 +68,7 @@ func newApp() (http.Handler, config.Config, error) {
 	}
 
 	// PostgreSQL or memory: build_server.go / build_wasm.go decide.
-	store, err := openStore()
+	store, err := open()
 	if err != nil {
 		return nil, cfg, err
 	}
