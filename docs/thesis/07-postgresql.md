@@ -16,6 +16,14 @@ Pages keeps progress in the browser and is a demo (AGENTS.md).
   stores (`RoundSentTwice`), through HTTP (`TestApp_ResultsSentTwice`:
   the letters are learned once) and in the browser (an answer lost on the
   way back).
+- One transaction per Learn save (issue #177): the letters, the open
+  letters, the lap and the round go in together (`Store.SaveLearned`), so
+  a save that fails halfway and is sent again is not learned twice.
+  Tested on both stores (`SaveLearned`), in PostgreSQL with a round that
+  cannot be inserted (`TestPostgresSaveLearnedAllOrNothing`: nothing else
+  is kept) and through HTTP with a store that fails once
+  (`TestApp_ResultsAfterAFailedSave`; on the code before the fix it fails
+  with "s learned 2 times").
 
 To fill: what is stored per user and language (profiles, rounds with their
 raw keys, letter statistics), how the statistics screen reads them.

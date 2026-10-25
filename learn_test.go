@@ -5,12 +5,15 @@ package main
 // Helpers (call, guestRequest) are in setup_test.go.
 
 import (
+	"errors"
 	"fmt"
 	"net/http/httptest"
 	"os"
 	"slices"
 	"strings"
 	"testing"
+
+	"typingtrainer/internal/storage"
 )
 
 // The stream: samples sent with a portion update the statistics at once,
@@ -114,6 +117,58 @@ func TestApp_ResultsSentTwice(t *testing.T) {
 	}
 	if code, _ := call(t, h, "POST", "/api/v1/results?lang=en", strings.Replace(body, "5f0c2a9e-1", "a b", 1)); code != 400 {
 		t.Fatalf("round id with a space: %d, want 400", code)
+	}
+}
+
+// failingStore fails the next write of a finished learning round, as a
+// lost database connection would, and then works again.
+type failingStore struct {
+	storage.Store
+	fail bool
+}
+
+var errStoreDown = errors.New("store down on purpose")
+
+func (f *failingStore) AddSession(user, lang string, s storage.Session) error {
+	if f.fail {
+		f.fail = false
+		return errStoreDown
+	}
+	return f.Store.AddSession(user, lang, s)
+}
+
+func (f *failingStore) SaveLearned(user, lang string, l storage.Learned) error {
+	if f.fail && l.Session != nil {
+		f.fail = false
+		return errStoreDown
+	}
+	return f.Store.SaveLearned(user, lang, l)
+}
+
+// A round whose saving failed (a server error) and is sent again by the
+// page is learned once: the letters and the round are stored in one step,
+// so the failed try leaves nothing behind.
+func TestApp_ResultsAfterAFailedSave(t *testing.T) {
+	store := &failingStore{Store: storage.NewMemoryStore(), fail: true}
+	h, _, err := newAppWith(func() (storage.Store, error) { return store, nil })
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := `{"samples":[{"char":"a","errors":0,"ms":300},{"char":"s","errors":1,"ms":400}],"wpm":30,"accuracy":90,"round":"5f0c2a9e-1"}`
+	if code, _ := call(t, h, "POST", "/api/v1/results?lang=en", body); code != 500 {
+		t.Fatalf("first send: %d, want 500 (the store fails)", code)
+	}
+	if code, out := call(t, h, "POST", "/api/v1/results?lang=en", body); code != 200 {
+		t.Fatalf("second send: %d %v", code, out)
+	}
+	_, st := call(t, h, "GET", "/api/v1/stats?lang=en", "")
+	if n := st["sessionCount"].(float64); n != 1 {
+		t.Fatalf("%v rounds, want 1", n)
+	}
+	for _, k := range st["keys"].([]any) {
+		if k := k.(map[string]any); (k["char"] == "a" || k["char"] == "s") && k["count"].(float64) != 1 {
+			t.Fatalf("%v learned %v times, want 1", k["char"], k["count"])
+		}
 	}
 }
 

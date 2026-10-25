@@ -126,6 +126,24 @@ func (m *MemoryStore) AddSession(user, lang string, s Session) error {
 	return nil
 }
 
+// SaveLearned is one step because it holds the lock throughout.
+func (m *MemoryStore) SaveLearned(user, lang string, l Learned) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	d := m.data(user, lang)
+	if l.Stats != nil {
+		d.stats = make(map[string]engine.KeyStat, len(l.Stats))
+		for k, v := range l.Stats {
+			d.stats[k] = v
+		}
+		d.unlocked, d.lap = l.Unlocked, l.Lap
+	}
+	if l.Session != nil && !d.hasRound(l.Session.Round) {
+		d.sessions = append(d.sessions, l.Session.WithLength())
+	}
+	return nil
+}
+
 func (m *MemoryStore) HasRound(user, lang, round string) (bool, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

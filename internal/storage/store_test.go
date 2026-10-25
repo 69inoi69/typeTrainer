@@ -39,6 +39,7 @@ var storeTests = map[string]func(*testing.T, Store){
 	"PracticeDays":              testPracticeDays,
 	"BestRounds":                testBestRounds,
 	"RoundSentTwice":            testRoundSentTwice,
+	"SaveLearned":               testSaveLearned,
 }
 
 // A round sent twice with the same id (a retry after a lost answer, issue
@@ -78,6 +79,52 @@ func testRoundSentTwice(t *testing.T, m Store) {
 	}
 	if has, _ := m.HasRound(u, "en", ""); has {
 		t.Fatal(`HasRound("") must be false`)
+	}
+}
+
+// SaveLearned stores the letters, the open letters, the lap and the round
+// together; without Stats it leaves the first three alone, a round id seen
+// before adds no round, and the study group is kept.
+func testSaveLearned(t *testing.T, m Store) {
+	m.SetGroup(u, "en", GroupRandom)
+	stats := map[string]engine.KeyStat{"a": {Count: 3}, "s": {Count: 1}}
+	round := Session{WPM: 40, Chars: 2, Round: "r1"}
+	if err := m.SaveLearned(u, "en", Learned{Stats: stats, Unlocked: 7, Lap: 1, Session: &round}); err != nil {
+		t.Fatal(err)
+	}
+	stats["a"] = engine.KeyStat{Count: 99} // the store keeps its own copy
+	check := func(when string, rounds int) {
+		t.Helper()
+		got, _ := m.KeyStats(u, "en")
+		unlocked, _ := m.Unlocked(u, "en")
+		lap, _ := m.Lap(u, "en")
+		n, _ := m.SessionCount(u, "en", "")
+		if len(got) != 2 || got["a"].Count != 3 || unlocked != 7 || lap != 1 || n != rounds {
+			t.Fatalf("%s: stats %v, unlocked %d, lap %d, %d rounds", when, got, unlocked, lap, n)
+		}
+	}
+	check("after the round", 1)
+	// sent again: nothing learned, the same round id
+	if err := m.SaveLearned(u, "en", Learned{Unlocked: 1, Session: &round}); err != nil {
+		t.Fatal(err)
+	}
+	check("round sent again", 1)
+	// a portion without new presses stores nothing either
+	m.SaveLearned(u, "en", Learned{Unlocked: 1})
+	check("empty portion", 1)
+	if g, _ := m.Group(u, "en"); g != GroupRandom {
+		t.Fatalf("group = %q, want it kept", g)
+	}
+	// a portion with presses: stats and progress, no round
+	m.SaveLearned(u, "en", Learned{Stats: map[string]engine.KeyStat{"a": {Count: 4}}, Unlocked: 8, Lap: 1})
+	if got, _ := m.KeyStats(u, "en"); len(got) != 1 || got["a"].Count != 4 {
+		t.Fatalf("portion: stats %v", got)
+	}
+	if n, _ := m.Unlocked(u, "en"); n != 8 {
+		t.Fatalf("portion: unlocked %d, want 8", n)
+	}
+	if n, _ := m.SessionCount(u, "en", ""); n != 1 {
+		t.Fatalf("portion added a round: %d", n)
 	}
 }
 
