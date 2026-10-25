@@ -5,7 +5,7 @@ routes: [docs/ARCHITECTURE.md](../ARCHITECTURE.md).
 
 ## Test coverage per package
 
-`go test -cover ./...` on 2026-10-24 (internal/api has no tests of its
+`go test -cover ./...` on 2026-10-25 (internal/api has no tests of its
 own; it is exercised by the whole-app tests in the repository root, counted
 with `go test -cover -coverpkg=./internal/api .`):
 
@@ -18,11 +18,12 @@ with `go test -cover -coverpkg=./internal/api .`):
 | internal/auth | 93.3% |
 | internal/language | 100% |
 | internal/layout | 80.0% |
-| internal/api (through the root tests) | 77.7% |
-| internal/storage | 48.6% |
+| internal/api (through the root tests) | 78.3% |
+| internal/storage, memory only | 50.1% |
+| internal/storage, with PostgreSQL (`TT_TEST_DATABASE_URL`) | 89.8% |
 
-The storage number is low because the PostgreSQL tests skip without a
-database; in CI they run against a real PostgreSQL, so both stores pass the
+Without a database the PostgreSQL tests skip, so the memory-only number is
+low; in CI they run against a real PostgreSQL, so both stores pass the
 same tests there.
 
 To fill: the real-time part (a portion of words sent and answered while the

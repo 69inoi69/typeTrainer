@@ -28,8 +28,9 @@ Tables (`internal/storage/migrations/001_init.sql`): `users`, `logins`,
 | 008 | Climb's ten levels |
 | 009 | Freetype text kinds |
 | 010 | Learn laps |
+| 011 | round id (a round sent twice is kept once) |
 
-To fill: an entity-relationship diagram from 001-010.
+To fill: an entity-relationship diagram from 001-011.
 
 ## Use cases
 

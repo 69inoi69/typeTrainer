@@ -22,6 +22,6 @@ through the owner and the simulation (AGENTS.md).
 ## Audit
 
 [ALGORITHM-AUDIT.md](ALGORITHM-AUDIT.md): an outside review of the model as
-it was on 2026-10-16 (what is measured, what is assumed, weak points). Its
-numbers predate later changes (held letters, the unmastered bonus, the
-home-row order); recounting them is issue #153.
+it was on 2026-10-16 (what is measured, what is assumed, weak points).
+Its section 8 reruns every experiment on the model of 2026-10-25 (issue
+#153): the slow-letter and waiting findings are weaker but still there.
