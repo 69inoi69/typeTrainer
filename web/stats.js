@@ -286,7 +286,7 @@ function drawChart(sessions, target, total, order) {
 
   el.chart.replaceChildren();
   const W = Math.max(280, el.chart.clientWidth || 860), H = Math.max(120, el.chart.clientHeight || 200);
-  const padL = 34, padR = 8, padT = 24, padB = 22;
+  const padL = 34, padR = 8, padT = 10, padB = 22;
   const plotW = W - padL - padR, plotH = H - padT - padB;
   const max = niceMax(Math.max(target, ...sessions.map((x) => x.wpm)));
   const y = (v) => padT + plotH - (v / max) * plotH;
@@ -294,7 +294,6 @@ function drawChart(sessions, target, total, order) {
   const bw = Math.max(3, Math.min(28, slot - 2));
 
   let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="WPM per exercise">` +
-    `<text class="axis axis-name" x="${padL - 6}" y="10" text-anchor="end">${t("chart.axisWpm")}</text>` +
     `<text class="axis axis-name" x="${padL + plotW / 2}" y="${H - 6}" text-anchor="middle">${t("chart.axisRound")}</text>`;
   for (let i = 0; i <= 4; i++) {
     const v = (max / 4) * i, yy = y(v);

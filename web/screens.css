@@ -129,38 +129,34 @@ body.tb-ending #view-type > .keyboard {
   display: inline-block; margin-left: 10px; padding: 1px 8px; border-radius: 6px;
   box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 60%, transparent);
 }
+:root[data-theme="light"] .r-best { box-shadow: inset 0 0 0 1.5px var(--accent-text); }
 .r-best > span { display: inline-block; font-weight: 700; letter-spacing: .02em; color: var(--accent-text); }
 .foil {
+  --foil: #d99a08, #f2b81e, #e0608f, #d99a08, #2fa8d8, #e8b020, #c98a00, #f2b81e, #e0608f, #d99a08, #2fa8d8, #e8b020, #d99a08;
+  --foil-lines: rgba(255, 255, 255, .12);
+  --foil-glare: rgba(255, 240, 200, .55);
   position: relative; overflow: hidden; isolation: isolate; color: transparent !important; text-shadow: none !important;
   -webkit-mask: var(--foil-mask) 0 0 / 100% 100% no-repeat; mask: var(--foil-mask) 0 0 / 100% 100% no-repeat;
 }
-.foil > .foil-sheen, .foil::after {
-  content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: repeating-linear-gradient(60deg, rgba(255, 255, 255, .12) 0 1px, transparent 1px 3px);
-}
-.foil > .foil-glare { position: absolute; top: 0; bottom: 0; left: 0; pointer-events: none; will-change: transform; }
-.foil > .foil-sheen {
-  width: 300%;
-  background:
-    linear-gradient(110deg, #d99a08, #f2b81e, #e0608f, #d99a08, #2fa8d8, #e8b020, #c98a00, #f2b81e, #e0608f, #d99a08, #2fa8d8, #e8b020, #d99a08);
-  animation: foil-drift 6s linear infinite;
+:root[data-theme="light"] .foil {
+  --foil: #a86f00, #c98a00, #c2366e, #a86f00, #1677a8, #b98000, #9a6400, #c98a00, #c2366e, #a86f00, #1677a8, #b98000, #a86f00;
+  --foil-lines: rgba(0, 0, 0, .1);
+  --foil-glare: rgba(255, 250, 235, .45);
 }
 .foil::after {
   content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: repeating-linear-gradient(60deg, rgba(255, 255, 255, .12) 0 1px, transparent 1px 3px);
+  background: repeating-linear-gradient(60deg, var(--foil-lines) 0 1px, transparent 1px 3px);
 }
+.foil > .foil-sheen, .foil > .foil-glare { position: absolute; top: 0; bottom: 0; left: 0; pointer-events: none; will-change: transform; }
+.foil > .foil-sheen { width: 300%; background: linear-gradient(110deg, var(--foil)); animation: foil-drift 6s linear infinite; }
 .foil > .foil-glare {
   width: 100%;
-  background: linear-gradient(110deg, transparent 0 38%, rgba(255, 240, 200, .55) 50%, transparent 62% 100%);
+  background: linear-gradient(110deg, transparent 0 38%, var(--foil-glare) 50%, transparent 62% 100%);
   animation: foil-glare 3.2s ease-in-out infinite;
 }
 @keyframes foil-drift { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @keyframes foil-glare { from { transform: translateX(-100%); } 60%, to { transform: translateX(100%); } }
-@media (prefers-reduced-motion: reduce) { .foil > .foil-sheen, .foil::after {
-  content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: repeating-linear-gradient(60deg, rgba(255, 255, 255, .12) 0 1px, transparent 1px 3px);
-}
-.foil > .foil-glare { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .foil > .foil-sheen, .foil > .foil-glare { animation: none; } }
 
 /* ---------- intro ---------- */
 .intro {
