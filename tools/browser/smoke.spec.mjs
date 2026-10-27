@@ -323,6 +323,29 @@ test("Climb: the result opens in place and the round switches do not move", asyn
   expect(box.y + box.height, "the result fits the window").toBeLessThanOrEqual(page.viewportSize().height);
 });
 
+for (const [w, h] of [[1920, 1080], [1366, 768]]) {
+  test(`Freetype at ${w}: the switches stand on one line at the text edges, and a line shows the round`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: h });
+    await openApp(page, { "tt.mode.en": "freetype", "tt.length.freetype": "words-10" });
+    const m = () => page.evaluate(() => {
+      const text = document.getElementById("text").getBoundingClientRect();
+      const sides = [...document.querySelectorAll("#mode-bar > .bar-side")].map((e) => e.getBoundingClientRect());
+      const fill = document.querySelector("#round-line > i").getBoundingClientRect();
+      const line = document.getElementById("round-line").getBoundingClientRect();
+      return { textL: text.left, textR: text.right, sides, done: fill.width / line.width, counter: !!document.getElementById("progress").offsetParent };
+    });
+    const at = await m();
+    expect(at.sides[0].left, "the left switches start at the text").toBeCloseTo(at.textL, 0);
+    expect(at.sides[1].right, "the right switches end at the text").toBeCloseTo(at.textR, 0);
+    expect(at.sides[0].top, "one line").toBe(at.sides[1].top);
+    expect(at.counter, "no counter").toBe(false);
+    expect(at.done).toBe(0);
+    for (let i = 0; i < 40; i++) { const c = await nextChar(page); if (!c) break; await page.keyboard.type(c); }
+    await page.waitForTimeout(400);
+    expect((await m()).done, "the line fills while typing").toBeGreaterThan(0);
+  });
+}
+
 test("the hand over the keyboard shows the finger of the next key", async ({ page }) => {
   await openApp(page, { "tt.mode.en": "learn" });
   const fingerOf = await page.evaluate(async () => {

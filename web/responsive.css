@@ -53,7 +53,8 @@
   .stat { gap: 5px; }
   #view-type { margin-block: 4px auto; }
   .note { font-size: .78rem; border-radius: 14px; }
-  .text-box { padding: 14px 16px 14px 34px; }
+  :root { --text-l: 34px; --text-r: 16px; }
+  .text-box { padding: 14px var(--text-r) 14px var(--text-l); }
   .text-box::before { left: 14px; top: 48px; }
   .text, .text-box::before { font-size: clamp(1.1rem, 5.2vw, 1.4rem); }
   .r-body { gap: 18px; }
