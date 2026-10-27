@@ -10,11 +10,11 @@ To fill: what each does for learning, what it measures, what it lacks.
 
 - **Monkeytype** (<https://github.com/monkeytypegame/monkeytype>): the look
   and feel this project follows; plain typing tests, no adaptive teaching
-  (its "weakspot" mode is simulated as "best of 20" in ALGORITHM.md
+  (its "weakspot" mode is simulated as "best of 20" in HOW-THE-MODES-WORK.md
   section 10).
 - **keybr** (<https://github.com/aradzie/keybr.com>): adaptive teaching,
   letters opened one by one, but generated letter combinations instead of
-  real words (the main difference of this project, AGENTS.md "Real words
+  real words (the main difference of this project, docs/PRODUCT.md "Real words
   only").
 
 # Reading list
@@ -73,7 +73,7 @@ marked ★.
   temperature parameter, chapter 2. Free online: <http://incompleteideas.net/book/the-book-2nd.html>
 - **Gelman, A. et al. (2013).** *Bayesian Data Analysis* (3rd ed.). CRC Press.
   Shrinkage towards a prior (hierarchical models); background for section 5.2 of
-  ALGORITHM.md. A short intuitive source is enough here, this book is for depth.
+  HOW-THE-MODES-WORK.md. A short intuitive source is enough here, this book is for depth.
 
 ## Word lists (data)
 

@@ -1,17 +1,16 @@
-# Product and interface guidelines
+# Design rules
 
-How to decide what to build, where to put it, how it should look and behave,
-and how to check it. These are principles, not rigid rules: use judgment,
+How the screen should look and behave, and how to check it. These are principles, not rigid rules: use judgment,
 and never make the app harder to use just to follow a rule to the letter.
 
 Read this before any change to the interface or a feature. It sits next to
 the other rule files and does not repeat them:
 
-- `AGENTS.md`: the stack, the architecture rules and the product decisions.
-  Those are binding and win over anything here.
-- `docs/UI-TEXT.md`: every text the user sees.
-- `docs/COMMENTING.md`: comments in the code.
-- `docs/ARCHITECTURE.md`: how the code is organised (modules, screen layout).
+- `docs/PRODUCT.md` and `docs/CODE-RULES.md`: the product decisions, the
+  stack and the architecture rules. Those are binding and win over
+  anything here.
+- `docs/TEXT-RULES.md`: every text the user sees.
+- `docs/HOW-THE-CODE-WORKS.md`: how the code is organised (modules, screen layout).
 
 Each section below separates **Established** (what the project already does;
 keep it) from **Recommended** (added by this document; follow it unless
@@ -20,7 +19,7 @@ there is a reason not to).
 ## 1. Product decisions
 
 **Established**
-- The product principles are in `AGENTS.md` ("Product principles"); they
+- The product principles are in `docs/PRODUCT.md`; they
   are not repeated here, so the two can never disagree.
 
 **Recommended**
@@ -35,7 +34,7 @@ there is a reason not to).
 **Established**
 - Three fixed places on every screen: the header (logo, account), the
   navigation (a rail on the left from 1000 px, a bar at the bottom below),
-  and the content in the middle (`docs/ARCHITECTURE.md`, "Screen layout").
+  and the content in the middle (`docs/HOW-THE-CODE-WORKS.md`, "Screen layout").
 - Panels (Settings, Profile, the reset confirm) share one window style:
   `.win` and `.win-title`.
   Each option is an `.opt` row: name (and a description only if needed) on
@@ -62,8 +61,7 @@ there is a reason not to).
   columns), 640 px (phone), 380 px (very small phone).
 - Sizes follow the window: the keyboard key size `--u` and the text width
   `--tw` are computed from the viewport, not picked from presets.
-- Phones and tablets show only the stats and the account (`AGENTS.md`,
-  "Product principles"): no typing screen, no navigation, a short line
+- Phones and tablets show only the stats and the account (`docs/PRODUCT.md`): no typing screen, no navigation, a short line
   says that practice needs a computer keyboard.
 - Long names are cut with "…" instead of pushing other things away.
 
@@ -106,7 +104,7 @@ there is a reason not to).
 
 ## 5. Text and labels
 
-All rules are in `docs/UI-TEXT.md`. In short: every text earns its place,
+All rules are in `docs/TEXT-RULES.md`. In short: every text earns its place,
 nothing for the obvious, explain what is not obvious and what has
 consequences, the same word for the same thing. All text lives in
 `web/i18n.js`.
@@ -115,7 +113,8 @@ consequences, the same word for the same thing. All text lives in
 
 **Established**
 - Typing feels instant: the rules for the keypress path and how to measure
-  it are in `AGENTS.md` ("Architecture rules", rule 4 of "Current phase").
+  it are in `docs/CODE-RULES.md` ("Architecture rules") and `AGENTS.md` (rule 4
+  of "Current phase").
   Feel numbers live in `web/feel.js`. Responses to a key are 80-180 ms,
   start in the same frame and ease out; they animate colour, opacity, filter or transform only
   (nothing that moves the layout). Colours for JavaScript animations come
@@ -152,7 +151,7 @@ consequences, the same word for the same thing. All text lives in
   destructive), `data-tip` tooltips, `--ctl` (38 px) as the height of every
   control.
 - Naming: Learn, Climb, Freetype, Stats, Settings; round, focus, mastered, level
-  (`docs/UI-TEXT.md`, word list).
+  (`docs/TEXT-RULES.md`, word list).
 
 **Recommended**
 - Before adding a new component, style or word, search for an existing one
@@ -183,8 +182,8 @@ consequences, the same word for the same thing. All text lives in
 
 **Established**
 - The stack, the import layers, no magic numbers and the two ways to run
-  (server and GitHub Pages) are rules of `AGENTS.md`; the import layers in
-  detail: `docs/ARCHITECTURE.md`, "Frontend modules".
+  (server and GitHub Pages) are rules of `docs/CODE-RULES.md`; the import layers in
+  detail: `docs/HOW-THE-CODE-WORKS.md`, "Frontend modules".
 
 **Recommended**
 - Read the code and try the feature before changing it. Look at the
@@ -193,7 +192,7 @@ consequences, the same word for the same thing. All text lives in
 - Prefer the smallest change that solves the problem in the right place
   over a workaround somewhere else.
 - When the change touches behaviour, update the docs that describe it in the
-  same task (`docs/ALGORITHM.md`, `docs/ARCHITECTURE.md`).
+  same task (`docs/HOW-THE-MODES-WORK.md`, `docs/HOW-THE-CODE-WORKS.md`).
 
 ## 10. Testing and verification
 

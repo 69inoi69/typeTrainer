@@ -8,7 +8,7 @@
   Looks like Monkeytype. Teaches like keybr. Real words only.<br><br>
   <a href="https://69inoi69.github.io/typeTrainer/"><b>Start typing</b></a>
   ·
-  <a href="docs/ALGORITHM.md">How it works</a>
+  <a href="docs/HOW-THE-MODES-WORK.md">How it works</a>
 </p>
 
 <p align="center">
@@ -47,7 +47,7 @@ optional; [CONTRIBUTING.md](CONTRIBUTING.md) has the details.
 Bug reports, ideas and pull requests are welcome. Start with
 [CONTRIBUTING.md](CONTRIBUTING.md): how to run the tests and the few rules
 the code follows. How the parts fit together is in
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+[docs/HOW-THE-CODE-WORKS.md](docs/HOW-THE-CODE-WORKS.md).
 
 ## Credits
 
@@ -64,7 +64,7 @@ the code follows. How the parts fit together is in
 - The look owes a lot to [Monkeytype](https://github.com/monkeytypegame/monkeytype),
   the teaching to [keybr](https://github.com/aradzie/keybr.com).
 
-How the word lists were made: [docs/ALGORITHM.md](docs/ALGORITHM.md).
+How the word lists were made: [docs/HOW-THE-MODES-WORK.md](docs/HOW-THE-MODES-WORK.md).
 
 ## License
 

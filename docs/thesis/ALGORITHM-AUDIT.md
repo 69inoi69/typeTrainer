@@ -33,7 +33,7 @@ The browser (`web/typing.js`) records one **sample** per typed letter:
 `{char: "s", errors: 1, ms: 412}`: which letter, how many wrong keys were
 pressed at that place, and the time since the previous key. Every 6 words
 (one **portion**) it sends the samples to `POST /api/v1/portion`.
-*Code fact* (`web/typing.js`, header comment; `docs/ALGORITHM.md` §3).
+*Code fact* (`web/typing.js`, header comment; `docs/HOW-THE-MODES-WORK.md` §3).
 
 ### 1.2 The server updates the letter's statistics
 
@@ -129,7 +129,7 @@ remaining samples, stores the round, and the loop starts again.
 
 ## 2. Why the thresholds and weights are what they are
 
-The reasons in `docs/ALGORITHM.md` §8 and the comments of
+The reasons in `docs/HOW-THE-MODES-WORK.md` §8 and the comments of
 `internal/config/config.go`, sorted by how well they are supported. The
 document itself says: "The values were chosen by reasoning, not fitted to
 data."
@@ -204,7 +204,7 @@ while another is still inaccurate matters. *Needs users.*
 
 ### 3.3 Getting stuck on one letter: speed, not mistakes
 
-`docs/ALGORITHM.md` §9 names "one stubborn letter blocks progress". The
+`docs/HOW-THE-MODES-WORK.md` §9 names "one stubborn letter blocks progress". The
 experiments show where that really happens:
 
 - **An inaccurate letter** gets the focus a lot (45 % of portions at 10 %
@@ -258,7 +258,7 @@ before them. *Code fact (counted from the word list).* A portion focused on
 `q` draws 6 words from 10, with the repeat penalty looking back 20 words, so
 the same words come back within a few portions. `FloorWords` keeps those
 10 words free of the frequency penalty, so at least they are spread evenly
-(§11.1 of `docs/ALGORITHM.md`). Rare letters also appear seldom outside
+(§11.1 of `docs/HOW-THE-MODES-WORK.md`). Rare letters also appear seldom outside
 their own focus, so they collect presses slowly. *Hypothesis:* the last
 letters are the most repetitive part of learning. Not measured per letter
 in this audit (experiment 5.5 below).
@@ -276,16 +276,16 @@ adds some repetition in the early lessons, and almost none later.
 ### 3.7 Smaller points
 
 - **No forgetting.** A letter not typed for days keeps its last statistics.
-  *Code fact.* (`docs/ALGORITHM.md` §10 lists this as a future direction.)
+  *Code fact.* (`docs/HOW-THE-MODES-WORK.md` §10 lists this as a future direction.)
 - **A mastered letter can stop being mastered** after one mistake, and then
   blocks the next letter again (§3.1). *Code fact.*
 - **A stale comment.** The header of `generator.go` and the comment on
   `NextUnlocked` say it is called "after every saved round" / "once per
   saved round". It is called after every portion (`learn` in
-  `internal/api/learning.go`). `docs/ALGORITHM.md` §6 is correct.
+  `internal/api/learning.go`). `docs/HOW-THE-MODES-WORK.md` §6 is correct.
   *Code fact.* A one-line comment fix, not a behaviour change.
 - **Time belongs to the movement into a letter**, not the letter itself; the
-  model treats it as the letter's (known, `docs/ALGORITHM.md` §9).
+  model treats it as the letter's (known, `docs/HOW-THE-MODES-WORK.md` §9).
 
 ## 4. What the simulation can and cannot tell
 
@@ -296,7 +296,7 @@ has, for every letter, a hidden error chance (3-30 %) and a hidden time
 adaptive model as exercises, the stream as in the app, the stream without
 the frequency penalty) get the same typists and the same random numbers. The
 goal: every letter open and every hidden value at the mastery goal.
-(`docs/ALGORITHM.md` §11.1.)
+(`docs/HOW-THE-MODES-WORK.md` §11.1.)
 
 **Result of this audit's run** (`go run ./tools/sim -lang en`, exercises of
 20 words until the goal, 20 typists):
@@ -388,7 +388,7 @@ and measure different words per 20 and the share of the most common word.
 show which letters are most repetitive.
 
 5.6 **The control group.** The built-in `?group=random` study
-(`docs/ALGORITHM.md` §11) is the only way to show that the algorithm helps
+(`docs/HOW-THE-MODES-WORK.md` §11) is the only way to show that the algorithm helps
 *people*: same practice time, compare speed and accuracy before and after.
 
 ## 6. Findings, by priority
@@ -426,7 +426,7 @@ show which letters are most repetitive.
     up waiting for letters (5.2)?
 11. Does the focus feel repetitive or boring, and when?
 12. Does the adaptive model help people more than random words (5.6)?
-13. Does learning on a phone need its own model (`docs/ALGORITHM.md` §9;
+13. Does learning on a phone need its own model (`docs/HOW-THE-MODES-WORK.md` §9;
     rounds already record the device)?
 
 ### What should not change without evidence
@@ -445,11 +445,11 @@ changes the core of the thesis (`AGENTS.md`) and is the owner's decision.
 Possible directions, only for discussion: check mastery on a longer window or
 with a margin, let the speed part weigh more near the goal, or require
 mastery "most of the time over the last N checks" instead of "at one check".
-Each would need the simulation rerun and `docs/ALGORITHM.md` updated.
+Each would need the simulation rerun and `docs/HOW-THE-MODES-WORK.md` updated.
 
 ## 7. What was inspected and run
 
-**Files read:** `AGENTS.md`, `docs/ALGORITHM.md` (§1-12),
+**Files read:** `AGENTS.md`, `docs/HOW-THE-MODES-WORK.md` (§1-12),
 `internal/engine/model.go`, `internal/engine/generator.go`,
 `internal/config/config.go`, `internal/api/learning.go` (`handlePortion`,
 `learn`, `handleResults`), `internal/sim/sim.go`, `tools/sim/main.go`,
@@ -476,7 +476,7 @@ Sections 1-7 describe the code of 2026-10-16 and stay as they were. Since
 then the model changed: held letters (a mastered letter stays mastered up
 to `KeepErrorRate`), the bonus for unmastered letters, the home-row order,
 no one-letter words and at most two uses of a word per round
-(`docs/ALGORITHM.md` §6-7, §10). Every experiment was run again on main
+(`docs/HOW-THE-MODES-WORK.md` §6-7, §10). Every experiment was run again on main
 at `5dd45a6` with the same commands (section 7; appendix A unchanged, it
 still compiles), the same seeds and the same typists.
 

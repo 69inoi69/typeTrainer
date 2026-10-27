@@ -1,4 +1,4 @@
-# Architecture
+# How the code works
 
 ## Overview
 
@@ -57,8 +57,8 @@ its own.
 | `data/langs/<id>/words.txt` | Word list per language, most frequent first (learning; Climb and Freetype too in a language without `free.txt`). |
 | `data/langs/<id>/free.txt` | The long list of Climb and Freetype (English only for now: 25 000 words, `tools/wordlists/free.py`). |
 | `data/langs/<id>/sentences.txt` | Freetype's real sentences, one per line (English only for now; from Tatoeba, CC BY 2.0 FR, `tools/sentences/build.py`). |
-| `internal/sim` | Simulation: a made-up typist and three word-choice strategies (docs/ALGORITHM.md, section 10). Not used by the app. |
-| `tools/sim/` | `go run ./tools/sim`: runs the simulation on the real word lists and prints the table. Its test checks that Learn's stream beats random words (docs/ALGORITHM.md, section 10). |
+| `internal/sim` | Simulation: a made-up typist and three word-choice strategies (docs/HOW-THE-MODES-WORK.md, section 10). Not used by the app. |
+| `tools/sim/` | `go run ./tools/sim`: runs the simulation on the real word lists and prints the table. Its test checks that Learn's stream beats random words (docs/HOW-THE-MODES-WORK.md, section 10). |
 | `tools/wordlists/` | Python script + block lists that build the word lists (not part of the app). |
 | `tools/browser/` | Browser checks (Playwright: a round in each mode, the caret, result and stats) and `perf.mjs`, the typing latency script. Node, not part of the app; how to run: CONTRIBUTING.md. |
 | `web/` | Static frontend: `index.html`, the stylesheets (`base.css` first, then `layout`, `typing`, `stats`, `screens`, `responsive`) and the JavaScript modules (see "Frontend modules" below). The interface language always follows the practice language. |
@@ -150,7 +150,7 @@ in `<head>` so a light page never flashes dark).
 ## Request lifecycle: from a keypress to the next words
 
 The text is a stream of short portions (`Generator.Portion`, see
-`docs/ALGORITHM.md`, section 7), not one exercise built in advance. A round
+`docs/HOW-THE-MODES-WORK.md`, section 7), not one exercise built in advance. A round
 is `RoundPortions` portions (30 words).
 
 1. Start of a round (`loadExercise()` in `typing.js`) → `POST /api/v1/portion {start: true}`
@@ -159,7 +159,7 @@ is `RoundPortions` portions (30 words).
 2. `keydown` (`input.js`) → `handleChar()` in `typing.js` compares the key with the expected
    character and moves on either way (wrong = red). Each typed position keeps
    one sample `{char, errors, ms}`; `backspace()` changes only the screen, never
-   the samples. Rules: `docs/ALGORITHM.md`, section 3.
+   the samples. Rules: `docs/HOW-THE-MODES-WORK.md`, section 3.
 3. The space after the last word of a portion → `POST /api/v1/portion` with the
    portion's samples, the words of the stream so far (`recent`) and the words
    typed with a mistake (`retry`). The handler (under a mutex) reads the stats
@@ -203,14 +203,14 @@ All responses are JSON. Every route except `/languages` and `/auth/*` takes `?la
 | POST | `/api/v1/auth/logout` | | `{ok: true}`; ends this login and deletes the cookie |
 | GET | `/api/v1/auth/me` | | `{accounts, name}`; `name` is null for a guest, `accounts` false where they cannot work (GitHub Pages) |
 | GET | `/api/v1/layout` | | layout JSON |
-| POST | `/api/v1/portion` | `{samples: [{char, errors, ms, typed?}], recent: [words], retry: [words], start: bool, last: bool}` | `{portions: [{words, focus, weakest, unlocked, locked}], newLetter, newLap, round}` (`newLap`: the goal in WPM of a lap these presses started, 0 = none; ALGORITHM.md 6.1); one portion, `AheadPortions + 1` with `start`, none with `last` |
+| POST | `/api/v1/portion` | `{samples: [{char, errors, ms, typed?}], recent: [words], retry: [words], start: bool, last: bool}` | `{portions: [{words, focus, weakest, unlocked, locked}], newLetter, newLap, round}` (`newLap`: the goal in WPM of a lap these presses started, 0 = none; HOW-THE-MODES-WORK.md 6.1); one portion, `AheadPortions + 1` with `start`, none with `last` |
 | POST | `/api/v1/results` | `{samples: [{char, errors, ms}], keys: [the same shape, the whole round], chars, wpm, accuracy, perSecond: [keypresses in each full second], length}` | `{unlocked, newLetter, newLap, consistency}` (`consistency` 0–100, `null` for a round under `ConsistencyMinSeconds`); the round is over: one history entry |
 | POST | `/api/v1/progress` | `{unlockAll: true\|false}` | `{unlocked}`; for development only, the interface no longer calls it |
 | POST | `/api/v1/group` | `{group: "random"\|""}` | `{group}`; the study group of the language (hidden: only the study link `?group=random` / `?group=adaptive` calls it, `web/app.js`). `/stats` returns `group`, every learning round stores it |
 | POST | `/api/v1/reset` | | `{ok: true}`; deletes all data of the language (reset button, until there are user accounts) |
 | GET | `/api/v1/export` | | `{unlocked, lap, keys: {char: {count, mistakes, errEma, timeEma, timedCount, held}}, sessions: [all, OLDEST first, each with its raw keys], freeplay: {sessions (each with its level)}, climbLevels: 10, freetype: {"1000": {sessions}, "1000-long": ..., "sentences": ..., "custom": ...}}`; everything stored for the language (`freeplay` and `freetype` are missing in older files; without `climbLevels` Climb's levels are the old 0..1, turned into 1..10 on import) |
 | POST | `/api/v1/import` | the same JSON as `/export` | `{unlocked, sessions}`; REPLACES the language's data, or changes nothing if the data is invalid |
-| GET | `/api/v1/stats?length=` | | `{keys: [{char, count, errorRate, avgMs, difficulty, mastered, unlocked}], sessions: [last 50 of that length, newest first, without raw keys], order: [the unlock order, for the letters a round opened], streaks (as in `/freeplay/stats`), sessionCount (of that length), learnRounds (Learn rounds of every length), lengths: [every length in the history], bests: {length: the fastest round of it}, targetWpm (the goal of the current lap), lap (0 = the first), lastLap, forecast: {known, rounds, more, letter, few} (about how many rounds to the next letter, `history.NextForecast`, ALGORITHM.md 6.2), masteryMin, masteryErr (the mastery rule: at least masteryMin presses, under masteryErr % mistakes, for the texts)}`; no `length` = every length |
+| GET | `/api/v1/stats?length=` | | `{keys: [{char, count, errorRate, avgMs, difficulty, mastered, unlocked}], sessions: [last 50 of that length, newest first, without raw keys], order: [the unlock order, for the letters a round opened], streaks (as in `/freeplay/stats`), sessionCount (of that length), learnRounds (Learn rounds of every length), lengths: [every length in the history], bests: {length: the fastest round of it}, targetWpm (the goal of the current lap), lap (0 = the first), lastLap, forecast: {known, rounds, more, letter, few} (about how many rounds to the next letter, `history.NextForecast`, HOW-THE-MODES-WORK.md 6.2), masteryMin, masteryErr (the mastery rule: at least masteryMin presses, under masteryErr % mistakes, for the texts)}`; no `length` = every length |
 | GET | `/api/v1/learn/history` | | `{order: [the letters in unlock order], rounds: [{wpm, accuracy, unlocked, lap, letters: [{count, errorRate, avgMs, mastered} or null while locked, in order]}], confusions: [{want, typed, n}]}`: every Learn round oldest first, every length, with the letter model replayed over the rounds' raw keys (`history.LetterTimeline`); the pairs mixed up at least `ConfusionMin` times, at most `ConfusionShown` (`history.Confusions`) |
 | GET | `/api/v1/activity?tz=` | | `{days: [{date, rounds, seconds, chars}]}`: every day with a finished round, every mode together, oldest first; `tz` = the browser's minutes from UTC (east positive), so days end at the user's midnight. `seconds` = right letters / 5 / WPM (`storage.RoundSeconds`). The stats screen builds the total time typing, the days in a row and the activity calendar from it |
 | POST | `/api/v1/freeplay/portion` | `{recent: [words of the round], start: bool, level}` | `{portions: [{words}], round, level}`; Climb: the next words at the level of the round (`level` 1..10, or 0 = where the user stands, `freeplay.Standing`) |
@@ -268,7 +268,7 @@ tried on real data (docs/thesis/08-testing-and-verification.md). A round with it
 5-7 KB of JSON; `MaxImportBytes` allows about 10 000 rounds in one import.
 History from before this has no keys (the field is missing). `device`
 says what the round was typed on (`keyboard` or `touch`; missing in older
-history); it is recorded only, the model does not use it (ALGORITHM.md,
+history); it is recorded only, the model does not use it (HOW-THE-MODES-WORK.md,
 section 9). `/stats` and
 `/freeplay/stats` and `/freetype/stats` drop the keys (`Session.Summary`), `/export` has them.
 
@@ -342,21 +342,21 @@ share no data: Climb and Freetype have their own routes and histories
 `FreetypeMode(n, variant)` for each Freetype list and kind of text).
 
 - **Learn**, for beginners, is the adaptive trainer described in
-  docs/ALGORITHM.md: the `/portion` and `/results` routes, the letter model,
+  docs/HOW-THE-MODES-WORK.md: the `/portion` and `/results` routes, the letter model,
   unlocking from the home row. It has no stats screen: its progress is the
   letters row (a colour and a bar per letter, tooltips with what each still
   needs, the mastered letters fading from the keyboard) and the Learn panel
   (`web/learnpanel.js`); its rounds follow one another with no result
   screen.
 - **Climb**, for people who can already type (`internal/freeplay`,
-  docs/ALGORITHM.md section 12): ten levels of words only, each a set of
+  docs/HOW-THE-MODES-WORK.md section 12): ten levels of words only, each a set of
   the n most common words; a round is typed at one level, and its accuracy
   decides (`freeplay.Standing`): three passes take the typist up, two fails
   in a row down. Its history (`AddFreeplaySession`) keeps the level of every
   round; where the next round starts is worked out from it. The stats
   screen is Climb's and Freetype's. Nothing it sends reaches the letter
   model: `/freeplay/results` drops any samples.
-- **Freetype**, for just typing (`internal/freeplay`, docs/ALGORITHM.md
+- **Freetype**, for just typing (`internal/freeplay`, docs/HOW-THE-MODES-WORK.md
   section 13): words drawn evenly from the n most common of the long list
   (`free.txt`), n picked in the row above the text (200 to 25 000;
   remembered per language in `tt.list.<lang>`), plain or of a kind
@@ -459,7 +459,7 @@ Where something new is likely to be added:
 - a new **tunable number**: `internal/config/config.go`
 - a new **language or layout**: `data/` (see "Adding a layout or language"
   below)
-- a new **interface text**: `web/i18n.js` (English for now, `docs/UI-TEXT.md`)
+- a new **interface text**: `web/i18n.js` (English for now, `docs/TEXT-RULES.md`)
 - a new **setting**: `web/settings.js`
 - a new **navigation item**: `web/index.html` (`nav.rail`) and `web/input.js`
 - a new **theme**: `web/base.css` (one `:root[data-theme]` block)
