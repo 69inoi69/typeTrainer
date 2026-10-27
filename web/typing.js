@@ -475,23 +475,19 @@ function endWord() {
 }
 function renderProgress() {
   const time = limit.kind === "time";
-  const key = time ? "metric.seconds" : "metric.words";
-  if (el.progressLabel.dataset.i18n !== key) {
-    el.progressLabel.dataset.i18n = key;
-    el.progressLabel.innerHTML = t(key);
-  }
-  let done;
+  let done, tip;
   if (!time) {
-    done = Math.min(wordsTyped, roundWords) / roundWords;
-    el.progress.textContent = `${Math.min(wordsTyped, roundWords)}/${roundWords}`;
+    const words = Math.min(wordsTyped, roundWords);
+    done = words / roundWords;
+    tip = t("round.words", { n: words, of: roundWords });
   } else {
     const passed = startTime === null ? 0 : (performance.now() - startTime) / 1000;
     done = Math.min(1, passed / limit.n);
-    el.progress.textContent = Math.max(0, Math.ceil(limit.n - passed));
+    tip = t("round.seconds", { n: Math.max(0, Math.ceil(limit.n - passed)) });
   }
   el.roundLine.classList.toggle("time", time);
   el.roundLine.firstChild.style.transform = `scaleX(${done})`;
-  el.roundLine.dataset.tipText = `${el.progress.textContent} ${t(key).toLowerCase()}`;
+  el.roundLine.dataset.tipText = tip;
 }
 // ---------- Tab: start the round again ----------
 export function restartRound() {

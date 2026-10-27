@@ -67,7 +67,7 @@ const I18N = {
     "intro.skip": "Skip",
     "intro.next": "Next",
     "streak.label": "Clean words",
-    "metric.acc": "Acc", "metric.words": "Words", "metric.seconds": "s left",
+    "metric.acc": "Acc", "round.words": "{n}/{of} words", "round.seconds": "{n} s left",
     "metric.raw": "Raw", "tip.raw": "WPM counts only correct characters; raw speed counts every keypress, including mistakes",
     "hint.tab": "New round", "hint.next": "Next round", "hint.settings": "Settings", "hint.stats": "Stats", "hint.typing": "Typing",
     "hint.word": "Delete word", "hint.lang": "Language",
