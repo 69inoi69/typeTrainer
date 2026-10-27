@@ -1,4 +1,4 @@
-// The in-memory Store: plain Go maps behind one mutex.
+// The in-memory Store.
 
 package storage
 
@@ -11,50 +11,36 @@ import (
 	"typingtrainer/internal/engine"
 )
 
-// MemoryStore keeps everything in RAM. Data is lost when the server stops.
-// The mutex makes it safe when several requests arrive at the same time:
-// the HTTP server runs every request in its own goroutine, and Go maps must
-// not be read and written at once. One lock for everything is simple, and
-// fast enough here (every operation is a few map lookups).
-//
-// Its methods do what the Store interface (store.go) says; only the ones
-// with something surprising have their own comment.
 type MemoryStore struct {
 	mu    sync.Mutex
 	langs map[key]*langData
 
-	users  map[string]User   // by name
-	names  map[string]string // user id -> name
-	logins map[string]login  // by token hash
+	users  map[string]User
+	names  map[string]string
+	logins map[string]login
 }
 
-// login is one logged-in browser: whose it is and until when.
 type login struct {
 	userID  string
 	expires time.Time
 }
 
-// key says whose data it is and in which language.
 type key struct{ user, lang string }
 
-// langData is everything one user has stored for one language.
 type langData struct {
 	stats    map[string]engine.KeyStat
 	unlocked int
 	lap      int
-	group    string // study group ("" or GroupRandom)
+	group    string
 	sessions []Session
 
-	freeplay map[string][]Session // mode (ModeClimb, FreetypeMode) -> its history, oldest first
+	freeplay map[string][]Session
 }
 
-// NewMemoryStore returns an empty store.
 func NewMemoryStore() *MemoryStore {
 	return &MemoryStore{langs: map[key]*langData{}, users: map[string]User{}, names: map[string]string{}, logins: map[string]login{}}
 }
 
-// data returns the record of a user in a language, creating it on first
-// use. The caller must hold m.mu.
 func (m *MemoryStore) data(user, lang string) *langData {
 	k := key{user, lang}
 	d, ok := m.langs[k]
@@ -65,7 +51,6 @@ func (m *MemoryStore) data(user, lang string) *langData {
 	return d
 }
 
-// KeyStats returns a COPY, so callers cannot change our data by accident.
 func (m *MemoryStore) KeyStats(user, lang string) (map[string]engine.KeyStat, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -77,7 +62,6 @@ func (m *MemoryStore) KeyStats(user, lang string) (map[string]engine.KeyStat, er
 	return out, nil
 }
 
-// SaveKeyStats keeps a copy too, for the same reason as KeyStats.
 func (m *MemoryStore) SaveKeyStats(user, lang string, stats map[string]engine.KeyStat) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -126,7 +110,6 @@ func (m *MemoryStore) AddSession(user, lang string, s Session) error {
 	return nil
 }
 
-// SaveLearned is one step because it holds the lock throughout.
 func (m *MemoryStore) SaveLearned(user, lang string, l Learned) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -150,8 +133,6 @@ func (m *MemoryStore) HasRound(user, lang, round string) (bool, error) {
 	return m.data(user, lang).hasRound(round), nil
 }
 
-// hasRound looks through every history of the language: the same id may
-// not come back in another mode either (the UNIQUE index of PostgresStore).
 func (d *langData) hasRound(round string) bool {
 	if round == "" {
 		return false
@@ -177,8 +158,6 @@ func (m *MemoryStore) RecentSessions(user, lang, length string, limit int) ([]Se
 	return newestFirst(m.data(user, lang).sessions, length, limit), nil
 }
 
-// newestFirst copies up to limit sessions of one length ("" = any),
-// newest first.
 func newestFirst(all []Session, length string, limit int) []Session {
 	out := []Session{}
 	for i := len(all) - 1; i >= 0 && len(out) < limit; i-- {
@@ -189,7 +168,6 @@ func newestFirst(all []Session, length string, limit int) []Session {
 	return out
 }
 
-// countLength counts the sessions of one length ("" = all).
 func countLength(all []Session, length string) int {
 	if length == "" {
 		return len(all)
@@ -203,7 +181,6 @@ func countLength(all []Session, length string) int {
 	return n
 }
 
-// lengths lists the different lengths of the sessions, sorted.
 func lengths(all []Session) []string {
 	seen := map[string]bool{}
 	out := []string{}
@@ -235,8 +212,6 @@ func (m *MemoryStore) BestRounds(user, lang string) (map[string]Session, error) 
 	return bestOf(m.data(user, lang).sessions), nil
 }
 
-// bestOf keeps the fastest session of every length (the first of equal
-// ones), without its raw keys.
 func bestOf(all []Session) map[string]Session {
 	out := map[string]Session{}
 	for _, s := range all {
@@ -338,8 +313,6 @@ func (m *MemoryStore) FreeplaySessionLengths(user, lang, mode string) ([]string,
 	return lengths(m.data(user, lang).freeplay[mode]), nil
 }
 
-// Reset forgets the user's language; the next call to data() starts it
-// from zero.
 func (m *MemoryStore) Reset(user, lang string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -347,9 +320,6 @@ func (m *MemoryStore) Reset(user, lang string) error {
 	return nil
 }
 
-// CreateUser gives the new account the id "u1", "u2", ... (PostgresStore
-// uses the table's own counter, with the same "u" in front). Ids never clash
-// with guests (LocalUser, GuestPrefix).
 func (m *MemoryStore) CreateUser(name, passwordHash string, now time.Time) (User, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -389,7 +359,6 @@ func (m *MemoryStore) AddLogin(tokenHash, userID string, expires time.Time) erro
 	return nil
 }
 
-// LoginUser forgets an expired login when it sees one.
 func (m *MemoryStore) LoginUser(tokenHash string, now time.Time) (string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

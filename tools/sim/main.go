@@ -1,19 +1,4 @@
-// Command sim runs the strategy simulation (internal/sim) on the real word
-// lists and prints a table of the results. Run it from the repository root:
-//
-//	go run ./tools/sim              # all languages
-//	go run ./tools/sim -lang en     # one language
-//	go run ./tools/sim -temps 0.1,0.25   # try other temperatures (experiment only)
-//	go run ./tools/sim -floor 0 -ramp 0  # other WordParams (experiment only)
-//
-// It is a research tool, not part of the app: it reads data/ from disk.
-// The numbers it uses come from internal/config (Engine, Words, Sim); the
-// flags only override them for an experiment. What the columns mean and
-// how to read the results is in docs/ALGORITHM.md, section 10.
-//
-// To add a column (a new metric): compute it in internal/sim (Result or
-// Variety), add its title to both header lines in runLanguage, and print it
-// in row or pct.
+// Command sim runs the strategy simulation and prints the results.
 package main
 
 import (
@@ -102,14 +87,6 @@ func main() {
 	}
 }
 
-// strategy builds a fresh strategy for one run (k: 0 random, 1 best of N,
-// 2 adaptive with temperature t, 3 the stream with temperature t, 4 the
-// stream without the word frequency penalty, to show what the penalty changes).
-// A fresh one each run, because the stream and best of N keep state.
-//
-// To add a strategy: a type in internal/sim, a new k here (and in
-// engineParams if it needs other engine numbers), a job in runLanguage and
-// its row name there.
 func strategy(k int, t float64, gen *engine.Generator, cfg config.Config, rng *rand.Rand) sim.Strategy {
 	switch k {
 	case 0:
@@ -124,23 +101,17 @@ func strategy(k int, t float64, gen *engine.Generator, cfg config.Config, rng *r
 	return &sim.Adaptive{Gen: gen, EP: ep}
 }
 
-// engineParams are the engine numbers of strategy k: the configured ones,
-// with temperature t for the engine strategies and no frequency penalty for 4.
 func engineParams(k int, t float64, cfg config.Config) engine.Params {
 	ep := cfg.Engine
 	if k >= 2 {
 		ep.Temperature = t
 	}
 	if k == 4 {
-		ep.RankPenalty = 0 // outside (0, 1) = off
+		ep.RankPenalty = 0
 	}
 	return ep
 }
 
-// runLanguage prints the table of one language: one row per strategy (and
-// per temperature for the engine strategies), each the summary of p.Runs
-// beginners (Run) and p.Runs experts (RunOpen). home: the resting keys of
-// the language's layout, put first in the unlock order as in the app.
 func runLanguage(id string, words, home []string, cfg config.Config, temps []float64) {
 	p := cfg.Sim
 	fmt.Printf("\n%s (%d words)\n", id, len(words))
@@ -169,11 +140,6 @@ func runLanguage(id string, words, home []string, cfg config.Config, temps []flo
 		name := ""
 		for run := 0; run < p.Runs; run++ {
 			seed := int64(run + 1)
-			// The same typist and the same random numbers for every strategy:
-			// only the word choice differs. Different seed offsets (+1000 for
-			// the typist's noise, +2000 for the strategy) keep the random
-			// streams apart, so one part using more numbers does not change
-			// what another part draws.
 			gen := engine.NewGenerator(words, rand.New(rand.NewSource(seed)), ep)
 			gen.SetHome(home, ep)
 			gen.SetWordParams(cfg.Words)
@@ -205,9 +171,6 @@ func runLanguage(id string, words, home []string, cfg config.Config, temps []flo
 	forecast(words, home, cfg)
 }
 
-// forecast prints how good the forecast of the Learn panel is for this
-// language (sim.Forecasts): the stream with the configured numbers, p.Runs
-// beginners, every forecast against the rounds the next letter really took.
 func forecast(words, home []string, cfg config.Config) {
 	p, ep, fp := cfg.Sim, cfg.Engine, cfg.Forecast
 	var runs []sim.ForecastRun
@@ -227,8 +190,6 @@ func forecast(words, home []string, cfg config.Config) {
 		s.Shown*100, s.N, s.MeanAbs, s.MedianAbs, s.MeanActual, s.Within*100, s.Early*100, fp.MaxRounds, s.More, s.MoreRight)
 }
 
-// row summarises the runs of one strategy. Runs that gave up count as
-// MaxExercises, so the mean is a lower bound when not every run reached the goal.
 func row(name string, res []sim.Result, vs []sim.Variety) string {
 	ex := make([]int, len(res))
 	sum, reached, open, openN := 0, 0, 0, 0
@@ -271,8 +232,6 @@ func row(name string, res []sim.Result, vs []sim.Variety) string {
 		letters/float64(len(res)), afterStr, pct(first), pct(vs))
 }
 
-// pct prints the mean variety of several runs in percent, and the mean
-// word length in letters.
 func pct(vs []sim.Variety) string {
 	var d, r, t, l, k float64
 	for _, v := range vs {
@@ -287,7 +246,6 @@ func pct(vs []sim.Variety) string {
 	return fmt.Sprintf("%4.0f%% %4.0f%% %4.0f%% %5.1f %5.0f", d/n, r/n, t/n, l/m, k/m)
 }
 
-// fail prints the error and stops with exit code 1.
 func fail(err error) {
 	fmt.Fprintln(os.Stderr, err)
 	os.Exit(1)

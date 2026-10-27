@@ -2,8 +2,6 @@ package storage
 
 import "testing"
 
-// A Freetype key reads back as the list and variant it was made from, and
-// nothing else reads as one (the export file's keys are checked with it).
 func TestFreetypeKey(t *testing.T) {
 	for _, c := range []struct {
 		n       int

@@ -104,7 +104,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | top | `input.js` | Keydown and phone input (with the one-space sentinel that makes Backspace work on phone keyboards), the navigation (learn · climb · stats), window resize: sends each action to the module that handles it. |
 | top | `app.js` | Entry point: `init()`. |
 
-**Import rule:** imports only go down. `state.js` and `i18n.js` import
+**Import rule:** imports only go down. `state.js`, `i18n.js` and `feel.js` import
 nothing, `fx.js` only `i18n.js`, `api.js` only `state.js`. Middle modules import
 the bottom layer and each other in one direction only. Nothing imports the top
 layer (`app.js` loads `input.js`). There are no import cycles, so every module

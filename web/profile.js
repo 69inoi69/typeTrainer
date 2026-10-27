@@ -1,37 +1,21 @@
-// The profile in the top right corner.
-// The account (log in / sign up / log out) lives on the server: the login is
-// an HttpOnly cookie this script never sees, and after logging in or out the
-// page reloads, so every module loads the data of the new user. Accounts work
-// only with the real server: on GitHub Pages /auth/me says accounts: false
-// and the form stays hidden.
-// The picture (tt.avatar) and, without an account, the name (tt.name) live
-// only in this browser; nothing about learning depends on them. "Reset"
-// forgets them together with the other tt.* keys.
-// Layer: middle. Imports only the bottom layer.
-// Called by: app.js (loadAccount, renderProfile at start), languages.js
-// (renderProfile on a language change), input.js (profileOpen, closeProfile:
-// keys go to the card while it is open, Esc closes it).
+// The profile card.
 
 import { t } from "./i18n.js";
 import { $, store } from "./state.js";
 import { getJSON, sendAuth } from "./api.js";
 
 const COLORS = ["#e2b714", "#8cc97a", "#7fa6e0", "#c98bd6", "#e59a62", "#5fc4c4", "#e57f8f"];
-const AVATAR_PX = 96;      // an uploaded picture is shrunk to this size: localStorage is small
+const AVATAR_PX = 96;
 
 const btn = $("profile-btn"), card = $("profile-card"), input = $("profile-input");
 const picks = $("avatar-picks"), file = $("avatar-file");
-const msg = $("account-msg");   // the line under the account fields
+const msg = $("account-msg");
 
-// the account from /auth/me: {accounts: bool, name: string | null}
 let account = { accounts: false, name: null };
 
-// the account's name; without accounts (GitHub Pages) the browser-only name
 const name = () => account.accounts ? account.name || "" : store.get("tt.name") || "";
-// a colour ("#e2b714") or a picture ("data:image/jpeg;base64,...")
 const avatar = () => store.get("tt.avatar") || COLORS[0];
 
-// one avatar circle: the picture, or the first letter of the name on a colour
 function paint(node) {
   const a = avatar();
   const photo = a.startsWith("data:");
@@ -40,8 +24,6 @@ function paint(node) {
   node.style.setProperty("--av", photo ? "var(--sub)" : a);
   node.textContent = photo ? "" : [...(name() || t("profile.guest"))][0];
 }
-// Where accounts work and nobody is logged in, the corner says "log in"
-// with a person icon (as on monkeytype); otherwise the picture and the name.
 const signIn = () => account.accounts && !account.name;
 const PERSON = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6"/></svg>`;
 function paintAll() {
@@ -52,8 +34,6 @@ function paintAll() {
   paint($("avatar-big"));
 }
 
-// Asks the server who is logged in. Called once at start; a failure
-// leaves the profile as a guest's.
 export async function loadAccount() {
   try {
     account = await getJSON("/auth/me", true);
@@ -63,11 +43,8 @@ export async function loadAccount() {
   renderProfile();
 }
 
-// Called at start and on every language change ("guest" is translated).
 export function renderProfile() {
   input.placeholder = t("profile.guest");
-  // Where accounts work, the name is the account's (or "guest"): the
-  // browser-only name field is not shown.
   $("profile-title").textContent = t(account.accounts ? "profile.titleAccount" : "profile.title");
   $("profile-field").hidden = account.accounts;
   $("profile-big-name").hidden = !account.accounts;
@@ -76,7 +53,7 @@ export function renderProfile() {
   $("profile-soon").hidden = account.accounts;
   $("account-form").hidden = !!account.name;
   $("account-in").hidden = !account.name;
-  if (account.name) $("account-as").innerHTML = t("account.as", { name: account.name }); // a-z 0-9 _ - only (server rule)
+  if (account.name) $("account-as").innerHTML = t("account.as", { name: account.name });
   else if (!msg.classList.contains("bad")) msg.textContent = t("account.note");
   btn.title = t("profile.open");
   picks.innerHTML = COLORS.map((c) =>
@@ -88,7 +65,6 @@ export function renderProfile() {
 
 // ---------- open / close ----------
 export const profileOpen = () => !card.hidden;
-// Closes the card (Esc, Enter in the name field, a click outside).
 export function closeProfile() {
   card.hidden = true;
   btn.setAttribute("aria-expanded", "false");
@@ -102,7 +78,6 @@ function openProfile() {
   (account.accounts ? (account.name ? null : $("account-name")) : input)?.focus();
 }
 btn.addEventListener("click", () => { btn.blur(); profileOpen() ? closeProfile() : openProfile(); });
-// a click anywhere else closes it
 document.addEventListener("pointerdown", (e) => {
   if (profileOpen() && !e.target.closest("#profile")) closeProfile();
 });
@@ -120,8 +95,6 @@ picks.addEventListener("click", (e) => {
   store.set("tt.avatar", b.dataset.c);
   renderProfile();
 });
-// An uploaded picture: cut to a square from the middle, shrunk to AVATAR_PX
-// and kept as a small JPEG text (data URL) in localStorage.
 file.addEventListener("change", () => {
   const f = file.files[0];
   file.value = "";
@@ -139,21 +112,19 @@ file.addEventListener("change", () => {
 });
 
 // ---------- account ----------
-// the line under the fields: an error (red) or, with no text, the usual note
 function setMsg(key) {
   msg.classList.toggle("bad", !!key);
   msg.textContent = t(key || "account.note");
 }
 const ERRORS = { 400: "account.rules", 401: "account.wrong", 409: "account.taken", 429: "account.slow" };
 
-// Both buttons submit the form (Enter = log in); the button says which route.
 $("account-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const act = e.submitter?.dataset.act === "register" ? "register" : "login";
   const body = { name: $("account-name").value, password: $("account-pass").value };
   try {
     const res = await sendAuth("POST", "/auth/" + act, body);
-    if (res.status === 200) { location.reload(); return; }   // the new user's data everywhere
+    if (res.status === 200) { location.reload(); return; }
     setMsg(ERRORS[res.status] || "account.fail");
   } catch (err) {
     console.error(err);

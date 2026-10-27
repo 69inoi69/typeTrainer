@@ -1,20 +1,4 @@
-// Interface texts in every language. The interface always uses the language
-// you are practising (switching EN/PL/UK/RU switches both).
-//
-// t("key", {name: value}) returns the text for the current language and fills
-// {name} placeholders. A missing text falls back to English. Elements with
-// data-i18n="key" in index.html are filled by applyI18n().
-//
-// Finger names are in the form the hint sentence needs ("press X with your
-// left pinky" / "naciśnij X lewym małym palcem"), so each language gets
-// grammatically correct sentences without code per language.
-//
-// Layer: bottom. Imports nothing; almost every module imports t().
-// To add an interface text: one key in the en block below, in the tone of
-// docs/UI-TEXT.md (only English is shown for now, see AGENTS.md; the pl, uk and
-// ru blocks fall back to English and get redone when those languages return), then t("key") in the code or
-// data-i18n="key" in index.html. Never write interface text in another file
-// (the one exception is file-check.js).
+// Interface texts.
 
 const I18N = {
   en: {
@@ -28,9 +12,6 @@ const I18N = {
     "settings.background": "Background",
     "settings.statsGroup": "Goals", "settings.goal": "Speed goal, WPM", "settings.daily": "Daily goal, minutes",
     "settings.sample": "type real words",
-    // the tooltips over the names of the settings (settings.js ROWS desc):
-    // what you see or can do with it first, then, only when it matters,
-    // what happens without it
     "settings.liveDesc": "See your WPM, raw speed and accuracy as you type. Hide them if they distract you; your results still appear after each round",
     "settings.size": "Text size", "settings.size_s": "Small", "settings.size_m": "Normal", "settings.size_l": "Large",
     "settings.glide": "Caret movement", "settings.glide_smooth": "Smooth", "settings.glide_jump": "Jump",
@@ -166,14 +147,11 @@ const I18N = {
     "tip.free": "Improve accuracy. Climb the levels",
     "mode.freetype": "Freetype",
     "tip.freetype": "Practise with words, sentences, or your own text",
-    // Freetype's word lists (letters.js, result.js, stats.js)
     "freetype.list": "Word list",
-    // the round bar above the text (modebar.js)
     "bar.round": "Round length",
     "bar.kind": "Round ends after", "bar.length": "Length",
     "freetype.listN": "The {n} most common words",
     "freetype.listTip": "The words in this round came from your selected word list",
-    // Freetype's kinds of text (modebar.js, stats.js, result.js; storage.FreetypeVariants)
     "ft.kind": "Kind of text",
     "ft.long": "long words", "ft.longTip": "Practise words of 6 letters or more from your chosen list. These rounds have separate stats",
     "ft.sentences": "sentences", "ft.sentencesTip": "Practise real sentences from Tatoeba, using words from the 25,000 most common. These rounds have separate stats",
@@ -199,7 +177,6 @@ const I18N = {
     "ls.mixNote": "Shows letters where you pressed the wrong key. A pair appears after it happens three times",
     "ls.lap": "Lap {n} of {all}, goal {w} wpm", "ls.instead": "you press", "ls.times": "{n} times",
     "ls.noMix": "No pairs yet. This list starts tracking from today; older rounds didn't record which key you pressed",
-    // Climb's levels (letters.js, result.js, stats.js, modebar.js)
     "climb.level": "Level",
     "tip.level": "Your next Climb level. There are 10 levels, from the 200 most common words to all 25,000. Words get rarer and longer as you climb, and accuracy decides when you move up",
     "climb.words": "Words come from the {n} most common words",
@@ -217,11 +194,9 @@ const I18N = {
     "climb.weak": "Weak pairs", "climb.weakTip": "The letter pairs you typed slowest or least accurately in your last 20 Climb rounds. Half the words in your next rounds include one of these pairs",
     "tile.level": "Level", "tile.levelNote": "next round",
     "tile.levelTip": "Your next Climb round starts at this level, using the {words} most common words",
-    // what a letter still needs before it counts as mastered (letters.js, result.js)
     "letter.needs": "still needs {list}",
     "need.start": "not typed yet", "need.cleaner": "fewer mistakes", "need.faster": "faster typing", "need.more": "more practice",
     "tip.nextNeeds": "Master {list} to open {l}",
-    // the Learn panel (learnpanel.js): the last round, the forecast or lap, the accuracy streak, today
     "lp.last": "Last round",
     "lp.first": "Finish your first round to see your speed and accuracy",
     "lp.faster": "You're {d} wpm faster than your average over the previous {n} rounds ({avg} wpm)",
@@ -239,7 +214,6 @@ const I18N = {
     "fc.next": "Next letter", "fc.none": "Appears once your recent rounds give enough to make a fair guess", "fc.lap": "Lap done in",
     "fc.rounds": "≈ {n} rounds", "fc.one": "≈ 1 round", "fc.more": "{n}+ rounds",
     "fc.tip": "This estimate uses your last 10 rounds to guess when each letter will reach its goal. The slowest is {l}; the estimate appears only when there's enough data to be useful",
-    // the news of the round that just ended (in the line above the text until you start typing)
     "news.newLetter": "New letter: {l}. It'll show up often for a while, so take your time",
     "news.newLetterTip": "You've mastered the earlier letters, so {l} is now open. Look for it in gold in the next words",
     "news.mastered": "You've mastered {list}",
@@ -252,7 +226,6 @@ const I18N = {
     "news.lapFirst": "You've completed Learn by mastering every letter. Lap {n} starts at {w} wpm",
     "news.lap": "You've mastered every letter at this goal. Lap {n} starts at {w} wpm",
     "news.lapTip": "Each lap raises the goal by 5 wpm. Letters that already meet the goal count as mastered after you type them once; slower letters appear more often until they catch up. Lap {last} is the final lap",
-    // a gold letter in the text (typing.js)
     "tip.fx": "The gold {l} is your focus. These words contain it",
     "nav.stats": "Stats", "nav.settings": "Settings",
     "settings.data": "Progress data", "data.save": "Export", "data.load": "Import",
@@ -482,27 +455,20 @@ const I18N = {
   },
 };
 
-let uiLang = "en";        // the interface language, changed with setUiLang()
-export const i18nVars = {};      // placeholders used by static texts: {f}, {j}, {l}, {r}, {target}
+let uiLang = "en";
+export const i18nVars = {};
 
-// The interface follows the typing language; English if it has no texts.
 export function setUiLang(id) {
   uiLang = I18N[id] ? id : "en";
 }
 
-// The text of key in the interface language, with {name} filled from vars
-// (or i18nVars). Falls back to English, then to the key itself.
 export function t(key, vars = {}) {
   const text = I18N[uiLang]?.[key] ?? I18N.en[key] ?? key;
   return text.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? i18nVars[name] ?? ""));
 }
 
-// Freetype's kind of text in words (storage.FreetypeVariants): "long" ->
-// "long words"; "" (plain words) -> "".
 export const variantLabel = (v) => v ? t("ft." + v) : "";
 
-// Fills every element that has data-i18n="key" (texts are our own, so
-// innerHTML is safe; it lets texts contain <b> and <kbd>).
 export function applyI18n(root = document) {
   root.querySelectorAll("[data-i18n]").forEach((node) => { node.innerHTML = t(node.dataset.i18n); });
 }

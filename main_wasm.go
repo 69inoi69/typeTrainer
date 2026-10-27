@@ -1,23 +1,6 @@
 //go:build js && wasm
 
-// Entry point for the GitHub Pages version.
-//
-// GitHub Pages can only host static files, it cannot run a Go server. So this
-// file compiles the WHOLE app (engine, store, API handlers) to WebAssembly,
-// which runs inside the browser. Instead of listening on a port, it gives
-// JavaScript one function:
-//
-//	goApi(method, path, body) -> {status, body}
-//
-// pages/wasm-shim.js sends every /api/v1/ request of the page (web/api.js,
-// web/tools.js) to that function. The handlers answer exactly as the real server would; httptest
-// is only used as a convenient in-memory request/response pair.
-//
-// Differences from the server, all decided in build_wasm.go: the memory
-// store only (pages/wasm-shim.js copies it to IndexedDB after every round
-// and loads it back on the next visit), no accounts and no guest
-// cookies (there is only the one person in the tab). Anything that needs
-// files on disk or a long-running server cannot work here.
+// Entry point of the GitHub Pages build.
 package main
 
 import (
@@ -43,8 +26,6 @@ func main() {
 		return map[string]any{"status": rec.Code, "body": rec.Body.String()}
 	}))
 
-	// Tell the page we are ready, then keep the Go program alive forever:
-	// if main returned, goApi would stop working.
 	js.Global().Call("dispatchEvent", js.Global().Get("Event").New("go-ready"))
 	select {}
 }

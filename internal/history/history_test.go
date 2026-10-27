@@ -27,12 +27,11 @@ func TestAccuracyStreaksEmpty(t *testing.T) {
 }
 
 func TestAccuracyStreaks(t *testing.T) {
-	// 96 97 100 | 90 | 98 100 100 100 | 95
 	s := rounds(96, 97, 100, 90, 98, 100, 100, 100, 95)
 	got := AccuracyStreaks(s, []float64{95, 97, 100})
 	want := []Streak{
-		{Min: 95, Longest: 5, Current: 5}, // 98 100 100 100 95
-		{Min: 97, Longest: 4, Current: 0}, // 98 100 100 100; the last 95 breaks it
+		{Min: 95, Longest: 5, Current: 5},
+		{Min: 97, Longest: 4, Current: 0},
 		{Min: 100, Longest: 3, Current: 0},
 	}
 	for i := range want {
@@ -43,7 +42,6 @@ func TestAccuracyStreaks(t *testing.T) {
 }
 
 func TestAccuracyStreaksRounding(t *testing.T) {
-	// 94.5 is shown as 95 and counts; 99.4 is shown as 99 and does not reach 100
 	got := AccuracyStreaks(rounds(94.5, 99.4), []float64{95, 100})
 	if got[0].Longest != 2 || got[1].Longest != 0 {
 		t.Fatalf("got %+v", got)
@@ -64,7 +62,7 @@ func TestLetterTimeline(t *testing.T) {
 	s := []storage.Session{
 		{WPM: 20, Accuracy: 90, Unlocked: 2, Keys: keys(
 			engine.Sample{Char: "a", Ms: 400}, engine.Sample{Char: "b", Errors: 1, Ms: 500, Typed: "n"})},
-		{WPM: 25, Accuracy: 100, Unlocked: 0, Keys: nil}, // old history: no keys, no number of letters
+		{WPM: 25, Accuracy: 100, Unlocked: 0, Keys: nil},
 		{WPM: 30, Accuracy: 95, Unlocked: 3, Keys: keys(engine.Sample{Char: "c", Ms: 300})},
 	}
 	got := LetterTimeline(s, order, 2, p, config.Default().Laps)
@@ -78,7 +76,6 @@ func TestLetterTimeline(t *testing.T) {
 	if r0.Letters[0].AvgMs != 400 || r0.Letters[1].AvgMs != 0 {
 		t.Errorf("round 1 times: a %v, b %v (a wrong press is not timed)", r0.Letters[0].AvgMs, r0.Letters[1].AvgMs)
 	}
-	// the round without keys keeps the letters as they were and the number open
 	if got[1].Unlocked != 2 || *got[1].Letters[0] != *r0.Letters[0] {
 		t.Errorf("round 2: %+v", got[1])
 	}
@@ -87,7 +84,6 @@ func TestLetterTimeline(t *testing.T) {
 	}
 }
 
-// many presses of one letter at ms each, clean
 func presses(c string, n int, ms float64) []engine.Sample {
 	out := make([]engine.Sample, n)
 	for i := range out {
@@ -96,13 +92,11 @@ func presses(c string, n int, ms float64) []engine.Sample {
 	return out
 }
 
-// A round of a later lap is judged at that lap's goal, and the new lap
-// takes back every letter's mastery (engine.StartLap), as the trainer does.
 func TestLetterTimelineLaps(t *testing.T) {
 	cfg := config.Default()
 	s := []storage.Session{
-		{Unlocked: 1, Keys: presses("a", 30, 380)},        // 380 ms: mastered at 30 wpm (400 ms)
-		{Unlocked: 1, Lap: 1, Keys: presses("a", 1, 380)}, // lap 1, 35 wpm = 343 ms: too slow now
+		{Unlocked: 1, Keys: presses("a", 30, 380)},
+		{Unlocked: 1, Lap: 1, Keys: presses("a", 1, 380)},
 		{Unlocked: 1, Lap: 1, Keys: presses("a", 40, 300)},
 	}
 	got := LetterTimeline(s, []string{"a"}, 1, cfg.Engine, cfg.Laps)
@@ -115,14 +109,10 @@ func TestLetterTimelineLaps(t *testing.T) {
 	}
 }
 
-// The forecast waits for the slowest letter; a letter without an answer
-// means no answer; no letter waiting means nothing to say.
 func TestNextForecast(t *testing.T) {
 	p := config.Default().Engine
 	fp := config.Default().Forecast
 	order := []string{"a", "b", "c"}
-	// a: mastered; b: 20 ms faster a round, 100 ms to go (5 rounds);
-	// c: 10 ms a round, 100 ms to go (10 rounds)
 	var rounds []Round
 	for i := 0; i < 8; i++ {
 		rounds = append(rounds, Round{Unlocked: 2, Letters: []*LetterState{
@@ -159,7 +149,7 @@ func TestConfusions(t *testing.T) {
 			engine.Sample{Char: "r", Errors: 1, Typed: "t"},
 			engine.Sample{Char: "r", Errors: 2, Typed: "t"},
 			engine.Sample{Char: "e", Errors: 1, Typed: "w"},
-			engine.Sample{Char: "e", Errors: 1}, // old history: no wrong key kept
+			engine.Sample{Char: "e", Errors: 1},
 		)},
 		{Keys: keys(
 			engine.Sample{Char: "r", Errors: 1, Typed: "t"},

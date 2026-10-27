@@ -1,8 +1,4 @@
-// Account routes: sign up, log in, log out, "who am I". Passwords and
-// tokens are handled by internal/auth; the store keeps users and logins.
-// A logged-in browser carries a cookie with a random token; every other
-// browser carries a guest cookie (WithGuest). userOf turns them into the
-// user id that every other route works with.
+// Account routes: sign up, log in, log out, who am I.
 
 package api
 
@@ -22,18 +18,11 @@ import (
 	"typingtrainer/internal/storage"
 )
 
-// The two cookies. Both hold only a random token, never a user id, so
-// a browser cannot claim to be someone else by editing its cookie.
 const (
 	loginCookie = "tt_login"
 	guestCookie = "tt_guest"
 )
 
-// userOf says whose data a request works with: the user of a valid login
-// cookie; without one, the guest of the guest cookie (WithGuest); without
-// that either, storage.LocalUser. An expired or unknown login cookie also
-// means the guest. Only a failing store is an error: then the request must
-// stop, so a logged-in user's data never lands with the guest.
 func (s *Server) userOf(r *http.Request) (string, error) {
 	if !s.cfg.Accounts {
 		return storage.LocalUser, nil
@@ -45,19 +34,11 @@ func (s *Server) userOf(r *http.Request) (string, error) {
 		}
 	}
 	if c, err := r.Cookie(guestCookie); err == nil && c.Value != "" {
-		// the id is a hash of the cookie, so reading the database (or an
-		// export) never gives away the cookie that opens a guest's data
 		return storage.GuestPrefix + auth.HashToken(c.Value), nil
 	}
 	return storage.LocalUser, nil
 }
 
-// WithGuest gives every browser its own guest: a request without a guest
-// cookie gets a new random one, so two visitors without accounts never see
-// each other's progress. It wraps the whole site, so the cookie is already
-// set by the page itself (index.html), before the scripts' first API calls.
-// Off where accounts are off (GitHub Pages: there is only one person, the
-// one in the tab).
 func (s *Server) WithGuest(next http.Handler) http.Handler {
 	if !s.cfg.Accounts {
 		return next
@@ -74,15 +55,12 @@ func (s *Server) WithGuest(next http.Handler) http.Handler {
 				Name: guestCookie, Value: token, Path: "/", MaxAge: int(age.Seconds()),
 				HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: s.isHTTPS(r),
 			})
-			r.AddCookie(&http.Cookie{Name: guestCookie, Value: token}) // this request is that guest too
+			r.AddCookie(&http.Cookie{Name: guestCookie, Value: token})
 		}
 		next.ServeHTTP(w, r)
 	})
 }
 
-// isHTTPS says whether the browser reached us over HTTPS: directly, or
-// through a proxy that ended HTTPS and says so (cfg.BehindProxy).
-// Cookies get Secure then: the browser never sends them over plain HTTP.
 func (s *Server) isHTTPS(r *http.Request) bool {
 	if r.TLS != nil {
 		return true
@@ -90,10 +68,6 @@ func (s *Server) isHTTPS(r *http.Request) bool {
 	return s.cfg.BehindProxy && r.Header.Get("X-Forwarded-Proto") == "https"
 }
 
-// clientIP is the address the limit on login attempts counts by. Behind a
-// proxy every request comes from the proxy, so the real address is the last
-// one in X-Forwarded-For: the one the proxy itself added (earlier ones are
-// written by the client and could be anything).
 func (s *Server) clientIP(r *http.Request) string {
 	if s.cfg.BehindProxy {
 		if f := r.Header.Get("X-Forwarded-For"); f != "" {
@@ -108,8 +82,6 @@ func (s *Server) clientIP(r *http.Request) string {
 	return host
 }
 
-// tooManyAttempts answers 429 with Retry-After (in seconds) and returns
-// true if this IP address used up its login/sign-up attempts.
 func (s *Server) tooManyAttempts(w http.ResponseWriter, ip string) bool {
 	wait := s.attempts.Wait(ip, time.Now())
 	if wait == 0 {
@@ -120,15 +92,11 @@ func (s *Server) tooManyAttempts(w http.ResponseWriter, ip string) bool {
 	return true
 }
 
-// credentials is the body of a sign-up or login request.
 type credentials struct {
 	Name     string `json:"name"`
 	Password string `json:"password"`
 }
 
-// readCredentials reads {name, password} (at most 4 KB) and normalizes the
-// name. It answers the request itself and returns false if accounts are
-// off or the body is broken.
 func (s *Server) readCredentials(w http.ResponseWriter, r *http.Request) (credentials, bool) {
 	var c credentials
 	if !s.cfg.Accounts {
@@ -143,12 +111,6 @@ func (s *Server) readCredentials(w http.ResponseWriter, r *http.Request) (creden
 	return c, true
 }
 
-// POST /api/v1/auth/register {name, password} -> {"name": "sasha"} and a
-// login cookie. 400 if the name or password breaks the rules (auth.ValidName,
-// auth.ValidPassword), 409 if the name is taken, 429 after too many attempts
-// from one IP address (every sign-up counts: each one costs a slow password
-// hash, and nobody needs ten accounts in 15 minutes). A new account starts
-// empty: the guest's progress stays with the guest.
 func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	c, ok := s.readCredentials(w, r)
 	if !ok {
@@ -181,11 +143,6 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	s.logIn(w, r, u)
 }
 
-// POST /api/v1/auth/login {name, password} -> {"name": "sasha"} and a login
-// cookie, or 401 for a wrong name OR password (the answer does not say
-// which, so it cannot be used to find out which names exist). Failed logins
-// count per IP address; after too many the answer is 429 until the window
-// ends, even for the right password. A successful login clears the count.
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	c, ok := s.readCredentials(w, r)
 	if !ok {
@@ -202,8 +159,6 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	hash := u.PasswordHash
 	if err != nil {
-		// unknown name: still check the password against a dummy hash, so
-		// the answer takes as long as for a real name
 		hash = s.dummyHash()
 	}
 	if !auth.CheckPassword(c.Password, hash) || err != nil {
@@ -215,9 +170,6 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	s.logIn(w, r, u)
 }
 
-// logIn makes a new login for the user and sets its cookie: HttpOnly (page
-// scripts cannot read it), SameSite=Lax (other sites cannot send requests
-// with it), Secure when the connection is HTTPS (isHTTPS).
 func (s *Server) logIn(w http.ResponseWriter, r *http.Request, u storage.User) {
 	token, hash, err := auth.NewToken()
 	if err != nil {
@@ -236,9 +188,6 @@ func (s *Server) logIn(w http.ResponseWriter, r *http.Request, u storage.User) {
 	writeJSON(w, http.StatusOK, map[string]string{"name": u.Name})
 }
 
-// POST /api/v1/auth/logout -> {"ok": true}: forgets the login on the server
-// and deletes the cookie. Fine to call when not logged in. The browser goes
-// back to its guest (the guest cookie stays).
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	if c, err := r.Cookie(loginCookie); err == nil && c.Value != "" {
 		if err := s.store.DeleteLogin(auth.HashToken(c.Value)); err != nil {
@@ -252,8 +201,6 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
 
-// GET /api/v1/auth/me -> {"accounts": true, "name": "sasha"}; name is null
-// for a guest; accounts is false where they cannot work (GitHub Pages).
 func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	out := map[string]any{"accounts": s.cfg.Accounts, "name": nil}
 	user, err := s.userOf(r)
@@ -272,15 +219,11 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
-// dummy is the hash made by dummyHash; sync.Once makes sure it is made
-// only once, even when two logins arrive at the same moment.
 var (
 	dummyOnce sync.Once
 	dummy     string
 )
 
-// dummyHash is a password hash nobody's password matches, with the same
-// cost as a real one. Made once, on the first login with an unknown name.
 func (s *Server) dummyHash() string {
 	dummyOnce.Do(func() {
 		dummy, _ = auth.HashPassword("no account has this password", s.cfg.Auth.Iterations)

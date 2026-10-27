@@ -14,15 +14,11 @@ import (
 
 var cfg = config.Default()
 
-// newTypist draws a typist and returns a clone, as tools/sim does
-// (a template has no noise source of its own).
 func newTypist(letters []string, seed int64) *sim.Typist {
 	t := sim.NewTypist(letters, cfg.Sim, rand.New(rand.NewSource(seed)))
 	return t.Clone(rand.New(rand.NewSource(seed + 1)))
 }
 
-// One sample per letter, none for spaces, and the first press is untimed,
-// as in the browser.
 func TestTypist_SamplesSkipSpacesAndFirstPress(t *testing.T) {
 	ty := newTypist([]string{"a", "b"}, 1)
 	s := ty.Type("ab ba")
@@ -39,7 +35,6 @@ func TestTypist_SamplesSkipSpacesAndFirstPress(t *testing.T) {
 	}
 }
 
-// Practice improves a letter until its hidden values meet the goal.
 func TestTypist_PracticeMakesSkilled(t *testing.T) {
 	ty := newTypist([]string{"a"}, 1)
 	if ty.Skilled(cfg.Engine) {
@@ -51,21 +46,18 @@ func TestTypist_PracticeMakesSkilled(t *testing.T) {
 	}
 }
 
-// Skilled needs every letter: one never practised keeps the typist unskilled.
 func TestTypist_NoLetterNoSkill(t *testing.T) {
 	ty := newTypist([]string{"a", "q"}, 1)
-	ty.Type(strings.Repeat("a", 1000)) // q never practised
+	ty.Type(strings.Repeat("a", 1000))
 	if ty.Skilled(cfg.Engine) {
 		t.Fatal("a letter that was never practised cannot meet the goal")
 	}
 }
 
-// BestOfN picks words with the letter that has the worst score.
 func TestBestOfN_PrefersWorstScore(t *testing.T) {
 	words := []string{"ab", "ba", "aa", "bb", "az", "za"}
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
 	s := &sim.BestOfN{Gen: gen, Words: 100, Rng: rand.New(rand.NewSource(2)), P: cfg.Sim}
-	// z is slow and wrong, a and b are fast and clean
 	var samples []engine.Sample
 	for i := 0; i < 30; i++ {
 		samples = append(samples,
@@ -80,13 +72,11 @@ func TestBestOfN_PrefersWorstScore(t *testing.T) {
 			withZ++
 		}
 	}
-	// 2 of 6 words have z; a uniform choice would give about 33 of 100
 	if withZ < 90 {
 		t.Fatalf("best of 20 should almost always pick a word with z, got %d/100", withZ)
 	}
 }
 
-// An untimed press gives no score, and the strategy still fills an exercise.
 func TestBestOfN_UntimedPressesHaveNoScore(t *testing.T) {
 	words := []string{"ab", "ba"}
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
@@ -97,8 +87,6 @@ func TestBestOfN_UntimedPressesHaveNoScore(t *testing.T) {
 	}
 }
 
-// On a small word list all four strategies open every letter and reach the
-// goal, in that order.
 func TestRun_EveryStrategyReachesTheGoal(t *testing.T) {
 	words := strings.Fields(`the then than tan ant net ten hen eat tea ate heat hat that
 		tent neat hate thee teeth near earn tear rate hear art rat tar her here there`)
@@ -121,7 +109,6 @@ func TestRun_EveryStrategyReachesTheGoal(t *testing.T) {
 	}
 }
 
-// Run stops at MaxExercises and reports that the goal was not reached.
 func TestRun_GivesUp(t *testing.T) {
 	words := []string{"ab", "ba", "abba"}
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
@@ -133,7 +120,6 @@ func TestRun_GivesUp(t *testing.T) {
 	}
 }
 
-// fixed returns the same texts in turn: a strategy for testing the variety numbers.
 type fixed struct {
 	texts []string
 	i     int
@@ -147,32 +133,27 @@ func (f *fixed) Text(map[string]engine.KeyStat, int, int) string {
 }
 func (f *fixed) Observe([]engine.Sample) {}
 
-// The variety numbers on hand-made texts, checked against values counted by hand.
 func TestRunOpen_Variety(t *testing.T) {
 	words := []string{"ab", "ba", "bb", "aa"}
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
 	s := &fixed{texts: []string{"ab ab ba bb", "ab aa aa aa"}}
 	ep := cfg.Engine
-	ep.ExerciseWords = 4 // one text = one exercise
+	ep.ExerciseWords = 4
 	v := sim.RunOpen(gen, s, newTypist(gen.Order(), 1), ep, 2)
-	// exercise 1: 3 different of 4 words; exercise 2: 2 of 4
 	if !near(v.Distinct, (0.75+0.5)/2) {
 		t.Errorf("Distinct = %v", v.Distinct)
 	}
-	// exercise 2: only "ab" (1 of 4 words) was in exercise 1
 	if !near(v.Repeated, 0.25) {
 		t.Errorf("Repeated = %v", v.Repeated)
 	}
-	// exercise 1: b is in all 4 words; exercise 2: a is in all 4 words
 	if !near(v.TopShare, 1) {
 		t.Errorf("TopShare = %v", v.TopShare)
 	}
-	if !near(v.Letters, 2) { // every word has 2 letters
+	if !near(v.Letters, 2) {
 		t.Errorf("Letters = %v", v.Letters)
 	}
 }
 
-// Run reports the mean word length over everything typed.
 func TestRun_Letters(t *testing.T) {
 	gen := engine.NewGenerator([]string{"ab", "ba", "abba"}, rand.New(rand.NewSource(1)), cfg.Engine)
 	p := cfg.Sim
@@ -185,7 +166,6 @@ func TestRun_Letters(t *testing.T) {
 	}
 }
 
-// No exercise measured: every variety number is NaN, not a misleading 0.
 func TestRunOpen_NoExercisesIsNaN(t *testing.T) {
 	gen := engine.NewGenerator([]string{"ab"}, rand.New(rand.NewSource(1)), cfg.Engine)
 	v := sim.RunOpen(gen, &fixed{texts: []string{"ab"}}, newTypist(gen.Order(), 1), cfg.Engine, 0)
@@ -194,28 +174,23 @@ func TestRunOpen_NoExercisesIsNaN(t *testing.T) {
 	}
 }
 
-// The stream measures variety in blocks of ExerciseWords words, whatever
-// the size of its portions.
 func TestRunOpen_StreamIsMeasuredInBlocks(t *testing.T) {
 	words := []string{"ab", "ba", "bb", "aa"}
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
-	s := &fixed{texts: []string{"ab ba", "bb aa"}} // 2 words per text
+	s := &fixed{texts: []string{"ab ba", "bb aa"}}
 	ep := cfg.Engine
 	ep.ExerciseWords = 4
 	v := sim.RunOpen(gen, s, newTypist(gen.Order(), 1), ep, 2)
-	// two blocks "ab ba bb aa": all different, and all in the previous block
 	if !near(v.Distinct, 1) || !near(v.Repeated, 1) {
 		t.Fatalf("got %+v", v)
 	}
 }
 
-// A word typed with a mistake comes back in one of the next portions.
 func TestStream_MistypedWordsComeBack(t *testing.T) {
 	words := strings.Fields("the then than tan ant net ten hen eat tea ate heat hat that")
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
 	s := &sim.Stream{Gen: gen, EP: cfg.Engine}
 	first := strings.Fields(s.Text(nil, len(gen.Order()), 0))
-	// every letter of the first word wrong, the rest clean
 	var samples []engine.Sample
 	for i, w := range first {
 		for _, r := range w {
@@ -238,7 +213,6 @@ func TestStream_MistypedWordsComeBack(t *testing.T) {
 	}
 }
 
-// A round of the stream is RoundPortions portions; then a new round starts.
 func TestStream_Rounds(t *testing.T) {
 	words := strings.Fields("the then than tan ant net ten hen eat tea ate heat hat that")
 	gen := engine.NewGenerator(words, rand.New(rand.NewSource(1)), cfg.Engine)
@@ -251,7 +225,6 @@ func TestStream_Rounds(t *testing.T) {
 	}
 }
 
-// An expert meets the goal from the start (RunOpen relies on that).
 func TestNewExpert_StartsNearTheGoal(t *testing.T) {
 	letters := []string{"a", "b", "c", "d", "e"}
 	ty := sim.NewExpert(letters, cfg.Sim, rand.New(rand.NewSource(1))).Clone(rand.New(rand.NewSource(2)))
@@ -262,8 +235,6 @@ func TestNewExpert_StartsNearTheGoal(t *testing.T) {
 
 func near(a, b float64) bool { return math.Abs(a-b) < 1e-9 }
 
-// Summarize: errors in rounds, the share close enough, the hopeful ones,
-// "more than MaxRounds" kept apart; nothing to sum up gives zeros.
 func TestSummarize(t *testing.T) {
 	fp := engine.ForecastParams{Window: 6, MinRounds: 3, MaxRounds: 50}
 	if s := sim.Summarize(nil, fp); s.N != 0 || s.MeanAbs != 0 || s.Shown != 0 {
@@ -271,9 +242,9 @@ func TestSummarize(t *testing.T) {
 	}
 	runs := []sim.ForecastRun{{
 		Checks: []sim.ForecastCheck{
-			{Said: 3, Actual: 3},   // right
-			{Said: 2, Actual: 5},   // 3 early: too hopeful, not within max(2, 1.25)
-			{Said: 14, Actual: 10}, // 4 late: more than max(2, 2.5)
+			{Said: 3, Actual: 3},
+			{Said: 2, Actual: 5},
+			{Said: 14, Actual: 10},
 			{Said: 51, Actual: 60, More: true},
 		},
 		Rounds: 10, Answered: 4,
@@ -287,11 +258,9 @@ func TestSummarize(t *testing.T) {
 	}
 }
 
-// Forecasts on a real run: every check has a forecast of at least 1 round
-// and an actual wait of at least 1, and some rounds had an answer.
 func TestForecasts(t *testing.T) {
 	ep := cfg.Engine
-	list, err := os.ReadFile("../../data/langs/en/words.txt") // enough letters to open many
+	list, err := os.ReadFile("../../data/langs/en/words.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

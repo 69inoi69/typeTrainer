@@ -1,7 +1,6 @@
 //go:build !(js && wasm)
 
-// Entry point for running on your computer: starts a normal web server.
-// (The GitHub Pages version starts in main_wasm.go instead.)
+// Entry point of the normal web server.
 package main
 
 import (
@@ -9,8 +8,6 @@ import (
 	"net/http"
 )
 
-// main builds the app (setup.go) and serves it at cfg.Addr until the
-// program is stopped.
 func main() {
 	handler, cfg, err := newApp()
 	if err != nil {

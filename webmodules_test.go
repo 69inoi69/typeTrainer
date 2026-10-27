@@ -1,17 +1,6 @@
 package main
 
-// The frontend in web/ is made of native ES modules. This test checks the
-// import rule written at the top of web/state.js, so it cannot break
-// without anyone noticing:
-//
-//	bottom: state.js, i18n.js and feel.js import nothing, fx.js only
-//	        i18n.js, api.js only state.js
-//	middle: everything else imports the bottom and each other, no cycles
-//	top:    app.js and input.js; nothing imports them (app.js loads input.js)
-//
-// To add a module: give it a layer in the comment at the top of
-// web/state.js; a new bottom-layer module also needs its row in
-// TestWebModules_BottomLayer below.
+// Checks the import layers of the web/ modules.
 
 import (
 	"io/fs"
@@ -21,10 +10,8 @@ import (
 	"testing"
 )
 
-// `import { a } from "./x.js";` and `import "./x.js";`
 var importRe = regexp.MustCompile(`(?:from|import)\s+"\./([a-z0-9_-]+\.js)"`)
 
-// webImports reads every module in web/ and returns file -> files it imports.
 func webImports(t *testing.T) map[string][]string {
 	t.Helper()
 	entries, err := fs.ReadDir(files, "web")
@@ -34,7 +21,7 @@ func webImports(t *testing.T) map[string][]string {
 	graph := map[string][]string{}
 	for _, e := range entries {
 		name := e.Name()
-		if !strings.HasSuffix(name, ".js") || name == "file-check.js" { // file-check.js is a plain script
+		if !strings.HasSuffix(name, ".js") || name == "file-check.js" {
 			continue
 		}
 		src, err := fs.ReadFile(files, "web/"+name)
@@ -49,7 +36,6 @@ func webImports(t *testing.T) map[string][]string {
 	return graph
 }
 
-// Every import names a module that exists in web/ (catches typos and renames).
 func TestWebModules_ImportsExist(t *testing.T) {
 	graph := webImports(t)
 	for file, imports := range graph {
@@ -61,7 +47,6 @@ func TestWebModules_ImportsExist(t *testing.T) {
 	}
 }
 
-// The bottom-layer modules import only what the rule allows them.
 func TestWebModules_BottomLayer(t *testing.T) {
 	graph := webImports(t)
 	allowed := map[string][]string{
@@ -80,7 +65,6 @@ func TestWebModules_BottomLayer(t *testing.T) {
 	}
 }
 
-// Nothing imports app.js, and only app.js imports input.js.
 func TestWebModules_TopLayer(t *testing.T) {
 	graph := webImports(t)
 	for file, imports := range graph {
@@ -92,12 +76,8 @@ func TestWebModules_TopLayer(t *testing.T) {
 	}
 }
 
-// No module imports itself through a chain of other modules: imports
-// always go one way, in every layer.
 func TestWebModules_NoCycles(t *testing.T) {
 	graph := webImports(t)
-	// depth-first search; a module met again while it is still on the path
-	// closes a cycle
 	const (
 		unseen = iota
 		onPath

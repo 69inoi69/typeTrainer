@@ -115,8 +115,8 @@ to apply with judgment; the rules in this file win where they differ.
   or the Web Animations API (`element.animate`), never JS timers. Typing
   latency is the product: measure it after touching this path (rule 4 of
   "Current phase").
-- The frontend is native ES modules with a three-layer import rule (top of
-  `web/state.js`, checked by `webmodules_test.go`): imports only go down, no
+- The frontend is native ES modules with a three-layer import rule
+  (`docs/ARCHITECTURE.md`, checked by `webmodules_test.go`): imports only go down, no
   cycles. State shared by several modules lives in the object `S`.
 - Every API route except `/languages` and `/auth/*` takes `?lang=`; every
   `Store` method takes the user id and the language id. Each user has their
@@ -145,8 +145,10 @@ to apply with judgment; the rules in this file win where they differ.
   and WebAssembly on GitHub Pages (`main_wasm.go`). Shared setup goes in
   `setup.go`. Do not add anything that only works with a real server (files on
   disk, background goroutines tied to HTTP) without telling me.
-- Comments follow `docs/COMMENTING.md`: why, not what; every file says what
-  it is for and how it connects; extension points say "To add ...".
+- Comments follow `docs/COMMENTING.md`. For now the code carries only
+  orientation: one line at the top of a file saying what it is, and section
+  dividers. I write the other comments myself, file by file; do not add
+  any beyond these.
 
 Details: `docs/ARCHITECTURE.md`.
 

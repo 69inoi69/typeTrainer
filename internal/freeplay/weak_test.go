@@ -6,8 +6,6 @@ import (
 	"testing"
 )
 
-// keysOf types text at ms per press, with the presses at slow typed at
-// slowMs instead and the presses at bad typed with one mistake.
 func keysOf(text string, ms, slowMs float64, slow, bad map[int]bool) []Key {
 	var out []Key
 	for i, r := range []rune(text) {
@@ -23,8 +21,6 @@ func keysOf(text string, ms, slowMs float64, slow, bad map[int]bool) []Key {
 	return out
 }
 
-// slowAt marks the second letter of every pair in text: those presses are
-// the movement into it.
 func slowAt(text, pair string) map[int]bool {
 	at := map[int]bool{}
 	for i := 0; ; {
@@ -37,7 +33,6 @@ func slowAt(text, pair string) map[int]bool {
 	}
 }
 
-// No rounds, or rounds with no letter pairs: no weak pairs.
 func TestWeakPairs_NoData(t *testing.T) {
 	if got := WeakPairs(nil, testParams); got != nil {
 		t.Fatalf("no rounds: %v", got)
@@ -47,7 +42,6 @@ func TestWeakPairs_NoData(t *testing.T) {
 	}
 }
 
-// An even typist has nothing weak: every pair costs the mean.
 func TestWeakPairs_EvenTypistHasNone(t *testing.T) {
 	text := strings.Repeat("the quick brown fox jumps ", 20)
 	if got := WeakPairs([][]Key{keysOf(text, 150, 0, nil, nil)}, testParams); len(got) != 0 {
@@ -55,35 +49,31 @@ func TestWeakPairs_EvenTypistHasNone(t *testing.T) {
 	}
 }
 
-// The slow pair comes first; a pair pressed too few times never counts.
 func TestWeakPairs_SlowPairFirst(t *testing.T) {
-	text := strings.Repeat("the quick brown fox jumps ", 20) // "ck" 20 times
+	text := strings.Repeat("the quick brown fox jumps ", 20)
 	round := keysOf(text, 150, 400, slowAt(text, "ck"), nil)
 	got := WeakPairs([][]Key{round}, testParams)
 	if len(got) == 0 || got[0].Pair != "ck" || got[0].Count != 20 || got[0].Cost != 400 {
 		t.Fatalf("slow ck: %v", got)
 	}
-	few := strings.Repeat("the quick brown fox ", 2) + strings.Repeat("the brown fox ", 20) // "ck" twice
+	few := strings.Repeat("the quick brown fox ", 2) + strings.Repeat("the brown fox ", 20)
 	if got := WeakPairs([][]Key{keysOf(few, 150, 400, slowAt(few, "ck"), nil)}, testParams); len(got) != 0 {
 		t.Fatalf("a pair seen twice is noise: %v", got)
 	}
 }
 
-// A mistake costs WeakMissMs; a clean press with no time does not count.
 func TestWeakPairs_MistakesAndUntimed(t *testing.T) {
 	text := strings.Repeat("the brown fox jumps ", 20)
-	round := keysOf(text, 150, 0, nil, slowAt(text, "ox")) // "ox": a mistake every time
+	round := keysOf(text, 150, 0, nil, slowAt(text, "ox"))
 	if got := WeakPairs([][]Key{round}, testParams); len(got) == 0 || got[0].Pair != "ox" || got[0].Cost != testParams.WeakMissMs {
 		t.Fatalf("inaccurate ox: %v", got)
 	}
-	untimed := keysOf(text, 150, 0, slowAt(text, "ox"), nil) // "ox" clean, never timed
+	untimed := keysOf(text, 150, 0, slowAt(text, "ox"), nil)
 	if got := WeakPairs([][]Key{untimed}, testParams); len(got) != 0 {
 		t.Fatalf("untimed presses must not count: %v", got)
 	}
 }
 
-// A capital, a space or a mark breaks a pair: "Th" is Shift's time, "x," is
-// not a movement between letters.
 func TestWeakPairs_OnlyLowerCaseLetters(t *testing.T) {
 	text := strings.Repeat("The fox, ", 30)
 	slow := map[int]bool{}
@@ -97,7 +87,6 @@ func TestWeakPairs_OnlyLowerCaseLetters(t *testing.T) {
 	}
 }
 
-// At most WeakPairs pairs, the most costly first, over several rounds.
 func TestWeakPairs_TopFew(t *testing.T) {
 	text := strings.Repeat("ab cd ef gh ij kl ", 20)
 	ms := map[string]float64{"ab": 300, "cd": 500, "ef": 400, "gh": 350}
@@ -115,8 +104,6 @@ func TestWeakPairs_TopFew(t *testing.T) {
 	}
 }
 
-// Portion: about WeakShare of the words carry a weak pair (plus the words
-// that carry one by chance); with too few such words the draw stays plain.
 func TestPortion_WeakShare(t *testing.T) {
 	words := make([]string, 200)
 	for i := range words {
@@ -141,7 +128,7 @@ func TestPortion_WeakShare(t *testing.T) {
 	if share := float64(with(got)) / 4000; share < p.WeakShare || share > p.WeakShare+0.1 {
 		t.Fatalf("share of words with the weak pair: %.2f, want about %.2f", share, p.WeakShare)
 	}
-	p.WeakMinWords = 100 // only 15 words have it: too few, the draw stays plain
+	p.WeakMinWords = 100
 	got = pk.Portion(nil, 4000, 1, []string{"xq"}, p)
 	if share := float64(with(got)) / 4000; share > 0.15 {
 		t.Fatalf("too few words with the pair: share %.2f, want the plain ~0.08", share)

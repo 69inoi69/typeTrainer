@@ -5,7 +5,6 @@ import (
 	"testing"
 )
 
-// The same number of keys every second gives 100.
 func TestConsistencyEvenPaceIs100(t *testing.T) {
 	v, ok := Consistency([]int{5, 5, 5, 5, 5}, 5)
 	if !ok || !near(v, 100) {
@@ -13,23 +12,19 @@ func TestConsistencyEvenPaceIs100(t *testing.T) {
 	}
 }
 
-// A case computed by hand matches the formula.
 func TestConsistencyKnownValue(t *testing.T) {
-	// mean 4, population sd 2 -> cv = 0.5
 	v, ok := Consistency([]int{2, 6, 2, 6}, 4)
 	cv := 0.5
 	want := 100 * (1 - math.Tanh(cv+math.Pow(cv, 3)/3+math.Pow(cv, 5)/5))
 	if !ok || !near(v, want) {
 		t.Fatalf("got %v, want %v", v, want)
 	}
-	if v < 50 || v > 55 { // about 52.6
+	if v < 50 || v > 55 {
 		t.Fatalf("cv 0.5 should give about 52.6, got %v", v)
 	}
 }
 
-// Keys per second or WPM per second give the same value (cv has no unit).
 func TestConsistencyScaleDoesNotMatter(t *testing.T) {
-	// keys per second or raw WPM per second (x12): the same consistency
 	a, _ := Consistency([]int{3, 5, 4, 6, 2}, 5)
 	b, _ := Consistency([]int{36, 60, 48, 72, 24}, 5)
 	if !near(a, b) {
@@ -37,7 +32,6 @@ func TestConsistencyScaleDoesNotMatter(t *testing.T) {
 	}
 }
 
-// Seconds without keys count, so a pause lowers consistency.
 func TestConsistencyPausesLowerIt(t *testing.T) {
 	even, _ := Consistency([]int{5, 5, 5, 5, 5, 5}, 5)
 	pause, _ := Consistency([]int{5, 5, 0, 0, 5, 5}, 5)
@@ -46,7 +40,6 @@ func TestConsistencyPausesLowerIt(t *testing.T) {
 	}
 }
 
-// Too short, empty or all-zero rounds give no value (ok = false).
 func TestConsistencyNotEnoughData(t *testing.T) {
 	cases := map[string][]int{
 		"nil":       nil,
@@ -61,9 +54,8 @@ func TestConsistencyNotEnoughData(t *testing.T) {
 	}
 }
 
-// Even a very uneven round stays within 0..100.
 func TestConsistencyStaysInRange(t *testing.T) {
-	v, ok := Consistency([]int{40, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 5) // cv = 3
+	v, ok := Consistency([]int{40, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 5)
 	if !ok || v < 0 || v > 100 {
 		t.Fatalf("got %v, %v; want 0..100", v, ok)
 	}

@@ -6,13 +6,11 @@ import (
 	"testing"
 )
 
-// newRng is a seeded random source, so every test run is the same.
 func newRng(seed int64) *rand.Rand { return rand.New(rand.NewSource(seed)) }
 
-// A new user's portion: PortionWords words of open letters, an open focus.
 func TestPortion_NewUserOpenLettersOnly(t *testing.T) {
 	g := newTestGen(2)
-	por := g.Portion(nil, 0, 0, nil, nil, testParams) // no stats, nothing stored yet
+	por := g.Portion(nil, 0, 0, nil, nil, testParams)
 	if len(por.Words) != testParams.PortionWords {
 		t.Fatalf("got %d words, want %d", len(por.Words), testParams.PortionWords)
 	}
@@ -32,14 +30,13 @@ func TestPortion_NewUserOpenLettersOnly(t *testing.T) {
 	}
 }
 
-// One focus letter per portion: every word trains it.
 func TestPortion_EveryWordHasTheFocus(t *testing.T) {
 	g := newTestGen(5)
 	all := len(g.Order())
 	for i := 0; i < 100; i++ {
 		por := g.Portion(nil, all, 0, nil, nil, testParams)
 		if len(g.newPool(nil, all, 0, testParams).byLetter[por.Focus]) < 3 {
-			continue // a letter with very few words may borrow others
+			continue
 		}
 		for _, w := range por.Words {
 			if !strings.Contains(w, por.Focus) {
@@ -49,14 +46,13 @@ func TestPortion_EveryWordHasTheFocus(t *testing.T) {
 	}
 }
 
-// No word twice in a row across portions, even when the last word is a retry.
 func TestPortion_NoWordTwiceInARow(t *testing.T) {
 	g := newTestGen(3)
 	var stream []string
 	for i := 0; i < 100; i++ {
 		var retry []string
 		if len(stream) > 0 {
-			retry = stream[len(stream)-1:] // the very last word comes back
+			retry = stream[len(stream)-1:]
 		}
 		stream = append(stream, g.Portion(nil, 0, 0, stream, retry, testParams).Words...)
 	}
@@ -67,12 +63,10 @@ func TestPortion_NoWordTwiceInARow(t *testing.T) {
 	}
 }
 
-// Up to RetryWords mistyped words come back, but never one with a locked
-// letter or one that is not in the list.
 func TestPortion_RetryWordsComeBack(t *testing.T) {
 	g := newTestGen(6)
 	all := len(g.Order())
-	retry := []string{"water", "people", "sentence"} // three, but RetryWords = 2
+	retry := []string{"water", "people", "sentence"}
 	por := g.Portion(nil, all, 0, nil, retry, testParams)
 	got := 0
 	for _, w := range por.Words {
@@ -86,8 +80,7 @@ func TestPortion_RetryWordsComeBack(t *testing.T) {
 	if got != 2 {
 		t.Fatalf("want water and people in %v", por.Words)
 	}
-	// a word with a locked letter (or not in the list) never comes back
-	por = g.Portion(nil, 0, 0, nil, []string{"zzz", "water"}, testParams) // w is locked at the start
+	por = g.Portion(nil, 0, 0, nil, []string{"zzz", "water"}, testParams)
 	for _, w := range por.Words {
 		if w == "zzz" || w == "water" {
 			t.Fatalf("not allowed word came back: %v", por.Words)
@@ -95,11 +88,10 @@ func TestPortion_RetryWordsComeBack(t *testing.T) {
 	}
 }
 
-// RepeatPenalty looks only at the last RecentWords words.
 func TestPortion_RecentWindow(t *testing.T) {
 	p := testParams
 	p.PortionWords = 1
-	p.MaxRepeats = 0 // only the penalty: with the cap the filler would ban ab and ba
+	p.MaxRepeats = 0
 	words := strings.Fields("ab ba aab")
 	count := func(recent []string) int {
 		hit := 0
@@ -111,14 +103,13 @@ func TestPortion_RecentWindow(t *testing.T) {
 		}
 		return hit
 	}
-	used := []string{"aab", "aab", "aab", "ab"}                                // aab used 3 times recently
-	old := append(append([]string{}, used...), filler("ba", p.RecentWords)...) // the same, but long ago
+	used := []string{"aab", "aab", "aab", "ab"}
+	old := append(append([]string{}, used...), filler("ba", p.RecentWords)...)
 	if a, b := count(used), count(old); a >= b {
 		t.Fatalf("recent uses should lower the chance: %d (recent) vs %d (old)", a, b)
 	}
 }
 
-// filler: n words, w and "ab" by turns.
 func filler(w string, n int) []string {
 	out := make([]string, n)
 	for i := range out {
@@ -131,14 +122,10 @@ func filler(w string, n int) []string {
 	return out
 }
 
-// MaxRepeats: in a whole round no word comes more than twice, even for a
-// focus letter with only two words (here c: "cab" and "abc"); the slots
-// those two cannot fill take other open words.
 func TestPortion_MaxRepeatsInARound(t *testing.T) {
 	p := testParams
 	p.StartLetters, p.MinWords = 3, 1
-	words := append(abWords()[2:62], "cab", "abc") // a and b words of 2..5 letters
-	// c is the only letter not mastered: it is the focus of every portion
+	words := append(abWords()[2:62], "cab", "abc")
 	good := KeyStat{Count: 100, ErrEMA: 0.01, TimeEMA: 300, TimedCount: 100, Held: true}
 	stats := map[string]KeyStat{"a": good, "b": good, "c": {}}
 	for seed := int64(0); seed < 50; seed++ {
@@ -164,7 +151,6 @@ func TestPortion_MaxRepeatsInARound(t *testing.T) {
 	}
 }
 
-// Words shorter than MinWordLetters never appear and take no rank; 0 keeps them.
 func TestNewGenerator_MinWordLetters(t *testing.T) {
 	words := strings.Fields("a i as is sa si ass")
 	p := testParams
@@ -184,7 +170,6 @@ func TestNewGenerator_MinWordLetters(t *testing.T) {
 	}
 }
 
-// No words per portion, no dictionary, or one word: no panic, no endless loop.
 func TestPortion_ZeroAndEmpty(t *testing.T) {
 	p := testParams
 	p.PortionWords = 0
@@ -192,11 +177,10 @@ func TestPortion_ZeroAndEmpty(t *testing.T) {
 		t.Fatalf("PortionWords = 0: got %v", por.Words)
 	}
 	p.StartLetters, p.MinWords = 1, 0
-	g := NewGenerator(nil, newRng(1), p) // no dictionary at all
+	g := NewGenerator(nil, newRng(1), p)
 	if por := g.Portion(nil, 0, 0, nil, nil, p); len(por.Words) != 0 {
 		t.Fatalf("no words: got %v", por.Words)
 	}
-	// a one-word dictionary: a repeat is the only choice, and must not hang
 	g = NewGenerator([]string{"aaa"}, newRng(1), p)
 	if por := g.Portion(nil, 1, 0, []string{"aaa"}, []string{"aaa"}, testParams); len(por.Words) != testParams.PortionWords {
 		t.Fatalf("one word: got %v", por.Words)

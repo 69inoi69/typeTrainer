@@ -2,14 +2,7 @@
 
 package storage
 
-// PostgresStore keeps everything in a PostgreSQL database, so nothing is
-// lost when the server stops. It implements the same Store interface as
-// MemoryStore, and the same tests run against both (store_test.go).
-//
-// The code uses only the standard database/sql package. The one
-// third-party module of the project, the pgx driver, is only registered
-// below (import _ ".../stdlib"): it teaches database/sql to talk to
-// PostgreSQL. Not in the WebAssembly build (no database in a browser).
+// The PostgreSQL Store.
 
 import (
 	"database/sql"
@@ -23,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib" // registers the "pgx" driver for database/sql
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"typingtrainer/internal/engine"
 )
@@ -31,17 +24,10 @@ import (
 //go:embed migrations/*.sql
 var migrations embed.FS
 
-// PostgresStore is the Store kept in PostgreSQL (see the top of this file).
-// Its methods do what the Store interface (store.go) says; only the ones
-// with something surprising have their own comment. A *sql.DB is safe for
-// many requests at once: it keeps a pool of connections by itself.
 type PostgresStore struct {
 	db *sql.DB
 }
 
-// OpenPostgres connects to the database at url, for example
-// postgres://user:password@localhost:5432/typetrainer, checks the
-// connection and brings the tables up to date (migrate).
 func OpenPostgres(url string) (*PostgresStore, error) {
 	db, err := sql.Open("pgx", url)
 	if err != nil {
@@ -58,15 +44,8 @@ func OpenPostgres(url string) (*PostgresStore, error) {
 	return &PostgresStore{db: db}, nil
 }
 
-// Close ends the connections (used by the tests).
 func (p *PostgresStore) Close() error { return p.db.Close() }
 
-// migrate applies the files in migrations/ that this database has not seen
-// yet, in the order of their numbers, each in its own transaction. The
-// table schema_migrations remembers which ones ran. So a new version of the
-// app updates an old database by itself, and running it twice changes
-// nothing. This is also why an old migration file must never be edited:
-// a database that already ran it would never see the change.
 func migrate(db *sql.DB) error {
 	if _, err := db.Exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
 		version INTEGER PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())`); err != nil {
@@ -76,7 +55,7 @@ func migrate(db *sql.DB) error {
 	if err != nil {
 		return err
 	}
-	sort.Strings(names) // 001_..., 002_...: the number decides the order
+	sort.Strings(names)
 	for _, name := range names {
 		version, err := strconv.Atoi(strings.SplitN(strings.TrimPrefix(name, "migrations/"), "_", 2)[0])
 		if err != nil {
@@ -112,7 +91,6 @@ func migrate(db *sql.DB) error {
 	return nil
 }
 
-// inTx runs f in a transaction: everything in it is saved, or nothing.
 func (p *PostgresStore) inTx(f func(tx *sql.Tx) error) error {
 	tx, err := p.db.Begin()
 	if err != nil {
@@ -124,8 +102,6 @@ func (p *PostgresStore) inTx(f func(tx *sql.Tx) error) error {
 	}
 	return tx.Commit()
 }
-
-// ---------- letter statistics ----------
 
 func (p *PostgresStore) KeyStats(user, lang string) (map[string]engine.KeyStat, error) {
 	rows, err := p.db.Query(`SELECT ch, count, mistakes, err_ema, time_ema, timed_count, held
@@ -146,7 +122,6 @@ func (p *PostgresStore) KeyStats(user, lang string) (map[string]engine.KeyStat, 
 	return out, rows.Err()
 }
 
-// SaveKeyStats replaces the whole set for the language, like MemoryStore.
 func (p *PostgresStore) SaveKeyStats(user, lang string, stats map[string]engine.KeyStat) error {
 	return p.inTx(func(tx *sql.Tx) error { return saveKeyStats(tx, user, lang, stats) })
 }
@@ -166,7 +141,6 @@ func saveKeyStats(tx *sql.Tx, user, lang string, stats map[string]engine.KeyStat
 	return nil
 }
 
-// SaveLearned: one transaction, so a failure anywhere stores nothing.
 func (p *PostgresStore) SaveLearned(user, lang string, l Learned) error {
 	return p.inTx(func(tx *sql.Tx) error {
 		if l.Stats != nil {
@@ -186,18 +160,15 @@ func (p *PostgresStore) SaveLearned(user, lang string, l Learned) error {
 	})
 }
 
-// ---------- progress: unlocked letters, the lap and the study group ----------
-
 func (p *PostgresStore) Unlocked(user, lang string) (int, error) {
 	var n int
 	err := p.db.QueryRow(`SELECT unlocked FROM progress WHERE user_id = $1 AND lang = $2`, user, lang).Scan(&n)
 	if errors.Is(err, sql.ErrNoRows) {
-		return 0, nil // a new user or language
+		return 0, nil
 	}
 	return n, err
 }
 
-// SetUnlocked: "upsert", insert the row or update it if it exists.
 func (p *PostgresStore) SetUnlocked(user, lang string, n int) error {
 	_, err := p.db.Exec(`INSERT INTO progress (user_id, lang, unlocked) VALUES ($1, $2, $3)
 		ON CONFLICT (user_id, lang) DO UPDATE SET unlocked = EXCLUDED.unlocked`, user, lang, n)
@@ -234,25 +205,18 @@ func (p *PostgresStore) SetGroup(user, lang, group string) error {
 	return err
 }
 
-// ---------- history (learning and free practice) ----------
-
-// Every mode shares the sessions table; the mode column keeps the
-// histories apart (every query below filters on it): modeLearning,
-// ModeClimb or FreetypeMode(n, variant) (migrations 007 and 009 allow them).
 const modeLearning = "learning"
 
-// execer: the database or a transaction (SaveLearned).
 type execer interface {
 	Exec(query string, args ...any) (sql.Result, error)
 }
 
-// addSession stores one round in the history of one mode.
 func (p *PostgresStore) addSession(user, lang, mode string, s Session) error {
 	return addSession(p.db, user, lang, mode, s)
 }
 
 func addSession(db execer, user, lang, mode string, s Session) error {
-	var keys []byte // nil -> NULL: no raw record
+	var keys []byte
 	if len(s.Keys) > 0 {
 		var err error
 		if keys, err = json.Marshal(s.Keys); err != nil {
@@ -260,7 +224,6 @@ func addSession(db execer, user, lang, mode string, s Session) error {
 		}
 	}
 	s = s.WithLength()
-	// a round id seen before (sessions_round_id, migration 011) inserts nothing
 	_, err := db.Exec(`INSERT INTO sessions
 		(user_id, lang, mode, wpm, accuracy, chars, consistency, unlocked, keys, finished_at, length, study_group, device, level, lap, round_id)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NULLIF($16, ''))
@@ -279,9 +242,6 @@ func (p *PostgresStore) HasRound(user, lang, round string) (bool, error) {
 	return found, err
 }
 
-// recentSessions reads up to limit rounds of one mode, newest first (by id,
-// the order they were stored in). In this query and the two below, an empty
-// length means "every length".
 func (p *PostgresStore) recentSessions(user, lang, mode, length string, limit int) ([]Session, error) {
 	rows, err := p.db.Query(`SELECT wpm, accuracy, chars, consistency, unlocked, keys, finished_at, length, study_group, device, level, lap
 		FROM sessions WHERE user_id = $1 AND lang = $2 AND mode = $3 AND ($4 = '' OR length = $4)
@@ -311,8 +271,6 @@ func (p *PostgresStore) recentSessions(user, lang, mode, length string, limit in
 	return out, rows.Err()
 }
 
-// bestRounds: one row per length, the fastest (DISTINCT ON keeps the first
-// row of each length in this order; of equal WPM the earliest stored).
 func (p *PostgresStore) bestRounds(user, lang, mode string) (map[string]Session, error) {
 	rows, err := p.db.Query(`SELECT DISTINCT ON (length) wpm, accuracy, chars, consistency, unlocked, finished_at, length, study_group, device, level, lap
 		FROM sessions WHERE user_id = $1 AND lang = $2 AND mode = $3
@@ -385,9 +343,6 @@ func (p *PostgresStore) LettersTyped(user, lang string, unlocked int) (int, erro
 	return n, err
 }
 
-// PracticeDays groups the rounds of both modes by the user's local date:
-// finished_at in UTC plus the offset, cut to the day. The seconds use the
-// same rule as RoundSeconds.
 func (p *PostgresStore) PracticeDays(user, lang string, tz time.Duration) ([]Day, error) {
 	rows, err := p.db.Query(`SELECT to_char((finished_at AT TIME ZONE 'UTC') + make_interval(secs => $3), 'YYYY-MM-DD') AS d,
 		COUNT(*), COALESCE(SUM(CASE WHEN wpm > 0 THEN chars * accuracy / 100 / 5 / wpm * 60 ELSE 0 END), 0), COALESCE(SUM(chars), 0)
@@ -424,9 +379,6 @@ func (p *PostgresStore) FreeplaySessionLengths(user, lang, mode string) ([]strin
 	return p.sessionLengths(user, lang, mode)
 }
 
-// Reset deletes the user's language from all three tables in one transaction.
-// The table names are fixed strings, never user input. Accounts and logins
-// are not per language, so they stay.
 func (p *PostgresStore) Reset(user, lang string) error {
 	return p.inTx(func(tx *sql.Tx) error {
 		for _, table := range []string{"progress", "key_stats", "sessions"} {
@@ -438,13 +390,8 @@ func (p *PostgresStore) Reset(user, lang string) error {
 	})
 }
 
-// ---------- accounts ----------
-
-// userID turns the table's number into the id the rest of the app uses.
 func userID(n int64) string { return "u" + strconv.FormatInt(n, 10) }
 
-// CreateUser: ON CONFLICT DO NOTHING inserts no row for a taken name, so
-// RETURNING gives nothing and Scan reports sql.ErrNoRows.
 func (p *PostgresStore) CreateUser(name, passwordHash string, now time.Time) (User, error) {
 	var n int64
 	err := p.db.QueryRow(`INSERT INTO users (name, password_hash, created_at) VALUES ($1, $2, $3)
@@ -458,9 +405,6 @@ func (p *PostgresStore) CreateUser(name, passwordHash string, now time.Time) (Us
 	return User{ID: userID(n), Name: name, PasswordHash: passwordHash, CreatedAt: now}, nil
 }
 
-// user reads one account. where is always a fixed string from this file,
-// never user input, so building the query with + is safe; the value itself
-// goes in as $1.
 func (p *PostgresStore) user(where string, arg any) (User, error) {
 	var u User
 	var n int64
@@ -477,8 +421,6 @@ func (p *PostgresStore) UserByName(name string) (User, error) {
 	return p.user("name = $1", name)
 }
 
-// UserByID: a guest ("local", "g...") or anything else that is not
-// "u<number>" is no account.
 func (p *PostgresStore) UserByID(id string) (User, error) {
 	n, err := strconv.ParseInt(strings.TrimPrefix(id, "u"), 10, 64)
 	if err != nil || !strings.HasPrefix(id, "u") {
@@ -493,7 +435,6 @@ func (p *PostgresStore) AddLogin(tokenHash, userID string, expires time.Time) er
 	return err
 }
 
-// LoginUser forgets an expired login when it sees one, like MemoryStore.
 func (p *PostgresStore) LoginUser(tokenHash string, now time.Time) (string, error) {
 	var id string
 	var expires time.Time

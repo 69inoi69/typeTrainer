@@ -8,8 +8,6 @@ import (
 	"testing"
 )
 
-// testParams mirrors the defaults in internal/config, written out here so
-// that changing the config does not silently change what the tests check.
 var testParams = Params{
 	PortionWords: 6, AheadPortions: 2, RoundPortions: 5, RecentWords: 20, RepeatPenalty: 0.3,
 	Levels: []int{200, 500, 1000, 2000, 3000, 5000, 7500, 10000, 15000, 25000}, LevelStart: 1,
@@ -18,17 +16,13 @@ var testParams = Params{
 	LongMin: 6, TextMarks: ".,?!;:'-", SentenceTries: 20,
 }
 
-// plain: the defaults (kept as a name: the tests below read "a plain
-// draw" where they need nothing special).
 func plain() Params { return testParams }
 
-// With no recent words every word allowed is equally likely: the counts of a
-// large sample stay close to the mean.
 func TestPortion_Uniform(t *testing.T) {
 	words := []string{"a", "bb", "ccc", "dddd", "eeeee", "the", "zebra", "quixotic"}
 	pk := NewPicker(words, rand.New(rand.NewSource(1)))
 	p := plain()
-	p.RecentWords = 0 // no repeat penalty: pure uniform draw
+	p.RecentWords = 0
 	count := map[string]int{}
 	const n = 80000
 	for _, w := range pk.Portion(nil, n, 1, nil, p) {
@@ -42,8 +36,6 @@ func TestPortion_Uniform(t *testing.T) {
 	}
 }
 
-// Level n opens the Levels[n-1] most common words; a level out of range
-// counts as the nearest one, and a short list caps every level.
 func TestMaxRank(t *testing.T) {
 	words := make([]string, 1200)
 	for i := range words {
@@ -62,7 +54,6 @@ func TestMaxRank(t *testing.T) {
 	if got := NewPicker(nil, rand.New(rand.NewSource(1))).MaxRank(5, testParams); got != 0 {
 		t.Errorf("no words: MaxRank %d, want 0", got)
 	}
-	// a word beyond the limit never comes at level 1
 	idx := map[string]int{}
 	for i, w := range words {
 		if _, ok := idx[w]; !ok {
@@ -76,7 +67,6 @@ func TestMaxRank(t *testing.T) {
 	}
 }
 
-// Climb is words only: no capitals and no marks at any level.
 func TestPortion_WordsOnly(t *testing.T) {
 	words := []string{"one", "two", "three", "four", "five", "six", "seven", "eight"}
 	pk := NewPicker(words, rand.New(rand.NewSource(5)))
@@ -89,8 +79,6 @@ func TestPortion_WordsOnly(t *testing.T) {
 	}
 }
 
-// The same word never comes twice in a row, also across the start of a
-// portion.
 func TestPortion_NeverTheSameWordTwiceInARow(t *testing.T) {
 	pk := NewPicker([]string{"ab", "ba"}, rand.New(rand.NewSource(2)))
 	got := pk.Portion([]string{"ab"}, 50, 1, nil, testParams)
@@ -103,11 +91,10 @@ func TestPortion_NeverTheSameWordTwiceInARow(t *testing.T) {
 	}
 }
 
-// A word used recently is less likely than one not used.
 func TestPortion_RecentWordsAreRarer(t *testing.T) {
 	words := []string{"one", "two", "three"}
 	pk := NewPicker(words, rand.New(rand.NewSource(3)))
-	recent := []string{"one", "one", "one", "two"} // "one" used 3 times, last word "two"
+	recent := []string{"one", "one", "one", "two"}
 	count := map[string]int{}
 	for i := 0; i < 3000; i++ {
 		count[pk.Portion(recent, 1, 1, nil, plain())[0]]++
@@ -115,12 +102,11 @@ func TestPortion_RecentWordsAreRarer(t *testing.T) {
 	if count["two"] != 0 {
 		t.Fatalf("the last word came again: %v", count)
 	}
-	if count["one"]*5 > count["three"] { // weight 0.3^3 = 0.027 against 1
+	if count["one"]*5 > count["three"] {
 		t.Fatalf("recent word not rarer: %v", count)
 	}
 }
 
-// No words, zero words asked for, and a one-word list: no panic, no endless loop.
 func TestPortion_EdgeCases(t *testing.T) {
 	if got := NewPicker(nil, rand.New(rand.NewSource(1))).Portion(nil, 6, 5, []string{"aa"}, testParams); got != nil {
 		t.Fatalf("no words: %v", got)
@@ -129,13 +115,11 @@ func TestPortion_EdgeCases(t *testing.T) {
 	if got := pk.Portion(nil, 0, 5, nil, testParams); got != nil {
 		t.Fatalf("n = 0: %v", got)
 	}
-	// one word: a repeat is the only choice and must not hang
 	if got := pk.Portion([]string{"aaa"}, 6, 5, nil, testParams); len(got) != 6 {
 		t.Fatalf("one word: %v", got)
 	}
 }
 
-// The caller's list of recent words is never changed.
 func TestPortion_DoesNotChangeRecent(t *testing.T) {
 	recent := make([]string, 2, 10)
 	recent[0], recent[1] = "one", "two"
@@ -147,7 +131,6 @@ func TestPortion_DoesNotChangeRecent(t *testing.T) {
 	}
 }
 
-// Judge: 96 % and up passes, under 92 % fails, in between holds.
 func TestJudge(t *testing.T) {
 	for acc, want := range map[float64]Verdict{100: Pass, 96: Pass, 95.9: Hold, 92: Hold, 91.9: Fail, 0: Fail} {
 		if got := Judge(acc, testParams); got != want {
@@ -156,7 +139,6 @@ func TestJudge(t *testing.T) {
 	}
 }
 
-// rounds builds a history at one level from accuracies, oldest first.
 func rounds(level int, accs ...float64) []Round {
 	out := make([]Round, len(accs))
 	for i, a := range accs {
@@ -165,9 +147,6 @@ func rounds(level int, accs ...float64) []Round {
 	return out
 }
 
-// Standing: three passes go up, two fails in a row go down, a fail starts
-// the passes again, a hold breaks a row of fails, and only the last run
-// at one level counts.
 func TestStanding(t *testing.T) {
 	p := testParams
 	for _, c := range []struct {
@@ -197,7 +176,6 @@ func TestStanding(t *testing.T) {
 	}
 }
 
-// The old levels (0..1, shown 1..100) map to the old number / 10, rounded up.
 func TestLevelFromOld(t *testing.T) {
 	for old, want := range map[float64]int{0: 1, 0.09: 1, 0.1: 2, 0.43: 5, 0.2: 3, 0.9: 9, 0.91: 10, 1: 10, -1: 1, 2: 10} {
 		if got := LevelFromOld(old); got != want {
@@ -206,7 +184,6 @@ func TestLevelFromOld(t *testing.T) {
 	}
 }
 
-// Freetype draws only from the size most common words; a size out of range is clamped to the list.
 func TestFreetype_OnlyTheChosenWords(t *testing.T) {
 	words := []string{"the", "of", "and", "zebra", "quixotic"}
 	pk := NewPicker(words, rand.New(rand.NewSource(7)))
@@ -230,8 +207,6 @@ func TestFreetype_OnlyTheChosenWords(t *testing.T) {
 	}
 }
 
-// Long words: only words of LongMin letters or more (counted as letters,
-// "żółwik" is 6), from the chosen list; a list without any gives any word.
 func TestFreetype_Long(t *testing.T) {
 	words := []string{"the", "zebras", "of", "żółwik", "quixotic", "and"}
 	pk := NewPicker(words, rand.New(rand.NewSource(3)))
@@ -247,11 +222,6 @@ func TestFreetype_Long(t *testing.T) {
 	}
 }
 
-// The quick draw (rejection) and the full weighing give the same odds: on
-// a short list full of recent words most draws end in the full weighing,
-// on a long list almost none do, and both must match the weights
-// RepeatPenalty^uses. Here: "a" used twice (0.09), "b" once (0.3), "c" and
-// "d" not at all (1), last word "b" excluded -> a : c : d = 0.09 : 1 : 1.
 func TestDraw_OddsAreTheWeights(t *testing.T) {
 	pk := NewPicker([]string{"a", "b", "c", "d"}, rand.New(rand.NewSource(8)))
 	p := plain()
@@ -273,19 +243,16 @@ func TestDraw_OddsAreTheWeights(t *testing.T) {
 	}
 }
 
-// The full weighing (after the quick draw misses): a short list where the
-// only word allowed is rare still gives that word, and weights that are all
-// 0 still give a word of the list.
 func TestDraw_FullWeighing(t *testing.T) {
 	pk := NewPicker([]string{"a", "b"}, rand.New(rand.NewSource(9)))
 	p := plain()
-	recent := []string{"a", "a", "a", "a", "a", "a", "a", "a", "a", "b"} // a: 0.3^9, b: the last word
+	recent := []string{"a", "a", "a", "a", "a", "a", "a", "a", "a", "b"}
 	for i := 0; i < 200; i++ {
 		if got := pk.Freetype(recent, 1, 2, false, p)[0]; got != "a" {
 			t.Fatalf("only %q is allowed, got %q", "a", got)
 		}
 	}
-	p.RepeatPenalty = 0 // a recent word weighs 0: with "b" last, every weight is 0
+	p.RepeatPenalty = 0
 	for i := 0; i < 50; i++ {
 		if got := pk.Freetype([]string{"a", "b"}, 1, 2, false, p)[0]; got != "a" && got != "b" {
 			t.Fatalf("all weights 0: %q is not a word of the list", got)
@@ -293,8 +260,6 @@ func TestDraw_FullWeighing(t *testing.T) {
 	}
 }
 
-// Longer keeps the words of at least min letters (counted as letters, not
-// bytes), in their order; nothing left is an empty list, not nil trouble.
 func TestLonger(t *testing.T) {
 	got := Longer([]string{"a", "the", "i", "żó", "ż", "of"}, 2)
 	if want := []string{"the", "żó", "of"}; !slices.Equal(got, want) {

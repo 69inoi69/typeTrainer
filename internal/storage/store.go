@@ -1,17 +1,4 @@
-// Package storage hides WHERE data is kept behind the Store interface.
-// There are two versions of it:
-//   - MemoryStore (memory.go): everything in RAM, lost on restart. The
-//     default, the tests' store, and the only one on GitHub Pages
-//     (a browser has no database).
-//   - PostgresStore (postgres.go): a PostgreSQL database, used by the normal
-//     server when DATABASE_URL is set (build_server.go).
-//
-// The rest of the app (internal/api) only ever sees the Store interface, so
-// it does not know or care which one it talks to. Both must behave exactly
-// alike: the same tests run against both (store_test.go).
-//
-// This package also defines the shapes that are stored (Session, User)
-// and the user ids of guests (LocalUser, GuestPrefix).
+// Package storage keeps all data behind the Store interface.
 package storage
 
 import (
@@ -23,78 +10,35 @@ import (
 	"typingtrainer/internal/engine"
 )
 
-// Session is one finished round: its summary numbers and, since raw
-// results are kept, every keypress of the round.
 type Session struct {
-	WPM      float64 `json:"wpm"`
-	Accuracy float64 `json:"accuracy"` // 0..100
-	Chars    int     `json:"chars"`
-	// Consistency of the speed, 0..100 (engine.Consistency). nil = not
-	// measured: a round too short to judge, or history from before it existed.
+	WPM         float64   `json:"wpm"`
+	Accuracy    float64   `json:"accuracy"`
+	Chars       int       `json:"chars"`
 	Consistency *float64  `json:"consistency,omitempty"`
 	FinishedAt  time.Time `json:"finishedAt"`
-	// Length is the round length the user chose in the settings, as
-	// "words-30" or "time-60" (ValidLength). Rounds of different lengths
-	// are not compared with each other: the stats screen shows one length
-	// at a time. Stores fill in DefaultLength when it is empty.
-	Length string `json:"length,omitempty"`
+	Length      string    `json:"length,omitempty"`
 
-	// Keys is the raw record of the round: every typed letter in order,
-	// with its mistakes and time, exactly as the browser measured it. The
-	// letter model can be replayed from it (engine.Apply), so parameters
-	// can be tested on real data later. Empty for history from before it
-	// was kept.
-	Keys []engine.Sample `json:"keys,omitempty"`
-	// Unlocked is how many letters were open after the round (learning
-	// only; 0 in free practice and in old history).
-	Unlocked int `json:"unlocked,omitempty"`
-	// Level is the Climb level the round was typed at, 1..10 (a whole
-	// number; freeplay.Standing reads the next level from these). 0 in the
-	// other modes. Before 2026-10-20 it was 0..1 (migration 008).
-	Level float64 `json:"level,omitempty"`
-	// Lap: Learn's lap the round was typed in (0 = the first; learning
-	// only): the goal speed of that round, so a replay of the letter model
-	// (history.LetterTimeline) judges each round by its own goal.
-	Lap int `json:"lap,omitempty"`
-	// Group: the study group the round was typed in (learning only):
-	// "" = the adaptive trainer, GroupRandom = the control group.
-	Group string `json:"group,omitempty"`
-	// Device: what the round was typed on, DeviceKeyboard or DeviceTouch;
-	// "" = not known (history from before it was kept). Only recorded for
-	// now: the letter model learns from both alike. Kept so we can later
-	// check whether phone rounds should count differently.
-	Device string `json:"device,omitempty"`
-	// Round: the id the page gave the round (a random string), so a round
-	// sent twice (a retry after a lost answer, issue #149) is kept once:
-	// AddSession and AddFreeplaySession skip a round id the user already
-	// has in this language. "" = no id (older pages, imports): always kept.
-	// Not exported: it only matters while the page may still send again.
-	Round string `json:"-"`
+	Keys     []engine.Sample `json:"keys,omitempty"`
+	Unlocked int             `json:"unlocked,omitempty"`
+	Level    float64         `json:"level,omitempty"`
+	Lap      int             `json:"lap,omitempty"`
+	Group    string          `json:"group,omitempty"`
+	Device   string          `json:"device,omitempty"`
+	Round    string          `json:"-"`
 }
 
-// The histories outside learning (Store.AddFreeplaySession and the rest).
-// ModeClimb keeps the first name of the second mode, "freeplay", because
-// rounds stored before are saved under it.
 const ModeClimb = "freeplay"
 
-// The kinds of Freetype round beside the plain list (2026-10-21). Each has
-// a history of its own, since rounds that are not alike are never mixed:
-// only the long words of a list, real sentences, or your own text. The
-// last two have no list (one history each: list does not count).
 const (
 	VariantLong      = "long"
 	VariantSentences = "sentences"
 	VariantCustom    = "custom"
 )
 
-// FreetypeVariants are the variants a round can have ("" = the plain list).
 var FreetypeVariants = []string{"", VariantLong, VariantSentences, VariantCustom}
 
-// Listless: does a round of this variant have no word list?
 func Listless(variant string) bool { return variant == VariantSentences || variant == VariantCustom }
 
-// FreetypeKey names one Freetype history in an export file and in the mode
-// column: "1000", "1000-long", "sentences", "custom". FreetypeMode is the mode.
 func FreetypeKey(n int, variant string) string {
 	switch {
 	case variant == "":
@@ -105,13 +49,8 @@ func FreetypeKey(n int, variant string) string {
 	return strconv.Itoa(n) + "-" + variant
 }
 
-// FreetypeMode is the history of Freetype on the list of the n most
-// common words in a variant: "freetype-1000", "freetype-1000-long",
-// "freetype-sentences", "freetype-custom".
 func FreetypeMode(n int, variant string) string { return "freetype-" + FreetypeKey(n, variant) }
 
-// ParseFreetypeKey reads a FreetypeKey back: the list (0 for a variant
-// without one) and the variant; ok = false for anything else.
 func ParseFreetypeKey(key string) (n int, variant string, ok bool) {
 	if Listless(key) {
 		return 0, key, true
@@ -129,21 +68,13 @@ func ParseFreetypeKey(key string) (n int, variant string, ok bool) {
 	return 0, "", false
 }
 
-// Day is the practice of one calendar day, learning and free practice
-// together: the stats screen builds its totals (time typing, rounds), the
-// days in a row and the activity calendar from these.
 type Day struct {
-	Date    string  `json:"date"`    // "2026-10-18", in the user's own time zone
-	Rounds  int     `json:"rounds"`  // finished rounds
-	Seconds float64 `json:"seconds"` // time spent typing (RoundSeconds)
-	Chars   int     `json:"chars"`   // letters typed
+	Date    string  `json:"date"`
+	Rounds  int     `json:"rounds"`
+	Seconds float64 `json:"seconds"`
+	Chars   int     `json:"chars"`
 }
 
-// RoundSeconds is about how long a round was typed: WPM counts the right
-// letters, 5 to a word, so the time is right letters / 5 / WPM minutes. The
-// right letters are Chars * Accuracy / 100 (Accuracy is the share of right
-// presses). The duration itself is not stored; this works for old history
-// too. A round with WPM 0 counts 0.
 func RoundSeconds(wpm, accuracy float64, chars int) float64 {
 	if wpm <= 0 {
 		return 0
@@ -151,22 +82,15 @@ func RoundSeconds(wpm, accuracy float64, chars int) float64 {
 	return float64(chars) * accuracy / 100 / 5 / wpm * 60
 }
 
-// The devices a round can be typed on (Session.Device).
 const (
-	DeviceKeyboard = "keyboard" // a physical keyboard
-	DeviceTouch    = "touch"    // a touch screen (phone, tablet)
+	DeviceKeyboard = "keyboard"
+	DeviceTouch    = "touch"
 )
 
-// GroupRandom is the control group of a user study (docs/ALGORITHM.md
-// learning works as usual, but the words of the open letters
-// are drawn at random instead of by the algorithm. "" = the normal app.
 const GroupRandom = "random"
 
-// DefaultLength is the length of every round from before the settings
-// existed: 30 words.
 const DefaultLength = "words-30"
 
-// WithLength returns the session with DefaultLength if it has no length.
 func (s Session) WithLength() Session {
 	if s.Length == "" {
 		s.Length = DefaultLength
@@ -174,147 +98,74 @@ func (s Session) WithLength() Session {
 	return s
 }
 
-// Summary is the session without its raw keys: what lists of many
-// sessions (the stats pages) need.
 func (s Session) Summary() Session {
 	s.Keys = nil
 	return s
 }
 
-// LocalUser is the user id of a guest where browsers cannot be told apart:
-// on GitHub Pages (no cookies) and for a browser that refuses cookies.
-// The tests use it too.
 const LocalUser = "local"
 
-// GuestPrefix starts the id of a guest the server knows by their guest
-// cookie: "g" + the hash of the cookie (api.Server.WithGuest). Account ids
-// start with "u", so the two never clash.
 const GuestPrefix = "g"
 
-// IsGuest says whether the id belongs to a guest (not to an account).
 func IsGuest(user string) bool {
 	return user == LocalUser || strings.HasPrefix(user, GuestPrefix)
 }
 
-// User is an account. The password is only kept as a hash (auth.HashPassword).
 type User struct {
-	ID           string    `json:"id"`   // never "local"; given by the store
-	Name         string    `json:"name"` // unique, already normalized (auth.NormalizeName)
+	ID           string    `json:"id"`
+	Name         string    `json:"name"`
 	PasswordHash string    `json:"-"`
 	CreatedAt    time.Time `json:"createdAt"`
 }
 
-// The errors a Store returns on purpose; callers check them with errors.Is.
-// Any other error means the store itself failed (a broken database).
 var (
-	// ErrNameTaken is returned by CreateUser for a name that already has an account.
 	ErrNameTaken = errors.New("storage: name taken")
-	// ErrNotFound is returned for no such user, or an unknown or expired login.
-	ErrNotFound = errors.New("storage: not found")
+	ErrNotFound  = errors.New("storage: not found")
 )
 
-// Store is every data operation the app needs. Nothing outside this
-// package should know how the data is actually stored.
-//
-// Every method takes two ids:
-//   - the user: an account id, or a guest's id (IsGuest). Each person has
-//     their own data.
-//   - the language ("en", "pl", ...): each language has its own letter
-//     statistics, its own unlock progress and its own history, because being
-//     good at English says nothing about Ukrainian.
-//
-// Reading language data that was never stored is not an error: a new user
-// or language reads as empty (no statistics, 0 letters open, no history).
-//
-// To add a method: add it here, implement it in BOTH memory.go and
-// postgres.go, and add a test to storeTests in store_test.go, so the two
-// stores are checked against the same behaviour. If it needs a new table
-// or column, see migrations/.
-// Learned is what learning changed, written by SaveLearned in one step.
 type Learned struct {
-	// Stats nil: nothing was learned (no new presses, or a round sent
-	// again); the letter model, Unlocked and Lap stay as they are.
 	Stats    map[string]engine.KeyStat
 	Unlocked int
 	Lap      int
-	// Session: the round that ended (a round id seen before adds
-	// nothing, as AddSession); nil for a portion in the middle of a round.
-	Session *Session
+	Session  *Session
 }
 
 type Store interface {
-	// KeyStats is the letter model (engine.KeyStat per letter); the caller
-	// may change the returned map freely. SaveKeyStats replaces the whole
-	// set: a letter left out is gone.
 	KeyStats(user, lang string) (map[string]engine.KeyStat, error)
 	SaveKeyStats(user, lang string, stats map[string]engine.KeyStat) error
 
-	// Unlocked is how many letters of the unlock order are open (0 = new user).
 	Unlocked(user, lang string) (int, error)
 	SetUnlocked(user, lang string, n int) error
-	// Lap is Learn's lap (0 = the first, at the configured goal speed; each
-	// lap after Learn complete raises the goal, internal/api lapParams).
 	Lap(user, lang string) (int, error)
 	SetLap(user, lang string, n int) error
 
-	// History of learning. length picks rounds of one length ("words-30");
-	// "" = all. A session without a length is stored as DefaultLength.
 	AddSession(user, lang string, s Session) error
-	RecentSessions(user, lang, length string, limit int) ([]Session, error) // newest first
-	SessionCount(user, lang, length string) (int, error)                    // finished rounds
-	SessionLengths(user, lang string) ([]string, error)                     // lengths in the history, sorted
-	// BestRounds: the fastest learning round of every length in the
-	// history (by WPM; of equal ones the earliest), without raw keys:
-	// the personal bests of the stats screen.
+	RecentSessions(user, lang, length string, limit int) ([]Session, error)
+	SessionCount(user, lang, length string) (int, error)
+	SessionLengths(user, lang string) ([]string, error)
 	BestRounds(user, lang string) (map[string]Session, error)
-	// LettersTyped: the letters (Session.Chars) of all learning rounds that
-	// ended with at least `unlocked` letters open. With the whole alphabet,
-	// it is how far the user is into the ramp of engine.MaxRank.
 	LettersTyped(user, lang string, unlocked int) (int, error)
 
-	// Group is the study group of the language ("" or GroupRandom), set
-	// through a hidden link for a user study. Reset clears it.
 	Group(user, lang string) (string, error)
 	SetGroup(user, lang, group string) error
 
-	// The modes outside learning (internal/freeplay) are kept apart from
-	// learning and from each other: mode is ModeClimb, or FreetypeMode(n)
-	// for each word list of Freetype (rounds on different lists are not
-	// compared, like rounds of different lengths). Their rounds never
-	// change the letter statistics above.
 	AddFreeplaySession(user, lang, mode string, s Session) error
-	RecentFreeplaySessions(user, lang, mode, length string, limit int) ([]Session, error) // newest first
+	RecentFreeplaySessions(user, lang, mode, length string, limit int) ([]Session, error)
 	FreeplaySessionCount(user, lang, mode, length string) (int, error)
 	FreeplaySessionLengths(user, lang, mode string) ([]string, error)
-	BestFreeplayRounds(user, lang, mode string) (map[string]Session, error) // as BestRounds
+	BestFreeplayRounds(user, lang, mode string) (map[string]Session, error)
 
-	// HasRound: the user already has a round with this id in this
-	// language, in any mode (Session.Round). Always false for "".
 	HasRound(user, lang, round string) (bool, error)
-	// SaveLearned writes what learning changed as one step (Learned):
-	// either all of it is stored or nothing is, so a round sent again
-	// after a server error is learned once.
 	SaveLearned(user, lang string, l Learned) error
 
-	// PracticeDays: every day with a finished round in this language,
-	// learning and free practice together, oldest first. tz is the user's
-	// offset from UTC (east is positive), so a day ends at their midnight.
 	PracticeDays(user, lang string, tz time.Duration) ([]Day, error)
 
-	// Reset deletes everything the user has stored for the language, free
-	// practice included: it is new again. Other users and languages stay.
 	Reset(user, lang string) error
 
-	// Accounts. CreateUser fails with ErrNameTaken if the name exists;
-	// UserByName and UserByID with ErrNotFound if there is no such user.
 	CreateUser(name, passwordHash string, now time.Time) (User, error)
 	UserByName(name string) (User, error)
 	UserByID(id string) (User, error)
 
-	// Logins: which user a login cookie belongs to. The store keeps only
-	// the hash of the cookie's token (auth.HashToken), never the token.
-	// LoginUser returns the user id, or ErrNotFound for an unknown or
-	// expired login.
 	AddLogin(tokenHash, userID string, expires time.Time) error
 	LoginUser(tokenHash string, now time.Time) (string, error)
 	DeleteLogin(tokenHash string) error

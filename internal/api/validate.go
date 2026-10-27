@@ -1,11 +1,4 @@
-// Request checks: nothing impossible or foreign may reach the statistics.
-// Each function returns "" when the input is fine, else the error message.
-// The browser is never trusted: anyone can send any JSON to the API, and a
-// single wrong number (a negative time, a letter from another alphabet)
-// would spoil a user's letter model for good.
-//
-// To add a field to a request or to the export file: check its range here,
-// in the same style, and add a bad case to the tests in setup_test.go.
+// Request checks.
 
 package api
 
@@ -19,11 +12,7 @@ import (
 	"typingtrainer/internal/storage"
 )
 
-// validate checks a results request: a round needs at least one typed
-// character, and samples as in validateSamples.
 func validate(req resultsRequest, maxEvents int, alphabet string) string {
-	// 1<<20 characters (about a million) and 400 WPM (below) are far above any
-	// real round: they only stop absurd numbers, not fast typists
 	if req.Chars < 1 || req.Chars > 1<<20 {
 		return "chars: out of range"
 	}
@@ -53,8 +42,6 @@ func validate(req resultsRequest, maxEvents int, alphabet string) string {
 	return ""
 }
 
-// validLength checks a round length: "" (DefaultLength), "words-N" with
-// 1 <= N <= maxWords, or "time-N" with 1 <= N <= maxSeconds seconds.
 func validLength(length string, maxWords, maxSeconds int) bool {
 	if length == "" {
 		return true
@@ -73,16 +60,12 @@ func validLength(length string, maxWords, maxSeconds int) bool {
 	return false
 }
 
-// validGroup accepts "" (the normal app) or storage.GroupRandom.
 func validGroup(g string) bool { return g == "" || g == storage.GroupRandom }
 
-// validDevice accepts "" (not known), storage.DeviceKeyboard or storage.DeviceTouch.
 func validDevice(d string) bool {
 	return d == "" || d == storage.DeviceKeyboard || d == storage.DeviceTouch
 }
 
-// validateSamples accepts at most max samples, every one a single letter of
-// the language's alphabet or a space, so junk keys never end up in the statistics.
 func validateSamples(samples []engine.Sample, max int, alphabet string) string {
 	if len(samples) > max {
 		return "samples: wrong number of samples"
@@ -91,8 +74,6 @@ func validateSamples(samples []engine.Sample, max int, alphabet string) string {
 		if utf8.RuneCountInString(smp.Char) != 1 || smp.Ms < 0 || smp.Errors < 0 {
 			return "samples: each needs exactly one char, errors >= 0 and ms >= 0"
 		}
-		// the wrong key: any one character (a capital or a mark is a real
-		// mistake too), and only where there was a mistake
 		if smp.Typed != "" && (utf8.RuneCountInString(smp.Typed) != 1 || smp.Errors == 0) {
 			return "samples: typed is one char, and only with errors"
 		}
@@ -103,10 +84,6 @@ func validateSamples(samples []engine.Sample, max int, alphabet string) string {
 	return ""
 }
 
-// validateImport makes sure a loaded file cannot put impossible numbers or
-// foreign letters into the statistics. letters = how many letters the
-// language's unlock order has, levels how many levels Climb has, laps the
-// last lap of Learn.
 func validateImport(in langExport, maxSessions, maxEvents, letters, levels, laps int, alphabet string, okLength func(string) bool, okFreetype func(string) bool, freetypeAlphabet string) string {
 	if in.Unlocked < 0 || in.Unlocked > letters {
 		return "unlocked: out of range"
@@ -140,8 +117,6 @@ func validateImport(in langExport, maxSessions, maxEvents, letters, levels, laps
 			return "freeplay " + msg
 		}
 		for _, sess := range in.Freeplay.Sessions {
-			// a file from before the ten levels (no climbLevels): 0..1,
-			// turned into a level by handleImport
 			old := in.ClimbLevels == 0 && inRange(sess.Level, 0, 1)
 			if !old && (sess.Level != math.Trunc(sess.Level) || !inRange(sess.Level, 1, float64(levels))) {
 				return "freeplay sessions: level out of range"
@@ -164,9 +139,6 @@ func validateImport(in langExport, maxSessions, maxEvents, letters, levels, laps
 	return ""
 }
 
-// validateSessions accepts at most max entries, every number in its range,
-// raw keys as in validateSamples (at most maxEvents per session).
-// laps: the last lap a round may have (0 outside Learn).
 func validateSessions(sessions []storage.Session, max, maxEvents, letters, laps int, alphabet string, okLength func(string) bool) string {
 	if len(sessions) > max {
 		return "sessions: too many"

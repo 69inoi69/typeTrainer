@@ -10,6 +10,11 @@ JavaScript style guide, and Ellen Spertus' "Best practices for writing code
 comments" (Stack Overflow blog), adapted to this project. Links are at the
 end.
 
+For now the code carries only orientation comments: one line at the top of
+a file saying what it is, and section dividers (`// ---------- name
+----------`). The other comments are written again file by file, by these
+rules.
+
 ## The ten rules
 
 1. **Explain why, not what.** The code already says what it does. A comment
@@ -27,7 +32,7 @@ end.
    and what it calls. In Go, the package comment (`// Package engine ...`)
    says it once per package; each other file gets one line or two if its
    part is not obvious from the name. In JavaScript, each module states its
-   job and its layer (see the import rule in `web/state.js`).
+   job and its layer (see the import rule in `docs/ARCHITECTURE.md`).
 
 3. **Every exported name has a doc comment** that starts with the name and is
    a full sentence (Go convention, read by `go doc`): `// Portion builds ...`.
@@ -84,7 +89,7 @@ end.
 
 ## Common extension points
 
-These are already marked in the code with "To add ..." comments:
+Where something new is likely to be added:
 
 - a new **API route**: `internal/api/handlers.go` (routes)
 - a new **Store method**: `internal/storage/store.go` (both stores and a test)
@@ -96,8 +101,8 @@ These are already marked in the code with "To add ..." comments:
 - a new **setting**: `web/settings.js`
 - a new **navigation item**: `web/index.html` (`nav.rail`) and `web/input.js`
 - a new **theme**: `web/base.css` (one `:root[data-theme]` block)
-- a new **frontend module**: `web/state.js` (the layer rule) and
-  `webmodules_test.go`
+- a new **frontend module**: its layer in `docs/ARCHITECTURE.md` ("Frontend
+  modules") and `webmodules_test.go`
 
 ## Sources
 
