@@ -189,17 +189,27 @@ dialog.settings-win:focus { outline: none; }
   .sw-list { max-height: calc(100dvh - 200px); }
   .sw-ctl { padding-left: 8px !important; }
 }
-.ring { display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--line); }
+.ring {
+  display: flex; align-items: stretch; border-radius: 10px; overflow: hidden;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 40%, var(--line));
+}
 .ring button {
-  padding: 4px 7px; border: 0; border-radius: 7px; background: none; color: var(--sub); font: inherit; font-size: .9rem;
+  padding: 5px 9px; border: 0; border-radius: 0; background: none; color: var(--sub); font: inherit; font-size: .9rem;
   white-space: nowrap; cursor: pointer; transition: color .15s, background-color .15s;
 }
-.ring button:hover { color: var(--text); }
-.ring button[aria-pressed="true"] {
-  color: var(--accent-text); background: color-mix(in srgb, var(--accent) 14%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
-}
-:root[data-theme="light"] .ring button[aria-pressed="true"] { color: var(--text); background: color-mix(in srgb, var(--accent) 26%, transparent); }
+.ring button + button { box-shadow: inset 1px 0 0 color-mix(in srgb, var(--sub) 40%, var(--line)); }
+.ring button:hover { color: var(--text); background: color-mix(in srgb, var(--text) 5%, transparent); }
+.ring button:focus-visible { outline-offset: -2px; }
+.ring button { position: relative; isolation: isolate; }
+.ring button[aria-pressed="true"] { color: var(--accent-text); }
+.ring button[aria-pressed="true"]::before { content: ""; position: absolute; inset: 0; z-index: -1; background: color-mix(in srgb, var(--accent) 22%, transparent); }
+:root[data-theme="light"] .ring button[aria-pressed="true"] { color: var(--text); }
+:root[data-theme="light"] .ring button[aria-pressed="true"]::before { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+.ring button.pick { animation: ring-pop .26s cubic-bezier(.3, 1.6, .5, 1); }
+.ring button.pick::before { animation: ring-fill .22s cubic-bezier(.2, .8, .3, 1); }
+@keyframes ring-pop { from { transform: scale(.92); } }
+@keyframes ring-fill { from { transform: scaleX(.3); opacity: .2; } }
+@media (prefers-reduced-motion: reduce) { .ring button.pick, .ring button.pick::before { animation: none; } }
 .ring-lbl { color: var(--sub); font-size: .9rem; margin: 0 4px 0 7px; }
 dialog.mini-pop {
   position: fixed; inset: auto; margin: 0; border: 0; padding: 8px 10px; color: var(--text);

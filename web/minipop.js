@@ -45,3 +45,22 @@ pop.addEventListener("keydown", (e) => {
   row[Math.max(0, Math.min(row.length - 1, row.indexOf(b) + (e.key === "ArrowRight" ? 1 : -1)))].click();
 });
 pop.addEventListener("close", () => anchorEl?.setAttribute("aria-expanded", "false"));
+
+function pickAnim(sel) {
+  const on = document.querySelector(`.ring button${sel}[aria-pressed="true"]`);
+  if (!on || on.classList.contains("pick")) return !!on;
+  on.classList.add("pick");
+  on.addEventListener("animationend", () => on.classList.remove("pick"), { once: true });
+  return true;
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest(".ring button");
+  if (!b) return;
+  const sel = [...b.attributes].filter((a) => a.name.startsWith("data-") && !a.name.startsWith("data-tip"))
+    .map((a) => `[${a.name}="${CSS.escape(a.value)}"]`).join("");
+  const host = b.closest(".ring").parentElement;
+  const watch = new MutationObserver(() => { if (pickAnim(sel)) watch.disconnect(); });
+  watch.observe(host, { childList: true, subtree: true });
+  setTimeout(() => watch.disconnect(), 1500);
+  requestAnimationFrame(() => { if (pickAnim(sel)) watch.disconnect(); });
+}, true);
