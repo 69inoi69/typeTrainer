@@ -282,9 +282,7 @@ function drawChart(sessions, target, total, order) {
   const first = total - sessions.length + 1;
   const scope = sessions.length === total ? t("chart.all") : t("chart.last", { n: sessions.length });
   const withAvg = sessions.length >= 3;
-  el.chartNote.textContent = target
-    ? t(withAvg ? "chart.noteAvg" : "chart.note", { scope, target })
-    : t(withAvg ? "chart.noteAvgNoGoal" : "chart.noteNoGoal", { scope });
+  el.chartNote.textContent = t(withAvg ? "chart.noteAvg" : "chart.note", { scope });
 
   el.chart.replaceChildren();
   const W = Math.max(280, el.chart.clientWidth || 860), H = Math.max(120, el.chart.clientHeight || 200);
@@ -295,7 +293,8 @@ function drawChart(sessions, target, total, order) {
   const slot = plotW / Math.max(sessions.length, 10);
   const bw = Math.max(3, Math.min(28, slot - 2));
 
-  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="WPM per exercise">`;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="WPM per exercise">` +
+    `<text class="axis axis-name" x="${padL + plotW / 2}" y="${H - 6}" text-anchor="middle">${t("chart.axisRound")}</text>`;
   for (let i = 0; i <= 4; i++) {
     const v = (max / 4) * i, yy = y(v);
     svg += `<line class="grid" x1="${padL}" x2="${W - padR}" y1="${yy}" y2="${yy}"/>`;

@@ -15,7 +15,7 @@ export const resultOpen = () => done !== null;
 
 export function showResult(r) {
 
-  const hero = `<div class="r-hero">${num(Math.round(r.wpm), "", "result.wpm", "big hero")}` +
+  const hero = `<div class="r-hero${r.best ? " best" : ""}">${num(Math.round(r.wpm), "", "result.wpm", "big hero")}` +
     `${num(Math.round(r.accuracy), "%", "result.acc", "big")}</div>`;
   let graph = "", list = "";
   if (r.words?.length) {
@@ -62,6 +62,7 @@ export function showResult(r) {
     (row.length ? `<div class="r-row">${row.join("")}</div>` : "") + note + list;
   const shown = open(body, "result.nextBtn");
   if (r.unsaved?.retry) saveAgain(r);
+  if (r.best) newBest();
   return shown;
 }
 
@@ -133,14 +134,41 @@ function speedChart(words, bands) {
     `<div class="r-plot"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">` +
     `<path class="r-grid" d="M0 0H100M0 50H100"/><path class="r-axisline" d="M0 0V100H100"/>` +
     `<polyline class="r-line" points="${line}"/></svg>${dots}` +
-    `<span class="r-xaxis" aria-hidden="true"><span>1</span><span>${pts.length}</span></span></div></div>`;
+    `<span class="r-xaxis" aria-hidden="true"><span>1</span><span class="r-axis-name">${t("result.axisWord")}</span><span>${pts.length}</span></span></div></div>`;
 }
 
-const ICON_NEXT = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>`;
+const ICON_NEXT = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>`;
+
+// ---------- a new best: the speed and its label as trading-card foil ----------
+function newBest() {
+  const lbl = box.querySelector(".r-hero .r-num.hero .r-lbl");
+  lbl.insertAdjacentHTML("beforeend", `<span class="r-best"><span>${t("result.newBest")}</span></span>`);
+  const nodes = [box.querySelector(".r-num.hero > b"), lbl.querySelector(".r-best > span")];
+  document.fonts.ready.then(() => nodes.forEach(foil));
+}
+function foil(node) {
+  const cs = getComputedStyle(node), w = node.offsetWidth, h = node.offsetHeight;
+  if (!w || !h) return;
+  const dpr = devicePixelRatio || 1, canvas = document.createElement("canvas");
+  canvas.width = Math.ceil(w * dpr);
+  canvas.height = Math.ceil(h * dpr);
+  const g = canvas.getContext("2d");
+  g.scale(dpr, dpr);
+  g.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  g.letterSpacing = cs.letterSpacing;
+  const text = node.firstChild?.nodeType === 3 ? node.firstChild.textContent : node.textContent;
+  const m = g.measureText(text);
+  const padT = parseFloat(cs.paddingTop), inner = h - padT - parseFloat(cs.paddingBottom);
+  const base = padT + (inner - m.fontBoundingBoxAscent - m.fontBoundingBoxDescent) / 2 + m.fontBoundingBoxAscent;
+  g.fillText(text, parseFloat(cs.paddingLeft), base);
+  node.style.setProperty("--foil-mask", `url(${canvas.toDataURL()})`);
+  node.classList.add("foil");
+  node.insertAdjacentHTML("beforeend", `<i class="foil-sheen" aria-hidden="true"></i><i class="foil-glare" aria-hidden="true"></i>`);
+}
 
 function open(body, btn) {
   box.innerHTML = `<div class="r-body">${body}</div>` +
-    `<p class="r-foot"><button type="button" class="btn r-next">${ICON_NEXT}<span>${t(btn)}</span>${isTouch() ? "" : "<kbd>enter</kbd> / <kbd>tab</kbd>"}</button></p>`;
+    `<p class="r-foot"><button type="button" class="r-next" data-tip="${btn}" aria-label="${t(btn)}">${ICON_NEXT}</button></p>`;
   box.querySelector(".r-body").addEventListener("click", (e) => {
     e.stopPropagation();
     const w = e.target.closest("[data-tip-text]");
