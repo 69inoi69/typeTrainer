@@ -3,9 +3,21 @@
 import { i18nVars, t, applyI18n } from "./i18n.js";
 import { $, el, S, store, reducedMotion, levelWords, listLabel, listless } from "./state.js";
 import { getJSON } from "./api.js";
-import { LENGTHS, lengthLabel, lengthFor, firstRoundDone } from "./settings.js";
+import { LENGTHS, GOALS, lengthLabel, lengthFor, firstRoundDone, setSetting } from "./settings.js";
+import { ring, ringBtn } from "./minipop.js";
 import { renderLearnStats, learnStatsStale } from "./learnstats.js";
 import { freetypeUrl, toggledVariant } from "./modes.js";
+
+// ---------- the goal line ----------
+const goalPick = $("goal-pick");
+function drawGoalPick() {
+  goalPick.innerHTML = `<span class="ring-lbl" data-tip-text="${t("settings.goalDesc")}">${t("settings.goal")}</span>` +
+    ring(t("settings.goal"), GOALS.map((g) => ringBtn(`data-goal="${g}"`, g ? String(g) : t("settings.off"), S.settings.goal === g)));
+}
+goalPick.addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-goal]");
+  if (b && b.getAttribute("aria-pressed") !== "true") setSetting("goal", b.dataset.goal);
+});
 
 let introVars = "";
 export async function refreshStats() {
@@ -55,6 +67,7 @@ export function renderStats() {
   if (activityStale) loadActivity();
 
   drawChart(sessions, S.settings.goal, s.sessionCount, mode === "learn" ? s.order : null);
+  drawGoalPick();
   renderLearnStats(mode === "learn").catch(console.error);
 }
 

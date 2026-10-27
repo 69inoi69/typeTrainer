@@ -5,6 +5,8 @@ import { $, S, store } from "./state.js";
 import { getJSON } from "./api.js";
 import { forecastText } from "./letters.js";
 import { learning } from "./modes.js";
+import { DAILY, setSetting } from "./settings.js";
+import { openPop, ring as ringGroup, ringBtn } from "./minipop.js";
 
 const box = $("learn-panel"), cols = $("lp-cols");
 
@@ -152,7 +154,7 @@ function dailyGoal() {
   goalNow = null;
   goalTyping = document.body.classList.contains("typing-now");
   const goal = S.settings.daily;
-  if (!goal) return `<span class="lp-cell lp-goal"></span>`;
+  if (!goal) return cell("lp-goal", t("lp.today"), `<b class="lp-none">${t("settings.off")}</b>`, t("lp.goalOffTip"));
   if (activityLang !== S.lang || !activity) return cell("lp-goal", t("lp.today"), NONE, t("lp.goalTip", { g: goal }));
   const byDate = Object.fromEntries(activity.map((d) => [d.date, d.seconds]));
   const day = (back) => {
@@ -182,6 +184,22 @@ export function tickGoal() {
   if (today >= goalNow.need) { renderPanel(); return true; }
   return false;
 }
+
+// ---------- picking the daily goal ----------
+const goalRow = () => `<div class="mp-row"><span class="mp-name" data-tip-text="${t("settings.dailyDesc")}">${t("settings.daily")}</span>` +
+  ringGroup(t("settings.daily"), DAILY.map((m) => ringBtn(`data-key="daily" data-value="${m}"`, m ? String(m) : t("settings.off"), S.settings.daily === m))) + `</div>`;
+const pickGoal = (cell) => openPop(cell, t("settings.daily"), goalRow, setSetting);
+cols?.addEventListener("click", (e) => {
+  const c = e.target.closest(".lp-goal");
+  if (c) pickGoal(c);
+});
+cols?.addEventListener("keydown", (e) => {
+  const c = e.target.closest(".lp-goal");
+  if (!c || (e.key !== "Enter" && e.key !== " ")) return;
+  e.preventDefault();
+  e.stopPropagation();
+  pickGoal(c);
+});
 
 const NONE = `<b class="lp-none">—</b>`;
 const cell = (cls, label, value, tip = "") =>

@@ -21,12 +21,11 @@ export function setLength(mode, id) {
   if (mode === S.mode) S.settings.length = id;
 }
 const CARETS = ["line", "block"];
-const GOALS = [0, 30, 40, 50, 75, 100, 125, 150, 200];
-const DAILY = [0, 5, 10, 15, 20, 30, 45, 60];
+export const GOALS = [0, 30, 40, 50, 75, 100, 125, 150, 200];
+export const DAILY = [0, 5, 10, 15, 20, 30, 45, 60];
 const DAILY_DEFAULT = 15;
 const CHOICES = {
   glide: { key: "tt.glide", values: ["smooth", "jump"], def: "smooth" },
-  size: { key: "tt.size", values: ["s", "m", "l"], def: "m" },
   sound: { key: "tt.sound", values: ["off", "errors", "keys"], def: "off" },
   volume: { key: "tt.volume", values: ["25", "50", "75", "100"], def: "50" },
   rest: { key: "tt.rest", values: ["0", "20", "30", "45", "60"], def: "0" },
@@ -98,7 +97,7 @@ let typingListener = () => {};
 export function onTypingLook(fn) { typingListener = fn; }
 
 // ---------- the window ----------
-const win = $("settings-win"), btn = $("btn-settings"), body = $("settings-body"), search = $("settings-search");
+const win = $("settings-win"), btn = $("btn-settings"), body = $("settings-body");
 
 function choice(key, value, label, chosen) {
   return `<button type="button" data-key="${key}" data-value="${value}" aria-pressed="${chosen}">${label}</button>`;
@@ -114,27 +113,18 @@ const action = (id, icon, label, cls = "btn") => `<button type="button" class="$
 
 const pick = (name, label) => seg(CHOICES[name].values.map((v) => choice(name, v, label(v), S.settings[name] === v)));
 const ROWS = [
-  { group: "settings.look", name: "settings.live", desc: "settings.liveDesc", ctl: () => onOff("live", S.settings.live) },
-  { group: "settings.look", name: "settings.size", ctl: () => pick("size", (v) => t("settings.size_" + v)) },
-  { group: "settings.look", name: "settings.caret", ctl: () => seg(CARETS.map((id) =>
-    choice("caret", id, `<i class="cs ${id}"></i>${t("settings." + id)}`, S.settings.caret === id))) },
-  { group: "settings.look", name: "settings.glide", desc: "settings.glideDesc", ctl: () => pick("glide", (v) => t("settings.glide_" + v)) },
-  { group: "settings.look", name: "settings.streak", desc: "settings.streakDesc", ctl: () => onOff("streak", S.settings.streak) },
-  { group: "settings.look", name: "settings.background", desc: "settings.backgroundDesc", ctl: () => onOff("bg", S.settings.bg !== "off") },
   { group: "settings.look", name: "settings.theme", ctl: () => seg([
     choice("theme", "dark", t("settings.dark"), S.settings.theme === "dark"),
     choice("theme", "light", t("settings.light"), S.settings.theme === "light")]) },
+  { group: "settings.look", name: "settings.caret", ctl: () => seg(CARETS.map((id) =>
+    choice("caret", id, `<i class="cs ${id}"></i>${t("settings." + id)}`, S.settings.caret === id))) },
+  { group: "settings.look", name: "settings.glide", desc: "settings.glideDesc", ctl: () => pick("glide", (v) => t("settings.glide_" + v)) },
+  { group: "settings.look", name: "settings.background", desc: "settings.backgroundDesc", ctl: () => onOff("bg", S.settings.bg !== "off") },
+  { group: "settings.look", name: "settings.live", desc: "settings.liveDesc", ctl: () => onOff("live", S.settings.live) },
   { group: "settings.typing", name: "settings.stop", desc: "settings.stopDesc", ctl: () => onOff("stop", S.settings.stop) },
   { group: "settings.typing", name: "settings.sound", desc: "settings.soundDesc", ctl: () => pick("sound", (v) => t("settings.sound_" + v)) },
   { group: "settings.typing", name: "settings.volume", ctl: () => pick("volume", (v) => v + "%"), show: () => S.settings.sound !== "off" },
-  { group: "settings.typing", name: "settings.rest", desc: "settings.restDesc", ctl: () => pick("rest", (v) => (v === "0" ? t("settings.off") : v)) },
-  { group: "settings.kbGroup", name: "settings.nextKey", desc: "settings.nextKeyDesc", ctl: () => onOff("nextKey", S.settings.nextKey), show: () => !isTouch() },
-  { group: "settings.kbGroup", name: "settings.hand", desc: "settings.handDesc", ctl: () => onOff("hand", S.settings.hand), show: () => !isTouch() },
-  { group: "settings.kbGroup", name: "settings.fingerText", desc: "settings.fingerTextDesc", ctl: () => onOff("fingerText", S.settings.fingerText), show: () => !isTouch() },
-  { group: "settings.statsGroup", name: "settings.daily", desc: "settings.dailyDesc", ctl: () => seg(DAILY.map((m) =>
-    choice("daily", String(m), m ? String(m) : t("settings.off"), S.settings.daily === m))) },
-  { group: "settings.statsGroup", name: "settings.goal", desc: "settings.goalDesc", ctl: () => seg(GOALS.map((g) =>
-    choice("goal", String(g), g ? String(g) : t("settings.off"), S.settings.goal === g))) },
+  { group: "settings.typing", name: "settings.rest", desc: "settings.restDesc", ctl: () => pick("rest", (v) => (v === "0" ? t("settings.off") : t("settings.min", { n: v }))) },
   { group: null, name: "settings.data", desc: "settings.dataDesc", ctl: () => action("btn-export", "export", "data.save") + action("btn-import", "import", "data.load") },
   { group: null, name: "settings.danger", desc: "settings.dangerDesc", danger: true, ctl: () => action("btn-reset", "trash", "data.reset", "btn danger") },
 ];
@@ -142,13 +132,8 @@ const ROWS = [
 let cur = 0;
 let shown = [];
 const attr = (s) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
-function nameHTML(name, q) {
-  const i = q ? name.toLowerCase().indexOf(q) : -1;
-  return i < 0 ? name : `${name.slice(0, i)}<em>${name.slice(i, i + q.length)}</em>${name.slice(i + q.length)}`;
-}
 function render() {
-  const q = search.value.trim().toLowerCase();
-  shown = ROWS.filter((r) => (r.show?.() ?? true) && t(r.name).toLowerCase().includes(q));
+  shown = ROWS.filter((r) => r.show?.() ?? true);
   cur = Math.min(cur, shown.length - 1);
   let html = "", group;
   shown.forEach((r, i) => {
@@ -158,19 +143,16 @@ function render() {
     group = r.group;
     const on = i === cur && !isTouch();
     const desc = r.desc ? ` data-tip-text="${attr(t(r.desc))}" aria-description="${attr(t(r.desc))}"` : "";
-    html += `<div class="sw-row${on ? " on" : ""}" data-i="${i}"><span class="sw-name${r.danger ? " danger" : ""}"${desc}>${nameHTML(t(r.name), q)}</span><span class="sw-ctl">${r.ctl()}</span></div>`;
+    html += `<div class="sw-row${on ? " on" : ""}" data-i="${i}"><span class="sw-name${r.danger ? " danger" : ""}"${desc}>${t(r.name)}</span><span class="sw-ctl">${r.ctl()}</span></div>`;
   });
-  body.innerHTML = previewHTML() +
-    (shown.length ? `<div class="sw-rows">${html}</div>` : `<p class="sw-empty">${t("settings.none")}</p>`);
+  body.innerHTML = previewHTML() + `<div class="sw-rows">${html}</div>`;
   startPreview();
 }
-search.addEventListener("input", () => { cur = 0; render(); });
 
-function apply(key, value) {
+export function setSetting(key, value) {
   if (CHOICES[key]) {
     S.settings[key] = value;
     store.set(CHOICES[key].key, value);
-    if (key === "size") typingListener();
     if (key === "sound" && value !== "off") soundListener(value);
   } else if (SWITCHES[key]) {
     S.settings[key] = value === "1";
@@ -202,7 +184,7 @@ function apply(key, value) {
     goalListener();
   }
   applySettings();
-  render();
+  if (win.open) render();
 }
 let soundListener = () => {};
 export function onSoundPick(fn) { soundListener = fn; }
@@ -240,19 +222,15 @@ function startPreview() {
 win.addEventListener("click", (e) => {
   if (e.target === win) { closeSettings(); return; }
   const b = e.target.closest("button[data-key]");
-  if (b) apply(b.dataset.key, b.dataset.value);
+  if (b) setSetting(b.dataset.key, b.dataset.value);
 });
 
 win.addEventListener("keydown", (e) => {
-  if (e.target !== search) {
-    if (e.key === "Enter" || e.key === " ") return;
-    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) search.focus();
-  }
+  if ((e.key === "Enter" || e.key === " ") && e.target !== win) return;
   const row = body.querySelectorAll(".sw-row")[cur];
   const btns = row ? [...row.querySelectorAll("button")] : [];
   if (e.key === "ArrowDown" || e.key === "ArrowUp") {
     e.preventDefault();
-    if (!shown.length) return;
     cur = (cur + (e.key === "ArrowDown" ? 1 : -1) + shown.length) % shown.length;
     render();
   } else if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && btns.length) {
@@ -261,7 +239,7 @@ win.addEventListener("keydown", (e) => {
     if (choices.length) {
       const at = choices.findIndex((b) => b.getAttribute("aria-pressed") === "true");
       const next = choices[Math.max(0, Math.min(choices.length - 1, at + (e.key === "ArrowRight" ? 1 : -1)))];
-      apply(next.dataset.key, next.dataset.value);
+      setSetting(next.dataset.key, next.dataset.value);
     } else {
       const at = btns.findIndex((b) => b.classList.contains("kb-on"));
       btns.forEach((b) => b.classList.remove("kb-on"));
@@ -285,16 +263,12 @@ win.addEventListener("close", () => {
 function closeSettings() { if (win.open) win.close(); }
 export function openSettings() {
   if (win.open) return;
-  search.value = "";
-  search.placeholder = t("settings.search");
   win.setAttribute("aria-label", t("settings.title"));
   cur = 0;
   render();
-  search.inert = isTouch();
   win.tabIndex = -1;
   win.showModal();
-  search.inert = false;
-  if (isTouch()) win.focus(); else search.focus();
+  win.focus();
   btn.setAttribute("aria-expanded", "true");
 }
 btn.addEventListener("click", () => { btn.blur(); settingsOpen() ? closeSettings() : openSettings(); });

@@ -78,7 +78,7 @@
 :root[data-theme="light"] .hand { --skin: color-mix(in srgb, var(--text) 16%, var(--bg)); }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { min-height: 100%; }
-@media (min-width: 1000px) and (pointer: fine) { html { font-size: clamp(16px, calc(100vh / 50), 18px); } }
+@media (min-width: 900px) and (pointer: fine) { html { font-size: clamp(16px, calc(100vh / 50), 18px); } }
 html { scrollbar-width: none; }
 html::-webkit-scrollbar { display: none; }
 body {
@@ -149,14 +149,6 @@ dialog.settings-win {
 }
 dialog.settings-win::backdrop { background: color-mix(in srgb, var(--bg) 70%, transparent); backdrop-filter: blur(3px); }
 dialog.settings-win:focus { outline: none; }
-.sw-search { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-bottom: 1px solid var(--line); }
-.sw-prompt { color: var(--accent-text); font-weight: 600; }
-.sw-search input {
-  flex: 1; min-width: 0; width: 0; border: 0; outline: 0; padding: 0; background: none;
-  color: var(--text); font: inherit; font-size: .9rem; caret-color: var(--accent);
-}
-.sw-search input::placeholder { color: var(--sub); }
-.sw-search input:focus-visible { outline: none; }
 .sw-list { padding: 4px 6px 6px; max-height: calc(100dvh - 14vh - 140px); overflow-y: auto; scrollbar-width: thin; }
 .sw-rows { display: grid; grid-template-columns: max-content 1fr; }
 .sw-group { grid-column: 1 / -1; color: var(--sub); font-size: .72rem; padding: 7px 8px 1px; }
@@ -165,12 +157,10 @@ dialog.settings-win:focus { outline: none; }
 .sw-row > span { display: flex; align-items: center; gap: 6px; min-height: 32px; padding: 2px 8px; }
 .sw-name { position: relative; font-size: .84rem; color: var(--text); border-radius: 8px 0 0 8px; }
 .sw-name.danger { color: color-mix(in srgb, var(--error) 75%, var(--sub)); }
-.sw-name em { font-style: normal; color: var(--accent-text); text-decoration: underline; text-underline-offset: 3px; }
 .sw-ctl { padding-left: 16px !important; border-radius: 0 8px 8px 0; }
 .sw-row.on > span { background: var(--track); }
 .sw-row.on .sw-name::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: var(--accent); }
 .sw-ctl .btn.kb-on { box-shadow: inset 0 0 0 1px var(--accent); }
-.sw-empty { margin: 0; padding: 12px 8px; color: var(--sub); font-size: .84rem; }
 .sw-name[data-tip-text] { cursor: help; }
 .sw-preview { position: sticky; top: -10px; z-index: 1; padding: 10px 12px 14px; margin: -8px -10px 4px; background: var(--panel); border-bottom: 1px solid var(--line); overflow: hidden; }
 .sw-preview .pv-text { height: auto; overflow: visible; white-space: nowrap; }
@@ -180,10 +170,8 @@ dialog.settings-win:focus { outline: none; }
 }
 .sw-foot { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 14px; border-top: 1px solid var(--line); color: var(--sub); font-size: .72rem; }
 .sw-foot kbd { background: var(--track); box-shadow: var(--ring); color: var(--text); border-radius: 4px; padding: 0 5px; margin-right: 3px; font-family: var(--mono); }
-@media (min-width: 1000px) and (pointer: fine) {
+@media (min-width: 900px) and (pointer: fine) {
   dialog.settings-win { inset-block-start: 11vh; min-width: 34rem; }
-  .sw-search { padding: 15px 20px; }
-  .sw-search input { font-size: 1.05rem; }
   .sw-list { padding: 8px 10px 10px; max-height: calc(100dvh - 11vh - 170px); }
   .sw-group { font-size: .8rem; padding: 12px 12px 4px; }
   .sw-row > span { min-height: 44px; padding: 3px 12px; }
@@ -199,11 +187,31 @@ dialog.settings-win:focus { outline: none; }
   .sw-row > span { min-height: 46px; }
   .sw-ctl .seg button, .sw-ctl .btn { min-height: 38px; }
 }
-@media (max-width: 999px) {
+@media (max-width: 899px) {
   dialog.settings-win { inset: auto auto calc(72px + env(safe-area-inset-bottom)) 50%; }
   .sw-list { max-height: calc(100dvh - 200px); }
   .sw-ctl { padding-left: 8px !important; }
 }
+.ring { display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--line); }
+.ring button {
+  padding: 4px 7px; border: 0; border-radius: 7px; background: none; color: var(--sub); font: inherit; font-size: .9rem;
+  white-space: nowrap; cursor: pointer; transition: color .15s, background-color .15s;
+}
+.ring button:hover { color: var(--text); }
+.ring button[aria-pressed="true"] {
+  color: var(--accent-text); background: color-mix(in srgb, var(--accent) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+:root[data-theme="light"] .ring button[aria-pressed="true"] { color: var(--text); background: color-mix(in srgb, var(--accent) 26%, transparent); }
+.ring-lbl { color: var(--sub); font-size: .9rem; margin: 0 4px 0 7px; }
+dialog.mini-pop {
+  position: fixed; inset: auto; margin: 0; border: 0; padding: 8px 10px; color: var(--text);
+  font-family: var(--ui); animation: note-in .15s var(--ease);
+}
+dialog.mini-pop::backdrop { background: none; }
+.mp-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 4px 2px; }
+.mp-name { font-size: .9rem; }
+.mp-name[data-tip-text] { cursor: help; }
 dialog.confirm {
   border: 0; padding: 16px 18px 14px; width: min(340px, calc(100vw - 32px)); color: var(--text);
   animation: note-in .2s var(--ease);

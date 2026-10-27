@@ -49,7 +49,7 @@ body.tb-ending #view-type > .keyboard {
 .r-graph { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .r-graph .r-chart { flex: 1; min-height: 120px; margin: 0; }
 .r-row { display: flex; align-items: flex-start; gap: 16px 40px; flex-wrap: wrap; }
-@media (min-width: 1000px) { .r-row { flex-wrap: nowrap; gap: 16px 32px; } .r-row > .r-num { flex: none; } .r-row > .r-num:has(.r-chars) { flex: 0 1 auto; min-width: 0; } }
+@media (min-width: 900px) { .r-row { flex-wrap: nowrap; gap: 16px 32px; } .r-row > .r-num { flex: none; } .r-row > .r-num:has(.r-chars) { flex: 0 1 auto; min-width: 0; } }
 .r-num { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .r-num.big > b { font-size: 2.6rem; line-height: 1; letter-spacing: -.03em; color: var(--text); }
 .r-num.hero > b { font-size: 4.6rem; letter-spacing: -.04em; color: var(--accent-text); text-shadow: 0 0 40px color-mix(in srgb, var(--accent) 25%, transparent); }
@@ -228,7 +228,7 @@ body.splashing .top .logo { visibility: hidden; }
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--av) 45%, transparent);
 }
 .avatar.photo { color: transparent; box-shadow: var(--ring); }
-@media (min-width: 1000px) {
+@media (min-width: 900px) {
   .profile-btn { height: 44px; gap: 10px; padding-left: 14px; }
   .profile-name { font-size: 1rem; }
   .profile-btn .avatar { width: 36px; height: 36px; font-size: 1rem; }
