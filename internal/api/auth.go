@@ -103,7 +103,7 @@ func (s *Server) readCredentials(w http.ResponseWriter, r *http.Request) (creden
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "accounts are off in this version"})
 		return c, false
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&c); err != nil {
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, int64(s.cfg.MaxAuthBodyBytes))).Decode(&c); err != nil {
 		badRequest(w, "invalid JSON")
 		return c, false
 	}

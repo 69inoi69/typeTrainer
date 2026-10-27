@@ -24,7 +24,7 @@ type portionRequest struct {
 }
 
 func (s *Server) handlePortion(w http.ResponseWriter, r *http.Request, user string, l *Language) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+	r.Body = http.MaxBytesReader(w, r.Body, int64(s.cfg.MaxBodyBytes))
 	var req portionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		badRequest(w, "invalid JSON")
@@ -172,7 +172,7 @@ type resultsRequest struct {
 }
 
 func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, user string, l *Language) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+	r.Body = http.MaxBytesReader(w, r.Body, int64(s.cfg.MaxBodyBytes))
 	var req resultsRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		badRequest(w, "invalid JSON")
@@ -181,7 +181,7 @@ func (s *Server) handleResults(w http.ResponseWriter, r *http.Request, user stri
 	if req.Chars == 0 {
 		req.Chars = len(req.Samples)
 	}
-	if msg := validate(req, s.cfg.MaxEvents, l.Info.Alphabet); msg != "" {
+	if msg := validate(req, s.cfg.MaxRoundChars, s.cfg.MaxEvents, l.Info.Alphabet); msg != "" {
 		badRequest(w, msg)
 		return
 	}
@@ -232,7 +232,7 @@ func (s *Server) handleProgress(w http.ResponseWriter, r *http.Request, user str
 	var req struct {
 		UnlockAll bool `json:"unlockAll"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&req); err != nil {
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, int64(s.cfg.MaxSmallBodyBytes))).Decode(&req); err != nil {
 		badRequest(w, "invalid JSON")
 		return
 	}
