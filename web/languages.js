@@ -51,7 +51,7 @@ export async function loadLanguage(id) {
     const info = S.languages.find((l) => l.id === id);
     S.alphabet = new Set(info.alphabet);
     document.documentElement.lang = id;
-    setUiLang(id);
+    await setUiLang(id);
     markLangSwitch();
     hideWarn();
     el.live.classList.remove("final");

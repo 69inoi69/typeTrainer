@@ -1,6 +1,6 @@
 // Entry point of the frontend.
 
-import { setUiLang, t } from "./i18n.js";
+import { t } from "./i18n.js";
 import { FX, Splash } from "./fx.js";
 import { el, S, store, isTouch } from "./state.js";
 import { getJSON, postJSON } from "./api.js";
@@ -27,8 +27,6 @@ async function joinStudy() {
 
 // ---------- start ----------
 (async function init() {
-  const guess = store.get("tt.lang") || (navigator.language || "").slice(0, 2).toLowerCase();
-  setUiLang(guess);
   renderProfile();
   const splash = Splash.start();
   loadSettings();
