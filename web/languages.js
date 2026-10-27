@@ -1,6 +1,6 @@
 // The language switch and loading a language.
 
-import { i18nVars, setUiLang, t, applyI18n } from "./i18n.js";
+import { i18nVars, t, applyI18n } from "./i18n.js";
 import { FX } from "./fx.js";
 import { el, S, store } from "./state.js";
 import { getJSON } from "./api.js";
@@ -51,7 +51,6 @@ export async function loadLanguage(id) {
     const info = S.languages.find((l) => l.id === id);
     S.alphabet = new Set(info.alphabet);
     document.documentElement.lang = id;
-    setUiLang(id);
     markLangSwitch();
     hideWarn();
     el.live.classList.remove("final");
