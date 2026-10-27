@@ -5,8 +5,6 @@ import (
 	"testing"
 )
 
-// The control group's portion: open words only, uniform, never the same word
-// twice in a row, no focus letter.
 func TestRandomPortion(t *testing.T) {
 	g := newTestGen(1)
 	open := map[string]bool{}
@@ -31,7 +29,6 @@ func TestRandomPortion(t *testing.T) {
 			last = w
 		}
 	}
-	// uniform: every open word comes, none much more often than the others
 	n := 2000 * testParams.PortionWords / len(open)
 	for w := range open {
 		if count[w] < n/3 || count[w] > 3*n {
@@ -40,7 +37,6 @@ func TestRandomPortion(t *testing.T) {
 	}
 }
 
-// Edge cases: no dictionary, no words per portion, a one-word dictionary.
 func TestRandomPortion_Edges(t *testing.T) {
 	if por := NewGenerator(nil, newRng(1), testParams).RandomPortion(0, "", testParams); len(por.Words) != 0 {
 		t.Fatalf("no dictionary: %v", por.Words)

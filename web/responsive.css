@@ -1,37 +1,28 @@
-/* Narrow and small windows: the navigation becomes a bar at the bottom,
-   phones get the stats-only layout. Loads last, so these rules win over the
-   same selectors in the other files (order: see base.css). */
+/* Narrow windows and phones. */
 
 /* ---------- narrow windows: the navigation is a bar at the bottom ---------- */
 @media (max-width: 999px) {
-  /* room for the bar, so nothing hides under it (fitKeyboard reads this) */
   body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
 }
-/* a zoomed-in page on a computer (a mouse, a narrow and short window,
-   such as 300-500 % zoom): the bottom bar would cover a third of the
-   screen and the text under it, so it sits at the end of the page instead,
-   and the settings window starts near the top */
 @media (max-width: 999px) and (max-height: 560px) and (pointer: fine) {
   .rail { position: static; }
   body { padding-bottom: 0; }
   dialog.settings-win { inset: 8px auto auto 50%; }
   .sw-list { max-height: calc(100dvh - 80px); }
-  .sw-foot { display: none; }   /* the keys line: the rows need the room more */
+  .sw-foot { display: none; }
 }
 @media (max-width: 760px) {
-  .profile-name { max-width: 10ch; }    /* phone: the name stays, a long one is cut with "…" */
+  .profile-name { max-width: 10ch; }
 }
 
 /* ---------- small screens (phones) ---------- */
 @media (max-width: 640px) {
-  /* phone: logo, languages and the account on top; numbers below */
   .top { padding-block: 10px 6px; gap: 8px; }
   .top-side { gap: 4px; }
   .logo-key { display: none; }
   .logo-name { font-size: 1.3rem; }
   :root { --ctl: 34px; }
   .lang-switch { grid-auto-columns: minmax(30px, auto); }
-  /* phone: six equal buttons over the whole width */
   .rail { justify-content: space-between; gap: 0; padding-inline: 2px; }
   .rail-group { flex: 2; }
   .rail .nav-switch { flex: 3; }
@@ -43,43 +34,30 @@
   .live { gap: 12px; margin-bottom: 6px; }
   .metric > span { font-size: 1.1rem; }
   .metric small { margin-left: 4px; font-size: .7rem; }
-  .metric:has(#wpm) { min-width: 3.5rem; }   /* the same room at the phone sizes */
+  .metric:has(#wpm) { min-width: 3.5rem; }
   .metric:has(#acc) { min-width: 4.1rem; }
   .metric:has(#progress) { min-width: 5.6rem; }
-  .metric.raw { display: none; }          /* phone: no room, wpm + acc are enough */
-  /* five tiles in two columns, the round count across both: three even
-     rows (rows of three leave a hole after the fifth tile) */
+  .metric.raw { display: none; }
   .tiles { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 100%; }
-  .tiles > .tile:first-child:nth-last-child(odd) { grid-column: 1 / -1; }   /* an odd count: the first across, the rest in pairs */
+  .tiles > .tile:first-child:nth-last-child(odd) { grid-column: 1 / -1; }
   .tile { padding: 10px 10px 9px; }
   .tile b { font-size: 1.3rem; }
-  /* phone: one row would make the chips tiny, so two rows of 13 (26
-     letters; a plain wrap gave 15 + 11) */
   .letter-row { display: grid; grid-template-columns: repeat(13, auto); justify-content: center; gap: 4px; }
-  /* no drawn keyboard on a phone, so the letters and the text take the
-     room. The text stays at the top: while you type, the
-     phone's own keyboard covers the bottom half of the screen. */
   .chip { font-size: clamp(.8rem, 3.6vw, .95rem); flex: none; width: 1.6em; height: 1.6em; }
-  /* Climb: the note goes under the level (one line more: nothing jumps,
-     the level changes only between portions) */
   .letters-caption:has(.mode-note) { flex-wrap: wrap; row-gap: 2px; }
   .letters-caption .mode-note { flex-basis: 100%; text-align: left; white-space: nowrap; }
   .letters-caption { gap: 12px; }
-  /* phone: the status line always has its own line under the numbers */
   .live { flex-wrap: wrap; height: auto; min-height: 28px; }
   .letters-caption { order: 1; flex-basis: 100%; }
   .letters-caption::before { display: none; }
   .stat { gap: 5px; }
-  #view-type { margin-block: 4px auto; }   /* phone: right under the header (the phone keyboard covers the bottom) */
-  .note { font-size: .78rem; border-radius: 14px; }   /* phone: a long message may take two lines */
+  #view-type { margin-block: 4px auto; }
+  .note { font-size: .78rem; border-radius: 14px; }
   .text-box { padding: 14px 16px 14px 34px; }
-  .text-box::before { left: 14px; top: 48px; }   /* 14 + 28 + 6 */
+  .text-box::before { left: 14px; top: 48px; }
   .text, .text-box::before { font-size: clamp(1.1rem, 5.2vw, 1.4rem); }
-  /* phone: the top stacks, the two big numbers side by side over the chart */
   .r-body { gap: 18px; }
   .r-top { grid-template-columns: 1fr; gap: 14px; }
-  /* two columns, so "New best" (result.js) takes its own line above the
-     numbers, as on a desktop, and never pushes the speed aside */
   .r-hero { display: grid; grid-template-columns: auto auto; justify-content: center; gap: 10px 32px; }
   .r-graph .r-chart { flex: none; height: 90px; min-height: 0; }
   .r-row { gap: 12px 28px; }
@@ -88,13 +66,12 @@
   .r-num.mid > b { font-size: 1.5rem; }
   .r-chars { font-size: .9rem; }
   .result .r-foot { margin-top: 18px; }
-  .r-next { width: 100%; justify-content: center; min-height: 46px; }   /* phone: the whole width, easy to hit */
+  .r-next { width: 100%; justify-content: center; min-height: 46px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
-  .note-bar { animation-duration: var(--ms, 3500ms) !important; } /* it is a timer, not decoration */
+  .note-bar { animation-duration: var(--ms, 3500ms) !important; }
 }
 
-/* confetti canvas (fx.js), above everything, never catches clicks */
 .confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 30; }

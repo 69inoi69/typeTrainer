@@ -1,23 +1,7 @@
-// Small visual rewards: confetti, bumps, a queue of short messages, and
-// the start screen (Splash).
-//
-// Nothing here changes what is measured or learned; it only makes actions
-// feel alive. Everything is either a CSS animation, the Web Animations API
-// (element.animate, runs on the compositor) or a short canvas animation that
-// runs only at the END of a round, never per keystroke.
-// With "reduce motion" switched on in the OS, all of it is skipped.
-// Layer: bottom. Imports nothing. It does not know
-// the rest of the app: callers pass it the element to animate (typing.js for
-// the streak and records, tools.js for toasts, app.js for the splash).
-// To add a reward effect: a function inside FX and its name in the returned
-// object. It may only change how things look: never S, a sample, or anything
-// sent to the server (AGENTS.md).
-
+// Visual rewards and the start screen.
 
 export const FX = (() => {
   const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
-  // confetti colours: fixed, not theme variables (a canvas cannot read CSS
-  // variables cheaply, and bright pieces read on both themes)
   const COLORS = ["#e2b714", "#8cc97a", "#7fa6e0", "#c98bd6", "#e59a62", "#5fc4c4", "#e57f8f"];
 
   // ---------- confetti ----------
@@ -29,7 +13,6 @@ export const FX = (() => {
     document.body.appendChild(canvas);
     ctx = canvas.getContext("2d");
   }
-  // burst(x, y): n pieces fly up from (x, y) in screen pixels and fall down.
   function burst(x, y, n = 70) {
     if (reduced()) return;
     ensureCanvas();
@@ -63,21 +46,14 @@ export const FX = (() => {
     frame = parts.length ? requestAnimationFrame(step) : 0;
     if (!frame) ctx.clearRect(0, 0, innerWidth, innerHeight);
   }
-  // burstFrom(element): confetti from the middle of an element.
   function burstFrom(node, n) {
     const r = node.getBoundingClientRect();
     burst(r.left + r.width / 2, r.top + r.height / 2, n);
   }
 
   // ---------- small animations ----------
-  // returns the Animation (or null), so callers can wait for .finished
   const anim = (node, frames, opts) => (node?.animate && !reduced() ? node.animate(frames, opts) : null);
 
-  // collapse(node, hide): fold an element away (height, margins, padding,
-  // opacity) or unfold it, then the class "off" (display: none) is set or
-  // removed. The content around it slides instead of jumping. The padding
-  // folds too: left out, it stayed until display: none and the page jumped
-  // by it at the end (the keyboard panel). Clicks only.
   async function collapse(node, hide, ms = 240) {
     if (reduced() || !node.animate) { node.classList.toggle("off", hide); return; }
     node.getAnimations().forEach((a) => a.cancel());
@@ -88,38 +64,26 @@ export const FX = (() => {
     const shut = { height: "0px", marginTop: "0px", marginBottom: "0px", paddingTop: "0px", paddingBottom: "0px", opacity: 0 };
     node.style.overflow = "hidden";
     const a = node.animate(hide ? [open, shut] : [shut, open], { duration: ms, easing: "cubic-bezier(.2,.8,.2,1)" });
-    try { await a.finished; } catch { return; }   // cancelled by a newer call
+    try { await a.finished; } catch { return; }
     node.style.overflow = "";
     if (hide) node.classList.add("off");
   }
-  // fade an element out (and a little down); resolves when done
   const fadeOut = async (node, ms = 200) => {
     const a = anim(node, [{ opacity: 1 }, { opacity: 0, transform: "translateY(4px)" }], { duration: ms, easing: "ease-in" });
-    if (a) { try { await a.finished; } catch { /* cancelled */ } }
+    if (a) { try { await a.finished; } catch {} }
   };
-  // bump: a quick grow and back (the streak number); s = how big at the top
   const bump = (node, s = 1.3) => anim(node,
     [{ transform: "scale(1)" }, { transform: `scale(${s})` }, { transform: "scale(1)" }],
     { duration: 280, easing: "cubic-bezier(.3,1.6,.5,1)" });
-  // shake: a short "no" from side to side (a broken streak, the reset button)
   const shake = (node) => anim(node,
     [{ transform: "translateX(0)" }, { transform: "translateX(-5px)" }, { transform: "translateX(4px)" }, { transform: "translateX(-2px)" }, { transform: "none" }],
     { duration: 320, easing: "ease-out" });
 
   // ---------- messages: part of the interface, not pop-ups ----------
-  // A message takes the place of the top line of the text card (the live
-  // numbers and the status line) for a few seconds, then the line comes
-  // back. One message at a time; the others wait in a queue. A thin bar under
-  // the message fills up while it is shown: when it is full (CSS animation,
-  // "animationend") the next one comes. Hover pauses it, a click skips it.
-  // They are only for things outside typing (a file saved or loaded): what
-  // happened while typing is shown on the result screen (result.js).
-  const NOTE_MS = 3500;    // time on screen
+  const NOTE_MS = 3500;
   const INFO_ICON = '<circle cx="12" cy="12" r="8"/><path d="M12 11v5M12 8h.01"/>';
   const queue = [];
-  let current = null;        // the message on screen, or null
-  // toast(html, act): queue a message; act: what its button (a
-  // button.note-act inside html) does when pressed
+  let current = null;
   function toast(html, act) {
     queue.push({ html, act });
     if (!current) showNext();
@@ -128,7 +92,7 @@ export const FX = (() => {
     const slot = document.getElementById("live");
     const box = document.getElementById("notice");
     const item = queue.shift();
-    if (!item) {                         // nothing left: the status line comes back
+    if (!item) {
       current = null;
       slot.classList.remove("noticing");
       return;
@@ -150,7 +114,7 @@ export const FX = (() => {
   }
   function closeNote(node) {
     if (node !== current || node.classList.contains("out")) return;
-    node.classList.add("out");           // fade out, then the next one (or the status line)
+    node.classList.add("out");
     node.addEventListener("animationend", (e) => { if (e.target === node) { node.remove(); showNext(); } });
   }
 
@@ -158,19 +122,9 @@ export const FX = (() => {
 })();
 
 // ---------- start screen ----------
-// Splash.start() runs right away; splash.done() is awaited once the app has
-// loaded. The splash stays at least MIN_MS so the word can type itself out
-// (screens.css, .splash-type), and any key or click skips the rest. Then
-// the splash fades away over the page, which is already drawn under it.
-// A calm fade, and nothing else moves: a page rising in piece by piece
-// would restyle the whole page at the moment the fade begins, which
-// stutters on a slow laptop. Only opacity is animated, so the compositor runs it
-// even while the page is still busy loading.
 export const Splash = (() => {
-  // the icon, 11 letters at --step 85 ms from --t0 320 ms (screens.css),
-  // then a short look at the whole word
   const MIN_MS = 1750;
-  const FADE_MS = 450;  // the splash fading away
+  const FADE_MS = 450;
   function start() {
     const root = document.getElementById("splash");
     const t0 = performance.now();
@@ -185,13 +139,9 @@ export const Splash = (() => {
 
     async function done() {
       const wait = MIN_MS - (performance.now() - t0);
-      // a timer as a wait, not an animation: it runs once, at load
       if (!skipped && wait > 0) await new Promise((r) => setTimeout(r, wait));
       const fade = root.animate([{ opacity: 1 }, { opacity: 0 }], { duration: FADE_MS, easing: "ease-in-out", fill: "forwards" });
-      // typing is allowed at once; the page appears under the fading splash
       document.body.classList.remove("splashing");
-      // the fade's own end, not a timer: on a busy slow laptop the fade
-      // starts late, and the splash must not vanish before it has faded
       await fade.finished;
       root.remove();
     }

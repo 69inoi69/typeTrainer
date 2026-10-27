@@ -1,14 +1,7 @@
-/* The typing screen: the letters row, the Learn panel, the status line,
-   the text and the caret, the Caps Lock and layout warning, the hands and
-   the drawn keyboard, Climb's level dots.
-   Loads after layout.css (order: see base.css). Typing latency matters
-   here: animate only transform and opacity, see AGENTS.md. */
+/* The typing screen. */
 
 /* ---------- letters bar (unlock progress) ---------- */
-/* min-height = one chip: Climb shows no letters, and an empty row must
-   keep its height, or the keyboard below gets more room and grows (fitKeyboard) */
 .letter-row { display: flex; flex-wrap: nowrap; justify-content: center; gap: 5px; min-height: calc(.9rem * 1.75); }
-/* always one row: with many letters (Polish, Ukrainian, Russian: 32) the chips get narrower */
 .chip {
   flex: 0 1 1.75em; min-width: 0; height: 1.75em; display: grid; place-items: center;
   border-radius: var(--r-sm); font-size: .9rem; font-weight: 500; color: color-mix(in srgb, var(--text) 78%, var(--sub));
@@ -16,9 +9,6 @@
   transition: background var(--med), color var(--med), transform var(--med);
 }
 .chip.mastered { color: var(--text); }
-/* how close an open letter is to mastered (letters.js letterProgress): a
-   thin bar along the bottom of the chip, its weakest part of the rule;
-   gone once the tick comes. The tooltip says what it still needs. */
 .chip .prog {
   position: absolute; left: 18%; right: 18%; bottom: 3px; height: 2px; border-radius: 2px;
   background: color-mix(in srgb, var(--sub) 30%, transparent); pointer-events: none;
@@ -29,10 +19,6 @@
   transition: transform .5s var(--ease);
 }
 .chip.mastered .prog { display: none; }
-/* the colour of an open letter: from red (far from mastered) to green
-   (mastered), mixed into the chip's own colour so it stays calm; the bar
-   above says the same in length, for eyes that do not tell red from green.
-   A letter not typed yet (.fresh) has no colour: nothing is known about it. */
 .chip:not(.locked, .focus, .fresh) {
   background: color-mix(in oklab, color-mix(in oklab, var(--ok) calc(var(--p, 0) * 100%), var(--error)) 22%, var(--panel-2));
 }
@@ -41,10 +27,6 @@
 }
 .chip.focus .prog { background: color-mix(in srgb, var(--on-accent) 25%, transparent); }
 .chip.focus .prog::after { background: var(--on-accent); }
-/* mastered: a small green tick in a dark round badge at the top right
-   corner, so it stays visible on any chip, the yellow focus one too
-   (a plain green dot vanishes on yellow).
-   ::before is the badge, ::after the tick (a mask, so it takes var(--ok)). */
 .chip.mastered::before {
   content: ""; position: absolute; top: -4px; right: -4px; width: 11px; height: 11px;
   border-radius: 50%; background: var(--bg); z-index: 1;
@@ -55,64 +37,29 @@
   -webkit-mask: var(--tick) center / contain no-repeat; mask: var(--tick) center / contain no-repeat;
 }
 :root { --tick: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 12.5l5 5L20 6.5' fill='none' stroke='black' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
-/* three states at a glance: open = a raised chip, focus = lit gold,
-   locked = only an outline */
 .chip.focus { background: var(--accent-fill); color: var(--on-accent); box-shadow: var(--accent-glow); }
-/* locked: crossed out, as on keybr */
 .chip.locked {
   background: linear-gradient(to top right, transparent calc(50% - .5px), color-mix(in srgb, var(--sub) 40%, transparent) 50%, transparent calc(50% + .5px));
   color: color-mix(in srgb, var(--sub) 55%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 25%, transparent);
 }
-/* the letter that opens next: still locked, but a gold dashed frame and a
-   brighter letter say "this one is coming" */
 .chip.locked.next { color: var(--accent-text); box-shadow: none; outline: 1px dashed color-mix(in srgb, var(--accent) 70%, transparent); outline-offset: -1px; }
-:root[data-theme="light"] .chip.fresh:not(.locked, .focus) { background: var(--panel); }   /* the coloured ones: above */
-.chip.pop { animation: pop 420ms cubic-bezier(.34, 1.56, .64, 1); }   /* a letter just opened: a springy pop */
+:root[data-theme="light"] .chip.fresh:not(.locked, .focus) { background: var(--panel); }
+.chip.pop { animation: pop 420ms cubic-bezier(.34, 1.56, .64, 1); }
 .chip.shine { animation: shine .9s ease-out; }
-/* a letter just mastered: it glows green once and calms down, no jump, so
-   it reads as "this one got its green dot" (it used to bounce, too loud) */
 @keyframes shine {
   0%, 30% { background: color-mix(in srgb, var(--ok) 30%, var(--panel)); color: var(--ok); }
 }
 .chip:not(.locked):hover { transform: translateY(-2px); }
 /* ---------- the Learn panel (learnpanel.js) ---------- */
-/* Two lines under the letters, left-aligned like the text: the last round,
-   the accuracy streak and today's goal; then the gold letter and what it
-   needs, or the news of the round that just ended. Readable at rest (the
-   text colour, not grey), stepping back while you type. */
-/* a fixed height (one line of columns): fitKeyboard
-   (keyboard.js) keeps this room in every mode, so the keyboard has one
-   size in all of them */
 .learn-panel { display: grid; height: var(--lp-room); margin-top: 12px; font-size: .9rem; color: color-mix(in srgb, var(--text) 80%, var(--sub)); transition: opacity .4s var(--ease); }
-/* Hidden (Climb, Freetype, Learn before its first stats) it keeps its
-   room: the text and the keyboard stand at the same place and size in
-   every mode. Climb's and
-   Freetype's round bar sits at the bottom of that room, right above the
-   text, as it does when it takes the panel's place. */
 .learn-panel[hidden] { visibility: hidden; }
 #view-type > .letters { position: relative; }
 body:not([data-mode="learn"]) #view-type > .letters > .mode-bar { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; }
-/* While you type the panel goes (issue #150): the summary is read between
-   rounds. Opacity only, the room stays: the first key moves
-   nothing. */
 body.typing-now .learn-panel { opacity: 0; pointer-events: none; }
-/* ...and the letters row slides down into its place (the middle of the
-   panel's room: 12px of margin, half the room, half the row's own height),
-   so the letter being learned sits closer to the text. Transform only:
-   no layout, the browser moves it on the compositor. */
 :root { --lp-room: calc(.9rem * 3.6); }
 #letters { transition: transform .4s var(--ease); }
 body.typing-now[data-mode="learn"] #letters { transform: translateY(calc(12px + var(--lp-room) / 2 + 50%)); }
 .lp-row { display: flex; align-items: center; gap: 30px; min-height: 1.9em; white-space: nowrap; min-width: 0; }
-/* One grid for both lines (one size for everything, clean alignment across
-   and down): the panel under the letters and
-   Learn's line above the text share these six tracks, so their dividers
-   line up. Line 1 spans them as Last round (1-2), Next letter (3), Clean
-   streak (4-5), Daily goal (6); line 2 is the word counter (1), "Learning
-   now" or the news (2-5) and the round switch or the live numbers (6).
-   Every label is .75rem grey, every value .9rem, number and words alike
-   (the number stands out by weight and colour, not size).
-   To add a column: change the tracks here and the spans below together. */
 :root { --lp-grid: 1.1fr 1.6fr 1.3fr 1.3fr 1.6fr 2.6fr; --lp-pad: 12px; }
 .lp-cols {
   display: grid; grid-template-columns: var(--lp-grid); padding: 6px 0;
@@ -130,54 +77,32 @@ body.typing-now[data-mode="learn"] #letters { transform: translateY(calc(12px + 
 .lp-none { color: var(--sub); }
 .lp-delta { font-variant-numeric: tabular-nums; }
 .lp-delta.up { color: var(--ok); }
-.lp-delta.down { color: var(--sub); }   /* information, not a scolding */
-/* a number that counts to a new value (learnpanel.js num, redraw): the
-   digits and the unit are drawn from --v (an integer, layout.css) and
-   data-u, so the browser can animate --v from the old value */
+.lp-delta.down { color: var(--sub); }
 .lp-n { counter-reset: v var(--v); }
 .lp-n::after { content: counter(v) attr(data-u); }
-/* the daily goal: a ring that fills clockwise from the top as the time
-   passes (--g, 0..1; learnpanel.js ring), green once the goal is reached;
-   ring and time sit together on the left, the seconds only add to the
-   right */
 .lp-ring { align-self: center; width: 16px; height: 16px; margin-right: 3px; transform: rotate(-90deg); flex: none; }
 .lp-ring circle { fill: none; stroke: color-mix(in srgb, var(--sub) 30%, transparent); stroke-width: 3; }
 .lp-ring .fill { stroke: var(--accent); stroke-dasharray: 100; stroke-dashoffset: calc(100 - var(--g) * 100); transition: stroke-dashoffset .5s linear, stroke .4s; }
 .lp-goal.met .lp-ring .fill { stroke: var(--ok); }
-/* The news of a round (learnpanel.js), tracks 2-5 of the line above the
-   text, the same edges as the panel's; while you type the live numbers
-   take that place (below) and they swap by opacity only, so the first key
-   changes no layout. */
 .focus-box { grid-column: 2 / 6; grid-row: 1; display: grid; align-items: end; transition: opacity .3s var(--ease); }
 .focus-box[hidden] { display: none; }
 body.typing-now .lp-news { opacity: 0; pointer-events: none; transition: opacity .3s var(--ease); }
 .lp-cell.met .lp-val b { color: var(--ok); }
-.lp-news { margin: 0 0 0 var(--lp-pad); align-self: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;   /* never under the round switch */
+.lp-news { margin: 0 0 0 var(--lp-pad); align-self: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
    font-size: .9rem; color: var(--text); cursor: default; }
 .lp-news.big { color: var(--accent-text); }
 .lp-news b { color: var(--accent-text); font-weight: 600; }
 
 /* ---------- typing settings (settings.js CHOICES and SWITCHES) ---------- */
-/* text size: the size of the text on a computer screen (the phone layout
-   keeps its own) */
 :root { --text-size: 2.15rem; }
 body[data-size="s"] { --text-size: 1.75rem; }
 body[data-size="l"] { --text-size: 2.6rem; }
-/* the caret jumps instead of gliding: no transition, the streak badge
-   riding on it too (!important: caret.js paceGlide may have left its own
-   duration on them) */
 body[data-glide="jump"], body[data-glide="jump"] :is(.caret, .streak) { --feel-caret-ms: 0ms !important; }
-/* a muted dot in the middle of every space (typing.js gives space spans
-   data-sp), so a beginner sees the space as a key too; in the letter's own
-   colour at low strength, alike in both themes; no setting (issue #167) */
 .text span[data-sp] { position: relative; }
 .text span[data-sp]::after {
   content: ""; position: absolute; left: 50%; top: 50%; width: .14em; height: .14em; border-radius: 50%;
   background: currentColor; opacity: .3; translate: -50% -50%; pointer-events: none;
 }
-/* the round bar above the letters (modebar.js): plain words as on
-   monkeytype's config bar, in groups split by a thin line, the chosen one
-   in the accent colour. It steps back while you type. */
 .mode-bar { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 0; margin-bottom: 6px; transition: opacity .4s var(--ease); }
 .mb-group { display: flex; align-items: center; gap: 2px; padding: 0 12px; }
 .mb-group + .mb-group { border-left: 1px solid var(--line); }
@@ -185,11 +110,8 @@ body[data-glide="jump"], body[data-glide="jump"] :is(.caret, .streak) { --feel-c
 .mode-bar button:hover { color: var(--text); }
 .mode-bar button[aria-pressed="true"] { color: var(--accent-text); }
 .mb-lbl { color: var(--sub); font-size: .9rem; margin-right: 4px; }
-.mode-bar[hidden], .round-switch[hidden] { display: none; }   /* one of the two per mode */
+.mode-bar[hidden], .round-switch[hidden] { display: none; }
 body.typing-now .mode-bar { opacity: 0; pointer-events: none; }
-/* Learn's round length, at the right end of the line above the text: two
-   quiet words, the chosen one gold with a gold line under it, as the mode
-   under the icon in the header */
 .round-switch { position: absolute; top: 0; right: 0; bottom: 0; display: flex; align-items: center; transition: opacity .4s var(--ease); }
 .round-switch .mb-group { gap: 20px; padding: 0; }
 .round-switch button { position: relative; padding: 3px 2px; border: 0; background: none; color: var(--sub); font: inherit; font-size: .9rem; cursor: pointer; transition: color .15s; }
@@ -197,17 +119,6 @@ body.typing-now .mode-bar { opacity: 0; pointer-events: none; }
 .round-switch button[aria-pressed="true"] { color: var(--accent-text); }
 .round-switch button[aria-pressed="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -3px; height: 2px; border-radius: 2px; background: var(--accent); }
 body.typing-now .round-switch { opacity: 0; pointer-events: none; }
-/* Learn's line above the text, on the panel's grid (--lp-grid): the word
-   counter (track 1), the news at rest or the live numbers while you type
-   (2-5, laid over each other; at rest the numbers would repeat the
-   panel's "Last round"), the round switch at rest (6), each from its
-   column's left edge.
-   No "Words" label: the switch says it. Every number is the panel's value
-   size; the counter and the live numbers keep their gold. The bottoms line
-   up: a label over a value everywhere, the numbers on the values' line.
-   The live numbers keep their room at rest, so nothing moves on the first
-   key. A narrow window drops the words after a value ("45%", "24 of 30"),
-   so nothing runs over (container query below). */
 body[data-mode="learn"] .live {
   display: grid; grid-template-columns: var(--lp-grid); align-items: end; align-content: center; gap: 0;
   container-type: inline-size;
@@ -219,44 +130,33 @@ body[data-mode="learn"] .live > .metric > span { font-size: .9rem; line-height: 
 body[data-mode="learn"] .live > .metric small { font-size: .9rem; line-height: 1.3; margin-left: .5ch; }
 body[data-mode="learn"] .live > .metric > span.pct { margin-left: 0; }
 body[data-mode="learn"] .live > .metric.num { grid-column: 2 / 6; min-width: 0; padding-left: var(--lp-pad); }
-body[data-mode="learn"] .live > .metric.num:nth-child(2) { padding-left: calc(var(--lp-pad) + 5rem); }   /* after "188 wpm" */
-body[data-mode="learn"] .live > .metric.num:nth-child(3) { padding-left: calc(var(--lp-pad) + 10rem); }   /* after "188 Raw"; "100% Acc" still fits at 1366 */
+body[data-mode="learn"] .live > .metric.num:nth-child(2) { padding-left: calc(var(--lp-pad) + 5rem); }
+body[data-mode="learn"] .live > .metric.num:nth-child(3) { padding-left: calc(var(--lp-pad) + 10rem); }
 body[data-mode="learn"] .round-switch { position: static; grid-column: 6; justify-self: start; align-self: end; padding-left: var(--lp-pad); }
 body[data-mode="learn"] .round-switch .mb-group { gap: 2ch; }
-/* track 6's divider, as the panel's columns have */
 body[data-mode="learn"] .live::after { content: ""; grid-column: 6; grid-row: 1; align-self: stretch; border-left: 1px solid var(--line); pointer-events: none; }
 body[data-mode="learn"] .live:has(> .focus-box[hidden])::after { display: none; }
-body.typing-now[data-mode="learn"] .live::after { opacity: 0; }   /* the switch is gone while you type */
+body.typing-now[data-mode="learn"] .live::after { opacity: 0; }
 @container (max-width: 920px) {
   .lp-cell { --lp-pad: 9px; }
 }
-body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; pointer-events: none; }   /* under the news and its tooltip */
+body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; pointer-events: none; }
 .wl { padding: 2px 8px; border: 0; border-radius: 6px; background: none; color: var(--sub); font: inherit; font-size: .9rem; cursor: pointer; transition: color .15s, opacity .4s var(--ease); }
 .wl:hover { color: var(--text); }
 .wl[aria-pressed="true"] { color: var(--accent-text); }
 
-/* a small bounce and one soft ring that spreads out and fades (no confetti) */
 @keyframes pop {
   0% { transform: scale(.6); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 80%, transparent); }
   55% { transform: scale(1.18); }
   100% { transform: scale(1); box-shadow: 0 0 0 12px transparent; }
 }
-/* The status line (focus, next letter, letters open): in the top line of
-   the text card, right after the word counter, behind a thin divider
-   (under the text it would sit far from it, next to the hands). With the
-   numbers hidden it moves up to the word counter. The
-   focus letter is the same gold square as the tinted letters in the text,
-   so the row also reads as their legend. Hidden on the result (with the
-   whole line), which has its own news. It keeps its brightness while you
-   type, so it must not move: the numbers before it have
-   fixed room (.metric min-width, below). */
 .letters-caption {
   display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-start; gap: 18px; white-space: nowrap;
-  flex: 0 1 auto; min-width: 0; overflow: hidden;   /* the numbers keep their room */
+  flex: 0 1 auto; min-width: 0; overflow: hidden;
   color: var(--sub); font-size: .82rem; transition: opacity .4s var(--ease), transform var(--med) var(--ease);
 }
 .letters-caption::before { content: ""; width: 1px; height: 1.2em; margin-left: 4px; background: var(--line); }
-.letters-caption:empty { display: none; }       /* nothing to say */
+.letters-caption:empty { display: none; }
 .text-box.blurred .letters-caption { opacity: .5; }
 .stat {
   display: inline-flex; align-items: center; gap: 7px; flex: none;
@@ -269,30 +169,23 @@ body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; point
 .stat b { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; font-size: .9rem; }
 .stat.focus svg { color: var(--accent-text); }
 .letters-caption .begin { padding: 0; font-size: .8rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: left; }
-.text-box.typing .letters-caption .begin { display: none; }   /* "type the text to begin": you have begun */
-/* desktop: one bigger scale for the whole page instead of single parts
-   made bigger (single parts make sizes jump around); here only what is
-   not in rem, and some room to breathe */
+.text-box.typing .letters-caption .begin { display: none; }
 @media (min-width: 1000px) and (pointer: fine) {
-  .letters { margin-bottom: 12px; }   /* room between the letters and the text block */
+  .letters { margin-bottom: 12px; }
   .letters-caption { font-size: .95rem; gap: 22px; }
   .stat svg { width: 1.1em; height: 1.1em; }
-  .stat .lbl, .stat b, .letters-caption .begin { font-size: 1em; }   /* label and value one size */
+  .stat .lbl, .stat b, .letters-caption .begin { font-size: 1em; }
   .letter-row { gap: 6px; min-height: calc(1.05rem * 1.75); }
   .chip { font-size: 1.05rem; border-radius: 7px; }
   .chip.locked { color: color-mix(in srgb, var(--sub) 80%, transparent); }
-  /* the mastered tick grows with the chips: easy to see at a glance */
   .chip.mastered::before { top: -7px; right: -7px; width: 18px; height: 18px; }
   .chip.mastered::after { top: -4px; right: -4px; width: 12px; height: 12px; }
 }
 
 /* ---------- text ---------- */
-/* A dark terminal-like card: left-aligned mono text, a block caret and a
-   prompt sign in front. The card is a bit lighter than the page and gets a
-   faint accent edge while it has the focus. */
 .text-box {
   position: relative; outline: none; cursor: text;
-  padding: 16px 32px 22px 52px;    /* room on the left for the prompt sign */
+  padding: 16px 32px 22px 52px;
   background: var(--panel);
   border-radius: var(--r-lg);
   box-shadow: var(--lift);
@@ -302,8 +195,7 @@ body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; point
 .text-box:focus-within, .text-box:focus {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent), var(--lift);
 }
-.text-box::before {                /* the prompt sign, like a shell waiting for input */
-  /* next to the first line: card padding (16) + the live line (28 + 10) */
+.text-box::before {
   content: "❯"; position: absolute; left: 24px; top: 54px;
   font-size: clamp(1.1rem, 3.6vw, 1.6rem); line-height: 1.7;
   color: var(--accent-text); opacity: .9; text-shadow: 0 0 18px color-mix(in srgb, var(--accent) 45%, transparent);
@@ -311,43 +203,20 @@ body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; point
 .text {
   position: relative;
   font-size: clamp(1.1rem, 3.6vw, 1.6rem); line-height: 1.7;
-  /* A fixed window of 3 lines, like a screen: only its content changes, the
-     card never grows or shrinks between exercises. A longer text scrolls up
-     line by line while you type (typing.js, placeCaret). */
   height: calc(3 * 1.7em); overflow: hidden;
   letter-spacing: .02em; color: var(--sub); word-break: break-word;
-  text-align: left;                /* like a terminal: lines start at the prompt */
+  text-align: left;
   transition: filter var(--med), opacity var(--med);
 }
-.text.swap { animation: text-in var(--med) var(--ease); }   /* new exercise fades in */
+.text.swap { animation: text-in var(--med) var(--ease); }
 @keyframes text-in { from { opacity: 0; transform: translateY(4px); } }
-/* words added while you type (typing.js, reveal): a short fade-in,
-   opacity only, so nothing on the screen moves (length: web/feel.js) */
-.text span.later { visibility: hidden; }   /* a word not shown yet: keeps its place (typing.js reveal) */
-/* Desktop (after monkeytype): no card,
-   the text stands on the page, bigger; the keyboard on its panel as wide
-   as the text, as big as
-   the height allows; the letters, text, hands and keyboard together in the
-   middle of the free height. The width no longer follows the keyboard, so
-   the header, the letters and the text keep one width. The letters sit
-   right on top of the text block (they are its legend; alone at the top of
-   the page they look unrelated), so they move with
-   it when the result takes the text's place. Centred by two equal auto
-   margins, above the letters and after the last element (::after, so it
-   works with the keyboard off).
-   --view-centred tells fitKeyboard (keyboard.js) that those margins are
-   only centring, not room taken. */
+.text span.later { visibility: hidden; }
 @media (min-width: 1000px) and (pointer: fine) {
-  /* the keyboard (with its panel) as wide as the text block; fitKeyboard
-     still caps the unit so the page fits */
-  /* 56rem: room for the middle, on every screen: header, text, result, stats */
   :root { --tw: min(100vw - 32px - 2 * var(--side), 56rem); --u-max: calc((var(--tw) - 24px) / 13.4); }
   .text-box, .text-box:focus-within, .text-box:focus { background: none; box-shadow: none; padding: 0 0 0 40px; }
-  /* Learn's line above the text starts at the card's edge, not the text's,
-     so its columns line up with the panel's (--lp-grid) */
   body[data-mode="learn"] .live { margin-left: -40px; }
   #view-type > .letters { margin-top: auto; }
-  .text-box::before { left: 0; top: 38px; }   /* next to the first line: under the live line */
+  .text-box::before { left: 0; top: 38px; }
   .text, .text-box::before { font-size: var(--text-size); }
   #view-type:not([hidden]) { flex: 1; display: flex; flex-direction: column; margin-block: 0; --view-centred: 1; }
   #view-type::after { content: ""; margin-top: auto; }
@@ -359,16 +228,7 @@ body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; point
   transition: opacity var(--med);
 }
 .text-box.blurred .focus-hint { opacity: 1; }
-/* the finger hint is for screen readers only and changes on every key:
-   strict containment keeps its update from touching the layout of the page */
 .finger-hint { contain: strict; }
-/* a round paused because the window lost focus (typing.js pauseRound).
-   Everything but the header freezes and steps back (the text, the live
-   line, the letters, the panel, the keyboard; not the shortcuts) so only the note is
-   read: a pause sign whose ring breathes slowly (waiting, not broken), the
-   word, the key that goes on (the footer's key style) and what happened to
-   the time. Centred on the whole card, so on a phone it never sits on top
-   of readable numbers. */
 .pause-note {
   position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
   opacity: 0; pointer-events: none; transition: opacity var(--med); text-align: center; padding-inline: 16px;
@@ -389,9 +249,6 @@ body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; point
 }
 .pause-note small { color: var(--sub); font-size: .8rem; opacity: .8; margin-top: 4px; }
 .text-box.paused .pause-note { opacity: 1; }
-/* the pause of the daily goal reached (typing.js pauseRound "goal"): a
-   green tick in place of the pause sign, and the reason in place of the
-   time note */
 .pause-note .goal-only, .pause-ic .goal-ic, .text-box.goal .pause-ic svg:not(.goal-ic),
 .text-box.goal .pause-note > :is([data-i18n="pause.title"], [data-i18n="pause.away"]) { display: none; }
 .text-box.goal .pause-note .goal-only, .text-box.goal .pause-ic .goal-ic { display: revert; }
@@ -399,97 +256,52 @@ body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; point
 .text-box :is(.text, .live), .text-box::before, #view-type > :not(.text-box) { transition: opacity var(--med), filter var(--med); }
 .text-box.paused :is(.text, .live) { filter: blur(5px); opacity: .2; }
 .text-box.paused::before { opacity: .25; }
-/* put on at once (typing.js pauseRound): a window out of sight draws
-   nothing, so a fade would only start when you come back */
 .text-box.snap, .text-box.snap *, .text-box.snap::before, body.tb-snap #view-type > :not(.text-box) { transition: none; }
-/* everything between the header and the shortcuts blurs like the text:
-   the letters row, the panel, the keyboard (a sharp keyboard under a
-   blurred text looks still in use); the header and the shortcuts stay
-   sharp, they say what to press */
 body.tb-paused #view-type > :not(.text-box) { filter: blur(5px); opacity: .25; }
 .text-box.paused :is(.caret, .focus-hint) { opacity: 0; }
 
-/* A typed letter turns white at the key press: one change, no fade,
-   nothing painted per frame (a short warm glow on every typed letter was
-   dropped for that: it painted the whole text again on every frame). */
 .text span.ok { color: var(--text); }
-/* No highlight on the letter under the caret: the caret marks it already,
-   and a lit next letter jumps ahead of the gliding caret. */
-/* the focus letter (the one being practised) is tinted until it is typed:
-   a muted gold, half way to the grey of the text (a brighter tint pulls
-   the eye away from the words) */
 .text span.fx { color: color-mix(in srgb, var(--accent) 46%, var(--sub)); }
-/* the next letter in the colour of its finger (typing.js lightNext, a
-   setting): the finger is seen without looking down. Light theme: the
-   finger colours are pastels, so a deeper shade.
-   Only the colour: the caret already marks the place. */
 .text span.fnext { color: var(--fc); }
 :root[data-theme="light"] .text span.fnext { color: color-mix(in oklab, var(--fc) 60%, #1d1428); }
 :root[data-theme="light"] .text span.fx { color: color-mix(in srgb, var(--accent-text) 80%, var(--sub)); }
-/* no glow on the text at rest: crisp letters read better; a mistake keeps a
-   short red glow (text-shadow moves nothing, so it costs nothing on a keypress) */
 .text span.bad, .text span.extra { text-shadow: 0 0 10px color-mix(in srgb, var(--error) 45%, transparent); }
-/* a wrong letter: red AND underlined, so it is not told by colour alone */
 .text span.bad {
   color: var(--error); border-radius: 3px; animation: oops 240ms ease-out;
   text-decoration: underline 2px color-mix(in srgb, var(--error) 70%, transparent); text-underline-offset: .2em;
 }
 @keyframes oops { from { background: color-mix(in srgb, var(--error) 35%, transparent); } }
-/* The three kinds of mistake look different at a glance, by colour AND
-   shape: wrong = red letter; skipped = dim with a dotted underline (it was
-   never typed); extra = struck through (it does not belong there). Lines do
-   not change the layout. */
-.text span.miss {                                    /* skipped with space */
+.text span.miss {
   color: color-mix(in srgb, var(--error) 45%, var(--sub));
   text-decoration: underline dotted var(--feel-mark-line, 2px); text-underline-offset: .22em;
   text-decoration-color: color-mix(in srgb, var(--error) 55%, transparent);
 }
-.text span.extra {                                   /* typed where the space was */
+.text span.extra {
   color: color-mix(in srgb, var(--error) 60%, var(--bg));
   text-decoration: line-through var(--feel-mark-line, 2px);
   text-decoration-color: color-mix(in srgb, var(--error) 70%, transparent);
 }
 
-/* The caret is ONE element moved with the CSS "translate" property (GPU), so
-   it glides from letter to letter (briefly: snappy, not floaty). JS sets its
-   position; its height and its gap above the letter are in em of the
-   text (82% and 9% of a letter's box in Geist Mono, as they were), so it is
-   always as tall as a letter (typing.js placeCaret says why).
-   "scale" stays free for the flinch and scales in place. */
 .caret {
-  /* a block caret, one character wide (the font is monospace, so 1ch is
-     exactly one letter), drawn over the letter in a see-through accent:
-     light enough that the letter under it stays easy to read, and no bar
-     under it (a yellow underline looks odd) */
   position: absolute; left: 1px; top: .117em; width: calc(1ch + .02em); height: 1.07em;
   background: color-mix(in srgb, var(--accent) 38%, transparent);
   border-radius: 3px; pointer-events: none;
   box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 25%, transparent);
   will-change: translate;
-  /* the glide: --caret-curve over --feel-caret-ms (both from web/feel.js) */
   transition: translate var(--feel-caret-ms, 0ms) var(--caret-curve);
-  /* at rest it stands still: its job is where, not "I am alive" (issue #167) */
 }
-.caret.jump { transition: none; }   /* new round, resize: no glide */
-/* The caret style is a setting (body[data-caret], settings.js); both move
-   the same way, only the look differs. The block above is "block". "line"
-   (the default, also before settings.js has run): 2.5px of accent at the
-   left edge of the next letter. */
+.caret.jump { transition: none; }
 body:not([data-caret]) .caret, body[data-caret="line"] .caret {
   width: 2.5px; background: var(--accent); border-radius: 2px;
   box-shadow: 0 0 12px 1px color-mix(in srgb, var(--accent) 55%, transparent);
 }
-:root[data-theme="light"] body[data-caret="block"] .caret { background: color-mix(in srgb, var(--accent) 55%, transparent); }   /* the pale gold needs more on white */
+:root[data-theme="light"] body[data-caret="block"] .caret { background: color-mix(in srgb, var(--accent) 55%, transparent); }
 :root[data-theme="light"] :is(body:not([data-caret]), body[data-caret="line"]) .caret { background: var(--accent-deep); box-shadow: 0 0 10px rgba(224, 162, 26, .45); }
 .text-box.blurred .caret { opacity: 0; }
 
 .hidden-input { position: absolute; opacity: 0; width: 1px; height: 1px; left: -9999px; }
 
 /* ---------- Caps Lock / wrong layout warning ---------- */
-/* Caps Lock / wrong layout: sits on top of the status line, so the page
-   never moves. Fades in and slides down a little. */
-/* a card: a gold icon, what
-   is wrong, and the keys that fix it drawn as small keycaps */
 .warn {
   position: absolute; left: 0; top: -4px; max-width: 100%; z-index: 2;
   display: flex; align-items: center; gap: 10px; width: max-content; min-height: 34px; padding: 4px 6px 4px 5px;
@@ -513,26 +325,10 @@ body:not([data-caret]) .caret, body[data-caret="line"] .caret {
 :root[data-theme="light"] .warn kbd { background: #fff; box-shadow: inset 0 -2px 0 rgba(30, 32, 40, .18), 0 0 0 1px rgba(30, 32, 40, .14); }
 
 /* ---------- hands: which finger presses the next key ---------- */
-/* Each finger is a rounded bar in its finger color; the one to use lights up
-   and lifts a little. Sizes follow the keyboard unit --u, so the hand grows
-   and shrinks with the keyboard (the intro has its own bigger copy). Every finger is its own layer (index.html):
-   the lift is the CSS "translate", moved by the graphics card. The finger
-   no longer taps or bounces on a keypress (measured, 2026-10-20: every
-   animation started per key made the typed letter show later). */
 .hands {
   display: flex; justify-content: center; align-items: flex-end; gap: calc(var(--u) * .9 * var(--feel-hand, 1));
   margin: 6px 0 8px; user-select: none; pointer-events: none;
 }
-/* On the typing screen a small hand rides along the top edge of the
-   keyboard, with no card around it (issue #150), right above the column of the next key, so key and
-   finger are seen in one place (with big hands above the keyboard the eyes
-   go to the hands first, then to the keys; a card standing on the key
-   above covers that key). Only the hand of that side;
-   both when both are used (space, Shift, AltGr). keyboard.js sets the
-   middle of the key in keys (--kx); the hand stands there at once, by
-   "translate" (no layout): no glide, so nothing slides across the keyboard
-   under the eyes while you type (#148). left: the keyboard's padding,
-   where the rows start. */
 .keyboard > .hands {
   position: absolute; left: 12px; top: 0; z-index: 2; margin: 0;
   gap: calc(var(--u) * .08); padding: 4px 5px 0;
@@ -543,42 +339,26 @@ body:not([data-caret]) .caret, body[data-caret="line"] .caret {
 .keyboard > .hands[data-show="l"] .hand.right, .keyboard > .hands[data-show="r"] .hand.left { display: none; }
 .keyboard .hand { --skin: color-mix(in srgb, var(--text) 16%, var(--panel)); }
 .hand {
-  /* --hu: one unit of the 100 x 84 drawing in px, for the finger moves */
   --hu: calc(var(--u) * 2 * var(--feel-hand, 1) / 100);
   position: relative; width: calc(var(--hu) * 100); aspect-ratio: 100 / 84; flex: none;
   --skin: color-mix(in srgb, var(--text) 7%, var(--bg));
-  /* the wrist fades out at the bottom instead of ending in a hard edge */
   -webkit-mask-image: linear-gradient(to bottom, #000 74%, transparent);
   mask-image: linear-gradient(to bottom, #000 74%, transparent);
 }
-/* the hands are plain grey silhouettes and only the finger to use takes its
-   colour, so it is the one coloured thing in them in both themes (tinted
-   fingers hide the right one in the light theme).
-   No outlines, no shadow on the knuckle line. */
 .hand > svg, .hand > .finger { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .hand .finger > svg { display: block; width: 100%; height: 100%; overflow: visible; }
-.hand.right { scale: -1 1; }   /* the left hand mirrored */
-/* Over the keyboard the hand is a picture (keyboard.js handPicture): the
-   live drawing stays as the model it is made from, out of sight; the
-   picture has room above for the lifted finger and its own faded wrist. */
+.hand.right { scale: -1 1; }
 .hand > img { display: none; }
 .keyboard .hand > img { display: block; position: absolute; left: 0; width: 100%; top: calc(-12 * var(--hu)); height: calc(96 * var(--hu)); }
 .keyboard .hand > :not(img) { display: none; }
 .keyboard .hand { -webkit-mask-image: none; mask-image: none; }
-/* the palm a shade darker than the fingers, so they stand apart from it */
 .hand .palm { fill: color-mix(in srgb, var(--skin) 78%, #000); }
 .hand .finger {
   --fc: #888;
-  will-change: translate;      /* a layer of its own: the intro lifts the fingers (screens.css demo-lift) */
+  will-change: translate;
 }
 .hand .finger .skin { fill: var(--skin); }
-/* The finger to use, in the pictures over the keyboard (keyboard.js
-   handPicture): lifted along the way it points (--dx/--dy, index.html) by
-   FEEL.fingerLiftPx, in its full colour (--fc; the light theme a deeper
-   --fcd), no glow (a blurred edge looks like double vision). It is the
-   main "which finger" signal; the key below is only hinted (.key.next). */
 
-/* visually hidden, still read by screen readers (the finger sentence) */
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
@@ -586,36 +366,24 @@ body:not([data-caret]) .caret, body[data-caret="line"] .caret {
 .sr-only kbd, .sr-only b { all: unset; }
 
 /* ---------- keyboard ---------- */
-/* the keyboard sits on one quiet panel as wide as its keys (the padding is
-   counted by fitKeyboard, keyboard.js) */
 .keyboard {
   display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * .12); user-select: none;
-  position: relative;   /* the hand over the next key (.hands) is placed in it */
-  isolation: isolate;   /* the lit key (.lit, z-index 1) stays under the hand */
+  position: relative;
+  isolation: isolate;
   width: max-content; max-width: 100%; margin-inline: auto; padding: 10px 12px 12px;
-  /* room for the hand above it (FEEL.handRoom, counted by fitKeyboard) */
   margin-top: calc(var(--u) * var(--feel-hand-room, 1));
   border-radius: var(--r-lg); background: color-mix(in srgb, var(--panel) 55%, transparent); box-shadow: var(--ring);
 }
-/* the hand is a setting; off, its room above the keyboard stays, so the
-   keyboard keeps its size and place */
 body.hand-off .keyboard > .hands { display: none; }
 :root[data-theme="light"] .keyboard { background: rgba(255, 255, 255, .55); box-shadow: var(--ring), 0 10px 30px -18px rgba(20, 24, 32, .25); }
-/* Hidden (keyboard.js autoKb), the keyboard keeps its room on a computer:
-   the letters and the text stand at the same place in every mode (issue
-   #150, one layout). A phone has no room to spare: there it goes. */
 .keyboard.off { visibility: hidden; }
 @media not ((min-width: 1000px) and (pointer: fine)) { .keyboard.off { display: none; } }
-/* a window too small for usable keys (fitKeyboard): the keyboard steps
-   aside for the text, without changing the saved choice */
 body.kb-nofit #keyboard { display: none; }
 .kb-row { display: flex; gap: calc(var(--u) * .12); width: calc(var(--u) * 13.4); }
 .key {
-  --fc: #888;                         /* finger color, set from JS */
+  --fc: #888;
   position: relative; height: var(--u); width: var(--u); flex: none;
   display: flex; align-items: center; justify-content: center;
-  /* calm keys: rounder, the finger colour mostly on the bottom edge, a
-     lighter and smaller label, a hairline of light on top */
   border-radius: calc(var(--u) * .2); font-size: calc(var(--u) * .3); font-weight: 400;
   color: color-mix(in srgb, var(--text) 70%, var(--bg));
   background:
@@ -623,43 +391,29 @@ body.kb-nofit #keyboard { display: none; }
     color-mix(in srgb, var(--fc) 9%, var(--key));
   border-bottom: 2px solid color-mix(in srgb, var(--fc) 55%, transparent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 1px 2px rgba(0, 0, 0, .4);
-  /* the next key's colour switches at once (a 120 ms fade of the colour and
-     the glow made the browser paint the keys again for several frames on
-     every key); only its lift glides, which the
-     graphics card does on its own */
   transition: transform var(--fast) var(--ease), translate 120ms ease-out, opacity var(--med);
   overflow: hidden;
 }
-.key.home::after {                    /* bump on F and J */
+.key.home::after {
   content: ""; position: absolute; bottom: 18%; width: 28%; height: 2px;
   background: currentColor; border-radius: 2px; opacity: .7;
 }
 .key .lbl { position: relative; transition: opacity .6s var(--ease); }
-/* a letter you have mastered fades from its key (letters.js): the fingers
-   know it, the eyes need not look down; the key itself and its colour stay */
 .keyboard .key.known .lbl { opacity: .14; }
-.key .alt {                           /* letter typed with AltGr, e.g. ą on the a key */
+.key .alt {
   position: absolute; right: 12%; bottom: 8%; font-size: .62em; opacity: .7;
 }
 .key > .lit .alt { opacity: 1; }
 .key.mod .lbl { font-size: .8em; }
-/* locked: dark, with a faint edge and a dim label (not see-through: that looked washed out) */
 .key.locked:not(.next) {
   background: color-mix(in srgb, var(--fc) 3%, var(--bg)); color: color-mix(in srgb, var(--sub) 65%, var(--bg));
   border-bottom-color: color-mix(in srgb, var(--fc) 22%, transparent);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .03);
 }
-/* Keycaps on the drawn keyboard (like custom keycaps on a good mechanical
-   board): a top face with a soft spot of light, the
-   front skirt in the finger colour (a thick inset shadow at the bottom), a
-   short drop under the key, and a bigger semibold legend. The keys of the
-   intro look the same;
-   the stats map keeps the plain look. */
 .keyboard .key, .intro .key {
   --skirt: calc(var(--u) * .09);
-  padding-bottom: var(--skirt);              /* the legend sits on the top face */
+  padding-bottom: var(--skirt);
   border-bottom: 0; border-radius: calc(var(--u) * .18);
-  /* capitals, as on the keycaps of real keyboards */
   font-family: "Geist Mono Keys", var(--mono); font-weight: 600; font-size: calc(var(--u) * .34); text-transform: uppercase;
   color: color-mix(in srgb, var(--text) 88%, var(--bg));
   background:
@@ -671,23 +425,11 @@ body.kb-nofit #keyboard { display: none; }
     inset 0 1px 0 rgba(255, 255, 255, .08), inset 0 0 0 1px rgba(255, 255, 255, .03),
     0 2px 0 rgba(0, 0, 0, .45), 0 6px 14px -6px rgba(0, 0, 0, .6);
 }
-.keyboard .key.wide .lbl, .keyboard .key.mod .lbl { font-size: .8em; text-transform: none; }   /* "Space", "AltGr" as written */
-:is(.keyboard, .intro) .key.home::after { bottom: 22%; }   /* the bump stays on the top face */
-/* The next key: it must be found by side vision while the eyes stay on the
-   text. Side vision sees brightness and movement more than hues, and a
-   faint tint of the finger colour got lost among the other coloured keys.
-   So it is the one key in its full finger colour: much brighter than the
-   dark keys around it (deeper than the pale ones on the light page),
-   raised a little (FEEL.nextKeyLiftPx) and glowing in the same colour as
-   the finger above (a white key shows no colour).
-   That look is drawn once on every key, in a layer of its own over it
-   (.lit, keyboard.js addLit), and only shown on the next key: switching
-   it is a change of opacity the graphics card does alone, the keys are
-   never painted again while you type (measured, 2026-10-20). The key under
-   it never changes, so its own rules here do not depend on .next. */
-.keyboard .key { overflow: visible; }   /* the glow of .lit reaches past the key */
+.keyboard .key.wide .lbl, .keyboard .key.mod .lbl { font-size: .8em; text-transform: none; }
+:is(.keyboard, .intro) .key.home::after { bottom: 22%; }
+.keyboard .key { overflow: visible; }
 .keyboard .key > .lit {
-  position: absolute; inset: 0; z-index: 1;   /* above the neighbouring keys too */
+  position: absolute; inset: 0; z-index: 1;
   display: flex; align-items: center; justify-content: center; padding-bottom: var(--skirt);
   border-radius: inherit; font-style: normal; pointer-events: none;
   color: #15161a; translate: 0 var(--feel-next-lift, -3px);
@@ -696,16 +438,12 @@ body.kb-nofit #keyboard { display: none; }
     inset 0 calc(-1 * var(--skirt)) 0 color-mix(in srgb, var(--fc) 60%, #0b0c0f),
     0 0 0 2px color-mix(in srgb, var(--fc) 60%, transparent),
     0 8px 22px -4px color-mix(in srgb, var(--fc) 55%, transparent);
-  /* when its key is pressed the light sinks a little and goes out (a dip
-     of FEEL.keyPress*): opacity and scale of a layer of its own, which the
-     graphics card animates alone; it comes on at once (no transition in
-     the .next state) */
   opacity: 0; scale: var(--feel-key-press-scale, .96); will-change: opacity, scale;
   transition: opacity var(--feel-key-press-ms, 90ms) ease-out, scale var(--feel-key-press-ms, 90ms) cubic-bezier(.2, .8, .2, 1);
 }
 .keyboard .key.next > .lit { opacity: 1; scale: 1; transition: none; }
 .keyboard .key.wide > .lit, .keyboard .key.mod > .lit { font-size: .8em; text-transform: none; }
-.keyboard .key.home > .lit::after {   /* the bump on F and J, as on the key */
+.keyboard .key.home > .lit::after {
   content: ""; position: absolute; bottom: 22%; width: 28%; height: 2px;
   background: currentColor; border-radius: 2px; opacity: .7;
 }
@@ -716,11 +454,6 @@ body.kb-nofit #keyboard { display: none; }
     inset 0 calc(-1 * var(--skirt)) 0 color-mix(in srgb, var(--fc) 18%, #0b0c0f), inset 0 1px 0 rgba(255, 255, 255, .04),
     0 2px 0 rgba(0, 0, 0, .35);
 }
-/* Light theme: the finger colours (data/layouts) are pastels made for the
-   dark page; mixed in at 12% they all fade to white. Here every key gets
-   more of its colour, a frame and
-   a shadow, and --fcd, a deeper shade of the same colour, draws the edges
-   and the finger to use. The layout data stays the same. */
 :root[data-theme="light"] :is(.keyboard, .intro) .key, :root[data-theme="light"] .hand .finger {
   --fcd: color-mix(in oklab, var(--fc) 72%, #1d1428);
 }
@@ -739,7 +472,7 @@ body.kb-nofit #keyboard { display: none; }
     0 2px 0 rgba(40, 35, 20, .12);
 }
 :root[data-theme="light"] .keyboard .key > .lit {
-  color: #fff;   /* the deep shade of its colour among the pale ones */
+  color: #fff;
   background: radial-gradient(120% 90% at 50% 30%, rgba(255, 255, 255, .18), transparent 60%), var(--fcd);
   box-shadow:
     inset 0 calc(-1 * var(--skirt)) 0 color-mix(in oklab, var(--fcd) 70%, #000), 0 0 0 2px var(--fcd),
@@ -747,10 +480,6 @@ body.kb-nofit #keyboard { display: none; }
 }
 :root[data-theme="light"] .hand .palm { fill: color-mix(in srgb, var(--skin) 82%, var(--text)); }
 
-/* Climb: one dot per pass a level needs, filled when passed (letters.js
-   status line, result.js level). The sentence after the result row says
-   what the round counted for: green when it counted or moved up, red when
-   it was under the fail line, plain when it did not count. */
 .pips { display: inline-flex; gap: 5px; margin-left: 8px; vertical-align: middle; }
 .pips i { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--sub); }
 .pips i.on { background: var(--ok); border-color: var(--ok); }
@@ -759,7 +488,6 @@ body.kb-nofit #keyboard { display: none; }
 .r-climb { margin: 0; font-size: 1.25rem; color: var(--text); }
 .r-climb.pass { color: var(--ok); }
 .r-climb.fail { color: var(--error); }
-/* a round the server did not keep (issue #149): the line in the error colour, the button beside it */
 .r-unsaved { margin: 0; font-size: 1.25rem; color: var(--error); display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; }
 .r-unsaved .btn { font-size: 1rem; }
 .letters-caption .mode-note.slip { color: var(--error); }

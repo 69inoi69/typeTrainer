@@ -2,7 +2,6 @@ package language
 
 import "testing"
 
-// A word is allowed only if every letter is in the alphabet; the empty word never is.
 func TestAllows(t *testing.T) {
 	pl := Language{Alphabet: "aąbcćdeęfghijklłmnńoóprsśtuwyzźż"}
 	uk := Language{Alphabet: "абвгґдеєжзиіїйклмнопрстуфхцчшщьюя"}
@@ -13,9 +12,9 @@ func TestAllows(t *testing.T) {
 	}{
 		{pl, "się", true},
 		{pl, "żółw", true},
-		{pl, "quiz", false}, // q is not in this alphabet
+		{pl, "quiz", false},
 		{uk, "їжак", true},
-		{uk, "это", false}, // э is Russian, not Ukrainian
+		{uk, "это", false},
 		{uk, "", false},
 	}
 	for _, c := range cases {
@@ -25,7 +24,6 @@ func TestAllows(t *testing.T) {
 	}
 }
 
-// A valid list parses; an empty list, a missing field, a repeated id or broken JSON is an error.
 func TestParse(t *testing.T) {
 	ok := `[{"id":"en","layout":"qwerty-en","alphabet":"abc"}]`
 	if _, err := Parse([]byte(ok)); err != nil {
@@ -44,11 +42,10 @@ func TestParse(t *testing.T) {
 	}
 }
 
-// Words lowercases, drops duplicates and foreign words, and keeps the frequency order.
 func TestWords(t *testing.T) {
 	en := Language{Alphabet: "abcdefghijklmnopqrstuvwxyz"}
 	got := en.Words("The\nthe\ncafé\nand\n\nan't\na\n")
-	want := []string{"the", "and", "a"} // lowercased, deduplicated, foreign letters dropped, order kept
+	want := []string{"the", "and", "a"}
 	if len(got) != len(want) {
 		t.Fatalf("Words = %q, want %q", got, want)
 	}

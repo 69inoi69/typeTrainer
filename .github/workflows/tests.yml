@@ -1,8 +1,4 @@
-# Checks every pull request before it is merged (pages.yml checks main again
-# before publishing): formatting, static checks, tests (the storage tests
-# also against a real PostgreSQL), that the WebAssembly version of the
-# site still compiles, and the browser checks (tools/browser: real rounds
-# typed in Chromium against the real server).
+# Checks every pull request.
 name: Tests
 
 on:
@@ -14,7 +10,6 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    # a throwaway PostgreSQL for internal/storage/postgres_test.go
     services:
       postgres:
         image: postgres:16
@@ -70,13 +65,10 @@ jobs:
           npm ci
           npx playwright install --with-deps chromium
 
-      # starts `go run .` itself (playwright.config.mjs)
       - name: Browser checks
         working-directory: tools/browser
         run: npx playwright test
 
-      # the trace and screenshot of a failed check, to open with
-      # `npx playwright show-trace`
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

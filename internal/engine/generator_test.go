@@ -21,9 +21,8 @@ func newTestGen(seed int64) *Generator {
 	return NewGenerator(testWords, rand.New(rand.NewSource(seed)), testParams)
 }
 
-// Each index is picked for its share of the total weight.
 func TestWeightedPick(t *testing.T) {
-	w := []float64{1, 3} // total 4: r in [0, .25) -> 0, [.25, 1) -> 1
+	w := []float64{1, 3}
 	for _, c := range []struct {
 		r    float64
 		want int
@@ -34,7 +33,6 @@ func TestWeightedPick(t *testing.T) {
 	}
 }
 
-// Empty input, all-zero weights, and a zero weight that is never picked.
 func TestWeightedPick_EdgeCases(t *testing.T) {
 	if got := WeightedPick(nil, 0.5); got != -1 {
 		t.Errorf("empty: got %d, want -1", got)
@@ -49,7 +47,6 @@ func TestWeightedPick_EdgeCases(t *testing.T) {
 	}
 }
 
-// The unlock order is by letter frequency in the word list.
 func TestLetterOrder_MostFrequentFirst(t *testing.T) {
 	order := letterOrder([]string{"eee", "ee", "ta", "t"}, nil, 1)
 	if strings.Join(order, "") != "eta" {
@@ -57,15 +54,13 @@ func TestLetterOrder_MostFrequentFirst(t *testing.T) {
 	}
 }
 
-// Home letters count HomeBoost times: a home letter a third as frequent
-// as another moves ahead of it with a boost of 4, not with 2.
 func TestLetterOrder_HomeLettersBoosted(t *testing.T) {
-	words := []string{"eee", "eee", "ttt", "a", "a"} // e 6, t 3, a 2
+	words := []string{"eee", "eee", "ttt", "a", "a"}
 	home := map[string]bool{"a": true}
-	if got := strings.Join(letterOrder(words, home, 4), ""); got != "aet" { // a counts 8
+	if got := strings.Join(letterOrder(words, home, 4), ""); got != "aet" {
 		t.Errorf("boost 4: got %s, want a e t", got)
 	}
-	if got := strings.Join(letterOrder(words, home, 2), ""); got != "eat" { // a counts 4: after e (6), before t (3)
+	if got := strings.Join(letterOrder(words, home, 2), ""); got != "eat" {
 		t.Errorf("boost 2: got %s, want e a t", got)
 	}
 	if got := strings.Join(letterOrder(words, home, 1), ""); got != "eta" {
@@ -73,8 +68,6 @@ func TestLetterOrder_HomeLettersBoosted(t *testing.T) {
 	}
 }
 
-// SetHome reorders and sizes the first lesson again: it still has enough
-// real words, and with no home letters the order is plain frequency.
 func TestSetHome_FirstLessonStillHasEnoughWords(t *testing.T) {
 	g := newTestGen(1)
 	plain := strings.Join(g.Order(), "")
@@ -91,7 +84,6 @@ func TestSetHome_FirstLessonStillHasEnoughWords(t *testing.T) {
 	}
 }
 
-// The first lesson has at least StartLetters letters and MinWords words.
 func TestFirstLesson_HasEnoughRealWords(t *testing.T) {
 	g := newTestGen(1)
 	if g.Start() < testParams.StartLetters {
@@ -102,10 +94,9 @@ func TestFirstLesson_HasEnoughRealWords(t *testing.T) {
 	}
 }
 
-// A new user's exercise uses only open letters and has ExerciseWords words.
 func TestNext_UsesOnlyOpenLetters(t *testing.T) {
 	g := newTestGen(2)
-	ex := g.Next(nil, 0, 0, testParams) // brand new user: no stats, unlocked = 0
+	ex := g.Next(nil, 0, 0, testParams)
 	open := strings.Join(ex.Unlocked, "") + " "
 	for _, r := range ex.Text {
 		if !strings.ContainsRune(open, r) {
@@ -120,7 +111,6 @@ func TestNext_UsesOnlyOpenLetters(t *testing.T) {
 	}
 }
 
-// Next never puts the same word twice in a row.
 func TestNext_NoWordTwiceInARow(t *testing.T) {
 	g := newTestGen(3)
 	for i := 0; i < 50; i++ {
@@ -133,7 +123,6 @@ func TestNext_NoWordTwiceInARow(t *testing.T) {
 	}
 }
 
-// The core promise: a weak letter shows up clearly more often.
 func TestNext_WeakLetterGetsFocus(t *testing.T) {
 	all := len(newTestGen(0).Order())
 	good := repeat(KeyStat{}, Sample{Ms: 250}, 60)
@@ -175,8 +164,6 @@ func TestNext_WeakLetterGetsFocus(t *testing.T) {
 	}
 }
 
-// A letter opens only when every open letter is mastered, one at a time,
-// never past the last letter.
 func TestNextUnlocked(t *testing.T) {
 	g := newTestGen(4)
 	start := g.Start()
@@ -191,19 +178,15 @@ func TestNextUnlocked(t *testing.T) {
 	if got := g.NextUnlocked(stats, start, testParams); got != start+1 {
 		t.Fatalf("all mastered: got %d, want %d", got, start+1)
 	}
-	// one weak letter blocks the next unlock
 	stats[g.Order()[0]] = repeat(KeyStat{}, Sample{Errors: 1}, 30)
 	if got := g.NextUnlocked(stats, start, testParams); got != start {
 		t.Fatalf("one weak letter: got %d, want %d", got, start)
 	}
-	// never goes past the last letter
 	if got := g.NextUnlocked(stats, 999, testParams); got != len(g.Order()) {
 		t.Fatalf("clamp: got %d", got)
 	}
 }
 
-// Letters like ą or Cyrillic take two bytes in UTF-8. The generator must
-// treat them as one letter each, otherwise words get wrongly locked.
 func TestNext_MultiByteLetters(t *testing.T) {
 	for name, words := range map[string][]string{
 		"polish":    strings.Fields("się że jest już tak nie mnie coś będzie wiem pan może są tylko ją ta za na"),
@@ -228,7 +211,6 @@ func TestNext_MultiByteLetters(t *testing.T) {
 				t.Fatalf("%s: locked letter %q in %q", name, r, ex.Text)
 			}
 		}
-		// with everything open, every word must be usable
 		all := g.Next(nil, len(g.Order()), 0, p)
 		if len(strings.Fields(all.Text)) != p.ExerciseWords {
 			t.Fatalf("%s: got %q", name, all.Text)
@@ -236,7 +218,6 @@ func TestNext_MultiByteLetters(t *testing.T) {
 	}
 }
 
-// letterRune reads a whole multi-byte letter, not its first byte.
 func TestLetterRune(t *testing.T) {
 	for in, want := range map[string]rune{"e": 'e', "ą": 'ą', "ж": 'ж', "ї": 'ї'} {
 		if got := letterRune(in); got != want {
@@ -245,18 +226,15 @@ func TestLetterRune(t *testing.T) {
 	}
 }
 
-// A letter that is a little too slow and holds back the next one gets much
-// more of the focus than the mastered letters (UnmasteredBonus); without
-// the bonus it gets about an equal share (the audit, section 3.3).
 func TestUnmasteredBonus_SlowLetterGetsTheFocus(t *testing.T) {
 	g := newTestGen(1)
 	open := g.Order()[:10]
 	stats := map[string]KeyStat{}
 	for _, c := range open {
-		stats[c] = repeat(KeyStat{}, Sample{Char: c, Ms: 380}, 40) // mastered, near the goal
+		stats[c] = repeat(KeyStat{}, Sample{Char: c, Ms: 380}, 40)
 	}
 	slow := open[3]
-	stats[slow] = repeat(KeyStat{}, Sample{Char: slow, Ms: 450}, 40) // never met the goal
+	stats[slow] = repeat(KeyStat{}, Sample{Char: slow, Ms: 450}, 40)
 	share := func(p Params) float64 {
 		pl := g.newPool(stats, 10, 0, p)
 		total := 0.0

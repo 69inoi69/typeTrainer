@@ -4,32 +4,21 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>typeTrainer</title>
-  <!-- the look, in this order (later files win on equal selectors; base.css says what each holds) -->
   <link rel="stylesheet" href="base.css">
   <link rel="stylesheet" href="layout.css">
   <link rel="stylesheet" href="typing.css">
   <link rel="stylesheet" href="stats.css">
   <link rel="stylesheet" href="screens.css">
   <link rel="stylesheet" href="responsive.css">
-  <!-- tab icon (svg, sharp at any size) and the home-screen icon for phones -->
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <!-- the colour of the phone's browser bar: --bg of the dark theme
-       (settings.js sets it to the chosen theme's --bg) -->
   <meta name="theme-color" content="#0e0f12">
-  <!-- the light theme, set before the page is drawn so it never flashes dark
-       first (settings.js keeps it up to date afterwards) -->
   <script>try { if (localStorage.getItem("tt.theme") === "light") document.documentElement.dataset.theme = "light"; } catch {}</script>
 </head>
 <body class="splashing">
-  <!-- Start screen: the logo types itself, then fades away over the page
-       (fx.js, Splash). -->
   <div class="splash" id="splash" aria-hidden="true">
     <div class="splash-logo" id="splash-logo"><svg class="logo-key" viewBox="0 0 64 64" aria-hidden="true"><rect x="9" y="12" width="46" height="44" rx="10" fill="#a8851a"/><rect x="9" y="8" width="46" height="42" rx="10" fill="#e2b714"/><rect x="22" y="38" width="20" height="5" rx="2.5" fill="#15171a"/></svg><span class="splash-type"><i style="--i:0">t</i><i style="--i:1">y</i><i style="--i:2">p</i><i style="--i:3">e</i><b><i style="--i:4">T</i><i style="--i:5">r</i><i style="--i:6">a</i><i style="--i:7">i</i><i style="--i:8">n</i><i style="--i:9">e</i><i style="--i:10">r</i></b></span></div>
   </div>
-  <!-- The header: who and where. The logo on the left; on the right the
-       language switch (on a wide screen it stands as a column at the right
-       edge, see .lang-switch in layout.css) and the account. -->
   <header class="top">
     <div class="logo">
       <svg class="logo-key" viewBox="0 0 64 64" aria-hidden="true"><rect x="9" y="12" width="46" height="44" rx="10" fill="#a8851a"/><rect x="9" y="8" width="46" height="42" rx="10" fill="#e2b714"/><rect x="22" y="38" width="20" height="5" rx="2.5" fill="#15171a"/></svg>
@@ -37,11 +26,7 @@
     </div>
 
     <div class="top-side">
-    <!-- Buttons come from /api/v1/languages. -->
     <div class="switch lang-switch" id="lang-switch" role="tablist" aria-label="Language" data-tip="tip.lang"></div>
-    <!-- Profile (profile.js): the account (log in / sign up, kept on the
-         server) and a picture that lives only in this browser. Without an
-         account the name lives only in this browser too. -->
     <div class="profile" id="profile">
       <button type="button" class="profile-btn" id="profile-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="profile-card">
         <span class="profile-name" id="profile-name"></span><span class="avatar" id="avatar" aria-hidden="true"></span>
@@ -57,7 +42,6 @@
         <small class="profile-label" data-i18n="profile.picture">Picture</small>
         <div class="avatar-picks" id="avatar-picks"></div>
         <input id="avatar-file" type="file" accept="image/*" hidden>
-        <!-- the account: shown only where accounts work (not on GitHub Pages) -->
         <div class="account" id="account" hidden>
           <form class="account-form" id="account-form" novalidate>
             <label class="profile-field"><small data-i18n="account.name">Account name</small>
@@ -84,90 +68,38 @@
   <main class="views">
     <!-- ================= TYPE VIEW ================= -->
     <section id="view-type" class="view active" role="tabpanel" aria-labelledby="tab-learn">
-      <!-- Letters: open ones, the one in focus, and the ones still locked. -->
       <div class="letters" aria-label="Letters">
-        <!-- the round bar: the current mode's round length (and Freetype's word list), modebar.js -->
         <div id="mode-bar" class="mode-bar"></div>
         <div id="letters" class="letter-row"></div>
-        <!-- Learn only (learnpanel.js): the last round, the accuracy streak,
-             today against the daily goal; the gold letter and what it needs,
-             or the news of the round that just ended -->
         <div id="learn-panel" class="learn-panel" aria-live="polite" hidden></div>
       </div>
 
-      <!-- The text to type. Each character is its own <span>; the caret is one
-           separate element that slides to the current character. -->
       <div id="text-box" class="text-box" tabindex="0" aria-label="Exercise text">
-        <!-- The top line of the card: the live numbers (small and dim, brighter
-             while you type), then the status line (focus, next letter).
-             Hidden numbers take no room, so the
-             status line moves up to the word counter. The Caps Lock / layout
-             warning and the messages appear on top of the whole line, so
-             nothing on the page moves when they show. -->
         <div class="live" id="live">
-          <!-- wpm, raw and accuracy ("num") can be hidden in the settings (settings.js) -->
-          <!-- the numbers are drawn by CSS from --v (typing.js setLive), so they can count smoothly -->
           <div class="metric num"><span id="wpm" class="live-n" style="--v:0"></span><small>wpm</small></div>
-          <!-- raw: every keypress counts, wrong ones too (display only, never sent) -->
           <div class="metric num raw" data-tip="tip.raw"><span id="raw" class="live-n" style="--v:0"></span><small data-i18n="metric.raw">Raw</small></div>
           <div class="metric num"><span id="acc" class="live-n" style="--v:100"></span><span class="pct">%</span><small data-i18n="metric.acc">Acc</small></div>
-          <!-- words typed in this round / words in the round, or the seconds left -->
           <div class="metric"><span id="progress">0/30</span><small id="progress-label" data-i18n="metric.words">Words</small></div>
-          <!-- the status line (letters.js): letters open before the first key in learning, the level in Climb -->
           <div id="letters-caption" class="letters-caption">&nbsp;</div>
-          <!-- Learn's round length (modebar.js): at the right end of this line,
-               next to the word counter it changes; the other modes keep the
-               round bar above the letters -->
-          <!-- the news of a Learn round (learnpanel.js), in the middle of this
-               line; fades out for the live numbers while you type -->
           <div id="focus-box" class="focus-box" hidden></div>
           <div id="round-switch" class="round-switch" hidden></div>
           <div class="warn" id="layout-warn" role="status" aria-live="polite"></div>
-          <!-- messages (fx.js, FX.toast) appear here, on top of the line -->
           <div class="notice" id="notice" role="status" aria-live="polite"></div>
         </div>
         <div id="text" class="text">loading…</div>
         <div id="caret" class="caret" aria-hidden="true"></div>
-        <!-- clean-word streak: words typed without a single mistake, in a row.
-             A bolt and the number riding just above the caret (typing.js
-             placeCaret), its colour warming with the streak (data-tier);
-             at 10, 25, 50, 100... it gives a small bump. -->
         <div class="streak" id="streak" data-tier="0"><svg class="bolt" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2.5 5 13.5h6l-1 8 8.5-11h-6z"/></svg><span id="streak-n">0</span><small class="sr-only" data-i18n="streak.label">Clean words</small></div>
         <div id="focus-hint" class="focus-hint" data-i18n="focusHint">Tap here to start typing</div>
-        <!-- a round paused because the window lost focus (typing.js pauseRound):
-             a slowly breathing pause sign, the word, how to go on and what
-             happened to the time -->
         <div class="pause-note" aria-live="polite"><span class="pause-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg><svg class="goal-ic" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><b data-i18n="pause.title">Paused</b><b class="goal-only" data-i18n="pause.goalTitle">Daily goal reached</b><span class="pause-go"><span data-i18n="pause.press">Press</span> <kbd data-i18n="pause.key">any key</kbd> <span data-i18n="pause.go">to go on</span></span><small data-i18n="pause.away">Time spent paused doesn't count.</small><small class="goal-only" data-i18n="pause.goalWhy">That's your typing time for today. Keep going if you like: the round goes on where you stopped.</small></div>
-        <!-- the result screen takes the place of the text when typing stops (result.js) -->
         <div id="result" class="result" role="status" aria-live="polite" hidden></div>
       </div>
-      <!-- touch screens have no Esc: a small "stop" under the card (as the
-           restart button under the words on monkeytype) -->
-      <!-- Invisible input: lets phone keyboards open and send characters. -->
       <input id="hidden-input" class="hidden-input" autocomplete="off" autocapitalize="off"
              autocorrect="off" spellcheck="false" aria-hidden="true">
 
       <div class="finger-hint sr-only" id="finger-hint" aria-live="off">&nbsp;</div>
 
       <div id="keyboard" class="keyboard" aria-label="On-screen keyboard">
-        <!-- Which finger presses the next key: a small hand stands over that
-             key (keyboard.js puts it back after every redraw), the finger
-             lights up in its color. The sentence for screen readers is the
-             finger hint above. -->
         <div class="hands" id="hands" aria-hidden="true">
-          <!-- A hand seen from above: fingers grow out of the knuckle line
-               (their bases are hidden under the palm), lengths as on a real
-               hand, the thumb comes out of the side of the palm. The palm is a
-               symmetric rounded shape, so the two hands look calm and even.
-               Every finger is its own small SVG drawing (data-f) over the same
-               100 x 84 area, the palm the last one on top. Over the keyboard
-               this drawing is only the model: keyboard.js draws a picture of
-               the hand from it for each finger to light and shows that (one
-               <img> per hand, #148). The intro's copy is live: each finger
-               SVG is wrapped in an <i>, and the <i> is what moves (the
-               graphics card can move an HTML element alone, not an <svg>).
-               --dx/--dy: the direction the finger points in, for its lift.
-               The right hand is the left one mirrored (typing.css). -->
           <div class="hand left"><i class="finger" data-f="lp" style="--dx:0.139;--dy:0.990"><svg viewBox="0 0 100 84"><path class="skin" transform="translate(0 6) rotate(-8 21 47)" d="M14.8 60L15.9 25.1A5.1 5.1 0 0 1 26.1 25.1L27.2 60Z"/></svg></i><i class="finger" data-f="lr" style="--dx:0.052;--dy:0.999"><svg viewBox="0 0 100 84"><path class="skin" transform="translate(0 6) rotate(-3 35.5 41)" d="M28.5 54L29.8 12.7A5.7 5.7 0 0 1 41.2 12.7L42.5 54Z"/></svg></i><i class="finger" data-f="lm" style="--dx:-0.000;--dy:1.000"><svg viewBox="0 0 100 84"><path class="skin" transform="translate(0 6)" d="M43.2 51.5L44.6 7.9A5.9 5.9 0 0 1 56.4 7.9L57.8 51.5Z"/></svg></i><i class="finger" data-f="li" style="--dx:-0.070;--dy:0.998"><svg viewBox="0 0 100 84"><path class="skin" transform="translate(0 6) rotate(4 65.5 41)" d="M58.5 54L59.8 15.2A5.7 5.7 0 0 1 71.2 15.2L72.5 54Z"/></svg></i><i class="finger thumb" data-f="thl" style="--dx:-0.743;--dy:0.669"><svg viewBox="0 0 100 84"><path class="skin" transform="translate(0 6) rotate(48 71 66)" d="M63.5 82L64.8 45.1A6.1 6.1 0 0 1 77.2 45.1L78.5 82Z"/></svg></i><svg viewBox="0 0 100 84"><path class="palm" transform="translate(0 6)" d="M14.5 50C14.5 43 20 39.5 28 38.8C34 38.2 39.5 37.8 44.5 37.8C49.5 37.8 55 38.2 61 38.8C69 39.5 74.5 43 74.5 50C74.5 60 71 68 66 74L64 84H25L23 74C18 68 14.5 60 14.5 50Z"/></svg></div>
           <div class="hand right"><i class="finger" data-f="rp" style="--dx:0.139;--dy:0.990"><svg viewBox="0 0 100 84"><path class="skin" transform="translate(0 6) rotate(-8 21 47)" d="M14.8 60L15.9 25.1A5.1 5.1 0 0 1 26.1 25.1L27.2 60Z"/></svg></i><i class="finger" data-f="rr" style="--dx:0.052;--dy:0.999"><svg viewBox="0 0 100 84"><path class="skin" transform="translate(0 6) rotate(-3 35.5 41)" d="M28.5 54L29.8 12.7A5.7 5.7 0 0 1 41.2 12.7L42.5 54Z"/></svg></i><i class="finger" data-f="rm" style="--dx:-0.000;--dy:1.000"><svg viewBox="0 0 100 84"><path class="skin" transform="translate(0 6)" d="M43.2 51.5L44.6 7.9A5.9 5.9 0 0 1 56.4 7.9L57.8 51.5Z"/></svg></i><i class="finger" data-f="ri" style="--dx:-0.070;--dy:0.998"><svg viewBox="0 0 100 84"><path class="skin" transform="translate(0 6) rotate(4 65.5 41)" d="M58.5 54L59.8 15.2A5.7 5.7 0 0 1 71.2 15.2L72.5 54Z"/></svg></i><i class="finger thumb" data-f="thr" style="--dx:-0.743;--dy:0.669"><svg viewBox="0 0 100 84"><path class="skin" transform="translate(0 6) rotate(48 71 66)" d="M63.5 82L64.8 45.1A6.1 6.1 0 0 1 77.2 45.1L78.5 82Z"/></svg></i><svg viewBox="0 0 100 84"><path class="palm" transform="translate(0 6)" d="M14.5 50C14.5 43 20 39.5 28 38.8C34 38.2 39.5 37.8 44.5 37.8C49.5 37.8 55 38.2 61 38.8C69 39.5 74.5 43 74.5 50C74.5 60 71 68 66 74L64 84H25L23 74C18 68 14.5 60 14.5 50Z"/></svg></div>
         </div>
@@ -176,25 +108,11 @@
     </section>
 
     <!-- ================= STATS VIEW ================= -->
-    <!-- Top to bottom (it scrolls, as on monkeytype): the
-         mode (Climb or Freetype, and its word list), the
-         personal best of every round length (a click picks the length shown
-         below), the activity of the last year, then the picked length in
-         detail (tiles and chart), the keyboard and the letters. Exact
-         values are in tooltips (hover, or keyboard focus). -->
     <section id="view-stats" class="view" role="tabpanel" aria-labelledby="tab-stats" hidden>
-      <!-- phones and tablets only (input.js statsOnly): why there is no typing here -->
       <p class="stats-only-note" data-i18n="phone.note">Typing practice needs a computer keyboard. Here you can look at your stats.</p>
-      <!-- which history: Climb or Freetype, and Freetype's word list (stats.js renderPick) -->
       <div class="stats-pick" id="stats-pick"></div>
-      <!-- the personal bests: one cell per round length, words and seconds
-           apart; rounds of different lengths are never mixed, so a click on
-           a cell picks the length everything below shows (stats.js) -->
       <div class="pbs" id="length-filter" role="tablist" aria-label="Round length"></div>
-      <!-- all time, both modes and every round length: time typing, rounds,
-           words, days in a row and the activity calendar (stats.js drawActivity) -->
       <div class="activity panel" id="activity" aria-label="All time"></div>
-      <!-- the picked length in detail; the picture is of it (share.js) -->
       <div class="len-bar">
         <h2 class="len-head" id="len-head"></h2>
         <button type="button" class="btn" id="btn-image" data-tip="tip.image"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-8 8"/></svg><span data-i18n="share.image">Image</span></button>
@@ -208,43 +126,26 @@
         </div>
         <div class="chart" id="chart"></div>
       </div>
-      <!-- Learn only: every letter round by round, one letter's speed, the
-           keys you mix up (learnstats.js) -->
       <div class="learn-stats" id="learn-stats" hidden></div>
 
     </section>
   </main>
 
-  <!-- The navigation (input.js wires the buttons). On a wide screen a column
-       at the left edge, on a narrow one a bar at the bottom, like an app.
-       Two groups: the three screens (learn, climb, stats) and the
-       settings.
-       To add an item: a button with an icon and a <small> label in the
-       right group, its text in i18n.js, its click in input.js. -->
   <nav class="rail" id="rail" aria-label="Navigation">
-    <!-- learn = the adaptive trainer for beginners, climb = the second
-         mode, harder as you get better (modes.js), stats = Climb's
-         statistics. An accent bar slides to the chosen one. -->
     <div class="switch rail-group nav-switch" id="nav-switch" role="tablist" aria-label="Screen">
       <span class="switch-thumb" aria-hidden="true"></span>
       <button type="button" role="tab" id="tab-learn" aria-selected="true" aria-controls="view-type" data-tip="tip.learn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9.5L12 5l9.5 4.5L12 14z"/><path d="M6.5 11.5v4.3c3.2 2.3 7.8 2.3 11 0v-4.3M21.5 9.5v5"/></svg><small data-i18n="mode.learn">Learn</small></button>
       <button type="button" role="tab" id="tab-climb" aria-selected="false" aria-controls="view-type" data-tip="tip.free"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19l6.5-10 4 6 2.5-3.5L21 19z"/><path d="M9.5 9V4l3.5 1.4-3.5 1.4"/></svg><small data-i18n="mode.free">Climb</small></button>
-      <!-- Freetype: a text field with its caret, free typing of any text (Learn: a graduation cap) -->
       <button type="button" role="tab" id="tab-freetype" aria-selected="false" aria-controls="view-type" data-tip="tip.freetype"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h1a3 3 0 0 1 3 3 3 3 0 0 1 3-3h1M13 20h-1a3 3 0 0 1-3-3 3 3 0 0 1-3 3H5M5 16H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h1M13 8h7a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-7M9 7v10"/></svg><small data-i18n="mode.freetype">Freetype</small></button>
       <button type="button" role="tab" id="tab-stats" aria-selected="false" aria-controls="view-stats" data-tip="tip.stats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16"/><path d="M7 17v-3M12 17v-4M17 17v-6"/><path d="M5 9.5l5-3.5 4 2.5 5-4.5"/></svg><small data-i18n="nav.stats">Stats</small></button>
     </div>
     <div class="rail-group tools">
-      <!-- settings: the button opens the settings window (settings.js), Esc too -->
       <div class="pop settings" id="settings">
         <button id="btn-settings" type="button" class="rail-btn" data-tip="tip.settings" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings-win"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg><small data-i18n="nav.settings">Settings</small></button>
       </div>
     </div>
   </nav>
 
-  <!-- The settings window (settings.js): Esc or the gear opens it. A search
-       line, then the rows drawn from the list in settings.js; on a real
-       keyboard the arrows move and change, the line at the bottom says so.
-       Export, import and reset are rows too (tools.js does the work). -->
   <dialog class="win settings-win" id="settings-win">
     <div class="sw-search"><span class="sw-prompt" aria-hidden="true">❯</span><input id="settings-search" type="text" autocomplete="off" spellcheck="false"></div>
     <div class="sw-list" id="settings-body"></div>
@@ -257,8 +158,6 @@
     <input id="import-file" type="file" accept="application/json,.json" hidden>
   </dialog>
 
-  <!-- "Reset all progress" asks here first (tools.js). A native <dialog>:
-       showModal() keeps the focus inside and Esc closes it. -->
   <dialog class="win confirm" id="reset-dialog" aria-labelledby="reset-title">
     <p class="win-title" id="reset-title" data-i18n="data.confirmTitle">Reset all progress?</p>
     <p class="win-p" data-i18n="data.confirmText">This can't be undone.</p>
@@ -268,7 +167,6 @@
     </div>
   </dialog>
 
-  <!-- Freetype's own text (customtext.js): paste a text, type it. -->
   <dialog class="win confirm custom-win" id="custom-dialog" aria-labelledby="custom-title">
     <p class="win-title" id="custom-title" data-i18n="custom.title">Your text</p>
     <p class="win-p" id="custom-help" data-i18n="custom.help"></p>
@@ -280,8 +178,6 @@
     </div>
   </dialog>
 
-  <!-- The keyboard shortcuts: small and grey under the keyboard. Only where
-       there is a real keyboard (layout.css hides them on touch screens). -->
   <footer class="bottom">
     <div class="hints" aria-label="Shortcuts">
       <span class="round-only"><kbd>tab</kbd> <span data-i18n="hint.tab">New round</span></span>
@@ -294,15 +190,9 @@
 
   <div id="tooltip" class="tooltip" role="tooltip" popover="manual"></div>
 
-  <!-- Guide A, "touch typing basics" (intro.js): it also opens by itself on
-       the very first visit. A short hands-on start, not a text to read: steps
-       1 and 2 wait for real key presses (physical keys, so it works with any
-       system layout). -->
   <div id="intro" class="intro hidden" role="dialog" aria-modal="true" aria-labelledby="intro-title">
     <div class="intro-card">
       <div class="intro-steps" id="intro-steps">
-        <!-- step 0: what touch typing is, with a small map of the keyboard
-             where every key has the colour of the finger that presses it -->
         <section class="intro-step" data-step="0">
           <p class="intro-kicker" data-i18n="intro.kickerWhat">Touch typing</p>
           <h2 id="intro-title" data-i18n="intro.titleWhat">Use all ten fingers, keep your eyes on the text</h2>
@@ -349,8 +239,6 @@
     </div>
   </div>
 
-  <!-- file-check.js: a plain script, it runs even when the page is opened
-       from disk. app.js is an ES module: it loads the other modules itself. -->
   <script src="file-check.js"></script>
   <script type="module" src="app.js"></script>
 </body>

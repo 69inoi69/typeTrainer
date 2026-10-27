@@ -1,88 +1,39 @@
-// How typing FEELS: every knob of the small responses to a keypress, in one
-// place. Tuning the feel means changing a number here, not a redesign
-// (issue #18: type, say "more" or "less", change one number).
-// The CSS reads the same values as custom properties (--feel-*), set below.
-// None of this changes what is measured or sent to the server.
-// Layer: bottom. Imports nothing.
-// Used by: keyboard.js (red tint, hand size, the lift of the finger in the
-// hand's pictures), caret.js (caret flinch, line scroll),
-// and the stylesheets (caret glide, the lift and dip of the next key)
-// through the --feel-* properties.
-// Speed rule (as smooth as monkeytype): what moves on
-// every key only moves (translate, transform, opacity of a whole element),
-// which the graphics card does without the page being painted again; no
-// glows or colour fades on every key.
-// To add a knob: a field in FEEL with its unit and what "more" does, then
-// either read FEEL.x in the JavaScript or add a root.setProperty line to
-// applyFeel below and use var(--feel-x) in the stylesheets.
+// Values for how typing feels.
 
 export const FEEL = {
-  // Everything that moves while you type: smooth, but it starts moving at
-  // once. Lower = snappier.
-  // The caret: 65 ms on monkeytype's almost even in-out curve (the CSS
-  // variable --caret-curve), picked by eye; what was tried before it:
-  // docs/thesis/DEVELOPMENT-LOG.md, section 8.7. A new key starts a new glide
-  // from where the caret is, so fast typing reads as one steady movement.
-  caretGlideMs: 65,         // the caret sliding to the next letter (0 = jumps)
-  // The glide follows your pace (caret.js paceGlide, #141): with keys
-  // closer than the glide, it takes this part of the average time between
-  // them instead, so the caret never trails fast hands.
-  caretGlidePace: 0.6,      // part of the time between keys (0 = always caretGlideMs)
-  caretGlideMinMs: 25,      // never shorter (about one and a half frames)
-  caretPaceKeys: 4,         // the average follows about this many last keys
-  caretPaceResetMs: 400,    // a longer gap is a pause: the average starts again
-  caretGlideStepMs: 5,      // the duration changes only in steps this big
-  // the shape of that glide (CSS timing function): monkeytype's inOut(1.25),
-  // matched within 0.2%, almost even; also carries the streak badge
+  caretGlideMs: 65,
+  caretGlidePace: 0.6,
+  caretGlideMinMs: 25,
+  caretPaceKeys: 4,
+  caretPaceResetMs: 400,
+  caretGlideStepMs: 5,
   caretCurve: "cubic-bezier(.31, .16, .69, .84)",
-  lineScrollMs: 120,        // the text moving up a line (0 = at once)
-  // After the last letter of a round, the finished text stays this long
-  // before the result comes: the caret reaches the end and the last letter
-  // turns white first, so the result never starts before the last letter
-  // shows. The round's time still ends at that key: this wait is
-  // not in the speed. 120 ms: picked by eye.
+  lineScrollMs: 120,
   resultHoldMs: 120,
-  // During that wait the finished text fades out (its last part, after the
-  // caret has arrived), then the result comes in: it fades in while rising
-  // a little (a plain fade reads as no transition).
-  resultInMs: 120,          // the result coming in (0 = at once; picked by eye)
-  resultRisePx: 12,         // how far it rises while it comes in (0 = only fades)
+  resultInMs: 120,
+  resultRisePx: 12,
 
-  // The key on the virtual keyboard answers a press: as its light goes
-  // out it sinks a little, a short, soft dip (typing.css .lit).
-  keyPressMs: 90,           // duration of the dip
-  keyPressScale: 0.96,      // how deep it dips (1 = no dip)
-  // A wrong key: a quick red tint, a hint rather than an alarm.
-  keyMissMs: 200,           // duration of the tint
-  keyMissAlpha: 0.4,        // strength of the red at the start (0..1)
+  keyPressMs: 90,
+  keyPressScale: 0.96,
+  keyMissMs: 200,
+  keyMissAlpha: 0.4,
 
-  // The streak number (Freetype, when on) hops on every clean word.
-  streakHopMs: 180,         // duration of the hop (0 = none)
-  streakHopPx: 4,           // how far up it starts
-  streakHopScale: 1.3,      // its size at the start (1 = none)
+  streakHopMs: 180,
+  streakHopPx: 4,
+  streakHopScale: 1.3,
 
-  // The caret flinches on a mistake: it shrinks, turns red and shakes for
-  // an instant, then comes back; its glide to the next letter is not touched.
-  caretFlinchMs: 120,       // duration (about 7 frames)
-  caretFlinchScale: 0.7,    // height at the start of the flinch (1 = none)
-  caretShakePx: 2,          // how far it shakes to each side (0 = no shake)
+  caretFlinchMs: 120,
+  caretFlinchScale: 0.7,
+  caretShakePx: 2,
 
-  // How the three kinds of mistake look (typing.css .bad / .miss / .extra):
-  // wrong = red letter; skipped = dim with a dotted underline;
-  // extra = struck through. Thickness of those lines, px.
   markLine: 2,
 
-  // The small hand above the keyboard, over the next key's column
-  // (keyboard.js highlightNextKey): the finger to use lights up on it.
-  handScale: 0.55,          // hand width in keys: 2 * handScale
-  handRoom: 1.05,           // room above the keyboard for the hand, in keys
-  fingerLiftPx: 8,          // how far the finger to use stands lifted, in units of the hand drawing (100 = its width)
-  // The next key stands out by brightness, not by colour: side vision sees
-  // light and movement, not hues: a coloured key gets lost while typing.
-  nextKeyLiftPx: 3,         // how far the next key rises above the others (0 = stays flat)
+  handScale: 0.55,
+  handRoom: 1.05,
+  fingerLiftPx: 8,
+  nextKeyLiftPx: 3,
 };
 
-// The CSS custom properties: the stylesheets use var(--feel-...). Set once, at load.
 function applyFeel() {
   const root = document.documentElement.style;
   root.setProperty("--feel-caret-ms", FEEL.caretGlideMs + "ms");

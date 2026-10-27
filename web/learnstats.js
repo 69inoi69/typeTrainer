@@ -1,35 +1,16 @@
-// The Learn part of the stats screen (Learn gets its own stats, after
-// keybr's profile): under the tiles and the speed chart
-// that every mode has, three panels only Learn can have:
-//   - every letter, round by round: a row per letter in the order they
-//     open, a cell per round, coloured as the letters row colours it (red
-//     far from mastered, green mastered); you see when each letter opened
-//     and how long it took to turn green; under it the forecast and the lap;
-//   - one letter: its speed round by round against the goal line, with
-//     its numbers now (a click on a letter of the grid picks it);
-//   - the keys you mix up: "r, you press t" and how often.
-// The numbers come from /learn/history: the server replays the letter
-// model over your saved rounds (history.LetterTimeline), so the colours
-// follow the same rule as the letters row (letters.js letterProgress).
-// Layer: middle. Imports the bottom layer and letters.js.
-// Called by: stats.js (renderLearnStats when Learn is the mode shown,
-// learnStatsStale after a round).
+// Learn's part of the stats screen.
 
 import { t } from "./i18n.js";
 import { $, S } from "./state.js";
 import { getJSON } from "./api.js";
 import { letterProgress, letterNeeds, forecastText } from "./letters.js";
 
-// a round's square in the grid: as wide as the rounds let it, between
-// CELL_MIN and CELL_MAX px; more rounds than fit: the last ones
 const CELL_MIN = 6, CELL_MAX = 16, GAP = 2;
 const box = $("learn-stats");
-let data = null, stale = true, letter = null;   // letter: the one shown in the second panel
+let data = null, stale = true, letter = null;
 
-// A round was added: the next showing asks the server again.
 export function learnStatsStale() { stale = true; }
 
-// Draws the three panels when Learn is the mode shown, hides them otherwise.
 export async function renderLearnStats(show) {
   box.hidden = !show;
   if (!show) return;
@@ -51,7 +32,6 @@ function draw() {
   box.innerHTML = gridPanel(rounds, order, open) + letterPanel(rounds, order) + confusionPanel(data.confusions ?? []);
 }
 
-// The open letter furthest from mastered after the last round: shown first.
 function weakest(last, order) {
   let best = order[0], low = 2;
   last.letters.forEach((k, i) => {
@@ -64,7 +44,7 @@ function weakest(last, order) {
 
 // ---------- every letter, round by round ----------
 function gridPanel(rounds, order, open) {
-  const width = box.clientWidth - 36 - 28;          // the panel's padding and the letters column
+  const width = box.clientWidth - 36 - 28;
   const cell = Math.max(CELL_MIN, Math.min(CELL_MAX, Math.floor((width + GAP) / rounds.length) - GAP));
   const fit = Math.max(10, Math.floor((width + GAP) / (cell + GAP)));
   const shown = rounds.slice(-fit), first = rounds.length - shown.length + 1;
@@ -83,8 +63,6 @@ function gridPanel(rounds, order, open) {
   return `<div class="panel ls-panel"><div class="panel-head"><h2>${t("ls.grid")}</h2><span class="panel-note">${t("ls.gridNote", { scope })}</span></div>` +
     `<div class="ls-grid" style="--cell:${cell}px;--gap:${GAP}px">${rows}</div>${forecastLine(order, open)}</div>`;
 }
-// Under the grid: about how many rounds to the next letter (or the end of
-// the lap), as on the Learn panel, and the lap after Learn complete.
 function forecastLine(order, open) {
   const s = S.lastStats ?? {};
   const f = forecastText(s.forecast, open >= order.length);
@@ -95,8 +73,6 @@ function forecastLine(order, open) {
 }
 
 // ---------- one letter ----------
-// Its speed after every round since it opened (wpm: 12000 / ms per press),
-// the goal as a dashed line, and its numbers now.
 function letterPanel(rounds, order) {
   const i = order.indexOf(letter), target = S.lastStats?.targetWpm || 30;
   const pts = [];
@@ -105,8 +81,6 @@ function letterPanel(rounds, order) {
     if (k?.avgMs) pts.push({ n: n + 1, wpm: 12000 / k.avgMs });
   });
   const k = rounds.at(-1).letters[i];
-  // its numbers now, as the stats on top of the screen show theirs, and
-  // in words what it still needs
   const stat = (value, label) => `<div class="act-stat"><b>${value}</b><small>${label}</small></div>`;
   const facts = !k?.count ? `<p class="ls-needs">${t("ls.noData")}</p>` :
     `<div class="act-stats ls-facts">` +
@@ -122,7 +96,7 @@ function letterChart(pts, target) {
   if (pts.length < 2) return `<p class="ls-empty">${t("ls.fewRounds")}</p>`;
   const W = Math.max(280, box.clientWidth - 36), H = 180, padL = 34, padR = 8, padT = 10, padB = 22;
   const plotW = W - padL - padR, plotH = H - padT - padB;
-  const step = Math.ceil(Math.max(target * 1.25, ...pts.map((p) => p.wpm)) / 4 / 5) * 5;   // round labels
+  const step = Math.ceil(Math.max(target * 1.25, ...pts.map((p) => p.wpm)) / 4 / 5) * 5;
   const max = step * 4;
   const x0 = pts[0].n, span = Math.max(1, pts.at(-1).n - x0);
   const x = (n) => padL + ((n - x0) / span) * plotW, y = (v) => padT + plotH - (v / max) * plotH;

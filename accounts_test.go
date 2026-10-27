@@ -1,8 +1,6 @@
 package main
 
-// Accounts and guests through the whole app: sign up, log in, one guest per
-// browser, the login attempt limit, running behind a proxy.
-// Helpers (call, guestRequest) are in setup_test.go.
+// Accounts and guests through the whole app.
 
 import (
 	"encoding/json"
@@ -12,8 +10,6 @@ import (
 	"testing"
 )
 
-// callAs is call with a login cookie ("" = a guest); it also returns the
-// login cookie the answer sets ("" if none).
 func callAs(t *testing.T, h http.Handler, cookie, method, path, body string) (int, map[string]any, string) {
 	t.Helper()
 	req := guestRequest(method, path, body)
@@ -36,7 +32,6 @@ func callAs(t *testing.T, h http.Handler, cookie, method, path, body string) (in
 	return rec.Code, out, set
 }
 
-// Sign up, log in, log out, and every account (and the guest) has its own data.
 func TestApp_Accounts(t *testing.T) {
 	h, _, _ := newApp()
 	_, me, _ := callAs(t, h, "", "GET", "/api/v1/auth/me", "")
@@ -52,7 +47,6 @@ func TestApp_Accounts(t *testing.T) {
 		t.Fatalf("ann /me: %v", me)
 	}
 
-	// the rules: name taken (any case), bad name, short password
 	for body, want := range map[string]int{
 		`{"name":"ANN","password":"another-pw"}`:  409,
 		`{"name":"a","password":"secret-ann"}`:    400,
@@ -65,7 +59,6 @@ func TestApp_Accounts(t *testing.T) {
 		}
 	}
 
-	// a round typed by ann is ann's only: the guest still has nothing
 	round := `{"samples":[{"char":"ж","errors":0,"ms":300}],"wpm":30,"accuracy":100}`
 	if code, _, _ := callAs(t, h, ann, "POST", "/api/v1/results?lang=ru", round); code != 200 {
 		t.Fatalf("ann's round: %d", code)
@@ -76,7 +69,6 @@ func TestApp_Accounts(t *testing.T) {
 		t.Fatalf("guest=%v ann=%v", guest["sessionCount"], mine["sessionCount"])
 	}
 
-	// wrong password and unknown name get the same answer
 	for _, body := range []string{`{"name":"ann","password":"wrong-pass"}`, `{"name":"nobody","password":"secret-ann"}`} {
 		if code, out, c := callAs(t, h, "", "POST", "/api/v1/auth/login", body); code != 401 || c != "" || out["error"] != "wrong name or password" {
 			t.Errorf("login %s: %d %v", body, code, out)
@@ -90,7 +82,6 @@ func TestApp_Accounts(t *testing.T) {
 		t.Fatal("after logging in again ann's data is gone")
 	}
 
-	// logout ends that login only; an unknown cookie is just a guest
 	callAs(t, h, ann, "POST", "/api/v1/auth/logout", "")
 	if _, me, _ := callAs(t, h, ann, "GET", "/api/v1/auth/me", ""); me["name"] != nil {
 		t.Fatalf("after logout: %v", me)
@@ -103,7 +94,6 @@ func TestApp_Accounts(t *testing.T) {
 	}
 }
 
-// cookieOf finds a cookie the answer sets (nil if none).
 func cookieOf(rec *httptest.ResponseRecorder, name string) *http.Cookie {
 	for _, c := range rec.Result().Cookies() {
 		if c.Name == name {
@@ -113,8 +103,6 @@ func cookieOf(rec *httptest.ResponseRecorder, name string) *http.Cookie {
 	return nil
 }
 
-// Every browser gets its own guest: a request without a guest cookie gets
-// one (already from the page itself), and two guests never share data.
 func TestApp_GuestPerBrowser(t *testing.T) {
 	h, _, _ := newApp()
 	rec := httptest.NewRecorder()
@@ -126,14 +114,12 @@ func TestApp_GuestPerBrowser(t *testing.T) {
 	if c.Secure {
 		t.Fatal("plain HTTP without a proxy: the cookie cannot be Secure")
 	}
-	// a browser that already has one keeps it
 	rec = httptest.NewRecorder()
 	h.ServeHTTP(rec, guestRequest("GET", "/", ""))
 	if cookieOf(rec, "tt_guest") != nil {
 		t.Fatal("an existing guest cookie must not be replaced")
 	}
 
-	// the test browser's round is not seen by the new guest
 	round := `{"samples":[{"char":"ж","errors":0,"ms":300}],"wpm":30,"accuracy":100}`
 	call(t, h, "POST", "/api/v1/results?lang=ru", round)
 	other := httptest.NewRequest("GET", "/api/v1/stats?lang=ru", nil)
@@ -148,7 +134,6 @@ func TestApp_GuestPerBrowser(t *testing.T) {
 	}
 }
 
-// fromIP is a guest request from one IP address.
 func fromIP(t *testing.T, h http.Handler, ip, path, body string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := guestRequest("POST", path, body)
@@ -158,15 +143,12 @@ func fromIP(t *testing.T, h http.Handler, ip, path, body string) *httptest.Respo
 	return rec
 }
 
-// After Auth.Attempts failed logins or sign-ups from one IP address, that
-// address gets 429 (even with the right password); others do not.
 func TestApp_LoginAttemptLimit(t *testing.T) {
 	h, cfg, _ := newApp()
 	if rec := fromIP(t, h, "10.0.0.1", "/api/v1/auth/register", `{"name":"ann","password":"secret-ann"}`); rec.Code != 200 {
 		t.Fatalf("register: %d", rec.Code)
 	}
 	right := `{"name":"ann","password":"secret-ann"}`
-	// two wrong passwords, the rest cheap broken sign-ups: all count
 	for i := 0; i < cfg.Auth.Attempts; i++ {
 		path, body := "/api/v1/auth/register", `{"name":"x","password":"short"}`
 		if i < 2 {
@@ -185,9 +167,6 @@ func TestApp_LoginAttemptLimit(t *testing.T) {
 	}
 }
 
-// Behind a proxy (BEHIND_PROXY=1) cookies are Secure when the proxy says
-// HTTPS, and the limit counts the address the proxy added, not one the
-// client wrote in front of it. Without the setting both headers are ignored.
 func TestApp_BehindProxy(t *testing.T) {
 	viaProxy := func(h http.Handler, forwardedFor string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest("POST", "/api/v1/auth/register", strings.NewReader(`{"name":"x","password":"short"}`))
@@ -208,7 +187,6 @@ func TestApp_BehindProxy(t *testing.T) {
 	if c := cookieOf(viaProxy(h, "1.1.1.1"), "tt_guest"); c == nil || !c.Secure {
 		t.Fatalf("HTTPS through the proxy: the cookie must be Secure: %+v", c)
 	}
-	// a different made-up first address every time: still one client
 	for i := 0; i < cfg.Auth.Attempts; i++ {
 		viaProxy(h, "fake-"+strings.Repeat("x", i)+", 9.9.9.9")
 	}

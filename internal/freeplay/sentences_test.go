@@ -6,7 +6,6 @@ import (
 	"testing"
 )
 
-// The file's header and empty lines are not sentences; spaces are tidied.
 func TestParseSentences(t *testing.T) {
 	got := ParseSentences("# from Tatoeba, CC BY 2.0 FR\n\nI like tea.\r\n  Where  is it?  \n")
 	if len(got) != 2 || got[0] != "I like tea." || got[1] != "Where is it?" {
@@ -17,8 +16,6 @@ func TestParseSentences(t *testing.T) {
 	}
 }
 
-// A portion is whole sentences with at least n words, and a sentence of
-// the round is not drawn again while others are left.
 func TestSentences_Portion(t *testing.T) {
 	list := []string{"I like tea.", "Where is it?", "Tom ran home, fast.", "Go!"}
 	s := NewSentences(list, rand.New(rand.NewSource(2)))
@@ -36,7 +33,6 @@ func TestSentences_Portion(t *testing.T) {
 			t.Errorf("%q twice in %q", sentence, text)
 		}
 	}
-	// every word belongs to a whole sentence: the text is sentences joined
 	rest := " " + text + " "
 	for _, sentence := range list {
 		rest = strings.ReplaceAll(rest, " "+sentence+" ", " ")
@@ -44,7 +40,6 @@ func TestSentences_Portion(t *testing.T) {
 	if strings.TrimSpace(rest) != "" {
 		t.Errorf("not whole sentences: %q left", rest)
 	}
-	// a list of one sentence still gives a portion (it repeats)
 	one := NewSentences([]string{"Go!"}, rand.New(rand.NewSource(3)))
 	if got := one.Portion([]string{"Go!"}, 2, testParams); strings.Join(got, " ") != "Go! Go!" {
 		t.Errorf("one sentence: %q", got)

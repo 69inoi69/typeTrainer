@@ -8,8 +8,6 @@ import (
 
 var t0 = time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)
 
-// A key is refused after max attempts, only until its window ends; other
-// keys are not affected.
 func TestLimiter_RefusesAfterMaxThenOpensAgain(t *testing.T) {
 	l := NewLimiter(3, 15*time.Minute)
 	if w := l.Wait("1.2.3.4", t0); w != 0 {
@@ -21,7 +19,6 @@ func TestLimiter_RefusesAfterMaxThenOpensAgain(t *testing.T) {
 		}
 		l.Count("1.2.3.4", t0.Add(time.Duration(i)*time.Minute))
 	}
-	// the 4th attempt waits until 15 minutes after the first one
 	if w := l.Wait("1.2.3.4", t0.Add(5*time.Minute)); w != 10*time.Minute {
 		t.Fatalf("wait = %v, want 10m", w)
 	}
@@ -31,14 +28,12 @@ func TestLimiter_RefusesAfterMaxThenOpensAgain(t *testing.T) {
 	if w := l.Wait("1.2.3.4", t0.Add(15*time.Minute)); w != 0 {
 		t.Fatalf("after the window: %v", w)
 	}
-	// the next attempt starts a new window with a count of 1
 	l.Count("1.2.3.4", t0.Add(16*time.Minute))
 	if w := l.Wait("1.2.3.4", t0.Add(16*time.Minute)); w != 0 {
 		t.Fatal("a new window must start from zero")
 	}
 }
 
-// Forget (a successful login) frees the key at once.
 func TestLimiter_Forget(t *testing.T) {
 	l := NewLimiter(1, time.Hour)
 	l.Count("k", t0)
@@ -49,10 +44,9 @@ func TestLimiter_Forget(t *testing.T) {
 	if l.Wait("k", t0) != 0 {
 		t.Fatal("after Forget the key must be free")
 	}
-	l.Forget("never seen") // no panic
+	l.Forget("never seen")
 }
 
-// Old windows are dropped once many keys are kept; live ones stay.
 func TestLimiter_Prune(t *testing.T) {
 	l := NewLimiter(1, time.Minute)
 	l.Count("live", t0.Add(time.Hour))

@@ -7,8 +7,6 @@ import (
 	"testing"
 )
 
-// The resting keys of the real layouts: the eight keys under the fingers
-// on the home row, the bump keys F / J (А / О) for the index fingers.
 func TestRestingKeys(t *testing.T) {
 	for file, want := range map[string]string{
 		"qwerty-en": "asdfjkl;",
@@ -33,7 +31,6 @@ func TestRestingKeys(t *testing.T) {
 	}
 }
 
-// A layout without home bumps has no resting keys.
 func TestRestingKeys_NoBumps(t *testing.T) {
 	l := &Layout{Rows: [][]Key{{{Char: "a", Finger: "lp"}}}}
 	if got := l.RestingKeys(); len(got) != 0 {

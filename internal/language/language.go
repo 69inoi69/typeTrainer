@@ -1,13 +1,4 @@
-// Package language describes the supported typing languages as DATA
-// (data/languages.json). setup.go reads that file with Parse and cleans each
-// word list with Words; the api package sends the list to the browser
-// (/api/v1/languages).
-//
-// To add a language: one entry in data/languages.json, one layout file in
-// data/layouts/ and one word list in data/langs/<id>/words.txt (made by
-// tools/wordlists/build.py); no code changes. The interface texts in
-// web/i18n.js are a separate matter. See "Adding a layout or language" in
-// docs/ARCHITECTURE.md.
+// Package language loads the typing languages from data/languages.json.
 package language
 
 import (
@@ -16,21 +7,16 @@ import (
 	"strings"
 )
 
-// Language is one entry of data/languages.json.
 type Language struct {
-	ID           string `json:"id"`           // "en", "pl", "uk", "ru"; also the folder in data/langs/
-	Name         string `json:"name"`         // shown to the user, in the language itself
-	Label        string `json:"label"`        // short label for the switch: "EN"
-	Layout       string `json:"layout"`       // layout file in data/layouts/, without .json
-	Alphabet     string `json:"alphabet"`     // every letter a word may contain
-	SystemLayout string `json:"systemLayout"` // name of the OS keyboard layout to switch to
-	// Hidden: loaded and working (?lang= still reaches it), but left out of
-	// /api/v1/languages, so the interface does not offer it. Used while a
-	// language waits for its interface texts to be redone.
-	Hidden bool `json:"hidden,omitempty"`
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	Label        string `json:"label"`
+	Layout       string `json:"layout"`
+	Alphabet     string `json:"alphabet"`
+	SystemLayout string `json:"systemLayout"`
+	Hidden       bool   `json:"hidden,omitempty"`
 }
 
-// Parse reads the language list and checks it for obvious mistakes.
 func Parse(data []byte) ([]Language, error) {
 	var langs []Language
 	if err := json.Unmarshal(data, &langs); err != nil {
@@ -55,7 +41,6 @@ func Parse(data []byte) ([]Language, error) {
 	return langs, nil
 }
 
-// Allows reports whether every letter of word is in the alphabet.
 func (l Language) Allows(word string) bool {
 	if word == "" {
 		return false
@@ -68,9 +53,6 @@ func (l Language) Allows(word string) bool {
 	return true
 }
 
-// Words splits a word list (one word per line, most frequent first),
-// lowercases it, keeps only words made of the language's letters and removes
-// duplicates. The order is kept: it is the frequency order of the source list.
 func (l Language) Words(list string) []string {
 	seen := map[string]bool{}
 	var out []string

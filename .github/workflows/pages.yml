@@ -1,13 +1,10 @@
-# Builds the GitHub Pages version on every push to main:
-#   1. run the tests (a broken build is never published)
-#   2. compile the whole Go app to WebAssembly (main_wasm.go)
-#   3. put web/ + app.wasm + the shim together and publish them
+# Tests, builds and publishes the GitHub Pages version on every push to main.
 name: Deploy to GitHub Pages
 
 on:
   push:
     branches: [main]
-  workflow_dispatch: # allows a manual run from the Actions tab
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -39,21 +36,14 @@ jobs:
           cp -r web/. site/
           cp pages/wasm-shim.js site/
           GOOS=js GOARCH=wasm go build -trimpath -ldflags="-s -w" -o site/app.wasm .
-          # wasm_exec.js ships with Go; its folder moved in Go 1.24
           cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" site/ 2>/dev/null \
             || cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" site/
-          # Load the Go runtime and the shim before app.js, then give every
-          # local .js/.css file ?v=<commit>, so a browser never mixes cached
-          # files of two versions (GitHub Pages lets browsers cache 10 minutes).
           V="${GITHUB_SHA::8}"
           sed -i 's|<script type="module" src="app.js"></script>|<script src="wasm_exec.js"></script>\n  <script src="wasm-shim.js"></script>\n  <script type="module" src="app.js"></script>|' site/index.html
           sed -i -E "s/(src|href)=\"([a-z0-9_.-]+\.(js|css))\"/\1=\"\2?v=$V\"/g" site/index.html
           for f in base.css layout.css typing.css stats.css screens.css responsive.css file-check.js wasm_exec.js wasm-shim.js app.js; do
             grep -q "$f?v=$V" site/index.html || { echo "missing version on $f"; exit 1; }
           done
-          # The ES modules load each other (import ... from "./typing.js"):
-          # those addresses get the same ?v=<commit>, or a browser could take
-          # a new app.js together with an old cached module.
           sed -i -E "s#(from |import )\"(\./[a-z0-9_-]+\.js)\"#\1\"\2?v=$V\"#g" site/*.js
           if grep -nE "(from |import )\"\./[a-z0-9_-]+\.js\"" site/*.js; then
             echo "an import above has no version"; exit 1

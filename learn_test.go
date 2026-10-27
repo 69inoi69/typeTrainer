@@ -1,8 +1,6 @@
 package main
 
-// Learn through the whole app: portions, results, the word list after the
-// alphabet, the hidden control group, laps and the forecast.
-// Helpers (call, guestRequest) are in setup_test.go.
+// Learn through the whole app.
 
 import (
 	"errors"
@@ -16,9 +14,6 @@ import (
 	"typingtrainer/internal/storage"
 )
 
-// The stream: samples sent with a portion update the statistics at once,
-// the answer has the next portion, and nothing goes into the history until
-// the run is stopped with /results.
 func TestApp_PortionLearnsWithoutAHistoryEntry(t *testing.T) {
 	h, _, _ := newApp()
 	body := `{"samples":[{"char":"о","errors":1,"ms":300},{"char":" ","errors":0,"ms":200}],"recent":["он"],"retry":["он"]}`
@@ -43,7 +38,6 @@ func TestApp_PortionLearnsWithoutAHistoryEntry(t *testing.T) {
 	if !counted {
 		t.Fatal("the sample of о was not applied")
 	}
-	// stopping with nothing left to send still records the run
 	if code, out := call(t, h, "POST", "/api/v1/results?lang=ru", `{"samples":[],"chars":40,"wpm":30,"accuracy":95}`); code != 200 {
 		t.Fatalf("results: %d %v", code, out)
 	}
@@ -65,8 +59,6 @@ func TestApp_PortionLearnsWithoutAHistoryEntry(t *testing.T) {
 	}
 }
 
-// /results measures consistency from the keypresses per second, keeps it in
-// the history and answers with it; a round too short to judge gets null.
 func TestApp_ResultsConsistency(t *testing.T) {
 	h, _, _ := newApp()
 	code, out := call(t, h, "POST", "/api/v1/results?lang=en", `{"samples":[],"chars":30,"wpm":30,"accuracy":95,"perSecond":[5,5,5,5,5,5]}`)
@@ -90,9 +82,6 @@ func TestApp_ResultsConsistency(t *testing.T) {
 	}
 }
 
-// A round sent twice with the same id (the page tries again when the
-// answer was lost, issue #149) is stored once and its samples are learned
-// once; a round id must be a short plain string.
 func TestApp_ResultsSentTwice(t *testing.T) {
 	h, _, _ := newApp()
 	body := `{"samples":[{"char":"a","errors":0,"ms":300},{"char":"s","errors":1,"ms":400}],"wpm":30,"accuracy":90,"round":"5f0c2a9e-1"}`
@@ -110,7 +99,6 @@ func TestApp_ResultsSentTwice(t *testing.T) {
 			t.Fatalf("%v learned %v times, want 1", k["char"], k["count"])
 		}
 	}
-	// another round (another id) counts as usual
 	call(t, h, "POST", "/api/v1/results?lang=en", strings.Replace(body, "5f0c2a9e-1", "5f0c2a9e-2", 1))
 	if _, st = call(t, h, "GET", "/api/v1/stats?lang=en", ""); st["sessionCount"].(float64) != 2 {
 		t.Fatalf("a new id: %v rounds, want 2", st["sessionCount"])
@@ -120,8 +108,6 @@ func TestApp_ResultsSentTwice(t *testing.T) {
 	}
 }
 
-// failingStore fails the next write of a finished learning round, as a
-// lost database connection would, and then works again.
 type failingStore struct {
 	storage.Store
 	fail bool
@@ -145,9 +131,6 @@ func (f *failingStore) SaveLearned(user, lang string, l storage.Learned) error {
 	return f.Store.SaveLearned(user, lang, l)
 }
 
-// A round whose saving failed (a server error) and is sent again by the
-// page is learned once: the letters and the round are stored in one step,
-// so the failed try leaves nothing behind.
 func TestApp_ResultsAfterAFailedSave(t *testing.T) {
 	store := &failingStore{Store: storage.NewMemoryStore(), fail: true}
 	h, _, err := newAppWith(func() (storage.Store, error) { return store, nil })
@@ -172,9 +155,6 @@ func TestApp_ResultsAfterAFailedSave(t *testing.T) {
 	}
 }
 
-// Rare words come in only after the whole alphabet is open, and only as the
-// user keeps typing (engine.MaxRank): the letters of learning rounds finished
-// with every letter open move the limit; free practice does not.
 func TestApp_RareWordsAfterTheAlphabet(t *testing.T) {
 	h, cfg, err := newApp()
 	if err != nil {
@@ -187,11 +167,6 @@ func TestApp_RareWordsAfterTheAlphabet(t *testing.T) {
 			rank[w] = i
 		}
 	}
-	// The words are random, so the mean is taken over 100 portions: with 30
-	// the ratio after the ramp ranged from 1.9 to 2.7 and the test failed
-	// about once in 40 runs. With 100 it stays between 2.1 and 2.4, and free
-	// practice stays between 0.9 and 1.1, so the limits 1.5 and 1.8 below
-	// sit well clear of both.
 	meanRank := func() float64 {
 		sum, n := 0, 0
 		for i := 0; i < 100; i++ {
@@ -220,8 +195,6 @@ func TestApp_RareWordsAfterTheAlphabet(t *testing.T) {
 	}
 }
 
-// The hidden study group: random words in learning, kept per language, on
-// every round, in the stats and in export/import.
 func TestApp_StudyGroup(t *testing.T) {
 	h, _, _ := newApp()
 	if code, _ := call(t, h, "POST", "/api/v1/group?lang=en", `{"group":"lazy"}`); code != 400 {
@@ -265,8 +238,6 @@ func TestApp_StudyGroup(t *testing.T) {
 	}
 }
 
-// What a round was typed on is kept with it (learning), an unknown device
-// is refused, and a page that does not send it stores "".
 func TestApp_RoundDevice(t *testing.T) {
 	h, _, _ := newApp()
 	if code, _ := call(t, h, "POST", "/api/v1/results?lang=en", `{"samples":[],"chars":40,"wpm":30,"accuracy":95,"device":"fridge"}`); code != 400 {
@@ -284,15 +255,10 @@ func TestApp_RoundDevice(t *testing.T) {
 	}
 }
 
-// Learn's laps: when every letter is open and mastered, the next press
-// starts the next lap, whose goal is 5 wpm higher (docs/ALGORITHM.md 6.1);
-// /stats tells the lap and its goal, and the lap goes through export and
-// import. The last lap is the last: no lap above it.
 func TestApp_LearnLaps(t *testing.T) {
 	h, _, _ := newApp()
 	keys := []string{}
 	for _, c := range "abcdefghijklmnopqrstuvwxyz" {
-		// fast and clean enough for every goal up to 60 wpm (200 ms)
 		keys = append(keys, fmt.Sprintf(`"%c":{"count":50,"errEma":0.01,"timeEma":150,"timedCount":50}`, c))
 	}
 	file := `{"unlocked":26,"keys":{` + strings.Join(keys, ",") + `}}`
@@ -344,8 +310,6 @@ func TestApp_LearnLaps(t *testing.T) {
 	}
 }
 
-// /stats has the forecast of the Learn panel: after a few rounds in which
-// every open letter got faster it has a number of rounds.
 func TestApp_LearnForecast(t *testing.T) {
 	h, _, _ := newApp()
 	_, st := call(t, h, "GET", "/api/v1/stats?lang=en", "")
@@ -359,7 +323,7 @@ func TestApp_LearnForecast(t *testing.T) {
 		}
 	}
 	for i := range 8 {
-		ms := 900 - 60*i // every open letter gets faster round by round
+		ms := 900 - 60*i
 		var samples []string
 		for _, c := range open {
 			for range 3 {

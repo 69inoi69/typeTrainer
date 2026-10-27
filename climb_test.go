@@ -1,7 +1,6 @@
 package main
 
-// Climb through the whole app: levels, judging a round, weak pairs.
-// Helpers (call, guestRequest) are in setup_test.go.
+// Climb through the whole app.
 
 import (
 	"fmt"
@@ -11,12 +10,6 @@ import (
 	"testing"
 )
 
-// Climb, the second mode: open to everyone; a round is typed at one level
-// (the user's, LevelStart at first, or one they pick); three passes take
-// them up, two fails in a row down; words only; its rounds go to their own
-// history with their level and never change the letter statistics of
-// learning; export/import carry it (and turn the old 0..1 levels into the
-// ten), reset clears it.
 func TestApp_Climb(t *testing.T) {
 	h, _, _ := newApp()
 	place := func(st map[string]any) map[string]any { return st["place"].(map[string]any) }
@@ -28,7 +21,6 @@ func TestApp_Climb(t *testing.T) {
 	if code != 200 || len(out["portions"].([]any)) != 3 || out["round"] != float64(5) || out["level"] != float64(1) {
 		t.Fatalf("first portions: %d %v", code, out)
 	}
-	// no one-letter words ("a", "i"), even among the 200 most common
 	for range 20 {
 		_, low := call(t, h, "POST", "/api/v1/freeplay/portion?lang=en", `{"level":1,"start":true}`)
 		for _, p := range low["portions"].([]any) {
@@ -39,8 +31,6 @@ func TestApp_Climb(t *testing.T) {
 			}
 		}
 	}
-	// the top level draws from the long list (free.txt), past words.txt;
-	// words only, in lower case
 	list, _ := os.ReadFile("data/langs/en/words.txt")
 	short := map[string]bool{}
 	for _, w := range strings.Fields(string(list)) {
@@ -63,7 +53,7 @@ func TestApp_Climb(t *testing.T) {
 			}
 		}
 	}
-	if beyond < 20 { // 30 words at level 10: almost all are past the 2000 of words.txt
+	if beyond < 20 {
 		t.Fatalf("level 10 drew only %d of 30 words past words.txt", beyond)
 	}
 	for _, bad := range []string{`{"level":11}`, `{"level":-1}`} {
@@ -71,9 +61,6 @@ func TestApp_Climb(t *testing.T) {
 			t.Fatalf("%s must be rejected", bad)
 		}
 	}
-	// three passes at level 4: up to 5; the answer says where the round
-	// leaves the user. Capitals and punctuation are still fine in the raw
-	// record (rounds from before the ten levels).
 	result := func(level int, acc float64) map[string]any {
 		round := fmt.Sprintf(`{"wpm":55,"accuracy":%v,"chars":150,"perSecond":[5,5,5,5,5,5,5,5],"level":%d,
 			"keys":[{"char":"T","errors":0,"ms":200},{"char":",","errors":0,"ms":180}]}`, acc, level)
@@ -90,7 +77,6 @@ func TestApp_Climb(t *testing.T) {
 	if p := result(4, 98)["place"].(map[string]any); p["level"] != float64(5) || p["moved"] != float64(1) {
 		t.Fatalf("three passes: %v", p)
 	}
-	// two fails in a row at 5: back to 4
 	if out := result(5, 90); out["verdict"] != "fail" || out["place"].(map[string]any)["level"] != float64(5) {
 		t.Fatalf("one fail: %v", out)
 	}
@@ -119,7 +105,6 @@ func TestApp_Climb(t *testing.T) {
 		t.Fatal("the history of one language leaked into another")
 	}
 
-	// export -> reset -> import brings the history and the level back
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, guestRequest("GET", "/api/v1/export?lang=en", ""))
 	file := rec.Body.String()
@@ -136,9 +121,6 @@ func TestApp_Climb(t *testing.T) {
 	if _, st := call(t, h, "GET", "/api/v1/freeplay/stats?lang=en", ""); st["sessionCount"] != float64(5) || place(st)["level"] != float64(4) {
 		t.Fatalf("import lost Climb: %v", st)
 	}
-	// a file from before the ten levels (no climbLevels, level 0..1, here
-	// the old 64 -> 7), with the typing test's flag of the free practice
-	// days: still loads, the level turned into a new one
 	old := `{"unlocked":6,"keys":{},"sessions":[],"freeplay":{"testPassed":true,"sessions":[
 		{"wpm":50,"accuracy":95,"chars":100,"finishedAt":"2026-10-19T10:00:00Z","level":0.64}]}}`
 	if code, out := call(t, h, "POST", "/api/v1/import?lang=en", old); code != 200 {
@@ -147,16 +129,12 @@ func TestApp_Climb(t *testing.T) {
 	if _, st := call(t, h, "GET", "/api/v1/freeplay/stats?lang=en", ""); place(st)["level"] != float64(7) {
 		t.Fatalf("old level 64 must become 7: %v", st["place"])
 	}
-	// a new file with a level out of 1..10 is refused
 	bad := strings.Replace(file, `"level":4`, `"level":0.5`, 1)
 	if code, _ := call(t, h, "POST", "/api/v1/import?lang=en", bad); code != 400 {
 		t.Fatal("a ten-level file with level 0.5 must be rejected")
 	}
 }
 
-// Climb's weak pairs: a round with a slow "ck" makes "ck" the first weak
-// pair in the result, and the next words carry it far more often than the
-// plain draw would.
 func TestApp_ClimbWeakPairs(t *testing.T) {
 	h, _, _ := newApp()
 	text := strings.Repeat("the quick brown fox jumps ", 20)
@@ -186,11 +164,9 @@ func TestApp_ClimbWeakPairs(t *testing.T) {
 			}
 		}
 	}
-	// the plain draw at level 5 has "ck" in about 1 word of 100
 	if share := float64(with) / float64(all); share < 0.3 {
 		t.Fatalf("words with the weak pair: %d of %d", with, all)
 	}
-	// a new user has no history: no weak pairs
 	h2, _, _ := newApp()
 	if _, out := call(t, h2, "POST", "/api/v1/freeplay/results?lang=en", `{"wpm":55,"accuracy":99,"chars":10,"level":5}`); len(out["weak"].([]any)) != 0 {
 		t.Fatalf("no history, still weak pairs: %v", out["weak"])

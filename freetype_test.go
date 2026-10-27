@@ -1,7 +1,6 @@
 package main
 
-// Freetype through the whole app: word lists, kinds of text, their histories.
-// Helpers (call, guestRequest) are in setup_test.go.
+// Freetype through the whole app.
 
 import (
 	"fmt"
@@ -10,9 +9,6 @@ import (
 	"testing"
 )
 
-// Freetype, the third mode: words from the list the typist chose (the n
-// most common of free.txt), lower case, no level; every list has its own
-// history, apart from Climb and learning; export/import carry them.
 func TestApp_Freetype(t *testing.T) {
 	h, _, _ := newApp()
 	_, st := call(t, h, "GET", "/api/v1/freetype/stats?lang=en", "")
@@ -20,7 +16,6 @@ func TestApp_Freetype(t *testing.T) {
 	if lists != "[200 1000 5000 10000 25000]" || st["list"] != float64(200) || st["sessionCount"] != float64(0) {
 		t.Fatalf("new user: lists %v, list %v, rounds %v", lists, st["list"], st["sessionCount"])
 	}
-	// a hidden language without free.txt offers what its words.txt allows
 	if _, ru := call(t, h, "GET", "/api/v1/freetype/stats?lang=ru", ""); fmt.Sprint(ru["lists"]) != "[200 1000]" {
 		t.Fatalf("ru lists: %v", ru["lists"])
 	}
@@ -55,7 +50,6 @@ func TestApp_Freetype(t *testing.T) {
 		t.Fatal("a letter of another alphabet is not a Freetype letter")
 	}
 
-	// the variants: long words of a list, real sentences and your own text (no list)
 	code, out = call(t, h, "POST", "/api/v1/freetype/portion?lang=en", `{"start":true,"list":1000,"variant":"long"}`)
 	if code != 200 {
 		t.Fatalf("long portions: %d %v", code, out)
@@ -105,7 +99,6 @@ func TestApp_Freetype(t *testing.T) {
 		t.Fatal("stats of a list not offered must be rejected")
 	}
 
-	// export -> reset -> import brings every list back
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, guestRequest("GET", "/api/v1/export?lang=en", ""))
 	file := rec.Body.String()
