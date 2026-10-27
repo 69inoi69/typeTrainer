@@ -201,7 +201,7 @@ consequences, the same word for the same thing. All text lives in
 - Prefer the smallest change that solves the problem in the right place
   over a workaround somewhere else.
 - When the change touches behaviour, update the docs that describe it in the
-  same task (`docs/ALGORITHM.md`, `docs/USER-GUIDE.md`, `docs/ARCHITECTURE.md`).
+  same task (`docs/ALGORITHM.md`, `docs/ARCHITECTURE.md`).
 
 ## 10. Testing and verification
 
