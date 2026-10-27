@@ -76,5 +76,12 @@ with everything on (18%) are above 15% on this machine. Since #150 the
 keyboard is only on while Learn opens letters; Climb, Freetype and Learn
 after the last letter type at the Climb line.
 
+The falling background, measured 2026-10-20 (headless Chromium, 170 wpm,
+keyboard and hands on): one `element.animate` per keycap with plain numbers
+on a bare wrapper costs about 1 ms more main-thread work per key than
+holding the keycaps still (16.5-17.9 vs 15.9-16.5 ms), and the typed letter
+shows just as fast (median 32 ms); the first version (the look and CSS
+variables on the moving element) cost about 2.5 ms.
+
 To fill: the finger layout (how a key maps to a finger and a colour,
 `web/keyboard.js`), the hand above the keyboard.
