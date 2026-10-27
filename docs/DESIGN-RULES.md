@@ -124,10 +124,16 @@ consequences, the same word for the same thing. All text lives in
   the whole typing screen on every key (measured:
   `docs/thesis/06-interface-finger-layout-latency.md`). A state other parts
   follow goes on `<body>` as a class instead (`boxState` in `state.js`).
+- When a round starts, nothing moves and nothing disappears just because
+  typing began. What is not needed right now dims (the header, the round
+  switches, the Learn cells) and comes back on hover; only what has lost
+  its meaning goes (the news of the last round). Each dim or fade has a
+  reason (#201).
 - A screen that opens (the result, the stats) does it as one short
   sequence of small rises (`rise` in `stats.css`), not as scattered effects;
   a redraw on resize does not replay it.
-- Selected states use `aria-pressed` / `aria-selected` and the accent fill.
+- Selected states use `aria-pressed` / `aria-selected` and the accent fill
+  (on the round switches: a light accent tint inside an accent ring).
 - A destructive action asks first in a confirm window (Reset all progress:
   "Reset all progress? This can't be undone.", Cancel has the focus).
 - Results stay on screen until the user presses Next round, Enter or Tab
