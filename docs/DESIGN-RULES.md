@@ -80,7 +80,10 @@ there is a reason not to).
 
 **Established**
 - What changes (typed text, numbers, results, messages) is bright; fixed
-  labels are small and grey (`.lbl-ui`, `--sub`).
+  labels are smaller and grey (`.lbl-ui`, `--label`, at least 4.5:1 on both
+  themes). No text is smaller than `--fs-min` (14px at the smallest root
+  size); `--sub` is for things that step back (untyped text, choices not
+  picked), not for labels people must read.
 - One accent colour (`--accent`, gold) for the caret, the focus letter and
   the selected option; a filled gold thing uses `--accent-fill` (a slight
   gradient) and `--accent-glow`; gold as text is `--accent-text`. Green

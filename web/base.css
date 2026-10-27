@@ -15,6 +15,8 @@
   --line: #24262c;
   --sub: #6c717c;
   --text: #e8e9ec;
+  --label: color-mix(in srgb, var(--text) 35%, var(--sub));
+  --fs-min: .875rem;
   --accent: #f2c230;
   --accent-deep: #e0a21a;
   --accent-text: var(--accent);
@@ -56,6 +58,7 @@
   --line: #e3e5e9;
   --sub: #6b7186;
   --text: #1a1d24;
+  --label: color-mix(in srgb, var(--text) 35%, var(--sub));
   --accent: #f2c230;
   --accent-text: #d49a00;
   --accent-glow: 0 0 0 1px rgba(200, 150, 20, .35), 0 6px 18px -6px rgba(220, 160, 20, .5);
@@ -97,7 +100,7 @@ input, textarea { user-select: text; -webkit-user-select: text; }
 /* ---------- two kinds of text ---------- */
 .lbl-ui, .metric small, .stat .lbl, .tile small, .r-lbl,
 .panel-note, .profile-field small, .profile-label, .intro-kicker {
-  font-family: var(--ui); font-size: .75rem; font-weight: 500; color: var(--sub);
+  font-family: var(--ui); font-size: var(--fs-min); font-weight: 500; color: var(--label);
 }
 button, .tooltip, .hints, .rail small, .intro p, .intro h2, .account-msg,
 .account-as, .profile-soon, .focus-hint, .letters-caption .begin, .warn, .panel h2 {
@@ -115,13 +118,13 @@ button, .tooltip, .hints, .rail small, .intro p, .intro h2, .account-msg,
 .win-title, .profile-title {
   margin: 0 0 4px; font-family: var(--ui); font-size: .95rem; font-weight: 600; color: var(--text);
 }
-.win-p { margin: 6px 0 0; font-family: var(--ui); font-size: .8rem; line-height: 1.5; color: color-mix(in srgb, var(--text) 82%, var(--sub)); }
+.win-p { margin: 6px 0 0; font-family: var(--ui); font-size: var(--fs-min); line-height: 1.5; color: color-mix(in srgb, var(--text) 82%, var(--sub)); }
 .win-p b { color: var(--text); font-weight: 600; }
 .win kbd { background: var(--track); box-shadow: var(--ring); color: var(--text); font-family: var(--mono); }
 @media (pointer: coarse) { .keys-only { display: none; } }
 .btn {
   display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: var(--r-md);
-  background: none; color: color-mix(in srgb, var(--text) 80%, var(--sub)); box-shadow: var(--ring); font-size: .8rem;
+  background: none; color: color-mix(in srgb, var(--text) 80%, var(--sub)); box-shadow: var(--ring); font-size: var(--fs-min);
 }
 .btn:hover { color: var(--text); background: var(--track); }
 .btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -145,7 +148,7 @@ dialog.settings-win:focus { outline: none; }
 .sw-sep { grid-column: 1 / -1; height: 1px; background: var(--line); margin: 5px 8px; }
 .sw-row { display: contents; }
 .sw-row > span { display: flex; align-items: center; gap: 6px; min-height: 32px; padding: 2px 8px; }
-.sw-name { position: relative; font-size: .84rem; color: var(--text); border-radius: 8px 0 0 8px; }
+.sw-name { position: relative; font-size: var(--fs-min); color: var(--text); border-radius: 8px 0 0 8px; }
 .sw-name.danger { color: color-mix(in srgb, var(--error) 75%, var(--sub)); }
 .sw-ctl { padding-left: 16px !important; border-radius: 0 8px 8px 0; }
 .sw-row.on > span { background: var(--track); }
@@ -165,7 +168,7 @@ dialog.settings-win:focus { outline: none; }
   --i: 0; top: .25em; height: 1.2em;
   translate: calc(var(--i) * (1ch + .02em)) 0;
 }
-.sw-foot { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 14px; border-top: 1px solid var(--line); color: var(--sub); font-size: .72rem; }
+.sw-foot { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 14px; border-top: 1px solid var(--line); color: var(--label); font-size: var(--fs-min); }
 .sw-foot kbd { background: var(--track); box-shadow: var(--ring); color: var(--text); border-radius: 4px; padding: 0 5px; margin-right: 3px; font-family: var(--mono); }
 @media (min-width: 900px) and (pointer: fine) {
   dialog.settings-win { inset-block-start: 6vh; min-width: 34rem; }
@@ -177,7 +180,7 @@ dialog.settings-win:focus { outline: none; }
   .sw-ctl .ring button, .sw-ctl .btn { font-size: .9rem; padding: 6px 12px; }
   .sw-ctl .btn svg { width: 17px; height: 17px; }
   .sw-ctl .cs { height: 14px; }
-  .sw-foot { font-size: .8rem; padding: 11px 20px; gap: 4px 18px; }
+  .sw-foot { font-size: var(--fs-min); padding: 11px 20px; gap: 4px 18px; }
 }
 @media (pointer: coarse) {
   .sw-foot { display: none; }
@@ -210,7 +213,7 @@ dialog.settings-win:focus { outline: none; }
 @keyframes ring-pop { from { transform: scale(.92); } }
 @keyframes ring-fill { from { transform: scaleX(.3); opacity: .2; } }
 @media (prefers-reduced-motion: reduce) { .ring button.pick, .ring button.pick::before { animation: none; } }
-.ring-lbl { display: flex; align-items: center; color: var(--sub); font-size: .9rem; margin: 0 4px 0 7px; }
+.ring-lbl { display: flex; align-items: center; color: var(--label); font-size: .9rem; margin: 0 4px 0 7px; }
 dialog.mini-pop {
   position: fixed; inset: auto; margin: 0; border: 0; padding: 8px 10px; color: var(--text);
   font-family: var(--ui); animation: note-in .15s var(--ease);
