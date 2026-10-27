@@ -190,6 +190,53 @@ test("the caret is still at rest, spaces have a dot, the settings are fewer", as
   await expect(page.getByText("Caret movement")).toBeVisible();
   await expect(page.getByText("Caret at rest")).toHaveCount(0);
   await expect(page.getByText("Space marks")).toHaveCount(0);
+  const names = await page.locator("#settings-win .sw-name").allTextContents();
+  expect(names, "only what holds for the whole site").toEqual(["Theme", "Caret", "Caret movement", "Falling keycaps",
+    "Speed while typing", "Stop on a mistake", "Sounds", "Break reminder", "Progress data", "Reset progress"]);
+  await expect(page.locator("#settings-win input[type=text]"), "no search").toHaveCount(0);
+});
+
+test("the settings of one screen live on that screen", async ({ page }) => {
+  await openApp(page, { "tt.mode.en": "freetype" });
+  const streak = page.locator('#mode-bar button[data-streak]');
+  await expect(streak).toHaveAttribute("aria-pressed", "false");
+  await streak.click();
+  await expect(streak).toHaveAttribute("aria-pressed", "true");
+  expect(await page.evaluate(() => localStorage.getItem("tt.streak.free"))).toBe("1");
+
+  await page.locator("#tab-learn").click();
+  await waitForText(page);
+  const goal = page.locator("#lp-cols .lp-goal");
+  await goal.click();
+  const pop = page.locator("#mini-pop");
+  await expect(pop.locator('button[data-key="daily"][aria-pressed="true"]')).toHaveText("15");
+  await pop.locator('button[data-key="daily"][data-value="0"]').click();
+  await page.keyboard.press("Escape");
+  await expect(goal.locator(".lp-val")).toHaveText("Off");
+  expect(await page.evaluate(() => localStorage.getItem("tt.daily"))).toBe("0");
+
+  await page.keyboard.press("Shift+Tab");
+  const line = page.locator('#goal-pick button[data-goal="50"]');
+  await line.click();
+  await expect(line).toHaveAttribute("aria-pressed", "true");
+  expect(await page.evaluate(() => localStorage.getItem("tt.goal"))).toBe("50");
+});
+
+test("browser zoom 200% keeps the desktop layout and nothing overlaps", async ({ browser }) => {
+  const ctx = await browser.newContext({ baseURL: "http://localhost:3000", viewport: { width: 960, height: 500 }, deviceScaleFactor: 2 });
+  const page = await ctx.newPage();
+  await openApp(page, { "tt.mode.en": "learn" });
+  const m = await page.evaluate(() => {
+    const cells = [document.querySelector(".metric:has(#progress)"), ...document.querySelectorAll("#lp-cols > .lp-cell"), document.getElementById("round-switch")]
+      .map((n) => n.getBoundingClientRect());
+    return {
+      sideways: document.documentElement.scrollWidth > innerWidth,
+      railAtBottom: document.getElementById("rail").getBoundingClientRect().top > innerHeight / 2,
+      overlaps: cells.slice(1).filter((r, i) => r.left < cells[i].right - 1).length,
+    };
+  });
+  expect(m).toEqual({ sideways: false, railAtBottom: false, overlaps: 0 });
+  await ctx.close();
 });
 
 test("the keyboard shows only while Learn opens letters", async ({ page }) => {
@@ -201,10 +248,15 @@ test("the keyboard shows only while Learn opens letters", async ({ page }) => {
     return { bg: c.backgroundColor, shadow: c.boxShadow };
   });
   expect(card, "no card around the hand").toEqual({ bg: "rgba(0, 0, 0, 0)", shadow: "none" });
+  await page.locator(".kb-gear").click();
+  const pop = page.locator("#mini-pop");
+  await expect(pop.locator(".mp-name", { hasText: /^Highlight next key$/ })).toBeVisible();
+  await expect(page.locator("#keyboard .key.next")).toHaveCount(1);
+  await pop.locator('button[data-key="nextKey"][data-value=""]').click();
+  await expect(page.locator("#keyboard .key.next")).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem("tt.nextKey"))).toBe("0");
   await page.keyboard.press("Escape");
-  await expect(page.locator(".sw-name", { hasText: /^Next key$/ })).toBeVisible();
-  await expect(page.locator(".sw-name", { hasText: /^Keyboard$/ })).toHaveCount(0);
-  await page.keyboard.press("Escape");
+  await expect(pop).toBeHidden();
   await page.locator("#tab-climb").click();
   await expect(kb).toBeHidden();
   await page.locator("#tab-learn").click();

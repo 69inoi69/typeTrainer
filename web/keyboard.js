@@ -2,7 +2,9 @@
 
 import { FEEL } from "./feel.js";
 import { t } from "./i18n.js";
-import { el, S, isTouch, themeColor, reducedMotion } from "./state.js";
+import { $, el, S, isTouch, themeColor, reducedMotion } from "./state.js";
+import { setSetting } from "./settings.js";
+import { openPop, ring, ringBtn } from "./minipop.js";
 
 // ---------- keyboard ----------
 let fingerOf = {};
@@ -53,6 +55,7 @@ export function drawKeyboard() {
     el.keyboard.appendChild(rowEl);
   });
   el.keyboard.appendChild(el.hands);
+  el.keyboard.appendChild(gear);
   for (const f of el.hands.querySelectorAll("[data-f]")) {
     const id = f.dataset.f;
     f.style.setProperty("--fc", S.layout.fingers[id.startsWith("th") ? "th" : id].color);
@@ -63,6 +66,21 @@ export function drawKeyboard() {
     if (!hand.querySelector("img")) hand.appendChild(Object.assign(document.createElement("img"), { alt: "" }));
   }
 }
+
+// ---------- the keyboard's own settings ----------
+const KB_SWITCHES = ["nextKey", "hand", "fingerText"];
+const gear = Object.assign(document.createElement("button"), { type: "button", className: "kb-gear" });
+gear.appendChild($("btn-settings").querySelector("svg").cloneNode(true));
+gear.dataset.tip = "tip.kb";
+gear.setAttribute("aria-label", t("tip.kb"));
+gear.setAttribute("aria-haspopup", "dialog");
+gear.setAttribute("aria-expanded", "false");
+const kbRows = () => KB_SWITCHES.map((k) => {
+  const on = S.settings[k], desc = t(`settings.${k}Desc`).replace(/"/g, "&quot;");
+  return `<div class="mp-row"><span class="mp-name" data-tip-text="${desc}">${t("settings." + k)}</span>` +
+    ring(t("settings." + k), [ringBtn(`data-key="${k}" data-value=""`, t("settings.off"), !on), ringBtn(`data-key="${k}" data-value="1"`, t("settings.on"), on)]) + `</div>`;
+}).join("");
+gear.addEventListener("click", () => openPop(gear, t("settings.kbGroup"), kbRows, setSetting));
 
 // ---------- the hand as pictures ----------
 const handPics = new Map();

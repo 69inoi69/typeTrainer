@@ -75,6 +75,7 @@ body.typing-now .learn-panel { opacity: 0; pointer-events: none; }
 .lp-ring circle { fill: none; stroke: color-mix(in srgb, var(--sub) 30%, transparent); stroke-width: 3; }
 .lp-ring .fill { stroke: var(--accent); stroke-dasharray: 100; stroke-dashoffset: calc(100 - var(--g) * 100); transition: stroke-dashoffset .5s linear, stroke .4s; }
 .lp-goal.met .lp-ring .fill { stroke: var(--ok); }
+.lp-cols > .lp-goal { cursor: pointer; }
 .lp-cell.met .lp-val b { color: var(--ok); }
 .lp-news { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 1rem; color: var(--text); cursor: default; }
 .lp-news.big { color: var(--accent-text); }
@@ -82,8 +83,6 @@ body.typing-now .learn-panel { opacity: 0; pointer-events: none; }
 
 /* ---------- typing settings (settings.js CHOICES and SWITCHES) ---------- */
 :root { --text-size: 2.15rem; }
-body[data-size="s"] { --text-size: 1.75rem; }
-body[data-size="l"] { --text-size: 2.6rem; }
 body[data-glide="jump"], body[data-glide="jump"] :is(.caret, .streak) { --feel-caret-ms: 0ms !important; }
 .text span[data-sp] { position: relative; }
 .text span[data-sp]::after {
@@ -91,18 +90,6 @@ body[data-glide="jump"], body[data-glide="jump"] :is(.caret, .streak) { --feel-c
   background: currentColor; opacity: .3; translate: -50% -50%; pointer-events: none;
 }
 .mode-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
-.mb-group { display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--line); }
-:is(.mode-bar, .round-switch) button {
-  padding: 4px 9px; border: 0; border-radius: 7px; background: none; color: var(--sub); font: inherit; font-size: .9rem;
-  white-space: nowrap; cursor: pointer; transition: color .15s, background-color .15s;
-}
-:is(.mode-bar, .round-switch) button:hover { color: var(--text); }
-:is(.mode-bar, .round-switch) button[aria-pressed="true"] {
-  color: var(--accent-text); background: color-mix(in srgb, var(--accent) 14%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
-}
-:root[data-theme="light"] :is(.mode-bar, .round-switch) button[aria-pressed="true"] { color: var(--text); background: color-mix(in srgb, var(--accent) 26%, transparent); }
-.mb-lbl { color: var(--sub); font-size: .9rem; margin: 0 4px 0 7px; }
 .mode-bar[hidden], .round-switch[hidden] { display: none; }
 .round-switch { display: flex; align-items: center; }
 /* ---------- while typing: dim what is not needed now, move nothing ---------- */
@@ -112,11 +99,13 @@ body.typing-now :is(.mode-bar, .round-switch, .lp-cols > .lp-cell):hover { opaci
 /* ---------- the Learn line above the text: counter, cells, round switch ---------- */
 body[data-mode="learn"] .live { display: grid; grid-template-columns: repeat(6, auto) minmax(0, 1fr) auto; column-gap: 28px; }
 body[data-mode="learn"] :is(.live > *, .lp-cols > .lp-cell) { grid-row: 1; }
+body[data-mode="learn"] .lp-cols > .lp-cell { min-width: max-content; }
+@media (max-width: 1100px) { body[data-mode="learn"] .live { column-gap: 14px; } }
 body[data-mode="learn"] #progress-label, body[data-mode="learn"] .letters-caption { display: none; }
 body[data-mode="learn"] .live > .metric > span { font-size: 1rem; line-height: 1.3; font-weight: 600; letter-spacing: 0; }
 body[data-mode="learn"] .live > .metric small { font-size: 1rem; line-height: 1.3; margin-left: .5ch; }
 body[data-mode="learn"] .live > .metric > span.pct { margin-left: 0; }
-body[data-mode="learn"] .live > .metric:has(#progress) { grid-column: 1; min-width: 0; }
+body[data-mode="learn"] .live > .metric:has(#progress) { grid-column: 1; min-width: max-content; }
 body[data-mode="learn"] .live > .metric.num:nth-child(1) { grid-column: 2; }
 body[data-mode="learn"] .live > .metric.raw { display: none; }
 body[data-mode="learn"] .live > .metric.num:nth-child(3) { grid-column: 3; }
@@ -158,7 +147,7 @@ body.typing-now:not(.live-off) .lp-cols > .lp-last { opacity: 0; pointer-events:
 .stat.focus svg { color: var(--accent-text); }
 .letters-caption .begin { padding: 0; font-size: .8rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: left; }
 .text-box.typing .letters-caption .begin { display: none; }
-@media (min-width: 1000px) and (pointer: fine) {
+@media (min-width: 900px) and (pointer: fine) {
   .letters { margin-bottom: 12px; }
   .letters-caption { font-size: .95rem; gap: 22px; }
   .stat svg { width: 1.1em; height: 1.1em; }
@@ -199,7 +188,7 @@ body.typing-now:not(.live-off) .lp-cols > .lp-last { opacity: 0; pointer-events:
 .text.swap { animation: text-in var(--med) var(--ease); }
 @keyframes text-in { from { opacity: 0; transform: translateY(4px); } }
 .text span.later { visibility: hidden; }
-@media (min-width: 1000px) and (pointer: fine) {
+@media (min-width: 900px) and (pointer: fine) {
   :root { --tw: min(100vw - 32px - 2 * var(--side), 56rem); --u-max: calc((var(--tw) - 24px) / 13.4); }
   .text-box, .text-box:focus-within, .text-box:focus { background: none; box-shadow: none; padding: 0 0 0 40px; }
   body[data-mode="learn"] .live { margin-left: -40px; }
@@ -366,9 +355,17 @@ body:not([data-caret]) .caret, body[data-caret="line"] .caret {
   border-radius: var(--r-lg); background: color-mix(in srgb, var(--panel) 55%, transparent); box-shadow: var(--ring);
 }
 body.hand-off .keyboard > .hands { display: none; }
+.kb-gear {
+  position: absolute; left: calc(100% + 8px); top: 4px; display: grid; place-items: center; width: 34px; height: 34px;
+  padding: 0; border: 0; border-radius: 9px; background: none; color: var(--sub); cursor: pointer; transition: color .15s, opacity .4s var(--ease);
+}
+.kb-gear:hover, .kb-gear[aria-expanded="true"] { color: var(--text); }
+.kb-gear svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+body.typing-now .kb-gear { opacity: .35; }
+body.typing-now .kb-gear:hover { opacity: 1; }
 :root[data-theme="light"] .keyboard { background: rgba(255, 255, 255, .55); box-shadow: var(--ring), 0 10px 30px -18px rgba(20, 24, 32, .25); }
 .keyboard.off { visibility: hidden; }
-@media not ((min-width: 1000px) and (pointer: fine)) { .keyboard.off { display: none; } }
+@media not ((min-width: 900px) and (pointer: fine)) { .keyboard.off { display: none; } }
 body.kb-nofit #keyboard { display: none; }
 .kb-row { display: flex; gap: calc(var(--u) * .12); width: calc(var(--u) * 13.4); }
 .key {

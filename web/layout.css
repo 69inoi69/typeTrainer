@@ -112,7 +112,7 @@ body:is([data-mode="climb"], [data-mode="freetype"]) .letter-row { visibility: h
 
 .pop { position: relative; }
 
-@media (min-width: 1000px) {
+@media (min-width: 900px) {
   :root { --side: 96px; }
   .rail {
     position: absolute; left: calc(50% - var(--tw) / 2 + 15rem); right: auto; top: 14px; bottom: auto; translate: none;

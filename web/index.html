@@ -123,6 +123,7 @@
         <div class="panel-head">
           <h2 data-i18n="stats.speed">Speed per round</h2>
           <span class="panel-note" id="chart-note"></span>
+          <span class="goal-pick" id="goal-pick"></span>
         </div>
         <div class="chart" id="chart"></div>
       </div>
@@ -147,7 +148,6 @@
   </nav>
 
   <dialog class="win settings-win" id="settings-win">
-    <div class="sw-search"><span class="sw-prompt" aria-hidden="true">❯</span><input id="settings-search" type="text" autocomplete="off" spellcheck="false"></div>
     <div class="sw-list" id="settings-body"></div>
     <div class="sw-foot keys-only">
       <span><kbd>↑</kbd><kbd>↓</kbd> <span data-i18n="settings.keyPick">pick</span></span>
@@ -157,6 +157,8 @@
     </div>
     <input id="import-file" type="file" accept="application/json,.json" hidden>
   </dialog>
+
+  <dialog class="win mini-pop" id="mini-pop"></dialog>
 
   <dialog class="win confirm" id="reset-dialog" aria-labelledby="reset-title">
     <p class="win-title" id="reset-title" data-i18n="data.confirmTitle">Reset all progress?</p>

@@ -33,7 +33,7 @@ there is a reason not to).
 
 **Established**
 - Three fixed places on every screen: the header (logo, account), the
-  navigation (a rail on the left from 1000 px, a bar at the bottom below),
+  navigation (a rail on the left from 900 px, a bar at the bottom below),
   and the content in the middle (`docs/HOW-THE-CODE-WORKS.md`, "Screen layout").
 - Panels (Settings, Profile, the reset confirm) share one window style:
   `.win` and `.win-title`.
@@ -42,6 +42,10 @@ there is a reason not to).
 - Boxes size to their content rather than to a fixed height (the result
   card, the panels).
 - Rare actions (Export, Import, Reset all progress) live in Settings, not on the main screen.
+- The settings window holds only what holds for the whole site. A setting of
+  one screen lives on that screen, next to what it changes: on the round bar,
+  in a small window opened from the control it belongs to (`openPop`), or
+  above the chart it draws on (#202).
 
 **Recommended**
 - Every element has a reason to be there and a reason to be where it is.
@@ -57,7 +61,7 @@ there is a reason not to).
 ## 3. Responsive design
 
 **Established**
-- Breakpoints in `web/responsive.css` and `web/stats.css`: 1000 px (rail vs bottom bar), 860 px (stats
+- Breakpoints in `web/responsive.css` and `web/stats.css`: 900 px (rail vs bottom bar; 200% browser zoom on a 1920 px screen stays above it), 860 px (stats
   columns), 640 px (phone), 380 px (very small phone).
 - Sizes follow the window: the keyboard key size `--u` and the text width
   `--tw` are computed from the viewport, not picked from presets.
@@ -152,7 +156,8 @@ consequences, the same word for the same thing. All text lives in
 ## 7. Consistency
 
 **Established**
-- Reusable patterns: `.win` panels, `.opt` rows, `.seg` segmented controls
+- Reusable patterns: `.win` panels, `.opt` rows, `.ring` switch groups (the
+  round bars, the small window, the stats goal line), `.seg` segmented controls
   (Off on the left, On on the right), `.btn` buttons (`.danger` for
   destructive), `data-tip` tooltips, `--ctl` (38 px) as the height of every
   control.
