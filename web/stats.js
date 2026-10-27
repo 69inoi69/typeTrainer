@@ -180,7 +180,7 @@ function drawActivity() {
   const dayNames = [0, 2, 4].map((i) => `<span style="grid-row:${i + 1}">${dayName.format(new Date(2026, 9, 19 + i))}</span>`).join("");
   const legend = `<span class="act-legend">${t("act.less")}<i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i>${t("act.more")}` +
     (goal ? `<i class="l2 met"></i>${t("act.goalLegend")}` : "") + `</span>`;
-  const periods = `<div class="seg act-period" role="group" aria-label="${t("act.period")}">` +
+  const periods = `<div class="ring act-period" role="group" aria-label="${t("act.period")}">` +
     Object.keys(PERIODS).map((p) => `<button type="button" data-period="${p}" aria-pressed="${p === period}">${t("act." + p)}</button>`).join("") + `</div>`;
   box.innerHTML = `<div class="act-head"><div class="act-stats" data-tip="act.${period}Tip">` +
     stat(duration(sum((x) => x.seconds)), "act.time") +

@@ -136,8 +136,8 @@ consequences, the same word for the same thing. All text lives in
 - A screen that opens (the result, the stats) does it as one short
   sequence of small rises (`rise` in `stats.css`), not as scattered effects;
   a redraw on resize does not replay it.
-- Selected states use `aria-pressed` / `aria-selected` and the accent fill
-  (on the round switches: a light accent tint inside an accent ring).
+- Selected states use `aria-pressed` / `aria-selected`; a chosen value in a
+  `.ring` group is a light accent tint inside an accent ring.
 - A destructive action asks first in a confirm window (Reset all progress:
   "Reset all progress? This can't be undone.", Cancel has the focus).
 - Results stay on screen until the user presses Next round, Enter or Tab
@@ -156,8 +156,9 @@ consequences, the same word for the same thing. All text lives in
 ## 7. Consistency
 
 **Established**
-- Reusable patterns: `.win` panels, `.opt` rows, `.ring` switch groups (the
-  round bars, the small window, the stats goal line), `.seg` segmented controls
+- Reusable patterns: `.win` panels, `.opt` rows, `.ring` switch groups (every
+  choice of a few values: the round bars, the settings, the small window,
+  the stats)
   (Off on the left, On on the right), `.btn` buttons (`.danger` for
   destructive), `data-tip` tooltips, `--ctl` (38 px) as the height of every
   control.

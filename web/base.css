@@ -119,18 +119,6 @@ button, .tooltip, .hints, .rail small, .intro p, .intro h2, .account-msg,
 .win-p b { color: var(--text); font-weight: 600; }
 .win kbd { background: var(--track); box-shadow: var(--ring); color: var(--text); font-family: var(--mono); }
 @media (pointer: coarse) { .keys-only { display: none; } }
-.seg {
-  display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 2px; border-radius: var(--r-md);
-  background: var(--panel); box-shadow: var(--ring);
-}
-.seg button {
-  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px;
-  background: none; color: var(--sub); font-size: .78rem; min-width: 34px; justify-content: center;
-}
-.seg button:hover { background: none; color: var(--text); }
-.seg button[aria-pressed="true"] {
-  background: var(--accent-fill); color: var(--on-accent); box-shadow: 0 2px 10px -3px rgba(220, 160, 20, .55);
-}
 .btn {
   display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: var(--r-md);
   background: none; color: color-mix(in srgb, var(--text) 80%, var(--sub)); box-shadow: var(--ring); font-size: .8rem;
@@ -145,13 +133,15 @@ button, .tooltip, .hints, .rail small, .intro p, .intro h2, .account-msg,
 dialog.settings-win {
   position: fixed; inset: 14vh auto auto 50%; translate: -50% 0; margin: 0;
   border: 0; padding: 0; width: max-content; max-width: calc(100vw - 24px); color: var(--text);
-  font-family: var(--ui); overflow: hidden; animation: note-in .2s var(--ease);
+  font-family: var(--ui); overflow: visible; animation: note-in .2s var(--ease);
 }
 dialog.settings-win::backdrop { background: color-mix(in srgb, var(--bg) 70%, transparent); backdrop-filter: blur(3px); }
 dialog.settings-win:focus { outline: none; }
-.sw-list { padding: 4px 6px 6px; max-height: calc(100dvh - 14vh - 140px); overflow-y: auto; scrollbar-width: thin; }
+.sw-list { padding: 4px 6px 6px; max-height: calc(100dvh - 14vh - 140px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 28%, transparent) transparent; }
+.sw-list::-webkit-scrollbar { width: 8px; }
+.sw-list::-webkit-scrollbar-thumb { border-radius: 4px; background: color-mix(in srgb, var(--text) 28%, transparent); }
 .sw-rows { display: grid; grid-template-columns: max-content 1fr; }
-.sw-group { grid-column: 1 / -1; color: var(--sub); font-size: .72rem; padding: 7px 8px 1px; }
+.sw-group { grid-column: 1 / -1; color: color-mix(in srgb, var(--text) 58%, var(--sub)); font-size: .875rem; padding: 10px 8px 2px; }
 .sw-sep { grid-column: 1 / -1; height: 1px; background: var(--line); margin: 5px 8px; }
 .sw-row { display: contents; }
 .sw-row > span { display: flex; align-items: center; gap: 6px; min-height: 32px; padding: 2px 8px; }
@@ -162,8 +152,15 @@ dialog.settings-win:focus { outline: none; }
 .sw-row.on .sw-name::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: var(--accent); }
 .sw-ctl .btn.kb-on { box-shadow: inset 0 0 0 1px var(--accent); }
 .sw-name[data-tip-text] { cursor: help; }
-.sw-preview { position: sticky; top: -10px; z-index: 1; padding: 10px 12px 14px; margin: -8px -10px 4px; background: var(--panel); border-bottom: 1px solid var(--line); overflow: hidden; }
-.sw-preview .pv-text { height: auto; overflow: visible; white-space: nowrap; }
+.sw-ctl .ring { flex-wrap: wrap; }
+.sw-ctl .ring button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 34px; }
+.sw-preview {
+  position: absolute; left: calc(100% + 12px); z-index: 1; padding: 8px 14px; border-radius: var(--r-md);
+  background: var(--panel); box-shadow: var(--ring), var(--shadow); font-size: 1.25rem; pointer-events: none;
+}
+.sw-preview.left { left: auto; right: calc(100% + 12px); }
+.sw-preview[hidden] { display: none; }
+.sw-preview .pv-text { height: auto; overflow: visible; white-space: nowrap; font-size: inherit; }
 .sw-preview .pv-caret {
   --i: 0; top: .25em; height: 1.2em;
   translate: calc(var(--i) * (1ch + .02em)) 0;
@@ -171,13 +168,13 @@ dialog.settings-win:focus { outline: none; }
 .sw-foot { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 14px; border-top: 1px solid var(--line); color: var(--sub); font-size: .72rem; }
 .sw-foot kbd { background: var(--track); box-shadow: var(--ring); color: var(--text); border-radius: 4px; padding: 0 5px; margin-right: 3px; font-family: var(--mono); }
 @media (min-width: 900px) and (pointer: fine) {
-  dialog.settings-win { inset-block-start: 11vh; min-width: 34rem; }
-  .sw-list { padding: 8px 10px 10px; max-height: calc(100dvh - 11vh - 170px); }
-  .sw-group { font-size: .8rem; padding: 12px 12px 4px; }
+  dialog.settings-win { inset-block-start: 6vh; min-width: 34rem; }
+  .sw-list { padding: 8px 10px 10px; max-height: calc(100dvh - 6vh - 110px); }
+  .sw-group { padding: 14px 12px 4px; }
   .sw-row > span { min-height: 44px; padding: 3px 12px; }
   .sw-name { font-size: 1rem; }
   .sw-ctl { padding-left: 32px !important; }
-  .sw-ctl .seg button, .sw-ctl .btn { font-size: .9rem; padding: 6px 14px; }
+  .sw-ctl .ring button, .sw-ctl .btn { font-size: .9rem; padding: 6px 12px; }
   .sw-ctl .btn svg { width: 17px; height: 17px; }
   .sw-ctl .cs { height: 14px; }
   .sw-foot { font-size: .8rem; padding: 11px 20px; gap: 4px 18px; }
@@ -185,7 +182,7 @@ dialog.settings-win:focus { outline: none; }
 @media (pointer: coarse) {
   .sw-foot { display: none; }
   .sw-row > span { min-height: 46px; }
-  .sw-ctl .seg button, .sw-ctl .btn { min-height: 38px; }
+  .sw-ctl .ring button, .sw-ctl .btn { min-height: 38px; }
 }
 @media (max-width: 899px) {
   dialog.settings-win { inset: auto auto calc(72px + env(safe-area-inset-bottom)) 50%; }

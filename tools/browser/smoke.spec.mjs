@@ -194,6 +194,16 @@ test("the caret is still at rest, spaces have a dot, the settings are fewer", as
   expect(names, "only what holds for the whole site").toEqual(["Theme", "Caret", "Caret movement", "Falling keycaps",
     "Speed while typing", "Stop on a mistake", "Sounds", "Break reminder", "Progress data", "Reset progress"]);
   await expect(page.locator("#settings-win input[type=text]"), "no search").toHaveCount(0);
+  const preview = page.locator("#settings-win .sw-preview");
+  await expect(preview, "no preview on Theme").toBeHidden();
+  await page.keyboard.press("ArrowDown");
+  await expect(preview, "the preview next to Caret").toBeVisible();
+  await page.keyboard.press("ArrowDown");
+  await expect(preview, "the preview next to Caret movement").toBeVisible();
+  await page.keyboard.press("ArrowDown");
+  await expect(preview, "no preview on Falling keycaps").toBeHidden();
+  const list = await page.locator("#settings-win .sw-list").evaluate((l) => l.scrollHeight <= l.clientHeight);
+  expect(list, "every row fits without scrolling").toBe(true);
 });
 
 test("the settings of one screen live on that screen", async ({ page }) => {
