@@ -201,7 +201,7 @@ const I18N = {
     "lp.accUp": "You're {d}% more accurate than your average over the previous {n} rounds ({avg}%)",
     "lp.accDown": "You're {d}% less accurate than your average over the previous {n} rounds ({avg}%)",
     "lp.streak": "{n} rounds in a row at {a}% accuracy or better",
-    "lp.streakLbl": "Clean streak", "lp.streakOf": "rounds at {a}%+",
+    "lp.streakLbl": "Clean streak",
     "lp.streakTip": "Aim for clean typing, not rushing. Mistakes can cost more time than slowing down a little",
     "lp.today": "Daily goal", "lp.goalOffTip": "Click to set how many minutes to type each day",
     "lp.goalOf": "of {g} min", "lp.goalMet": "min, goal reached", "lp.todayDays": "Daily goal, {n} days in a row",

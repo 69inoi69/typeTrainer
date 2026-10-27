@@ -11,7 +11,7 @@ import { openPop, ring as ringGroup, ringBtn } from "./minipop.js";
 const box = $("learn-panel"), cols = $("lp-cols");
 
 const AVG_ROUNDS = 10, AVG_MIN = 3;
-const STREAK_LEVELS = [100, 98, 97, 95, 90];
+const STREAK_LEVELS = [100, 98, 97, 95, 90], STREAK_DOTS = 10;
 
 let activity = null, activityLang = "";
 export async function refreshActivity() {
@@ -115,16 +115,28 @@ function lastRound() {
     wpm: before.reduce((a, x) => a + x.wpm, 0) / before.length,
     acc: before.reduce((a, x) => a + x.accuracy, 0) / before.length,
   } : null;
-  const delta = (now, was, unit, up, down) => {
-    if (!avg) return "";
+  const delta = (now, was, up, down) => {
     const d = Math.round(now) - Math.round(was);
-    if (!d) return "";
-    const tip = t(d > 0 ? up : down, { d: Math.abs(d), n: before.length, avg: Math.round(was) });
-    return `<span class="lp-delta ${d > 0 ? "up" : "down"}" tabindex="0" data-tip-text="${tip}">${d > 0 ? "↑" : "↓"}${Math.abs(d)}${unit}</span>`;
+    return d ? t(d > 0 ? up : down, { d: Math.abs(d), n: before.length, avg: Math.round(was) }) : "";
   };
+  const tip = avg ? [delta(last.wpm, avg.wpm, "lp.faster", "lp.slower"), delta(last.accuracy, avg.acc, "lp.accUp", "lp.accDown")]
+    .filter(Boolean).join(". ") : "";
   return cell("lp-last", t("lp.last"),
-    `${num(last.wpm)}<small>wpm</small>${delta(last.wpm, avg?.wpm, "", "lp.faster", "lp.slower")}` +
-    `${num(last.accuracy, "%", "lp-gap")}<small>${t("metric.acc")}</small>${delta(last.accuracy, avg?.acc, "%", "lp.accUp", "lp.accDown")}`);
+    `${num(last.wpm)}<small>wpm</small>${spark(list.slice(0, AVG_ROUNDS).map((x) => x.wpm).reverse(), avg?.wpm, tip)}` +
+    `${num(last.accuracy, "%", "lp-gap")}<small>${t("metric.acc")}</small>`);
+}
+
+const SPARK_W = 64, SPARK_H = 18;
+function spark(wpms, avg, tip) {
+  if (wpms.length < 2) return "";
+  const all = avg === undefined ? wpms : [...wpms, avg];
+  const lo = Math.min(...all), span = Math.max(...all) - lo || 1;
+  const x = (i) => (i * SPARK_W / (wpms.length - 1)).toFixed(1);
+  const y = (v) => (SPARK_H - 2 - (v - lo) / span * (SPARK_H - 4)).toFixed(1);
+  const end = wpms.length - 1;
+  return `<svg class="lp-spark" viewBox="0 0 ${SPARK_W} ${SPARK_H}"${tip ? ` tabindex="0" data-tip-text="${tip}"` : ` aria-hidden="true"`}>` +
+    (avg === undefined ? "" : `<line class="avg" x1="0" x2="${SPARK_W}" y1="${y(avg)}" y2="${y(avg)}"/>`) +
+    `<polyline points="${wpms.map((v, i) => `${x(i)},${y(v)}`).join(" ")}"/><circle cx="${x(end)}" cy="${y(wpms[end])}" r="3"/></svg>`;
 }
 
 function forecast() {
@@ -132,7 +144,8 @@ function forecast() {
   const f = forecastText(s.forecast, S.exercise.locked.length === 0);
   const label = s.lap ? `${t("lp.lap")} ${t("lp.lapOf", { n: s.lap + 1, all: s.lastLap + 1 })}` : t("fc.next");
   const tip = [s.lap ? t("lp.lapTip", { w: s.targetWpm }) : "", f ? f.tip : t("fc.none")].filter(Boolean).join(". ");
-  return cell("lp-fc", label, f ? `<b>${f.value}</b>` : NONE, tip);
+  const next = s.lap ? "" : S.exercise.locked[0];
+  return cell("lp-fc", label, (next ? `<b class="lp-key">${next}</b>` : "") + (f ? `<b>${f.value}</b>` : NONE), tip);
 }
 
 function accStreak() {
@@ -141,7 +154,8 @@ function accStreak() {
     let n = 0;
     while (n < list.length && list[n].accuracy >= level) n++;
     if (n >= 2) {
-      return cell("lp-streak", t("lp.streakLbl"), `${num(n)}<small>${t("lp.streakOf", { a: level })}</small>`,
+      const dots = Array.from({ length: STREAK_DOTS }, (_, i) => `<i${i < n ? ` class="on"` : ""}></i>`).join("");
+      return cell("lp-streak", t("lp.streakLbl"), `<span class="lp-dots" aria-hidden="true">${dots}</span>${num(n)}`,
         `${t("lp.streak", { n, a: level })}. ${t("lp.streakTip")}`);
     }
   }

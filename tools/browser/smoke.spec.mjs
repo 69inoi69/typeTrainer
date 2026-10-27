@@ -45,6 +45,28 @@ test("Learn: a round can be typed to the end and is saved", async ({ page }) => 
   await expect(page.locator("#lp-cols .lp-last [data-n]").first()).toHaveAttribute("data-n", /^[1-9]/);
 });
 
+test("Learn: the panel draws the speed line, the next letter and the streak dots, with equal gaps", async ({ page }) => {
+  const wpms = [52, 51, 48, 50, 49, 47, 48, 45, 46, 44, 45, 43];
+  await page.route("**/api/v1/stats?*", async (route) => {
+    const res = await route.fetch(), body = await res.json();
+    body.sessions = wpms.map((wpm, i) => ({ ...(body.sessions?.[0] ?? {}), wpm, accuracy: i < 4 ? 97 : 90 }));
+    body.forecast = { known: true, rounds: 4, letter: "e" };
+    return route.fulfill({ response: res, json: body });
+  });
+  await openApp(page, { "tt.mode.en": "learn" });
+  const spark = page.locator("#lp-cols .lp-last .lp-spark");
+  await expect(spark.locator("polyline")).toHaveAttribute("points", /^(\S+ ){9}\S+$/);
+  await expect(spark.locator("line.avg")).toHaveCount(1);
+  await expect(spark).toHaveAttribute("data-tip-text", /faster/);
+  const next = await page.locator("#letters .locked.next").first().textContent();
+  await expect(page.locator("#lp-cols .lp-fc .lp-key")).toHaveText(next.trim());
+  await expect(page.locator("#lp-cols .lp-streak .lp-dots i.on")).toHaveCount(4);
+  const boxes = await Promise.all(["#lp-cols .lp-last", "#lp-cols .lp-fc", "#lp-cols .lp-streak", "#lp-cols .lp-goal", "#round-switch"]
+    .map((s) => page.locator(s).boundingBox()));
+  const gaps = boxes.slice(1).map((b, i) => b.x - (boxes[i].x + boxes[i].width));
+  for (const g of gaps) expect(g, `gaps ${gaps.map(Math.round)}`).toBeCloseTo(gaps[0], 0);
+});
+
 test("Learn: typing dims the line above the text and moves nothing", async ({ page }) => {
   await openApp(page, { "tt.mode.en": "learn", "tt.length.learn": "words-15", "tt.live": "1" });
   const last = page.locator("#lp-cols .lp-last"), streak = page.locator("#lp-cols .lp-streak");
