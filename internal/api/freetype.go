@@ -69,7 +69,7 @@ func (s *Server) handleFreetypePortion(w http.ResponseWriter, r *http.Request, u
 		List    int      `json:"list"`
 		Variant string   `json:"variant"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&req); err != nil {
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, int64(s.cfg.MaxBodyBytes))).Decode(&req); err != nil {
 		badRequest(w, "invalid JSON")
 		return
 	}
@@ -106,12 +106,12 @@ func (s *Server) handleFreetypePortion(w http.ResponseWriter, r *http.Request, u
 
 func (s *Server) handleFreetypeResults(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	var req resultsRequest
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&req); err != nil {
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, int64(s.cfg.MaxBodyBytes))).Decode(&req); err != nil {
 		badRequest(w, "invalid JSON")
 		return
 	}
 	req.Samples = nil
-	if msg := validate(req, s.cfg.MaxEvents, s.freetypeAlphabet(l.Info.Alphabet)); msg != "" {
+	if msg := validate(req, s.cfg.MaxRoundChars, s.cfg.MaxEvents, s.freetypeAlphabet(l.Info.Alphabet)); msg != "" {
 		badRequest(w, msg)
 		return
 	}

@@ -12,8 +12,8 @@ import (
 	"typingtrainer/internal/storage"
 )
 
-func validate(req resultsRequest, maxEvents int, alphabet string) string {
-	if req.Chars < 1 || req.Chars > 1<<20 {
+func validate(req resultsRequest, maxChars, maxEvents int, alphabet string) string {
+	if req.Chars < 1 || req.Chars > maxChars {
 		return "chars: out of range"
 	}
 	if msg := validateSamples(req.Samples, maxEvents, alphabet); msg != "" {

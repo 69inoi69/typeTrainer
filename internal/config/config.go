@@ -12,6 +12,11 @@ type Config struct {
 	Addr      string
 	MaxEvents int
 
+	MaxBodyBytes      int
+	MaxSmallBodyBytes int
+	MaxAuthBodyBytes  int
+	MaxRoundChars     int
+
 	MaxImportBytes    int
 	MaxImportSessions int
 
@@ -37,6 +42,11 @@ func Default() Config {
 	return Config{
 		Addr:      "localhost:3000",
 		MaxEvents: 5000,
+
+		MaxBodyBytes:      1 << 20,
+		MaxSmallBodyBytes: 1024,
+		MaxAuthBodyBytes:  4096,
+		MaxRoundChars:     1 << 20,
 
 		MaxImportBytes:    64 << 20,
 		MaxImportSessions: 50000,
