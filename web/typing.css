@@ -208,6 +208,9 @@ body.typing-now:not(.live-off) .lp-cols > .lp-last { opacity: 0; pointer-events:
   .text, .text-box::before { font-size: var(--text-size); }
   #view-type:not([hidden]) { flex: 1; display: flex; flex-direction: column; margin-block: 0; --view-centred: 1; }
   #view-type::after { content: ""; margin-top: auto; }
+  :root { --view-top: max(16px, 50vh - 360px); }
+  body.kb-hidden #keyboard { display: none; }
+  body.kb-hidden #view-type > .letters, body.kb-hidden.tb-resulting #view-type > .letters { margin-top: var(--view-top); }
 }
 .text-box.blurred .text { filter: blur(3px); opacity: .5; }
 .focus-hint {
