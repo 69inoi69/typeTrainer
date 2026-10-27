@@ -197,6 +197,8 @@ body.stats-only .stats-only-note {
   background: var(--panel); box-shadow: var(--ring); color: var(--sub); font-size: .85rem; line-height: 1.45;
 }
 .hints .stats-hint { display: none; }
+.hints .result-only { display: none; }
+body.tb-resulting:not([data-view="stats"]) .hints .result-only { display: inline; }
 body[data-view="stats"] .hints :is(.type-only, .round-only) { display: none; }
 body[data-view="stats"] .hints .stats-hint { display: inline; }
 button {

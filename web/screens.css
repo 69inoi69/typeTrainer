@@ -116,17 +116,51 @@ body.tb-ending #view-type > .keyboard {
 .r-w i { font-style: normal; text-decoration: underline 2px var(--error); text-underline-offset: 4px; }
 .result .r-foot { display: flex; justify-content: center; margin-top: 26px; }
 .r-next {
-  min-height: 50px; padding: 0 30px; border-radius: 999px; font-size: 1.05rem; font-weight: 500; color: var(--accent-text);
-  background: none;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 16%, transparent);
-  transition: box-shadow var(--med), background var(--med);
+  display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%;
+  background: none; color: var(--sub); cursor: pointer; transition: color var(--fast), background var(--fast);
 }
-.r-next:hover, .r-next:focus-visible {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 70%, transparent);
+.r-next:hover, .r-next:focus-visible { color: var(--accent-text); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.r-next svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.r-axis-name { color: color-mix(in srgb, var(--text) 58%, var(--sub)); }
+.r-xaxis > .r-axis-name { translate: none; }
+
+/* ---------- a new best: trading-card foil on the speed and its label ---------- */
+.r-best {
+  display: inline-block; margin-left: 10px; padding: 1px 8px; border-radius: 6px;
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 60%, transparent);
 }
-.r-next svg { width: 20px; height: 20px; stroke-width: 2.4; }
-.r-next kbd { margin-left: 4px; background: var(--panel); }
+.r-best > span { display: inline-block; font-weight: 700; letter-spacing: .02em; color: var(--accent-text); }
+.foil {
+  position: relative; overflow: hidden; isolation: isolate; color: transparent !important; text-shadow: none !important;
+  -webkit-mask: var(--foil-mask) 0 0 / 100% 100% no-repeat; mask: var(--foil-mask) 0 0 / 100% 100% no-repeat;
+}
+.foil > .foil-sheen, .foil::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(60deg, rgba(255, 255, 255, .12) 0 1px, transparent 1px 3px);
+}
+.foil > .foil-glare { position: absolute; top: 0; bottom: 0; left: 0; pointer-events: none; will-change: transform; }
+.foil > .foil-sheen {
+  width: 300%;
+  background:
+    linear-gradient(110deg, #d99a08, #f2b81e, #e0608f, #d99a08, #2fa8d8, #e8b020, #c98a00, #f2b81e, #e0608f, #d99a08, #2fa8d8, #e8b020, #d99a08);
+  animation: foil-drift 6s linear infinite;
+}
+.foil::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(60deg, rgba(255, 255, 255, .12) 0 1px, transparent 1px 3px);
+}
+.foil > .foil-glare {
+  width: 100%;
+  background: linear-gradient(110deg, transparent 0 38%, rgba(255, 240, 200, .55) 50%, transparent 62% 100%);
+  animation: foil-glare 3.2s ease-in-out infinite;
+}
+@keyframes foil-drift { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes foil-glare { from { transform: translateX(-100%); } 60%, to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .foil > .foil-sheen, .foil::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(60deg, rgba(255, 255, 255, .12) 0 1px, transparent 1px 3px);
+}
+.foil > .foil-glare { animation: none; } }
 
 /* ---------- intro ---------- */
 .intro {

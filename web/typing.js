@@ -674,7 +674,6 @@ async function finishFree(wpm, accuracy, keys, perSecond) {
   const { res, unsaved } = await trySave("/freeplay/results", body, saved);
   if (res) {
     const best = before.length > 0 && wpm > Math.max(...before.map((x) => x.wpm));
-    if (best) FX.burstFrom(el.wpm, 80);
     await showResult({ ...shown, consistency: res.consistency, best, climb: { level, ...(await saved(res)) } });
   } else {
     await showResult({ ...shown, consistency: null, climb: { level }, unsaved });
@@ -715,7 +714,6 @@ async function finishFreetype(wpm, accuracy, keys, perSecond) {
   if (res) {
     await saved();
     const best = before.length > 0 && wpm > Math.max(...before.map((x) => x.wpm));
-    if (best) FX.burstFrom(el.wpm, 80);
     await showResult({ ...shown, consistency: res.consistency, best });
   } else {
     await showResult({ ...shown, consistency: null, unsaved });

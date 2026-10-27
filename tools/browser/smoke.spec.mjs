@@ -98,6 +98,25 @@ for (const mode of MODES) {
   });
 }
 
+test("Freetype: a faster round shows New best in foil, and the small button starts the next round", async ({ page }) => {
+  await openApp(page, { "tt.mode.en": "freetype", "tt.length.freetype": "words-10" });
+  await typeRound(page, { delay: 160 });
+  await expectResult(page);
+  await expect(page.locator("#result .r-best")).toHaveCount(0);
+  await expect(page.locator(".hints .result-only")).toBeVisible();
+  await expect(page.locator(".hints .round-only").first()).toBeHidden();
+  await page.locator("#result .r-next").click();
+  await expect(page.locator("body")).not.toHaveClass(/\btb-resulting\b/);
+  await waitForText(page);
+  await typeRound(page, { delay: 40 });
+  await expectResult(page);
+  await expect(page.locator("#result .r-best")).toHaveText("New best");
+  await expect(page.locator("#result .r-num.hero > b.foil")).toHaveCount(1);
+  expect(await page.locator(".confetti").count(), "no confetti").toBe(0);
+  await page.keyboard.press("Enter");
+  await expect(page.locator("body")).not.toHaveClass(/\btb-resulting\b/);
+});
+
 const expectedOnly = (info, path) => {
   const rest = info.problems.filter((p) => !p.includes(path) && !p.startsWith("console:"));
   info.problems.splice(0, info.problems.length, ...rest);
