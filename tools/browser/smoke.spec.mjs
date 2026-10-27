@@ -215,17 +215,31 @@ test("the keyboard shows only while Learn opens letters", async ({ page }) => {
   await expect(kb).toBeHidden();
 });
 
-test("the text stands at the same place in every mode", async ({ page }) => {
+test("the text stands at the same place for the same keyboard state", async ({ page }) => {
   await openApp(page, { "tt.mode.en": "learn" });
   const top = async () => Math.round((await page.locator("#text-box").boundingBox()).y);
   const learn = await top();
+  let noKeyboard;
   for (const m of ["climb", "freetype", "learn"]) {
     await page.locator(`#tab-${m}`).click();
     await waitForText(page);
     await expect(page.locator("#keyboard")).toHaveClass(m === "learn" ? /^(?!.*\boff\b)/ : /\boff\b/);
     await page.waitForFunction(() => !document.getAnimations().some((a) => a.playState === "running" && a.effect?.target?.closest?.("#keyboard, #text-box, .letters")));
-    expect(await top(), `the text in ${m}`).toBe(learn);
+    if (m === "learn") expect(await top(), "the text in Learn").toBe(learn);
+    else expect(await top(), `the text in ${m}`).toBe(noKeyboard ??= await top());
   }
+});
+
+test("Climb: the result opens in place and the round switches do not move", async ({ page }) => {
+  await openApp(page, { "tt.mode.en": "climb", "tt.length.climb": "words-10" });
+  const bar = page.locator("#mode-bar");
+  const before = (await bar.boundingBox()).y;
+  await typeRound(page);
+  await expectResult(page);
+  await page.waitForFunction(() => !document.getAnimations().some((a) => a.playState === "running" && a.effect?.target?.closest?.("#view-type")));
+  expect((await bar.boundingBox()).y, "the bar on the result").toBeCloseTo(before, 0);
+  const box = await page.locator("#result").boundingBox();
+  expect(box.y + box.height, "the result fits the window").toBeLessThanOrEqual(page.viewportSize().height);
 });
 
 test("the hand over the keyboard shows the finger of the next key", async ({ page }) => {

@@ -81,7 +81,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 | bottom | `feel.js` | `FEEL`: every knob of how a keypress feels (caret glide, the dip of the lit key, red tint of a wrong key, caret flinch, shake, the hand above the keyboard, mistake marks), also given to the CSS as `--feel-*` (`applyFeel()` at load). Tuning the feel = changing a number here. |
 | bottom | `api.js` | `getJSON` / `postJSON` for `/api/v1/`, with `?lang=` added. |
 | middle | `tools.js` | Tooltips, and the data buttons of the settings window: export / import, reset (with its confirm window). |
-| middle | `keyboard.js` | On-screen keyboard from the layout data, the next key, the small hand that stands on its top edge above the next key's column (moved by `translate` at once, no glide, no layout read) and shows the finger to use: the hand is a picture, one PNG per finger (or fingers) to light, drawn once from the SVG model in `index.html` for the theme and the layout, so a key only swaps the `src` of one `<img>` per hand (#148), shown only in Learn while letters are still locked (`autoKb`, called on a mode change and whenever the letters are drawn; no setting; it fades, transform and opacity only; hidden on a computer it keeps its room, `visibility`, so the text stands at the same place in every mode), the automatic size that fits the window: the same in every mode (every mode keeps the Learn panel's room above the text, and the hand's room stays when the hand is off) and kept in CSS px when the browser zoom changes, so it zooms with the page. |
+| middle | `keyboard.js` | On-screen keyboard from the layout data, the next key, the small hand that stands on its top edge above the next key's column (moved by `translate` at once, no glide, no layout read) and shows the finger to use: the hand is a picture, one PNG per finger (or fingers) to light, drawn once from the SVG model in `index.html` for the theme and the layout, so a key only swaps the `src` of one `<img>` per hand (#148), shown only in Learn while letters are still locked (`autoKb`, called on a mode change and whenever the letters are drawn; no setting; it fades, transform and opacity only; when it is hidden the body gets `kb-hidden` and the keyboard takes no room, so the text starts where a centred result would start and the result opens in place, #197), the automatic size that fits the window (the Learn panel's room above the text and the hand's room stay when the hand is off), kept in CSS px when the browser zoom changes, so it zooms with the page. |
 | middle | `stats.js` | The stats screen of Learn, Climb and Freetype (Learn adds its letters below, `learnstats.js`): the switch of the mode and Freetype's kind of text and list on top, the personal bests, time typed today, in 7 days or all time with the activity calendar from `/activity`, tiles with the level, trends, the accuracy streaks and the personal goal, the WPM chart with the 10-round average; and `refreshStats()` (the letters of learning, `S.lastStats`). |
 | middle | `share.js` | The "image" button of the stats screen: a PNG card drawn on a canvas from what the screen shows. |
 | middle | `typing.js` | The text stream (portions added while you type), where the caret goes (`placeCaret`), `handleChar()` / `backspace()`, live WPM / accuracy, the "typing now" header mode, sending results. |
@@ -141,7 +141,10 @@ counter on the left, the Learn panel's cells after it and the round
 switch on the right, the live numbers in the first cell's place while typing), with the
 warnings and messages shown on top of it, and then the text; the
 letters bar sits above it, the keyboard (on a panel as wide as the text,
-with the hand riding along its top edge) below.
+with the hand riding along its top edge) below. Without the keyboard
+(Climb, Freetype, Learn with every letter open) the block starts at
+`--view-top` (`typing.css`), where the result card starts, so the round
+switches stay put when the result opens.
 
 Colours are CSS variables on `:root`; the light theme redefines them under
 `:root[data-theme="light"]` (set by `settings.js`, and by a one-line script

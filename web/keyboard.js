@@ -204,12 +204,15 @@ export function autoKb(animate = false) {
   if (hide === S.kbHidden && applied) return;
   applied = true;
   S.kbHidden = hide;
-  document.body.classList.toggle("kb-hidden", S.kbHidden);
   if (animate && !reducedMotion() && el.keyboard.animate) fold(S.kbHidden);
   else {
-    el.keyboard.classList.toggle("off", S.kbHidden);
+    setOff(S.kbHidden);
     requestFit();
   }
+}
+function setOff(hide) {
+  el.keyboard.classList.toggle("off", hide);
+  document.body.classList.toggle("kb-hidden", hide);
 }
 
 const FOLD_MS = 220;
@@ -226,7 +229,7 @@ async function fold(hide) {
     if (run !== foldRun) return;
   }
   const before = movers.map((n) => n.getBoundingClientRect().top);
-  el.keyboard.classList.toggle("off", hide);
+  setOff(hide);
   if (!hide) fitKeyboard();
   const after = movers.map((n) => n.getBoundingClientRect().top);
   movers.forEach((n, i) => {
@@ -252,7 +255,7 @@ function fitKeyboard() {
   if (isTouch()) { root.removeProperty("--u-fit"); return; }
   if (S.view !== "type") return;
   if (el.textBox.classList.contains("resulting")) return;
-  if (el.keyboard.getAnimations().length) return;
+  if (el.keyboard.getAnimations().length || el.keyboard.classList.contains("off")) return;
   const centred = getComputedStyle(el.viewType).getPropertyValue("--view-centred").trim() === "1";
   const kb = getComputedStyle(el.keyboard);
   const kbFrame = ["paddingTop", "paddingBottom", "borderTopWidth", "borderBottomWidth"].reduce((sum, p) => sum + parseFloat(kb[p]), 0);
