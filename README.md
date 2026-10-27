@@ -8,8 +8,6 @@
   Looks like Monkeytype. Teaches like keybr. Real words only.<br><br>
   <a href="https://69inoi69.github.io/typeTrainer/"><b>Start typing</b></a>
   ·
-  <a href="docs/USER-GUIDE.md">Guide</a>
-  ·
   <a href="docs/ALGORITHM.md">How it works</a>
 </p>
 
