@@ -42,30 +42,31 @@ test("Learn: a round can be typed to the end and is saved", async ({ page }) => 
   await expect(page.locator("body")).toHaveAttribute("data-mode", "learn");
   await typeRound(page, { done: async () => saved });
   await expect(page.locator("#progress")).toHaveText(/^0\/15/);
-  await expect(page.locator("#learn-panel .lp-last [data-n]").first()).toHaveAttribute("data-n", /^[1-9]/);
+  await expect(page.locator("#lp-cols .lp-last [data-n]").first()).toHaveAttribute("data-n", /^[1-9]/);
 });
 
-test("Learn: the panel shows at rest and goes while typing", async ({ page }) => {
+test("Learn: typing dims the line above the text and moves nothing", async ({ page }) => {
   await openApp(page, { "tt.mode.en": "learn", "tt.length.learn": "words-15", "tt.live": "1" });
-  const panel = page.locator("#learn-panel");
-  await expect(panel).toBeVisible();
-  await expect(panel).toHaveCSS("opacity", "1");
-  const room = await panel.boundingBox();
+  const last = page.locator("#lp-cols .lp-last"), streak = page.locator("#lp-cols .lp-streak");
+  const goal = page.locator("#lp-cols .lp-goal"), round = page.locator("#round-switch");
   const row = page.locator("#letters");
-  const rowAt = (await row.boundingBox()).y;
+  await expect(last).toBeVisible();
+  await expect(streak).toHaveCSS("opacity", "1");
+  const at = async () => Promise.all([row, last, streak, goal, round].map(async (l) => (await l.boundingBox()).y));
+  const before = await at();
+  const lastX = (await last.boundingBox()).x;
+  const counter = await page.locator("#progress").boundingBox();
+  expect(lastX, "the cells right after the word counter").toBeGreaterThan(counter.x + counter.width);
   await page.keyboard.type(await nextChar(page));
-  await expect(panel).toHaveCSS("opacity", "0");
+  await expect(streak).toHaveCSS("opacity", "0.35");
+  await expect(round).toHaveCSS("opacity", "0.35");
+  await expect(goal).toHaveCSS("opacity", "1");
+  await expect(last).toHaveCSS("opacity", "0");
   const wpm = page.locator(".live > .metric.num").first();
   await expect(wpm).toHaveCSS("opacity", "1");
-  const counter = await page.locator("#progress").boundingBox();
-  const lastCol = await page.locator("#learn-panel .lp-goal").boundingBox();
-  const speed = await wpm.boundingBox();
-  expect(speed.x, "the speed right after the word counter").toBeGreaterThan(counter.x + counter.width);
-  expect(speed.x, "not in the last column").toBeLessThan(lastCol.x);
-  expect(await panel.boundingBox(), "the panel keeps its room").toEqual(room);
-  await expect.poll(async () => (await row.boundingBox()).y, "the letters row in the panel's place")
-    .toBeCloseTo(room.y + room.height / 2 - (await row.boundingBox()).height / 2, -1);
-  expect(rowAt).toBeLessThan(room.y);
+  expect((await wpm.boundingBox()).x, "this round's speed where the last round's was").toBeCloseTo(lastX, -1);
+  await page.waitForTimeout(500);
+  expect(await at(), "nothing moved").toEqual(before);
 });
 
 const MODES = [
@@ -82,6 +83,18 @@ for (const mode of MODES) {
     await page.keyboard.press("Tab");
     await expect(page.locator("body")).not.toHaveClass(/\btb-resulting\b/);
     await waitForText(page);
+  });
+
+  test(`${mode.name}: typing dims the round switches and moves nothing`, async ({ page }) => {
+    await openApp(page, mode.storage);
+    const bar = page.locator("#mode-bar");
+    await expect(bar).toHaveCSS("opacity", "1");
+    const before = await bar.boundingBox();
+    await page.keyboard.type(await nextChar(page));
+    await expect(bar).toHaveCSS("opacity", "0.35");
+    await bar.hover();
+    await expect(bar).toHaveCSS("opacity", "1");
+    expect(await bar.boundingBox(), "the bar stays where it was").toEqual(before);
   });
 }
 

@@ -6,7 +6,7 @@ import { getJSON } from "./api.js";
 import { forecastText } from "./letters.js";
 import { learning } from "./modes.js";
 
-const box = $("learn-panel"), focusBox = $("focus-box");
+const box = $("learn-panel"), cols = $("lp-cols");
 
 const AVG_ROUNDS = 10, AVG_MIN = 3;
 const STREAK_LEVELS = [100, 98, 97, 95, 90];
@@ -64,18 +64,17 @@ const masteredTip = () => {
 };
 
 // ---------- drawing ----------
-let drawn = "", drawnFocus = "";
+let drawn = "", drawnNews = "";
 export function renderPanel() {
   if (!box) return;
   const show = learning() && !!S.lastStats && !!S.exercise;
-  box.hidden = focusBox.hidden = !show;
-  if (!show) { drawn = drawnFocus = ""; return; }
+  box.hidden = cols.hidden = !show;
+  if (!show) { drawn = drawnNews = ""; return; }
   if (news && news.lang !== S.lang) news = null;
-  const top = [lastRound(), forecast(), accStreak(), dailyGoal()].join("");
-  const html = `<div class="lp-cols">${top}</div>`;
-  if (html !== drawn) { drawn = html; redraw(box, ".lp-val", html); }
-  const focus = news ? `<p class="lp-news${news.big ? " big" : ""}"${news.tip ? ` tabindex="0" data-tip-text="${news.tip}"` : ""}>${news.text}</p>` : "";
-  if (focus !== drawnFocus) { drawnFocus = focus; focusBox.innerHTML = focus; }
+  const html = [lastRound(), forecast(), accStreak(), dailyGoal()].join("");
+  if (html !== drawn) { drawn = html; redraw(cols, ".lp-val", html); }
+  const line = news ? `<p class="lp-news${news.big ? " big" : ""}"${news.tip ? ` tabindex="0" data-tip-text="${news.tip}"` : ""}>${news.text}</p>` : "";
+  if (line !== drawnNews) { drawnNews = line; box.innerHTML = line; }
 }
 
 function redraw(el, sel, html) {
