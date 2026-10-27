@@ -17,6 +17,7 @@ import { renderLetters } from "./letters.js";
 import { buildAmbient } from "./ambient.js";
 import { renderPanel } from "./learnpanel.js";
 import { keySound } from "./sound.js";
+import { questOpen, questKey } from "./mascot.js";
 import "./share.js";
 
 window.addEventListener("resize", () => {
@@ -118,6 +119,7 @@ onGoalChange(() => {
 // ---------- input ----------
 document.addEventListener("keydown", (e) => {
   if (document.querySelector("dialog[open]")) return;
+  if (questOpen()) { questKey(e); return; }
   if (introOpen()) { introKey(e); return; }
   if (profileOpen()) {
     if (e.key === "Escape") { e.preventDefault(); closeProfile(); }

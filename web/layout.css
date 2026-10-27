@@ -21,6 +21,43 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
 .logo-name { font-family: var(--logo); font-size: 1.75rem; font-weight: 600; letter-spacing: -.03em; color: var(--accent-text); white-space: nowrap; transition: color .4s var(--ease); }
 .logo-name span { color: var(--text); transition: color .4s var(--ease); }
 
+/* ---------- the logo's keycap and the mascot (#207) ---------- */
+.logo { position: relative; cursor: pointer; user-select: none; }
+.logo-cap, .logo-eyes, .logo-side { transform-box: fill-box; transform-origin: center; }
+.logo-eyes { opacity: 0; }
+.logo-cap, .logo-side { transition: opacity .2s var(--ease); }
+.logo.out .logo-cap { opacity: 0; }
+.logo.out .logo-side { opacity: .3; }
+.logo-name i { display: inline-block; font-style: normal; }
+.logo-name i.tail { color: var(--text); }
+.logo-text { position: relative; }
+.logo-quest { position: absolute; left: 0; top: 0; bottom: 0; display: flex; align-items: center; cursor: default; pointer-events: none; }
+.q-text { font-family: var(--logo); font-size: 1.75rem; font-weight: 600; letter-spacing: -.03em; white-space: nowrap; color: color-mix(in srgb, var(--sub) 40%, transparent); }
+.q-text i { display: inline-block; font-style: normal; box-shadow: -2px 0 0 transparent; }
+.q-text i.done { visibility: hidden; }
+.q-text i.next { box-shadow: -2px 0 0 var(--accent); }
+.q-note { position: absolute; left: 0; top: calc(100% + 8px); white-space: nowrap; font-size: .95rem; color: color-mix(in srgb, var(--text) 70%, var(--sub)); }
+.mascot {
+  position: fixed; left: 0; top: 0; z-index: 40; width: 52px; height: 52px;
+  cursor: grab; touch-action: none; user-select: none; will-change: transform;
+  transition: opacity .25s var(--ease), visibility .25s;
+}
+.mascot.held { cursor: grabbing; }
+.m-body, .m-body svg { display: block; width: 100%; height: 100%; }
+.m-body { transform-origin: 50% 100%; transition: rotate .2s var(--ease); }
+.mascot.held .m-body { rotate: -8deg; }
+.m-eyes, .m-mouth { transform-box: fill-box; transform-origin: center; transition: transform .15s var(--ease); }
+.mascot.held .m-mouth { transform: scaleX(.4); }
+.m-say {
+  position: absolute; bottom: calc(100% + 10px); left: 0; margin: 0;
+  padding: 8px 12px; border-radius: 10px; white-space: nowrap; pointer-events: none;
+  font-size: .95rem; color: var(--text); background: var(--panel-2); box-shadow: var(--lift);
+  opacity: 0; transform: translateY(4px); transition: opacity .2s var(--ease), transform .2s var(--ease);
+}
+.m-say.left { left: auto; right: 0; }
+.m-say.on { opacity: 1; transform: none; }
+body.typing-now .mascot, body.splashing .mascot { opacity: 0; visibility: hidden; }
+
 /* ---------- the top line of the text card ---------- */
 .live {
   position: relative;
