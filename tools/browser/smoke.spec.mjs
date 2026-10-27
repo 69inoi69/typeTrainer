@@ -346,6 +346,33 @@ for (const [w, h] of [[1920, 1080], [1366, 768]]) {
   });
 }
 
+test("no text on the typing, result, settings and stats screens is smaller than 14px", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await openApp(page, { "tt.mode.en": "climb", "tt.length.climb": "words-10" });
+  const small = () => page.evaluate(() => {
+    const out = new Set();
+    const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let n; (n = w.nextNode());) {
+      const el = n.parentElement;
+      if (!n.textContent.trim() || !el.checkVisibility({ visibilityProperty: true }) || el.closest("#keyboard, .logo")) continue;
+      const fs = parseFloat(getComputedStyle(el).fontSize);
+      if (fs < 13.95) out.add(`${el.tagName.toLowerCase()}.${el.className} ${fs}px "${n.textContent.trim().slice(0, 20)}"`);
+    }
+    return [...out];
+  });
+  expect(await small(), "typing").toEqual([]);
+  await typeRound(page);
+  await expectResult(page);
+  expect(await small(), "result").toEqual([]);
+  await page.locator("#tab-stats").click();
+  await expect(page.locator("#tiles > *").first()).toBeVisible();
+  expect(await small(), "stats").toEqual([]);
+  await openApp(page, { "tt.mode.en": "climb" });
+  await page.keyboard.press("Escape");
+  await expect(page.locator("dialog[open]").first()).toBeVisible();
+  expect(await small(), "settings").toEqual([]);
+});
+
 test("the hand over the keyboard shows the finger of the next key", async ({ page }) => {
   await openApp(page, { "tt.mode.en": "learn" });
   const fingerOf = await page.evaluate(async () => {

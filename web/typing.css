@@ -139,7 +139,7 @@ body.typing-now:not(.live-off) .lp-cols > .lp-last { opacity: 0; pointer-events:
 .letters-caption {
   display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-start; gap: 18px; white-space: nowrap;
   flex: 0 1 auto; min-width: 0; overflow: hidden;
-  color: var(--sub); font-size: .82rem; transition: opacity .4s var(--ease), transform var(--med) var(--ease);
+  color: var(--label); font-size: var(--fs-min); transition: opacity .4s var(--ease), transform var(--med) var(--ease);
 }
 body:not(.live-off) .letters-caption::before { content: ""; width: 1px; height: 1.2em; margin-left: 4px; background: var(--line); }
 .letters-caption:empty { display: none; }
@@ -154,7 +154,7 @@ body:not(.live-off) .letters-caption::before { content: ""; width: 1px; height: 
 }
 .stat b { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; font-size: .9rem; }
 .stat.focus svg { color: var(--accent-text); }
-.letters-caption .begin { padding: 0; font-size: .8rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: left; }
+.letters-caption .begin { padding: 0; font-size: var(--fs-min); min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: left; }
 .text-box.typing .letters-caption .begin { display: none; }
 @media (min-width: 900px) and (pointer: fine) {
   .letters { margin-bottom: 12px; }
@@ -233,10 +233,10 @@ body:not(.live-off) .letters-caption::before { content: ""; width: 1px; height: 
 .pause-note b { font-size: 1.6rem; font-weight: 500; letter-spacing: -.01em; color: var(--text); margin-bottom: 10px; }
 .pause-go { color: var(--sub); font-size: .95rem; }
 .pause-go kbd {
-  font-family: var(--mono); font-size: .8rem; color: var(--text); background: var(--track); box-shadow: var(--ring);
+  font-family: var(--mono); font-size: var(--fs-min); color: var(--text); background: var(--track); box-shadow: var(--ring);
   border-radius: 5px; padding: 1px 7px; margin-right: 2px;
 }
-.pause-note small { color: var(--sub); font-size: .8rem; opacity: .8; margin-top: 4px; }
+.pause-note small { color: var(--label); font-size: var(--fs-min); margin-top: 4px; }
 .text-box.paused .pause-note { opacity: 1; }
 .pause-note .goal-only, .pause-ic .goal-ic, .text-box.goal .pause-ic svg:not(.goal-ic),
 .text-box.goal .pause-note > :is([data-i18n="pause.title"], [data-i18n="pause.away"]) { display: none; }
@@ -294,7 +294,7 @@ body:not([data-caret]) .caret, body[data-caret="line"] .caret {
 .warn {
   position: absolute; left: 0; top: -4px; max-width: 100%; z-index: 2;
   display: flex; align-items: center; gap: 10px; width: max-content; min-height: 34px; padding: 4px 6px 4px 5px;
-  border-radius: 10px; font-size: .85rem; line-height: 1.35;
+  border-radius: 10px; font-size: var(--fs-min); line-height: 1.35;
   color: var(--text); background: var(--panel-2);
   box-shadow: var(--ring), 0 10px 28px -12px rgba(0, 0, 0, .6);
   opacity: 0; transform: translateY(-4px); pointer-events: none;
@@ -306,7 +306,7 @@ body:not([data-caret]) .caret, body[data-caret="line"] .caret {
 .warn-icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .warn-keys { display: inline-flex; align-items: center; gap: 4px; padding-left: 10px; margin-right: 4px; border-left: 1px solid var(--line); color: var(--sub); white-space: nowrap; }
 .warn kbd {
-  font-family: "Geist Mono Keys", var(--mono); font-weight: 600; font-size: .78rem; color: var(--text);
+  font-family: "Geist Mono Keys", var(--mono); font-weight: 600; font-size: var(--fs-min); color: var(--text);
   padding: 2px 7px 4px; border-radius: 6px; background: var(--key);
   box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .45), 0 0 0 1px var(--line);
 }

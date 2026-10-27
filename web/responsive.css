@@ -28,12 +28,12 @@
   .rail .nav-switch { flex: 3; }
   .rail .switch button, .rail-btn { width: auto; flex: 1; min-width: 0; }
   .rail .pop { flex: 1; display: flex; }
-  .rail .switch button small, .rail-btn small { font-size: .66rem; }
+  .rail .switch button small, .rail-btn small { font-size: var(--fs-min); }
   .rail .switch button, .rail-btn { height: 54px; }
   .lang-switch button { padding: 0 6px; }
   .live { gap: 12px; margin-bottom: 6px; }
   .metric > span { font-size: 1.1rem; }
-  .metric small { margin-left: 4px; font-size: .7rem; }
+  .metric small { margin-left: 4px; font-size: var(--fs-min); }
   .metric:has(#wpm) { min-width: 3.5rem; }
   .metric:has(#acc) { min-width: 4.1rem; }
   .metric:has(#progress) { min-width: 5.6rem; }
@@ -52,7 +52,7 @@
   .letters-caption::before { display: none; }
   .stat { gap: 5px; }
   #view-type { margin-block: 4px auto; }
-  .note { font-size: .78rem; border-radius: 14px; }
+  .note { font-size: var(--fs-min); border-radius: 14px; }
   :root { --text-l: 34px; --text-r: 16px; }
   .text-box { padding: 14px var(--text-r) 14px var(--text-l); }
   .text-box::before { left: 14px; top: 48px; }

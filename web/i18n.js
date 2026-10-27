@@ -76,7 +76,6 @@ const I18N = {
     "pause.goalTitle": "Daily goal reached", "pause.goalWhy": "That's your typing time for today. Keep going if you like: the round goes on where you stopped.",
     "pause.title": "Paused", "pause.press": "Press", "pause.key": "any key", "pause.go": "to resume", "pause.away": "The clock stops while you're paused, so this time doesn't count toward your speed or round timer.",
     "key.space": "Space", "key.tab": "Tab", "key.caps": "Caps", "key.shift": "Shift", "key.enter": "Enter",
-    "tip.mastered": "Typed at least {min} times, under {err}% mistakes, at {target} wpm or faster",
     "tip.next": "Opens when you've mastered every open letter",
     "hint.press": "Press <kbd class='hk'>{key}</kbd> with your <b>{finger}</b>",
     "hint.alt": "Press <kbd class='hk'>{key}</kbd>: hold <kbd class='hk'>altgr</kbd> with your right thumb, then <kbd class='hk'>{base}</kbd> with your <b>{finger}</b>",
