@@ -32,16 +32,17 @@ export function renderModeBar() {
       ringBtn(`data-toggle="${k}"`, t(`ft.${k}`), v === k, t(`ft.${k}Tip`)));
     if (v === "custom" && hasCustomText()) kinds.push(ringBtn(`data-edit="1"`, t("ft.edit"), false, t("ft.editTip")));
     parts.push(ring(t("ft.kind"), kinds));
-    parts.push(ring(t("settings.streak"), [ringBtn(`data-streak="1"`, t("settings.streak"), S.settings.streak, t("settings.streakDesc"))]));
     if (!listless(v)) parts.push(ring(t("freetype.list"), (S.freetype?.lists ?? []).map((n) =>
       ringBtn(`data-list="${n}"`, listLabel(n), n === S.freetypeList, t("freetype.listN", { n })))));
   }
   const kind = lengthOf(cur).kind;
-  parts.push(ring(t("bar.kind"), ["words", "time"].map((k) =>
+  const end = [];
+  end.push(ring(t("bar.kind"), ["words", "time"].map((k) =>
     ringBtn(`data-length="${k}-30"`, t(k === "words" ? "settings.words" : "settings.time"), k === kind))));
-  parts.push(ring(t("bar.length"), LENGTHS.filter((id) => lengthOf(id).kind === kind).map((id) =>
+  end.push(ring(t("bar.length"), LENGTHS.filter((id) => lengthOf(id).kind === kind).map((id) =>
     ringBtn(`data-length="${id}"`, String(lengthOf(id).n), id === cur, lengthLabel(id)))));
-  bar.innerHTML = parts.join("");
+  if (S.mode === "freetype") end.push(ring(t("settings.streak"), [ringBtn(`data-streak="1"`, t("settings.streak"), S.settings.streak, t("settings.streakDesc"))]));
+  bar.innerHTML = `<span class="bar-side">${parts.join("")}</span><span class="bar-side">${end.join("")}</span>`;
 }
 
 let pickListener = () => {};

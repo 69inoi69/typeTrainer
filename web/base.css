@@ -210,7 +210,7 @@ dialog.settings-win:focus { outline: none; }
 @keyframes ring-pop { from { transform: scale(.92); } }
 @keyframes ring-fill { from { transform: scaleX(.3); opacity: .2; } }
 @media (prefers-reduced-motion: reduce) { .ring button.pick, .ring button.pick::before { animation: none; } }
-.ring-lbl { color: var(--sub); font-size: .9rem; margin: 0 4px 0 7px; }
+.ring-lbl { display: flex; align-items: center; color: var(--sub); font-size: .9rem; margin: 0 4px 0 7px; }
 dialog.mini-pop {
   position: fixed; inset: auto; margin: 0; border: 0; padding: 8px 10px; color: var(--text);
   font-family: var(--ui); animation: note-in .15s var(--ease);
