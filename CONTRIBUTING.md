@@ -93,13 +93,14 @@ The website on GitHub Pages is the same Go code compiled to WebAssembly
   not into the logic.
 - Every text a user sees lives in `web/i18n.js` and follows
   [docs/UI-TEXT.md](docs/UI-TEXT.md): short, plain, and only where it helps.
-- The code that runs on every keypress stays light. Read the top of
-  `web/typing.js` before touching it, and check that typing still feels
-  instant.
+- The code that runs on every keypress stays light (the rules are in
+  `AGENTS.md`, "Architecture rules"); measure it with `perf.mjs` before
+  and after.
 - If you change how Learn picks letters or words, update
   [docs/ALGORITHM.md](docs/ALGORITHM.md) and the tests in the same pull
   request, and show the result of `go run ./tools/sim`.
-- Comments say why, not what ([docs/COMMENTING.md](docs/COMMENTING.md)).
+- Comments: [docs/COMMENTING.md](docs/COMMENTING.md). For now the code
+  keeps only a one-line header per file and section dividers.
 
 The bigger picture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the
 code, [docs/GUIDELINES.md](docs/GUIDELINES.md) for the interface.

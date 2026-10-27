@@ -87,23 +87,6 @@ rules.
 | Why a piece of code is the way it is | a comment next to it |
 | What changed and when | the commit message, not the code |
 
-## Common extension points
-
-Where something new is likely to be added:
-
-- a new **API route**: `internal/api/handlers.go` (routes)
-- a new **Store method**: `internal/storage/store.go` (both stores and a test)
-- a new **table or column**: `internal/storage/migrations/` (a new numbered file)
-- a new **tunable number**: `internal/config/config.go`
-- a new **language or layout**: `data/` (see "Adding a layout or language" in
-  `docs/ARCHITECTURE.md`)
-- a new **interface text**: `web/i18n.js` (English for now, `docs/UI-TEXT.md`)
-- a new **setting**: `web/settings.js`
-- a new **navigation item**: `web/index.html` (`nav.rail`) and `web/input.js`
-- a new **theme**: `web/base.css` (one `:root[data-theme]` block)
-- a new **frontend module**: its layer in `docs/ARCHITECTURE.md` ("Frontend
-  modules") and `webmodules_test.go`
-
 ## Sources
 
 - [Go Doc Comments](https://go.dev/doc/comment): the official guide to Go doc comments.

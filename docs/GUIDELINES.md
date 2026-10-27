@@ -62,21 +62,15 @@ there is a reason not to).
   columns), 640 px (phone), 380 px (very small phone).
 - Sizes follow the window: the keyboard key size `--u` and the text width
   `--tw` are computed from the viewport, not picked from presets.
-- Phones and tablets (a touch screen, no mouse) show only the stats and the
-  account: no typing screen, no navigation, a short line says that practice
-  needs a computer keyboard (thumbs on glass would skew the letter model).
-  On a phone, check that the stats are not broken; the
-  typing screen is checked at desktop widths only.
+- Phones and tablets show only the stats and the account (`AGENTS.md`,
+  "Product principles"): no typing screen, no navigation, a short line
+  says that practice needs a computer keyboard.
 - Long names are cut with "…" instead of pushing other things away.
 
 **Recommended**
-- Design each size for how it is used, not as a shrunken desktop: on a phone
-  the thumb reaches the bottom, the screen is narrow and the system keyboard
-  takes half of it.
-- Check every change at about 390 px, 768 px and 1280 px wide, and drag the
-  window between them: these widths are spot checks, not a guarantee.
-  Nothing may be clipped, overlap, scroll sideways or wrap into one word per
-  line.
+- Check the typing screen at desktop widths (drag the window between about
+  1280 px and 1920 px) and the stats screen also at about 390 px. Nothing
+  may be clipped, overlap, scroll sideways or wrap into one word per line.
 - When a row does not fit, decide what wraps and how (see the length
   filter in `stats.css`), instead of letting the browser decide.
 
@@ -120,18 +114,17 @@ consequences, the same word for the same thing. All text lives in
 ## 6. Interaction and feedback
 
 **Established**
-- Typing feels instant: a keypress only flips classes on one or two letters;
-  the caret moves once per animation frame; animations use CSS transitions
-  or the Web Animations API, never JS timers (`AGENTS.md`). Feel numbers
-  live in `web/feel.js`. Responses to a key are 80-180 ms, start in the same
-  frame and ease out; they animate colour, opacity, filter or transform only
+- Typing feels instant: the rules for the keypress path and how to measure
+  it are in `AGENTS.md` ("Architecture rules", rule 4 of "Current phase").
+  Feel numbers live in `web/feel.js`. Responses to a key are 80-180 ms,
+  start in the same frame and ease out; they animate colour, opacity, filter or transform only
   (nothing that moves the layout). Colours for JavaScript animations come
   from the theme (`themeColor` in `state.js`), never hard-coded.
 - No `:has()` over a big part of the page (`body`, `#view-type`): any text
   that changes inside it (the hint, a counter) makes the browser restyle
-  the whole typing screen on every key; on a slow laptop that held the
-  caret back by about 90 ms (2026-10-23). A state other parts follow goes
-  on `<body>` as a class instead (`boxState` in `state.js`).
+  the whole typing screen on every key (measured:
+  `docs/thesis/06-interface-finger-layout-latency.md`). A state other parts
+  follow goes on `<body>` as a class instead (`boxState` in `state.js`).
 - A screen that opens (the result, the stats) does it as one short
   sequence of small rises (`rise` in `stats.css`), not as scattered effects;
   a redraw on resize does not replay it.
@@ -189,10 +182,9 @@ consequences, the same word for the same thing. All text lives in
 ## 9. Implementation quality
 
 **Established**
-- Go standard library only (plus the PostgreSQL driver); plain HTML, CSS and
-  ES modules, no build step; the three-layer import rule in `web/state.js`;
-  no magic numbers (`internal/config/config.go`, `web/feel.js`).
-- The same code runs as a server and as WebAssembly on GitHub Pages.
+- The stack, the import layers, no magic numbers and the two ways to run
+  (server and GitHub Pages) are rules of `AGENTS.md`; the import layers in
+  detail: `docs/ARCHITECTURE.md`, "Frontend modules".
 
 **Recommended**
 - Read the code and try the feature before changing it. Look at the
@@ -206,14 +198,12 @@ consequences, the same word for the same thing. All text lives in
 ## 10. Testing and verification
 
 **Established**
-- `gofmt -w .`, `go vet ./...`, `go test ./...`, the WebAssembly build and
-  the browser checks (`tools/browser`, CONTRIBUTING.md) pass before a task
-  is done; CI runs them on every pull request.
-- New engine logic gets unit tests, including empty and zero cases.
+- What must pass before a task is done: `AGENTS.md`, "Before you say a
+  task is done"; the commands: `CONTRIBUTING.md`.
 
 **Recommended**
 - Look at the real result in a browser, not just the code: the screen that
-  changed, at phone and desktop width, in both themes when colours change.
+  changed, in both themes when colours change.
 - Check the edges: no data yet, a very long name, the first and the last
   letter, a time round that runs out, Climb at a low and a high level.
 - Check what is next to the change, not only the element that was asked
