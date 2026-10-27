@@ -41,7 +41,7 @@ test("Learn: a round can be typed to the end and is saved", async ({ page }) => 
   await openApp(page, { "tt.mode.en": "learn", "tt.length.learn": "words-15" });
   await expect(page.locator("body")).toHaveAttribute("data-mode", "learn");
   await typeRound(page, { done: async () => saved });
-  await expect(page.locator("#progress")).toHaveText(/^0\/15/);
+  await expect(page.locator("#round-line")).toHaveAttribute("data-tip-text", /^0\/15 /);
   await expect(page.locator("#lp-cols .lp-last [data-n]").first()).toHaveAttribute("data-n", /^[1-9]/);
 });
 
@@ -55,8 +55,7 @@ test("Learn: typing dims the line above the text and moves nothing", async ({ pa
   const at = async () => Promise.all([row, last, streak, goal, round].map(async (l) => (await l.boundingBox()).y));
   const before = await at();
   const lastX = (await last.boundingBox()).x;
-  const counter = await page.locator("#progress").boundingBox();
-  expect(lastX, "the cells right after the word counter").toBeGreaterThan(counter.x + counter.width);
+  expect(lastX, "the cells start at the text").toBeCloseTo((await page.locator("#text").boundingBox()).x, 0);
   await page.keyboard.type(await nextChar(page));
   await expect(streak).toHaveCSS("opacity", "0.35");
   await expect(round).toHaveCSS("opacity", "0.35");
@@ -256,7 +255,7 @@ test("browser zoom 200% keeps the desktop layout and nothing overlaps", async ({
   const page = await ctx.newPage();
   await openApp(page, { "tt.mode.en": "learn" });
   const m = await page.evaluate(() => {
-    const cells = [document.querySelector(".metric:has(#progress)"), ...document.querySelectorAll("#lp-cols > .lp-cell"), document.getElementById("round-switch")]
+    const cells = [...document.querySelectorAll("#lp-cols > .lp-cell"), document.getElementById("round-switch")]
       .map((n) => n.getBoundingClientRect());
     return {
       sideways: document.documentElement.scrollWidth > innerWidth,
@@ -323,6 +322,21 @@ test("Climb: the result opens in place and the round switches do not move", asyn
   expect(box.y + box.height, "the result fits the window").toBeLessThanOrEqual(page.viewportSize().height);
 });
 
+test("one grid in all three modes: the progress line and the round switches stand at the text edges", async ({ page }) => {
+  for (const mode of ["learn", "climb", "freetype"]) {
+    await openApp(page, { "tt.mode.en": mode });
+    const m = await page.evaluate(() => {
+      const text = document.getElementById("text").getBoundingClientRect();
+      const line = document.getElementById("round-line").getBoundingClientRect();
+      const right = (document.querySelector("#round-switch:not([hidden]) .ring") ?? document.querySelector("#mode-bar > .bar-side:last-child")).getBoundingClientRect();
+      return { textL: text.left, textR: text.right, lineL: line.left, lineR: line.right, rightR: right.right };
+    });
+    expect(m.lineL, `${mode}: line starts at the text`).toBeCloseTo(m.textL, 0);
+    expect(m.lineR, `${mode}: line ends at the text`).toBeCloseTo(m.textR, 0);
+    expect(m.rightR, `${mode}: the round switches end at the text`).toBeCloseTo(m.textR, 0);
+  }
+});
+
 for (const [w, h] of [[1920, 1080], [1366, 768]]) {
   test(`Freetype at ${w}: the switches stand on one line at the text edges, and a line shows the round`, async ({ page }) => {
     await page.setViewportSize({ width: w, height: h });
@@ -332,13 +346,12 @@ for (const [w, h] of [[1920, 1080], [1366, 768]]) {
       const sides = [...document.querySelectorAll("#mode-bar > .bar-side")].map((e) => e.getBoundingClientRect());
       const fill = document.querySelector("#round-line > i").getBoundingClientRect();
       const line = document.getElementById("round-line").getBoundingClientRect();
-      return { textL: text.left, textR: text.right, sides, done: fill.width / line.width, counter: !!document.getElementById("progress").offsetParent };
+      return { textL: text.left, textR: text.right, sides, done: fill.width / line.width };
     });
     const at = await m();
     expect(at.sides[0].left, "the left switches start at the text").toBeCloseTo(at.textL, 0);
     expect(at.sides[1].right, "the right switches end at the text").toBeCloseTo(at.textR, 0);
     expect(at.sides[0].top, "one line").toBe(at.sides[1].top);
-    expect(at.counter, "no counter").toBe(false);
     expect(at.done).toBe(0);
     for (let i = 0; i < 40; i++) { const c = await nextChar(page); if (!c) break; await page.keyboard.type(c); }
     await page.waitForTimeout(400);

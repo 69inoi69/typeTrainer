@@ -76,7 +76,6 @@ body.typing-now .mascot, body.splashing .mascot { opacity: 0; visibility: hidden
 .metric > .live-n.snap { transition: none; }
 .metric:has(#wpm), .metric.raw { min-width: 4rem; }
 .metric:has(#acc) { min-width: 4.6rem; }
-.metric:has(#progress) { min-width: 6.5rem; }
 .live.final .metric > span { color: var(--text); }
 
 .streak {
