@@ -54,7 +54,7 @@ func (s *Server) weakPairs(user string, l *Language) ([]freeplay.Pair, error) {
 
 func (s *Server) handleFreeplayPortion(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	var req freeplayPortionRequest
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&req); err != nil {
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, int64(s.cfg.MaxBodyBytes))).Decode(&req); err != nil {
 		badRequest(w, "invalid JSON")
 		return
 	}
@@ -109,12 +109,12 @@ func climbAlphabet(alphabet string) string { return alphabet + strings.ToUpper(a
 
 func (s *Server) handleFreeplayResults(w http.ResponseWriter, r *http.Request, user string, l *Language) {
 	var req resultsRequest
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&req); err != nil {
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, int64(s.cfg.MaxBodyBytes))).Decode(&req); err != nil {
 		badRequest(w, "invalid JSON")
 		return
 	}
 	req.Samples = nil
-	if msg := validate(req, s.cfg.MaxEvents, climbAlphabet(l.Info.Alphabet)); msg != "" {
+	if msg := validate(req, s.cfg.MaxRoundChars, s.cfg.MaxEvents, climbAlphabet(l.Info.Alphabet)); msg != "" {
 		badRequest(w, msg)
 		return
 	}

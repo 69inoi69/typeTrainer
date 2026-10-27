@@ -192,7 +192,7 @@ func (s *Server) handleGroup(w http.ResponseWriter, r *http.Request, user string
 	var req struct {
 		Group string `json:"group"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&req); err != nil {
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, int64(s.cfg.MaxSmallBodyBytes))).Decode(&req); err != nil {
 		badRequest(w, "invalid JSON")
 		return
 	}
