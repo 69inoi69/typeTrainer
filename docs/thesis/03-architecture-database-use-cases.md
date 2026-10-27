@@ -1,12 +1,12 @@
 # 3. Architecture, database schema, use cases
 
 Thesis item 3. The architecture itself is described in
-[docs/ARCHITECTURE.md](../ARCHITECTURE.md); this file collects what the
+[docs/HOW-THE-CODE-WORKS.md](../HOW-THE-CODE-WORKS.md); this file collects what the
 chapter needs on top of it. To bring up to date after the cleanup phase.
 
 ## Architecture
 
-- Layers and packages: ARCHITECTURE.md (`internal/engine` pure logic,
+- Layers and packages: HOW-THE-CODE-WORKS.md (`internal/engine` pure logic,
   `internal/api` HTTP, `internal/storage` behind `storage.Store`, `web/`
   ES modules in three import layers).
 - Two ways to run the same code: a server (`main.go`) and WebAssembly on

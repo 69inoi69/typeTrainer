@@ -4,7 +4,7 @@ Thesis item 8: testing, and verifying that the adaptation works. How to
 check that Learn's adaptive word choice helps, beyond "it feels right":
 what is already built for it, the results so far, and where the model
 could go next. The algorithm itself is in
-[docs/ALGORITHM.md](../ALGORITHM.md). (This file was `EVALUATION.md`.)
+[docs/HOW-THE-MODES-WORK.md](../HOW-THE-MODES-WORK.md). (This file was `EVALUATION.md`.)
 
 ## Results so far
 
@@ -39,11 +39,11 @@ connection or by the server turning the round down). Coverage per package:
   (`TestUpdate_RecentDataWins`), one press is not evidence
   (`TestDifficulty_ShrinkageNeedsEvidence`), only open letters are used.
 - **A simulation** of made-up typists that compares Learn with random words
-  and with monkeytype's "weakspot" ([ALGORITHM.md](../ALGORITHM.md),
+  and with monkeytype's "weakspot" ([HOW-THE-MODES-WORK.md](../HOW-THE-MODES-WORK.md),
   section 10; `go run ./tools/sim`).
 - **A hidden control group** for a study with real people (below).
 - **Raw data.** Every round in the history keeps its raw keypresses
-  (`keys`: letter, mistakes, time, in order; ARCHITECTURE.md, "Raw round
+  (`keys`: letter, mistakes, time, in order; HOW-THE-CODE-WORKS.md, "Raw round
   records"), and `/export` writes them to the file. Replaying them through
   `engine.Apply` rebuilds the letter statistics, so the same real data can be
   run with other values of `Alpha` or the weights (idea 4 below), and
@@ -86,7 +86,7 @@ These are directions, not things that are built:
 
 1. **Bigram statistics.** Keep the same `KeyStat` for pairs like `th`, `ng`, and
    add their difficulty to `D(word)`. Directly targets the transition problem
-   of ALGORITHM.md section 9. (Climb already tracks weak pairs of its own,
+   of HOW-THE-MODES-WORK.md section 9. (Climb already tracks weak pairs of its own,
    section 12.1.)
 2. **Word-level choice in one step.** Instead of "letter, then word", a single
    softmax over `D(word)` with a different aggregation (sum, max, mean).

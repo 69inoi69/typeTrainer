@@ -1,4 +1,4 @@
-# Interface text rules
+# Text rules
 
 How to write every text a user sees: labels, buttons, descriptions,
 tooltips, messages, the first-visit guide. All of them live in `web/i18n.js`. Only English is

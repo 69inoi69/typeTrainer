@@ -5,8 +5,8 @@ Lublin University of Technology (2027), a side quest of the product. This
 folder keeps what the thesis needs and the app does not: one file per item
 of the thesis plan. A pull request that yields material for an item (a
 number, a measurement, a decision) adds a few lines to its file. Product
-docs ([docs/ALGORITHM.md](../ALGORITHM.md),
-[docs/ARCHITECTURE.md](../ARCHITECTURE.md)) stay where they are; these
+docs ([docs/HOW-THE-MODES-WORK.md](../HOW-THE-MODES-WORK.md),
+[docs/HOW-THE-CODE-WORKS.md](../HOW-THE-CODE-WORKS.md)) stay where they are; these
 files link to them.
 
 1. [01-existing-systems-and-literature.md](01-existing-systems-and-literature.md): existing systems and the reading list.

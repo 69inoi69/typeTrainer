@@ -92,18 +92,20 @@ The website on GitHub Pages is the same Go code compiled to WebAssembly
 - Every number you might want to tune goes into `internal/config/config.go`,
   not into the logic.
 - Every text a user sees lives in `web/i18n.js` and follows
-  [docs/UI-TEXT.md](docs/UI-TEXT.md): short, plain, and only where it helps.
+  [docs/TEXT-RULES.md](docs/TEXT-RULES.md): short, plain, and only where it helps.
 - The code that runs on every keypress stays light (the rules are in
-  `AGENTS.md`, "Architecture rules"); measure it with `perf.mjs` before
+  `docs/CODE-RULES.md`, "Architecture rules"); measure it with `perf.mjs` before
   and after.
 - If you change how Learn picks letters or words, update
-  [docs/ALGORITHM.md](docs/ALGORITHM.md) and the tests in the same pull
+  [docs/HOW-THE-MODES-WORK.md](docs/HOW-THE-MODES-WORK.md) and the tests in the same pull
   request, and show the result of `go run ./tools/sim`.
-- Comments: [docs/COMMENTING.md](docs/COMMENTING.md). For now the code
+- Comments: [docs/CODE-RULES.md](docs/CODE-RULES.md). For now the code
   keeps only a one-line header per file and section dividers.
 
-The bigger picture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the
-code, [docs/GUIDELINES.md](docs/GUIDELINES.md) for the interface.
+The bigger picture: [docs/PRODUCT.md](docs/PRODUCT.md) for what the
+product is, [docs/CODE-RULES.md](docs/CODE-RULES.md) and
+[docs/HOW-THE-CODE-WORKS.md](docs/HOW-THE-CODE-WORKS.md) for the code,
+[docs/DESIGN-RULES.md](docs/DESIGN-RULES.md) for the interface.
 
 ## License
 

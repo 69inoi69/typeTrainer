@@ -1,5 +1,12 @@
 # typeTrainer: development log
 
+File names below are as they were at the time. Since issue #152 the docs
+are `docs/PRODUCT.md`, `docs/CODE-RULES.md` (with the old COMMENTING.md),
+`docs/HOW-THE-CODE-WORKS.md` (was ARCHITECTURE.md),
+`docs/HOW-THE-MODES-WORK.md` (was ALGORITHM.md), `docs/DESIGN-RULES.md`
+(was GUIDELINES.md) and `docs/TEXT-RULES.md` (was UI-TEXT.md);
+`docs/USER-GUIDE.md` was removed.
+
 How the practical part of the engineering thesis was built together with an AI
 coding agent, from the first idea to a working, published application.
 3–17 October 2026.

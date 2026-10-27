@@ -1,24 +1,24 @@
 # 2. Requirements
 
 Thesis item 2: functional and non-functional requirements. A first list,
-taken from what the app does now (AGENTS.md and the code); the final
+taken from what the app does now (docs/PRODUCT.md and the code); the final
 list is fixed when the cleanup phase ends. Each line says where it is met.
 
 ## Functional
 
 - F1. Learn teaches from zero: letters open one by one from the home row;
-  the algorithm alone chooses the words (ALGORITHM.md sections 6-7).
-- F2. Only real words of the language are typed (data/langs, ALGORITHM.md
+  the algorithm alone chooses the words (HOW-THE-MODES-WORK.md sections 6-7).
+- F2. Only real words of the language are typed (data/langs, HOW-THE-MODES-WORK.md
   section 11).
 - F3. Every keypress is measured per letter: mistakes and time
-  (ALGORITHM.md sections 3-4).
+  (HOW-THE-MODES-WORK.md sections 3-4).
 - F4. Climb: levels of ever rarer words, judged by accuracy (section 12).
 - F5. Freetype: plain typing of words, long words, sentences or your own
   text; nothing adapts (section 13).
 - F6. Statistics per mode, list and round length, never mixed
   (`web/stats.js`).
 - F7. Accounts: sign up, log in, log out; progress kept per user and
-  language (ARCHITECTURE.md).
+  language (HOW-THE-CODE-WORKS.md).
 - F8. An on-screen keyboard shows the next key and the finger to use
   (06-interface-finger-layout-latency.md).
 - F9. Export and import of all progress as a file.
@@ -33,7 +33,7 @@ list is fixed when the cleanup phase ends. Each line says where it is met.
 - N2. A desktop with a physical keyboard; phones show only stats and the
   account.
 - N3. Server: Go standard library only (plus the PostgreSQL driver); no
-  frontend framework, no build step (AGENTS.md, Stack).
+  frontend framework, no build step (docs/CODE-RULES.md, Stack).
 - N4. Storage behind one interface, memory or PostgreSQL, both passing the
   same tests (07-postgresql.md).
 - N5. Passwords and login tokens stored only as hashes (internal/auth).

@@ -1,7 +1,7 @@
 # 5. The Go server
 
 Thesis item 5: the Go server with real-time processing. Code layout and
-routes: [docs/ARCHITECTURE.md](../ARCHITECTURE.md).
+routes: [docs/HOW-THE-CODE-WORKS.md](../HOW-THE-CODE-WORKS.md).
 
 ## Test coverage per package
 

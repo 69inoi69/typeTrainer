@@ -1,7 +1,7 @@
 # 7. PostgreSQL: profiles, round history, statistics
 
 Thesis item 7. The server with PostgreSQL is the main version; GitHub
-Pages keeps progress in the browser and is a demo (AGENTS.md).
+Pages keeps progress in the browser and is a demo (docs/PRODUCT.md).
 
 - Storage interface: `internal/storage/store.go` (`storage.Store`); two
   implementations, `MemoryStore` and `PostgresStore`, pass the same tests

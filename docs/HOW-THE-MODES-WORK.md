@@ -1,4 +1,4 @@
-# The adaptive algorithm
+# How the modes work
 
 How the trainer decides what you type next, and why each part is built the
 way it is. Every formula here is exactly what the code does, and every number
@@ -23,7 +23,7 @@ chosen at random, but with probabilities shaped by difficulty, so weak letters
 show up much more often and strong ones still appear sometimes. Learning has
 no settings: the model alone decides what to practise. (Climb, the second
 mode in `internal/freeplay`, for people who can already type, has its own
-rule, section 12, and never feeds this model; see docs/ARCHITECTURE.md,
+rule, section 12, and never feeds this model; see docs/HOW-THE-CODE-WORKS.md,
 "Modes".)
 
 ## 2. Design decisions
@@ -640,7 +640,7 @@ fitted to real data; `docs/thesis/08-testing-and-verification.md` says how they 
   previous key to this one, so a slow `s` after `t` may really be a slow `t→s`
   movement. It is assigned to `s`.
 - **Per user, not per person.** The model is kept per account, or per browser
-  for a guest (ARCHITECTURE.md, "Accounts"). Someone who types as a guest on
+  for a guest (HOW-THE-CODE-WORKS.md, "Accounts"). Someone who types as a guest on
   two computers is two learners to the model; the model itself does not know
   about users at all.
 - **One model for every device.** Rounds typed on a phone (two thumbs on a

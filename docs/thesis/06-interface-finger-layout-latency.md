@@ -2,9 +2,9 @@
 
 Thesis item 6: the JavaScript interface, the finger layout shown on the
 keyboard, and input latency. The modules are listed in
-[docs/ARCHITECTURE.md](../ARCHITECTURE.md) ("Frontend modules"); the
+[docs/HOW-THE-CODE-WORKS.md](../HOW-THE-CODE-WORKS.md) ("Frontend modules"); the
 keyboard layouts are data in `data/layouts/`. The keyboard with the hands
-is a thesis item: it is made cheap, never cut (AGENTS.md).
+is a thesis item: it is made cheap, never cut (docs/PRODUCT.md).
 
 ## Input latency
 

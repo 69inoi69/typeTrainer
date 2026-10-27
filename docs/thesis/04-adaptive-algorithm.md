@@ -2,13 +2,13 @@
 
 Thesis item 4: the mathematical model of the adaptive algorithm (letter
 difficulty index and weighted random choice). The model as it works now is
-described in [docs/ALGORITHM.md](../ALGORITHM.md); the code is
+described in [docs/HOW-THE-MODES-WORK.md](../HOW-THE-MODES-WORK.md); the code is
 `internal/engine/model.go` and `generator.go`. Changes to the formulas go
-through the owner and the simulation (AGENTS.md).
+through the owner and the simulation (docs/PRODUCT.md).
 
 ## Where each part is
 
-| Part | ALGORITHM.md |
+| Part | HOW-THE-MODES-WORK.md |
 |---|---|
 | What is measured per key | section 3 |
 | Per-letter statistics (EMA) | section 4 |
