@@ -137,7 +137,8 @@ consequences, the same word for the same thing. All text lives in
   sequence of small rises (`rise` in `stats.css`), not as scattered effects;
   a redraw on resize does not replay it.
 - Selected states use `aria-pressed` / `aria-selected`; a chosen value in a
-  `.ring` group is a light accent tint inside an accent ring.
+  `.ring` group is a light accent tint. A `.ring` group is a row of cells
+  side by side, with a thin line between them, so it reads as one switch.
 - A destructive action asks first in a confirm window (Reset all progress:
   "Reset all progress? This can't be undone.", Cancel has the focus).
 - Results stay on screen until the user presses Next round, Enter or Tab
