@@ -239,22 +239,10 @@ const I18N = {
   },
 };
 
-let uiLang = "en";
 export const i18nVars = {};
 
-export async function setUiLang(id) {
-  if (!I18N[id]) {
-    try {
-      I18N[id] = (await import(`./i18n/${id}.js`)).default;
-    } catch {
-      id = "en";
-    }
-  }
-  uiLang = id;
-}
-
 export function t(key, vars = {}) {
-  const text = I18N[uiLang]?.[key] ?? I18N.en[key] ?? key;
+  const text = I18N.en[key] ?? key;
   return text.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? i18nVars[name] ?? ""));
 }
 
