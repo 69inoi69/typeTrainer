@@ -102,7 +102,7 @@ const win = $("settings-win"), btn = $("btn-settings"), body = $("settings-body"
 function choice(key, value, label, chosen) {
   return `<button type="button" data-key="${key}" data-value="${value}" aria-pressed="${chosen}">${label}</button>`;
 }
-const seg = (buttons) => `<span class="seg">${buttons.join("")}</span>`;
+const seg = (buttons) => `<span class="ring">${buttons.join("")}</span>`;
 const onOff = (key, on) => seg([choice(key, "", t("settings.off"), !on), choice(key, "1", t("settings.on"), on)]);
 const ICON = {
   export: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19h14"/></svg>',
@@ -145,8 +145,8 @@ function render() {
     const desc = r.desc ? ` data-tip-text="${attr(t(r.desc))}" aria-description="${attr(t(r.desc))}"` : "";
     html += `<div class="sw-row${on ? " on" : ""}" data-i="${i}"><span class="sw-name${r.danger ? " danger" : ""}"${desc}>${t(r.name)}</span><span class="sw-ctl">${r.ctl()}</span></div>`;
   });
-  body.innerHTML = previewHTML() + `<div class="sw-rows">${html}</div>`;
-  startPreview();
+  body.innerHTML = `<div class="sw-rows">${html}</div>`;
+  placePreview();
 }
 
 export function setSetting(key, value) {
@@ -192,20 +192,31 @@ export function onSoundPick(fn) { soundListener = fn; }
 // ---------- the preview ----------
 const PREVIEW_STEP_MS = 260;
 const PREVIEW_WRONG = 6;
-let previewTimer = 0;
-function previewHTML() {
-  const text = t("settings.sample");
-  const letters = [...text].map((c) => `<span${c === " " ? " data-sp" : ""}>${c}</span>`).join("");
-  return `<div class="sw-preview" aria-hidden="true"><div class="text pv-text">${letters}<i class="caret pv-caret"></i></div></div>`;
+let previewTimer = 0, hoverRow = -1;
+const PREVIEW_ROWS = ["settings.caret", "settings.glide"];
+const preview = document.createElement("div");
+preview.className = "sw-preview";
+preview.hidden = true;
+preview.setAttribute("aria-hidden", "true");
+win.appendChild(preview);
+function placePreview() {
+  const i = hoverRow >= 0 ? hoverRow : isTouch() ? -1 : cur;
+  const name = PREVIEW_ROWS.includes(shown[i]?.name) && body.querySelector(`.sw-row[data-i="${i}"] .sw-name`);
+  if (!name) { preview.hidden = true; clearInterval(previewTimer); return; }
+  if (preview.hidden) startPreview();
+  preview.hidden = false;
+  const w = win.getBoundingClientRect(), r = name.getBoundingClientRect();
+  preview.style.top = `${r.top - w.top + r.height / 2 - preview.offsetHeight / 2}px`;
+  preview.classList.toggle("left", w.right + 12 + preview.offsetWidth > innerWidth);
 }
 function startPreview() {
   clearInterval(previewTimer);
-  const box = body.querySelector(".pv-text");
-  if (!box) return;
-  const spans = [...box.querySelectorAll("span")], caret = box.querySelector(".pv-caret");
+  const letters = [...t("settings.sample")].map((c) => `<span${c === " " ? " data-sp" : ""}>${c}</span>`).join("");
+  preview.innerHTML = `<div class="text pv-text">${letters}<i class="caret pv-caret"></i></div>`;
+  const spans = [...preview.querySelectorAll("span")], caret = preview.querySelector(".pv-caret");
   let i = 0;
   const step = () => {
-    if (!win.open || !box.isConnected) { clearInterval(previewTimer); return; }
+    if (!win.open || preview.hidden) { clearInterval(previewTimer); return; }
     if (i > spans.length + 3) {
       i = 0;
       spans.forEach((sp) => (sp.className = ""));
@@ -218,6 +229,12 @@ function startPreview() {
   step();
   previewTimer = setInterval(step, PREVIEW_STEP_MS);
 }
+body.addEventListener("mouseover", (e) => {
+  const row = e.target.closest(".sw-row");
+  const i = row ? Number(row.dataset.i) : -1;
+  if (i !== hoverRow) { hoverRow = i; placePreview(); }
+});
+body.addEventListener("mouseleave", () => { hoverRow = -1; placePreview(); });
 
 win.addEventListener("click", (e) => {
   if (e.target === win) { closeSettings(); return; }
@@ -257,6 +274,8 @@ let closeListener = () => {};
 export function onSettingsClose(fn) { closeListener = fn; }
 win.addEventListener("close", () => {
   clearInterval(previewTimer);
+  preview.hidden = true;
+  hoverRow = -1;
   btn.setAttribute("aria-expanded", "false");
   closeListener();
 });
