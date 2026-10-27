@@ -1,7 +1,7 @@
 # 2. Requirements
 
 Thesis item 2: functional and non-functional requirements. A first list,
-taken from what the app does now (AGENTS.md, docs/USER-GUIDE.md); the final
+taken from what the app does now (AGENTS.md and the code); the final
 list is fixed when the cleanup phase ends. Each line says where it is met.
 
 ## Functional
@@ -16,7 +16,7 @@ list is fixed when the cleanup phase ends. Each line says where it is met.
 - F5. Freetype: plain typing of words, long words, sentences or your own
   text; nothing adapts (section 13).
 - F6. Statistics per mode, list and round length, never mixed
-  (USER-GUIDE.md, stats screen).
+  (`web/stats.js`).
 - F7. Accounts: sign up, log in, log out; progress kept per user and
   language (ARCHITECTURE.md).
 - F8. An on-screen keyboard shows the next key and the finger to use
