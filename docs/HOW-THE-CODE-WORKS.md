@@ -24,8 +24,8 @@ its own.
 
 | Path | Responsibility |
 |---|---|
-| `setup.go` | Loads the embedded data files, creates the store, generator and API server (`newApp`). Shared by both entry points. |
-| `main.go` | Entry point for the normal server: calls `newApp` and starts HTTP. |
+| `setup.go` | Loads the embedded data files, creates the store, generator and API server (`newApp`), and serves `web/` through `internal/static`. Shared by both entry points. |
+| `main.go` | Entry point for the normal server: calls `newApp` and starts HTTP with the time limits of `config.Server` (a slow client cannot hold a connection); on Ctrl+C or SIGTERM it stops taking new requests and lets the running ones finish (up to `Server.Shutdown`), so a round being saved during a restart is not lost (#246). |
 | `main_wasm.go` | Entry point for the GitHub Pages build (see below). |
 | `pages/wasm-shim.js` | Pages only: routes `/api/v1/` requests from the frontend to the Go code in the browser, and keeps the progress in IndexedDB (the `/export` JSON per language, loaded back with `/import`). |
 | `.github/workflows/pages.yml` | On every push to `main`: test, build WebAssembly, publish to Pages. |
@@ -50,6 +50,7 @@ its own.
 | `internal/api/freeplay.go` | The `/api/v1/freeplay/*` routes: Climb's portions, results (with the verdict) and stats. |
 | `internal/api/freetype.go` | The `/api/v1/freetype/*` routes: Freetype's portions, results and stats per word list. |
 | `internal/api/auth.go` | The `/api/v1/auth/*` routes (sign up, log in, log out, who am I) and `userOf`: which user a request belongs to. |
+| `internal/static` | Serves the embedded `web/` files: an ETag (a hash of the file) with `Cache-Control: no-cache`, so a browser that has the file gets a short 304 instead of it again; text files gzipped once, when first asked for, if the browser accepts gzip. Anything else (a folder, a missing file) goes to the standard file server. |
 | `internal/layout` | Parses and validates the keyboard layout JSON; `RestingKeys` (the home row keys under the fingers, first in the learning order). |
 | `internal/language` | Parses `languages.json`; `Allows(word)` checks a word against the alphabet. |
 | `data/languages.json` | The languages: id, name, label, layout, alphabet, OS layout name. |
