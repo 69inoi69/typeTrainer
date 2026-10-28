@@ -2,53 +2,38 @@
 
 export const FX = (() => {
   const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const COLORS = ["#e2b714", "#8cc97a", "#7fa6e0", "#c98bd6", "#e59a62", "#5fc4c4", "#e57f8f"];
 
-  // ---------- confetti ----------
-  let canvas = null, ctx = null, parts = [], frame = 0;
-  function ensureCanvas() {
-    if (canvas) return;
-    canvas = document.createElement("canvas");
-    canvas.className = "confetti";
-    document.body.appendChild(canvas);
-    ctx = canvas.getContext("2d");
+  // ---------- a wave of light along the letters row ----------
+  function wave(row) {
+    if (reduced() || !row) return;
+    [...row.children].forEach((chip, i) => {
+      const glow = document.createElement("i");
+      glow.className = "wave";
+      glow.style.setProperty("--i", i);
+      glow.addEventListener("animationend", () => glow.remove(), { once: true });
+      chip.append(glow);
+    });
   }
-  function burst(x, y, n = 70) {
-    if (reduced()) return;
-    ensureCanvas();
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = innerWidth * dpr; canvas.height = innerHeight * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    for (let i = 0; i < n; i++) {
-      const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.2;
-      const v = 4 + Math.random() * 6;
-      parts.push({
-        x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v,
-        w: 4 + Math.random() * 5, h: 3 + Math.random() * 4,
-        r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.4,
-        c: COLORS[i % COLORS.length], life: 0,
-      });
-    }
-    if (!frame) frame = requestAnimationFrame(step);
-  }
-  function step() {
-    ctx.clearRect(0, 0, innerWidth, innerHeight);
-    parts = parts.filter((p) => p.life < 90 && p.y < innerHeight + 20);
-    for (const p of parts) {
-      p.life++; p.vy += 0.22; p.vx *= 0.985;
-      p.x += p.vx; p.y += p.vy; p.r += p.vr;
-      ctx.save();
-      ctx.globalAlpha = Math.max(0, 1 - p.life / 90);
-      ctx.translate(p.x, p.y); ctx.rotate(p.r);
-      ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
-      ctx.restore();
-    }
-    frame = parts.length ? requestAnimationFrame(step) : 0;
-    if (!frame) ctx.clearRect(0, 0, innerWidth, innerHeight);
-  }
-  function burstFrom(node, n) {
-    const r = node.getBoundingClientRect();
-    burst(r.left + r.width / 2, r.top + r.height / 2, n);
+
+  // ---------- trading-card foil over a number or a word ----------
+  function foil(node) {
+    const cs = getComputedStyle(node), w = node.offsetWidth, h = node.offsetHeight;
+    if (!w || !h) return;
+    const dpr = devicePixelRatio || 1, canvas = document.createElement("canvas");
+    canvas.width = Math.ceil(w * dpr);
+    canvas.height = Math.ceil(h * dpr);
+    const g = canvas.getContext("2d");
+    g.scale(dpr, dpr);
+    g.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    g.letterSpacing = cs.letterSpacing;
+    const text = node.firstChild?.nodeType === 3 ? node.firstChild.textContent : node.textContent;
+    const m = g.measureText(text);
+    const padT = parseFloat(cs.paddingTop), inner = h - padT - parseFloat(cs.paddingBottom);
+    const base = padT + (inner - m.fontBoundingBoxAscent - m.fontBoundingBoxDescent) / 2 + m.fontBoundingBoxAscent;
+    g.fillText(text, parseFloat(cs.paddingLeft), base);
+    node.style.setProperty("--foil-mask", `url(${canvas.toDataURL()})`);
+    node.classList.add("foil");
+    node.insertAdjacentHTML("beforeend", `<i class="foil-sheen" aria-hidden="true"></i><i class="foil-glare" aria-hidden="true"></i>`);
   }
 
   // ---------- small animations ----------
@@ -118,7 +103,7 @@ export const FX = (() => {
     node.addEventListener("animationend", (e) => { if (e.target === node) { node.remove(); showNext(); } });
   }
 
-  return { burst, burstFrom, bump, shake, toast, anim, collapse, fadeOut };
+  return { wave, foil, bump, shake, toast, anim, collapse, fadeOut };
 })();
 
 // ---------- start screen ----------

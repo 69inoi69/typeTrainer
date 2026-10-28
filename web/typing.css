@@ -44,11 +44,33 @@
 }
 .chip.locked.next { color: var(--accent-text); box-shadow: none; outline: 1px dashed color-mix(in srgb, var(--accent) 70%, transparent); outline-offset: -1px; }
 :root[data-theme="light"] .chip.fresh:not(.locked, .focus) { background: var(--panel); }
-.chip.pop { animation: pop 420ms cubic-bezier(.34, 1.56, .64, 1); }
-.chip.shine { animation: shine .9s ease-out; }
-@keyframes shine {
-  0%, 30% { background: color-mix(in srgb, var(--ok) 30%, var(--panel)); color: var(--ok); }
+.chip.pop { animation: chip-flip .7s cubic-bezier(.3, 1.4, .5, 1); }
+.chip > .ring {
+  position: absolute; inset: -1px; border-radius: inherit; border: 2px solid var(--accent);
+  pointer-events: none; opacity: 0; animation: chip-ring .8s .15s ease-out;
 }
+.chip.arrive { animation: chip-arrive .5s .35s both; }
+.chip.shine { animation: chip-nod .5s .38s cubic-bezier(.3, 1.6, .5, 1); }
+.chip.shine::before, .chip.shine::after { animation: chip-tick .4s .5s cubic-bezier(.3, 1.8, .5, 1) both; }
+.chip > .fill {
+  position: absolute; inset: 0; border-radius: inherit; background: var(--ok); pointer-events: none;
+  transform-origin: bottom; opacity: 0; animation: chip-fill .9s ease-out;
+}
+.chip > .wave {
+  position: absolute; inset: 0; border-radius: inherit; background: var(--accent); pointer-events: none;
+  opacity: 0; animation: chip-wave .7s calc(var(--i) * 45ms) ease-out;
+}
+@keyframes chip-flip {
+  0% { transform: perspective(200px) rotateY(90deg) scale(.8); }
+  60% { transform: perspective(200px) rotateY(-12deg) scale(1.12); }
+}
+@keyframes chip-ring { from { transform: scale(1); opacity: 1; } to { transform: scale(1.9); opacity: 0; } }
+@keyframes chip-arrive { from { opacity: 0; } }
+@keyframes chip-nod { 40% { transform: scale(.9); } }
+@keyframes chip-tick { from { transform: scale(0); } }
+@keyframes chip-fill { from { transform: scaleY(0); opacity: .45; } 45% { transform: none; opacity: .45; } }
+@keyframes chip-wave { 25% { opacity: .75; } }
+
 .chip:not(.locked):hover { transform: translateY(-2px); }
 /* ---------- the Learn panel (learnpanel.js) ---------- */
 .learn-panel { display: flex; align-items: center; height: var(--lp-room); margin-bottom: 12px; font-size: 1rem; transition: opacity .4s var(--ease); }
@@ -73,6 +95,7 @@ body.typing-now .learn-panel { opacity: 0; pointer-events: none; }
 .lp-ring .fill { stroke: var(--accent); stroke-dasharray: 100; stroke-dashoffset: calc(100 - var(--g) * 100); transition: stroke-dashoffset .5s linear, stroke .4s; }
 .lp-goal.met .lp-ring .fill { stroke: var(--ok); }
 .lp-cols > .lp-goal { cursor: pointer; }
+body.typing-now .lp-best > i { animation-play-state: paused; }
 .lp-spark { align-self: center; width: 64px; height: 18px; margin-inline: .5ch; overflow: visible; flex: none; }
 .lp-spark polyline { fill: none; stroke: color-mix(in srgb, var(--text) 70%, var(--sub)); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .lp-spark .avg { stroke: color-mix(in srgb, var(--sub) 45%, transparent); stroke-width: 1; stroke-dasharray: 2 2; }
@@ -134,11 +157,7 @@ body.typing-now:not(.live-off) .lp-cols > :is(.lp-last, .lp-intro) { opacity: 0;
 .wl:hover { color: var(--text); }
 .wl[aria-pressed="true"] { color: var(--accent-text); }
 
-@keyframes pop {
-  0% { transform: scale(.6); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 80%, transparent); }
-  55% { transform: scale(1.18); }
-  100% { transform: scale(1); box-shadow: 0 0 0 12px transparent; }
-}
+
 .letters-caption {
   display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-start; gap: 18px; white-space: nowrap;
   flex: 0 1 auto; min-width: 0; overflow: hidden;

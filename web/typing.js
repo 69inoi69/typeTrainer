@@ -613,10 +613,10 @@ async function finishRound(byLastKey = false) {
     const r = compareStats(roundBefore, S.lastStats);
     markMastered(r.mastered);
     const milestone = roundNews({ ...r, wpm, newLetter: roundNewLetter, newLap: roundNewLap });
-    if (r.best || milestone) FX.burstFrom(el.wpm, 80);
     refreshActivity();
     el.live.classList.remove("final");
     await loadExercise();
+    if (milestone) FX.wave(el.letters);
   } catch (err) {
     console.error(err);
     FX.toast(t("err.load"));

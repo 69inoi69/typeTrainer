@@ -7,6 +7,7 @@ import { forecastText, rule } from "./letters.js";
 import { learning } from "./modes.js";
 import { DAILY, setSetting } from "./settings.js";
 import { openPop, ring as ringGroup, ringBtn } from "./minipop.js";
+import { FX } from "./fx.js";
 
 const box = $("learn-panel"), cols = $("lp-cols");
 
@@ -31,9 +32,10 @@ export function compareStats(before, after) {
 }
 
 // ---------- news of the round ----------
-let news = null;
+let news = null, bestLang = "";
 export function roundNews(r) {
   news = null;
+  bestLang = r.best ? S.lang : "";
   const ex = S.exercise, keys = S.lastStats?.keys ?? [];
   if (!ex) return false;
   const flag = store.get(`tt.milestone.${S.lang}`) || "";
@@ -75,13 +77,17 @@ export function renderPanel() {
   if (news && news.lang !== S.lang) news = null;
   const first = !(S.lastStats.sessions ?? []).length && S.exercise.locked.length > 0;
   const html = [...(first ? [intro()] : [lastRound(), forecast(), accStreak()]), dailyGoal()].join("");
-  if (html !== drawn) { drawn = html; redraw(cols, ".lp-val", html); }
+  if (html !== drawn) {
+    drawn = html;
+    redraw(cols, ".lp-val", html);
+    document.fonts.ready.then(() => cols.querySelectorAll(".lp-best:not(.foil)").forEach(FX.foil));
+  }
   const line = news ? `<p class="lp-news${news.big ? " big" : ""}"${news.tip ? ` tabindex="0" data-tip-text="${news.tip}"` : ""}>${news.text}</p>` : "";
   if (line !== drawnNews) { drawnNews = line; box.innerHTML = line; }
 }
 
 function redraw(el, sel, html) {
-  const nums = (root) => [...root.querySelectorAll(`${sel} .lp-n`)];
+  const nums = (root) => [...root.querySelectorAll(`${sel} :is(.lp-n, .lp-best)`)];
   const before = nums(el).map((v) => +v.dataset.n);
   const metBefore = [...el.querySelectorAll(".lp-cell")].map((c) => c.classList.contains("met"));
   el.innerHTML = html;
@@ -123,7 +129,7 @@ function lastRound() {
   const tip = avg ? [delta(last.wpm, avg.wpm, "lp.faster", "lp.slower"), delta(last.accuracy, avg.acc, "lp.accUp", "lp.accDown")]
     .filter(Boolean).join(". ") : "";
   return cell("lp-last", t("lp.last"),
-    `${num(last.wpm)}<small>wpm</small>${spark(list.slice(0, AVG_ROUNDS).map((x) => x.wpm).reverse(), avg?.wpm, tip)}` +
+    `${bestLang === S.lang ? `<b class="lp-best" data-n="${Math.round(last.wpm)}">${Math.round(last.wpm)}</b>` : num(last.wpm)}<small>wpm</small>${spark(list.slice(0, AVG_ROUNDS).map((x) => x.wpm).reverse(), avg?.wpm, tip)}` +
     `${num(last.accuracy, "%", "lp-gap")}<small>${t("metric.acc")}</small>`);
 }
 

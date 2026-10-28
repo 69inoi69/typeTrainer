@@ -3,6 +3,7 @@
 import { t, variantLabel } from "./i18n.js";
 import { $, el, S, isTouch, reducedMotion, levelWords, listLabel, boxState } from "./state.js";
 import { FEEL } from "./feel.js";
+import { FX } from "./fx.js";
 import { showTip } from "./tools.js";
 
 const box = $("result");
@@ -144,28 +145,8 @@ function newBest() {
   const lbl = box.querySelector(".r-hero .r-num.hero .r-lbl");
   lbl.insertAdjacentHTML("beforeend", `<span class="r-best"><span>${t("result.newBest")}</span></span>`);
   const nodes = [box.querySelector(".r-num.hero > b"), lbl.querySelector(".r-best > span")];
-  document.fonts.ready.then(() => nodes.forEach(foil));
+  document.fonts.ready.then(() => nodes.forEach(FX.foil));
 }
-function foil(node) {
-  const cs = getComputedStyle(node), w = node.offsetWidth, h = node.offsetHeight;
-  if (!w || !h) return;
-  const dpr = devicePixelRatio || 1, canvas = document.createElement("canvas");
-  canvas.width = Math.ceil(w * dpr);
-  canvas.height = Math.ceil(h * dpr);
-  const g = canvas.getContext("2d");
-  g.scale(dpr, dpr);
-  g.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
-  g.letterSpacing = cs.letterSpacing;
-  const text = node.firstChild?.nodeType === 3 ? node.firstChild.textContent : node.textContent;
-  const m = g.measureText(text);
-  const padT = parseFloat(cs.paddingTop), inner = h - padT - parseFloat(cs.paddingBottom);
-  const base = padT + (inner - m.fontBoundingBoxAscent - m.fontBoundingBoxDescent) / 2 + m.fontBoundingBoxAscent;
-  g.fillText(text, parseFloat(cs.paddingLeft), base);
-  node.style.setProperty("--foil-mask", `url(${canvas.toDataURL()})`);
-  node.classList.add("foil");
-  node.insertAdjacentHTML("beforeend", `<i class="foil-sheen" aria-hidden="true"></i><i class="foil-glare" aria-hidden="true"></i>`);
-}
-
 function open(body, btn) {
   box.innerHTML = `<div class="r-body">${body}</div>` +
     `<p class="r-foot"><button type="button" class="r-next" data-tip="${btn}" aria-label="${t(btn)}">${ICON_NEXT}</button></p>`;
