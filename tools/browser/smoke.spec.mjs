@@ -377,17 +377,21 @@ test("stats: the goal line is a number of your own, and Learn's is its target", 
 test("browser zoom 200% keeps the desktop layout and nothing overlaps", async ({ browser }) => {
   const ctx = await browser.newContext({ baseURL: "http://localhost:3000", viewport: { width: 960, height: 500 }, deviceScaleFactor: 2 });
   const page = await ctx.newPage();
+  const check = async (state) => {
+    const m = await page.evaluate(() => {
+      const nodes = [...document.querySelectorAll("#lp-cols > .lp-cell"), document.getElementById("round-switch")];
+      const cells = nodes.map((n) => n.getBoundingClientRect());
+      return {
+        sideways: document.documentElement.scrollWidth > innerWidth,
+        railAtBottom: document.getElementById("rail").getBoundingClientRect().top > innerHeight / 2,
+        overlaps: cells.slice(1).filter((r, i) => r.left < cells[i].right - 1).length,
+        spills: nodes.filter((n) => n.scrollWidth > n.clientWidth + 1).map((n) => n.className),
+      };
+    });
+    expect(m, state).toEqual({ sideways: false, railAtBottom: false, overlaps: 0, spills: [] });
+  };
   await openApp(page, { "tt.mode.en": "learn" });
-  const m = await page.evaluate(() => {
-    const cells = [...document.querySelectorAll("#lp-cols > .lp-cell"), document.getElementById("round-switch")]
-      .map((n) => n.getBoundingClientRect());
-    return {
-      sideways: document.documentElement.scrollWidth > innerWidth,
-      railAtBottom: document.getElementById("rail").getBoundingClientRect().top > innerHeight / 2,
-      overlaps: cells.slice(1).filter((r, i) => r.left < cells[i].right - 1).length,
-    };
-  });
-  expect(m).toEqual({ sideways: false, railAtBottom: false, overlaps: 0 });
+  await check("first visit");
   await ctx.close();
 });
 
