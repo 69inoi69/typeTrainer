@@ -25,7 +25,6 @@ const I18N = {
     "settings.nextKey": "Next key",
     "settings.hand": "Hand",
     "settings.handDesc": "Shows which finger to use",
-    "settings.fingerText": "Finger colours in text",
     "settings.dailyDesc": "Minutes a day, all modes together",
     "settings.goalDesc": "The dashed line on the chart",
     "settings.rest": "Break reminder", "settings.min": "{n} min",

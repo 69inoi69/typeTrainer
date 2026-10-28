@@ -276,8 +276,6 @@ body.tb-paused #view-type > :not(.text-box, .letters), body.tb-paused #view-type
 
 .text span.ok { color: var(--text); }
 .text span.fx { color: color-mix(in srgb, var(--accent) 46%, var(--sub)); }
-.text span.fnext { color: var(--fc); }
-:root[data-theme="light"] .text span.fnext { color: color-mix(in oklab, var(--fc) 60%, #1d1428); }
 :root[data-theme="light"] .text span.fx { color: color-mix(in srgb, var(--accent-text) 80%, var(--sub)); }
 .text span.bad, .text span.extra { text-shadow: 0 0 10px color-mix(in srgb, var(--error) 45%, transparent); }
 .text span.bad {

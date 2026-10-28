@@ -67,7 +67,7 @@ export function drawKeyboard() {
 }
 
 // ---------- the keyboard's own settings ----------
-const KB_SWITCHES = ["nextKey", "hand", "fingerText"];
+const KB_SWITCHES = ["nextKey", "hand"];
 const KB_DESC = { hand: "settings.handDesc" };
 const gear = Object.assign(document.createElement("button"), { type: "button", className: "kb-gear" });
 gear.appendChild($("btn-settings").querySelector("svg").cloneNode(true));
@@ -167,7 +167,6 @@ let nextKeyEl = null;
 export function highlightNextKey() {
   if (nextKeyEl) nextKeyEl.classList.remove("next");
   if (S.altgrEl) S.altgrEl.classList.remove("next");
-  S.nextFc = "";
   const ch = S.text[S.pos];
   const base = ch === undefined ? ch : baseOf(ch);
   nextKeyEl = S.keyEls[base] || null;
@@ -185,7 +184,6 @@ export function highlightNextKey() {
   } else {
     el.hint.innerHTML = t("hint.press", vars);
   }
-  S.nextFc = S.layout.fingers[fingerId].color;
   if (!hand) { showHands(""); return; }
   const sideOf = (id) => (id === "thl" || id[0] === "l" ? "l" : "r");
   const sides = [...new Set(ids.map(sideOf))];
