@@ -241,6 +241,19 @@ test("Learn: an unsaved round offers to save it again", async ({ page }, info) =
   expectedOnly(info, "/api/v1/results");
 });
 
+test("Live stats is on for a new user and doesn't switch itself", async ({ page }) => {
+  await openApp(page, { "tt.mode.en": "climb", "tt.length.climb": "words-10" });
+  await expect(page.locator("body")).not.toHaveClass(/\blive-off\b/);
+  await page.evaluate(() => localStorage.setItem("tt.live", "0"));
+  await page.reload();
+  await waitForText(page);
+  await expect(page.locator("body")).toHaveClass(/\blive-off\b/);
+  await typeRound(page);
+  await expectResult(page);
+  expect(await page.evaluate(() => localStorage.getItem("tt.live")), "a finished round leaves the setting alone").toBe("0");
+  await expect(page.locator("body")).toHaveClass(/\blive-off\b/);
+});
+
 test("the background is off by default and on when chosen", async ({ page }) => {
   await openApp(page);
   await expect(page.locator(".ambient")).toHaveAttribute("data-kind", "off");

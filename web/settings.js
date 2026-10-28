@@ -53,7 +53,7 @@ export function lengthLabel(id) {
 // ---------- loading and applying ----------
 export function loadSettings() {
   S.settings.length = lengthFor(S.mode);
-  S.settings.live = store.get("tt.live") === "1";
+  S.settings.live = store.get("tt.live") !== "0";
   S.settings.streak = store.get("tt.streak.free") === "1";
   const bg = store.get("tt.bg");
   S.settings.bg = bg && bg !== "off" ? "keys" : "off";
@@ -82,14 +82,6 @@ function applySettings() {
   document.documentElement.dataset.theme = S.settings.theme;
   document.querySelector('meta[name="theme-color"]')
     ?.setAttribute("content", getComputedStyle(document.documentElement).getPropertyValue("--bg").trim());
-}
-
-export function firstRoundDone() {
-  if (store.get("tt.live") !== null) return;
-  store.set("tt.live", "1");
-  S.settings.live = true;
-  applySettings();
-  if (win.open) render();
 }
 
 let goalListener = () => {};

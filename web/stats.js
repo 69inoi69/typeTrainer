@@ -3,7 +3,7 @@
 import { i18nVars, t, applyI18n } from "./i18n.js";
 import { $, el, S, store, reducedMotion, listLabel, listless } from "./state.js";
 import { getJSON } from "./api.js";
-import { LENGTHS, lengthLabel, lengthFor, firstRoundDone, setSetting } from "./settings.js";
+import { LENGTHS, lengthLabel, lengthFor, setSetting } from "./settings.js";
 import { ring, ringBtn } from "./minipop.js";
 import { renderLearnStats, learnStatsStale } from "./learnstats.js";
 import { freetypeUrl, toggledVariant } from "./modes.js";
@@ -54,7 +54,6 @@ export async function refreshStats() {
   S.lastStats = await getJSON(`/stats?length=${lengthFor("learn")}`);
   activityStale = true;
   learnStatsStale();
-  if (S.lastStats.lengths.length) firstRoundDone();
   const vars = [S.lastStats.targetWpm, S.lastStats.masteryMin, Math.round(S.lastStats.masteryErr)];
   if (vars.join() !== introVars) {
     introVars = vars.join();
