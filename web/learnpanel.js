@@ -164,7 +164,6 @@ function forecast() {
   return cell("lp-fc", label, (next ? `<b class="lp-key">${next}</b>` : "") + value, tip);
 }
 
-// the stats tile's streak (#239): rounds in a row at the first of StreakAccuracies
 function accStreak() {
   const s = S.lastStats.streaks?.[0];
   if (!s) return cell("lp-streak", "", NONE);
