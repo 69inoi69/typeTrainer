@@ -55,10 +55,12 @@ test("Learn: a round can be typed to the end and is saved", async ({ page }) => 
   await expect(page.locator("#lp-cols .lp-intro .lp-key"), "before the first round: how to open the next letter").toHaveText(next);
   await expect(page.locator("#lp-cols .lp-intro .lp-val")).toHaveText("20 presses, under 5% mistakes, 30 wpm");
   await expect(page.locator("#lp-cols .lp-last")).toHaveCount(0);
+  await expect(page.locator("#lp-cols .lp-goal"), "the daily goal waits for the first round").toHaveCount(0);
   await typeRound(page, { done: async () => saved });
   await expect(page.locator("#round-line")).toHaveAttribute("data-tip-text", /^0\/15 /);
   await expect(page.locator("#lp-cols .lp-intro")).toHaveCount(0);
   await expect(page.locator("#lp-cols .lp-last [data-n]").first()).toHaveAttribute("data-n", /^[1-9]/);
+  await expect(page.locator("#lp-cols .lp-goal"), "the daily goal after the first round").toBeVisible();
 });
 
 test("Learn: the panel draws the speed line, the next letter and the streak dots, with equal gaps", async ({ page }) => {
@@ -255,6 +257,19 @@ test("the start screen plays its full length only on the first visit", async ({ 
   expect(again, "a later visit doesn't wait for it").toBeLessThan(1500);
 });
 
+test("Live stats is on for a new user and doesn't switch itself", async ({ page }) => {
+  await openApp(page, { "tt.mode.en": "climb", "tt.length.climb": "words-10" });
+  await expect(page.locator("body")).not.toHaveClass(/\blive-off\b/);
+  await page.evaluate(() => localStorage.setItem("tt.live", "0"));
+  await page.reload();
+  await waitForText(page);
+  await expect(page.locator("body")).toHaveClass(/\blive-off\b/);
+  await typeRound(page);
+  await expectResult(page);
+  expect(await page.evaluate(() => localStorage.getItem("tt.live")), "a finished round leaves the setting alone").toBe("0");
+  await expect(page.locator("body")).toHaveClass(/\blive-off\b/);
+});
+
 test("the background is off by default and on when chosen", async ({ page }) => {
   await openApp(page);
   await expect(page.locator(".ambient")).toHaveAttribute("data-kind", "off");
@@ -300,6 +315,7 @@ test("the caret is still at rest, spaces have a dot, the settings are fewer", as
 });
 
 test("the settings of one screen live on that screen", async ({ page }) => {
+  await withHistory(page);
   await openApp(page, { "tt.mode.en": "freetype" });
   const streak = page.locator('#mode-bar button[data-streak]');
   await expect(streak).toHaveAttribute("aria-pressed", "false");
@@ -418,6 +434,20 @@ test("the text stands at the same place for the same keyboard state", async ({ p
   }
 });
 
+test("Climb: the live numbers show from the first key, not as zeros at rest", async ({ page }) => {
+  await openApp(page, { "tt.mode.en": "climb", "tt.length.climb": "words-10", "tt.live": "1" });
+  const wpm = page.locator(".live > .metric.num").first();
+  await expect(wpm, "no zeros before the round").toHaveCSS("opacity", "0");
+  await page.keyboard.type(await nextChar(page));
+  await expect(wpm, "the numbers after the first key").toHaveCSS("opacity", "1");
+  await typeRound(page);
+  await expectResult(page);
+  await page.keyboard.press("Tab");
+  await waitForText(page);
+  await expect(wpm, "the last round's numbers stay until the next one starts").toHaveCSS("opacity", "1");
+  await expect(wpm.locator(".live-n")).not.toHaveAttribute("data-v", "0");
+});
+
 test("Climb: the result opens in place and the round switches do not move", async ({ page }) => {
   await openApp(page, { "tt.mode.en": "climb", "tt.length.climb": "words-10" });
   const bar = page.locator("#mode-bar");
@@ -526,6 +556,31 @@ test("light theme: a round finishes and the caret stays in its line", async ({ p
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await typeRound(page, { afterKey: () => expectCaretInLine(page) });
   await expectResult(page);
+});
+
+test("gold text reads on the page in both themes: 4.5:1, big numbers 3:1", async ({ page }) => {
+  for (const theme of ["dark", "light"]) {
+    await openApp(page, { "tt.theme": theme });
+    const ratio = await page.evaluate(() => {
+      const rgb = (v) => {
+        const probe = document.createElement("i");
+        probe.style.color = `var(${v})`;
+        document.body.append(probe);
+        const c = getComputedStyle(probe).color.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number);
+        probe.remove();
+        return c;
+      };
+      const lum = (c) => c.map((x) => x / 255).map((x) => x <= .03928 ? x / 12.92 : ((x + .055) / 1.055) ** 2.4)
+        .reduce((s, x, i) => s + x * [.2126, .7152, .0722][i], 0);
+      const on = (v) => {
+        const [a, b] = [lum(rgb(v)), lum(rgb("--bg"))].sort((x, y) => y - x);
+        return (a + .05) / (b + .05);
+      };
+      return { text: on("--accent-text"), big: on("--accent-big") };
+    });
+    expect(ratio.text, `${theme}: --accent-text on --bg`).toBeGreaterThanOrEqual(4.5);
+    expect(ratio.big, `${theme}: --accent-big on --bg`).toBeGreaterThanOrEqual(3);
+  }
 });
 
 test("stats on a phone: nothing is wider than the screen", async ({ page }) => {

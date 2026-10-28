@@ -12,7 +12,7 @@ import { renderLetters, markNewLetter, markMastered } from "./letters.js";
 import { renderPanel, roundNews, compareStats, refreshActivity, tickGoal } from "./learnpanel.js";
 import { learning, refreshFreeplay } from "./modes.js";
 import { renderModeBar } from "./modebar.js";
-import { lengthOf, firstRoundDone } from "./settings.js";
+import { lengthOf } from "./settings.js";
 import { keySound } from "./sound.js";
 import { customPortions, customRoundDone } from "./customtext.js";
 import { flinchCaret, paceGlide, resetGlide, scrollText, stopScroll } from "./caret.js";
@@ -605,7 +605,6 @@ async function finishRound(byLastKey = false) {
       await loadExercise();
       return;
     }
-    firstRoundDone();
     await refreshStats();
     if (res.newLetter) newLetter(res.newLetter);
     if (res.newLap) roundNewLap = res.newLap;
@@ -635,7 +634,6 @@ function learnUnsaved(err, body) {
   FX.toast(`${t("save.learnFailed")} <button type="button" class="note-act">${t("save.again")}</button>`, () => {
     if (round !== learnRound) { FX.toast(t("save.late")); return; }
     saveRound("/results", body).then((res) => {
-      firstRoundDone();
       refreshStats().catch(console.error);
       refreshActivity();
       if (res.newLetter) newLetter(res.newLetter);
@@ -666,7 +664,6 @@ async function finishFree(wpm, accuracy, keys, perSecond) {
   const level = S.climbLevel;
   const body = { wpm, accuracy, chars: keys.length, perSecond, keys, length: S.settings.length, device: device(), level, round: roundId() };
   const saved = async (res) => {
-    firstRoundDone();
     S.climbLevel = res.place.level;
     refreshActivity();
     await refreshFreeplay();
@@ -707,7 +704,6 @@ async function finishFreetype(wpm, accuracy, keys, perSecond) {
   const done = wordsTyped;
   const saved = async () => {
     if (variant === "custom") customRoundDone(done);
-    firstRoundDone();
     refreshActivity();
     await refreshFreeplay();
     return {};

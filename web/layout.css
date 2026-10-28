@@ -18,7 +18,7 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
 .logo { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .logo-key { width: 34px; height: 34px; flex: none; }
 .logo-text { display: flex; flex-direction: column; line-height: 1; min-width: 0; }
-.logo-name { font-family: var(--logo); font-size: 1.75rem; font-weight: 600; letter-spacing: -.03em; color: var(--accent-text); white-space: nowrap; transition: color .4s var(--ease); }
+.logo-name { font-family: var(--logo); font-size: 1.75rem; font-weight: 600; letter-spacing: -.03em; color: var(--accent-big); white-space: nowrap; transition: color .4s var(--ease); }
 .logo-name span { color: var(--text); transition: color .4s var(--ease); }
 
 /* ---------- the logo's keycap and the mascot (#207) ---------- */
@@ -64,6 +64,8 @@ body.typing-now .mascot, body.splashing .mascot { opacity: 0; visibility: hidden
   display: flex; gap: 6px 18px; align-items: center; height: 44px; margin: 0 0 6px; min-width: 0;
 }
 .live > .metric { transition: opacity .4s var(--ease), transform var(--med) var(--ease); }
+/* the round's numbers show from its first key; at rest their place stays empty (#241) */
+body:not(.typing-now) .live:not(.final) > .metric.num { opacity: 0; pointer-events: none; }
 .metric { display: flex; align-items: baseline; }
 .metric.raw span { color: color-mix(in srgb, var(--accent-text) 55%, var(--sub)); }
 .metric.raw { cursor: default; }
