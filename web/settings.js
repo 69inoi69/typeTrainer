@@ -121,7 +121,7 @@ const ROWS = [
   { group: "settings.typing", name: "settings.volume", ctl: () => pick("volume", (v) => v + "%"), show: () => S.settings.sound !== "off" },
   { group: "settings.typing", name: "settings.rest", desc: "settings.restDesc", ctl: () => pick("rest", (v) => (v === "0" ? t("settings.off") : t("settings.min", { n: v }))) },
   { group: null, name: "settings.data", desc: "settings.dataDesc", ctl: () => action("btn-export", "export", "data.save") + action("btn-import", "import", "data.load") },
-  { group: null, name: "settings.danger", desc: "settings.dangerDesc", danger: true, ctl: () => action("btn-reset", "trash", "data.reset", "btn danger") },
+  { group: null, name: "settings.danger", desc: "settings.dangerDesc", ctl: () => action("btn-reset", "trash", "data.reset", "btn danger") },
 ];
 
 let cur = 0;
@@ -138,7 +138,7 @@ function render() {
     group = r.group;
     const on = i === cur && !isTouch();
     const desc = r.desc ? ` data-tip-text="${attr(t(r.desc))}" aria-description="${attr(t(r.desc))}"` : "";
-    html += `<div class="sw-row${on ? " on" : ""}" data-i="${i}"><span class="sw-name${r.danger ? " danger" : ""}"${desc}>${t(r.name)}</span><span class="sw-ctl">${r.ctl()}</span></div>`;
+    html += `<div class="sw-row${on ? " on" : ""}" data-i="${i}"><span class="sw-name"${desc}>${t(r.name)}</span><span class="sw-ctl">${r.ctl()}</span></div>`;
   });
   body.innerHTML = `<div class="sw-rows">${html}</div>`;
   placePreview();
