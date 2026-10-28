@@ -52,7 +52,7 @@ test("Learn: a round can be typed to the end and is saved", async ({ page }) => 
   await openApp(page, { "tt.mode.en": "learn", "tt.length.learn": "words-15" });
   await expect(page.locator("body")).toHaveAttribute("data-mode", "learn");
   const next = (await page.locator("#letters .locked.next").first().textContent()).trim();
-  await expect(page.locator("#lp-cols .lp-intro .lp-key"), "before the first round: how to unlock the next letter").toHaveText(next);
+  await expect(page.locator("#lp-cols .lp-intro .lp-key"), "before the first round: how to open the next letter").toHaveText(next);
   await expect(page.locator("#lp-cols .lp-intro .lp-val")).toHaveText("20 presses, under 5% mistakes, 30 wpm");
   await expect(page.locator("#lp-cols .lp-last")).toHaveCount(0);
   await typeRound(page, { done: async () => saved });
@@ -271,7 +271,7 @@ test("the caret is still at rest, spaces have a dot, the settings are fewer", as
   await expect(page.getByText("Space marks")).toHaveCount(0);
   const names = await page.locator("#settings-win .sw-name").allTextContents();
   expect(names, "only what holds for the whole site").toEqual(["Theme", "Caret", "Caret movement", "Falling keycaps",
-    "Speed while typing", "Stop on a mistake", "Sounds", "Break reminder", "Progress data", "Reset progress"]);
+    "Live stats", "Stop on a mistake", "Sounds", "Break reminder", "Progress data", "Reset progress"]);
   await expect(page.locator("#settings-win input[type=text]"), "no search").toHaveCount(0);
   const preview = page.locator("#settings-win .sw-preview");
   await expect(preview, "no preview on Theme").toBeHidden();
@@ -372,7 +372,7 @@ test("the keyboard shows only while Learn opens letters", async ({ page }) => {
   expect(card, "no card around the hand").toEqual({ bg: "rgba(0, 0, 0, 0)", shadow: "none" });
   await page.locator(".kb-gear").click();
   const pop = page.locator("#mini-pop");
-  await expect(pop.locator(".mp-name", { hasText: /^Highlight next key$/ })).toBeVisible();
+  await expect(pop.locator(".mp-name", { hasText: /^Next key$/ })).toBeVisible();
   await expect(page.locator("#keyboard .key.next")).toHaveCount(1);
   await pop.locator('button[data-key="nextKey"][data-value=""]').click();
   await expect(page.locator("#keyboard .key.next")).toHaveCount(0);

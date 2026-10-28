@@ -1,7 +1,7 @@
 // The letters row.
 
 import { t } from "./i18n.js";
-import { el, S, levelWords } from "./state.js";
+import { el, S } from "./state.js";
 import { learning } from "./modes.js";
 
 let popLetter = null;
@@ -95,9 +95,9 @@ function renderFreeLetters() {
   const own = level === c.place.level;
   const passes = own ? c.place.passes : 0, fails = own ? c.place.fails : 0;
   const pips = `<span class="pips" aria-hidden="true">${Array.from({ length: c.passesUp }, (_, i) => `<i${i < passes ? ' class="on"' : ""}></i>`).join("")}</span>`;
-  const rule = t(level < top ? "climb.ruleTip" : "climb.ruleTipTop", { up: c.passesUp, pass: c.passAccuracy, fail: c.failAccuracy, next: level + 1 });
+  const rule = t("climb.ruleTip", { fail: c.failAccuracy });
   const slip = fails > 0 && level > 1;
-  const note = slip ? t("climb.slip", { fail: c.failAccuracy, prev: level - 1 }) : t("climb.words", { n: levelWords(level) });
+  const note = slip ? t("climb.slip", { fail: c.failAccuracy, prev: level - 1 }) : level < top ? t("climb.words", { up: c.passesUp, pass: c.passAccuracy }) : t("climb.top");
   el.lettersCaption.innerHTML =
     `<span class="stat focus" data-tip-text="${rule}"><svg viewBox="0 0 24 24" aria-hidden="true">${STAT_ICONS.level}</svg>` +
     `<span class="lbl">${t("climb.level")}</span><b>${level}</b>${pips}</span>` +
@@ -127,12 +127,11 @@ export function letterNeeds(k) {
   return out;
 }
 function letterTip(c, k) {
-  if (!k?.count) return `${c} · ${t("letter.noData")}`;
-  const parts = [c, t("heat.count", { n: k.count }), t("letter.err", { e: Math.round(k.errorRate * 100) })];
-  if (k.avgMs) parts.push(t("letter.ms", { ms: Math.round(k.avgMs) }));
+  if (!k?.count) return `${c}: ${t("letter.noData")}`;
+  const parts = [t("heat.count", { n: k.count }), t("letter.err", { e: Math.round(k.errorRate * 100) })];
+  if (k.avgMs) parts.push(t("letter.ms", { wpm: Math.round(12000 / k.avgMs) }));
   const needs = letterNeeds(k);
-  parts.push(k.mastered ? t("letter.mastered") : t("letter.needs", { list: needs.map((n) => t(n)).join(", ") }));
-  return parts.join(" · ");
+  return `${c}: ${parts.join(", ")}. ${k.mastered ? t("letter.mastered") : t("letter.needs", { list: needs.map((n) => t(n)).join(", ") })}`;
 }
 
 // ---------- the forecast ----------

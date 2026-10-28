@@ -44,17 +44,17 @@ export function showResult(r) {
   }
   let note = "";
   if (r.climb && !r.climb.place) {
-    row.push(`<span class="r-num mid" tabindex="0" data-tip-text="${t("tip.level")}"><span class="r-lbl">${t("climb.level")}</span><b>${r.climb.level}</b></span>`);
+    row.push(`<span class="r-num mid" tabindex="0" data-tip-text="${t("tip.level", { words: levelWords(r.climb.level) })}"><span class="r-lbl">${t("climb.level")}</span><b>${r.climb.level}</b></span>`);
   } else if (r.climb) {
     const p = r.climb.place, c = S.climb;
     const move = p.moved ? ` <span class="trend ${p.moved > 0 ? "up" : "down"}">${p.moved > 0 ? "↑" : "↓"}</span>` : "";
     const pips = p.moved || !c ? "" : `<span class="pips">${Array.from({ length: c.passesUp }, (_, i) => `<i${i < p.passes ? ' class="on"' : ""}></i>`).join("")}</span>`;
-    row.push(`<span class="r-num mid" tabindex="0" data-tip-text="${t("tip.level")}"><span class="r-lbl">${t("climb.level")}</span><b>${p.level}${move}${pips}</b></span>`);
+    row.push(`<span class="r-num mid" tabindex="0" data-tip-text="${t("tip.level", { words: levelWords(p.level) })}"><span class="r-lbl">${t("climb.level")}</span><b>${p.level}${move}${pips}</b></span>`);
     if (r.climb.weak?.length) row.push(num(r.climb.weak.map((w) => w.pair).join(" "), "", "climb.weak", "mid", "climb.weakTip"));
     if (c) note = `<p class="r-climb ${r.climb.verdict}">${climbNote(r.climb, c)}</p>`;
   }
-  if (r.list) row.push(num(listLabel(r.list), "", "freetype.list", "mid", "freetype.listTip"));
-  if (r.variant) row.push(num(variantLabel(r.variant), "", "ft.text", "mid", "ft.textTip"));
+  if (r.list) row.push(num(listLabel(r.list), "", "freetype.list", "mid"));
+  if (r.variant) row.push(num(variantLabel(r.variant), "", "ft.text", "mid"));
 
   if (r.unsaved) note = `<p class="r-unsaved" role="status"><span>${r.unsaved.text}</span>` +
     (r.unsaved.retry ? ` <button type="button" class="btn r-again">${t("save.again")}</button>` : "") + `</p>`;

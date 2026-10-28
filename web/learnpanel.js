@@ -116,7 +116,7 @@ const num = (x, unit = "", cls = "") => {
 function lastRound() {
   const list = S.lastStats.sessions ?? [];
   const last = list[0];
-  if (!last) return cell("lp-last", t("lp.last"), NONE, t("lp.first"));
+  if (!last) return cell("lp-last", t("lp.last"), NONE);
   const before = list.slice(1, 1 + AVG_ROUNDS);
   const avg = before.length >= AVG_MIN ? {
     wpm: before.reduce((a, x) => a + x.wpm, 0) / before.length,
@@ -169,10 +169,10 @@ function accStreak() {
     if (n >= 2) {
       const dots = Array.from({ length: STREAK_DOTS }, (_, i) => `<i${i < n ? ` class="on"` : ""}></i>`).join("");
       return cell("lp-streak", t("lp.streakLbl"), `<span class="lp-dots" aria-hidden="true">${dots}</span>${num(n)}`,
-        `${t("lp.streak", { n, a: level })}. ${t("lp.streakTip")}`);
+        t("lp.streak", { a: level }));
     }
   }
-  return cell("lp-streak", t("lp.streakLbl"), NONE, t("lp.streakTip"));
+  return cell("lp-streak", t("lp.streakLbl"), NONE, t("lp.streak", { a: STREAK_LEVELS.at(-1) }));
 }
 
 let goalNow = null;
