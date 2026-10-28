@@ -11,7 +11,7 @@ import { showResult } from "./result.js";
 import { renderLetters, markNewLetter, markMastered } from "./letters.js";
 import { renderPanel, roundNews, compareStats, refreshActivity, tickGoal } from "./learnpanel.js";
 import { learning, refreshFreeplay } from "./modes.js";
-import { renderModeBar } from "./modebar.js";
+import { renderModeBar, climbAnswer } from "./modebar.js";
 import { lengthOf } from "./settings.js";
 import { keySound } from "./sound.js";
 import { customPortions, customRoundDone } from "./customtext.js";
@@ -664,6 +664,7 @@ async function finishFree(wpm, accuracy, keys, perSecond) {
     refreshActivity();
     await refreshFreeplay();
     renderLetters();
+    climbAnswer(res.verdict, res.place);
     return { verdict: res.verdict, place: res.place, weak: res.weak };
   };
   const shown = { wpm, accuracy, words: typedWords(), ...roundFacts() };
