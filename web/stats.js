@@ -321,16 +321,17 @@ function drawChart(sessions, target, total, order) {
   const y = (v) => padT + plotH - (v / max) * plotH;
   const slot = plotW / Math.max(sessions.length, 10);
   const bw = Math.max(3, Math.min(28, slot - 2));
+  const shift = plotW - slot * sessions.length;
 
   let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="WPM per exercise">` +
-    `<text class="axis axis-name" x="${padL + plotW / 2}" y="${H - 6}" text-anchor="middle">${t("chart.axisRound")}</text>`;
+    `<text class="axis axis-name" x="${shift > slot ? padL : padL + plotW / 2}" y="${H - 6}" text-anchor="${shift > slot ? "start" : "middle"}">${t("chart.axisRound")}</text>`;
   for (let i = 0; i <= 4; i++) {
     const v = (max / 4) * i, yy = y(v);
     svg += `<line class="grid" x1="${padL}" x2="${W - padR}" y1="${yy}" y2="${yy}"/>`;
     svg += `<text class="axis" x="${padL - 6}" y="${yy + 4}" text-anchor="end">${Math.round(v)}</text>`;
   }
   sessions.forEach((x, i) => {
-    const bx = padL + i * slot + (slot - bw) / 2, top = y(x.wpm), base = y(0);
+    const bx = padL + shift + i * slot + (slot - bw) / 2, top = y(x.wpm), base = y(0);
     const r = Math.min(4, bw / 2, base - top);
     const d = `M${bx},${base} V${top + r} Q${bx},${top} ${bx + r},${top} H${bx + bw - r} Q${bx + bw},${top} ${bx + bw},${top + r} V${base} Z`;
     svg += `<path class="bar${i === sessions.length - 1 ? " last" : ""}" data-i="${i}" style="--i:${i}" d="${d}"/>`;
@@ -339,7 +340,7 @@ function drawChart(sessions, target, total, order) {
     ? order.slice(sessions[i - 1].unlocked, x.unlocked) : []);
   opened.forEach((letters, i) => {
     if (!letters.length) return;
-    const cx = padL + (i + 0.5) * slot;
+    const cx = padL + shift + (i + 0.5) * slot;
     svg += `<text class="opened" x="${cx}" y="${padT + 9}" text-anchor="middle">${letters.join("")}</text>` +
       `<line class="opened" x1="${cx}" x2="${cx}" y1="${padT + 13}" y2="${y(sessions[i].wpm) - 3}"/>`;
   });
@@ -348,15 +349,15 @@ function drawChart(sessions, target, total, order) {
     const pts = sessions.map((_, i) => {
       const part = sessions.slice(Math.max(0, i - 9), i + 1);
       const v = part.reduce((a, x) => a + x.wpm, 0) / part.length;
-      return `${(padL + (i + 0.5) * slot).toFixed(1)},${y(v).toFixed(1)}`;
+      return `${(padL + shift + (i + 0.5) * slot).toFixed(1)},${y(v).toFixed(1)}`;
     });
     svg += `<polyline class="avg" points="${pts.join(" ")}"/>`;
   }
-  svg += `<text class="axis" x="${padL + slot / 2}" y="${H - 6}" text-anchor="middle">#${first}</text>`;
+  svg += `<text class="axis" x="${padL + shift + slot / 2}" y="${H - 6}" text-anchor="middle">#${first}</text>`;
   if (sessions.length > 1)
-    svg += `<text class="axis" x="${padL + (sessions.length - 0.5) * slot}" y="${H - 6}" text-anchor="middle">#${total}</text>`;
+    svg += `<text class="axis" x="${padL + shift + (sessions.length - 0.5) * slot}" y="${H - 6}" text-anchor="middle">#${total}</text>`;
   sessions.forEach((_, i) => {
-    svg += `<rect class="hit" data-i="${i}" x="${padL + i * slot}" y="${padT}" width="${slot}" height="${plotH}"/>`;
+    svg += `<rect class="hit" data-i="${i}" x="${padL + shift + i * slot}" y="${padT}" width="${slot}" height="${plotH}"/>`;
   });
   svg += `</svg>`;
   el.chart.innerHTML = svg;

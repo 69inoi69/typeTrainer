@@ -55,7 +55,6 @@ function climbSteps() {
       `aria-label="${t("climb.level")} ${l}" data-tip-text="${t("climb.levelTip", { words: levelWords(l) })}"><i></i>${kLabel(n)}</button>`;
   }).join("") + `</div>`;
 }
-// the rule is spelled out until the first Climb round; after that it lives in the tooltip
 const SEEN = "tt.climbSeen";
 function climbStatus() {
   const c = S.climb, level = S.climbLevel ?? c.place?.level, top = c.levels.length;
