@@ -453,6 +453,21 @@ test("light theme: a round finishes and the caret stays in its line", async ({ p
   await expectResult(page);
 });
 
+test("stats on a phone: nothing is wider than the screen", async ({ page }) => {
+  await withHistory(page);
+  for (const width of [390, 375]) {
+    await page.setViewportSize({ width, height: 800 });
+    await openApp(page, { "tt.mode.en": "learn" });
+    await page.locator("#tab-stats").click();
+    await expect(page.locator("#chart svg")).toBeVisible();
+    const wide = await page.evaluate(() => [...document.querySelectorAll("#view-stats *")]
+      .filter((n) => n.getBoundingClientRect().right > innerWidth + 0.5)
+      .map((n) => `${n.tagName.toLowerCase()}#${n.id}.${n.getAttribute("class")}`));
+    expect(wide, `elements past the right edge at ${width}px`).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth), "no sideways scroll").toBe(width);
+  }
+});
+
 test("the stats screen opens after a round and shows it", async ({ page }) => {
   await openApp(page, { "tt.mode.en": "climb", "tt.length.climb": "words-10" });
   await typeRound(page);

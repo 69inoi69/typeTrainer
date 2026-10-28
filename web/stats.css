@@ -111,6 +111,12 @@
 .goal-pick { display: flex; align-items: center; gap: 4px; margin-left: auto; }
 .goal-pick .ring-lbl { cursor: help; }
 .goal-pick .ring button { padding: 3px 7px; font-size: var(--fs-min); }
+@media (max-width: 640px) {
+  .goal-pick { flex-wrap: wrap; width: 100%; margin-left: 0; }
+  .goal-pick .ring-lbl { margin-left: 0; }
+  .goal-pick .ring { width: 100%; }
+  .goal-pick .ring button { flex: 1 1 auto; padding-inline: 0; }
+}
 .panel h2 { font-size: .9rem; font-weight: 500; letter-spacing: -.01em; margin: 0; color: var(--text); }
 .empty { color: var(--label); padding: 28px 0; text-align: center; }
 
