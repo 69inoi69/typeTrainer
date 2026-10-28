@@ -61,6 +61,7 @@ test("Learn: a round can be typed to the end and is saved", async ({ page }) => 
   await expect(page.locator("#lp-cols .lp-intro")).toHaveCount(0);
   await expect(page.locator("#lp-cols .lp-last [data-n]").first()).toHaveAttribute("data-n", /^[1-9]/);
   await expect(page.locator("#lp-cols .lp-goal"), "the daily goal after the first round").toBeVisible();
+  await expect(page.locator("#lp-cols .lp-fc .lp-none"), "no bare dash before a forecast").toHaveText("estimating");
 });
 
 test("Learn: the panel draws the speed line, the next letter and the streak dots, with equal gaps", async ({ page }) => {
