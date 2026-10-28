@@ -33,19 +33,8 @@ async function expectResult(page) {
   await expect(page.locator("#result")).toContainText(/\d/);
 }
 
-test("Learn: a round can be typed to the end and is saved", async ({ page }) => {
-  let saved = false;
-  page.on("response", (r) => {
-    if (r.request().method() === "POST" && new URL(r.url()).pathname === "/api/v1/results" && r.ok()) saved = true;
-  });
-  await openApp(page, { "tt.mode.en": "learn", "tt.length.learn": "words-15" });
-  await expect(page.locator("body")).toHaveAttribute("data-mode", "learn");
-  await typeRound(page, { done: async () => saved });
-  await expect(page.locator("#round-line")).toHaveAttribute("data-tip-text", /^0\/15 /);
-  await expect(page.locator("#lp-cols .lp-last [data-n]").first()).toHaveAttribute("data-n", /^[1-9]/);
-});
-
-test("Learn: the panel draws the speed line, the next letter and the streak dots, with equal gaps", async ({ page }) => {
+// Learn's /stats as if 12 rounds were typed: speeds newest first, the last 4 at 97%.
+async function withHistory(page) {
   const wpms = [52, 51, 48, 50, 49, 47, 48, 45, 46, 44, 45, 43];
   await page.route("**/api/v1/stats?*", async (route) => {
     const res = await route.fetch(), body = await res.json();
@@ -53,6 +42,27 @@ test("Learn: the panel draws the speed line, the next letter and the streak dots
     body.forecast = { known: true, rounds: 4, letter: "e" };
     return route.fulfill({ response: res, json: body });
   });
+}
+
+test("Learn: a round can be typed to the end and is saved", async ({ page }) => {
+  let saved = false;
+  page.on("response", (r) => {
+    if (r.request().method() === "POST" && new URL(r.url()).pathname === "/api/v1/results" && r.ok()) saved = true;
+  });
+  await openApp(page, { "tt.mode.en": "learn", "tt.length.learn": "words-15" });
+  await expect(page.locator("body")).toHaveAttribute("data-mode", "learn");
+  const next = (await page.locator("#letters .locked.next").first().textContent()).trim();
+  await expect(page.locator("#lp-cols .lp-intro .lp-key"), "before the first round: how to unlock the next letter").toHaveText(next);
+  await expect(page.locator("#lp-cols .lp-intro .lp-val")).toHaveText("20 presses, under 5% mistakes, 30 wpm");
+  await expect(page.locator("#lp-cols .lp-last")).toHaveCount(0);
+  await typeRound(page, { done: async () => saved });
+  await expect(page.locator("#round-line")).toHaveAttribute("data-tip-text", /^0\/15 /);
+  await expect(page.locator("#lp-cols .lp-intro")).toHaveCount(0);
+  await expect(page.locator("#lp-cols .lp-last [data-n]").first()).toHaveAttribute("data-n", /^[1-9]/);
+});
+
+test("Learn: the panel draws the speed line, the next letter and the streak dots, with equal gaps", async ({ page }) => {
+  await withHistory(page);
   await openApp(page, { "tt.mode.en": "learn" });
   const spark = page.locator("#lp-cols .lp-last .lp-spark");
   await expect(spark.locator("polyline")).toHaveAttribute("points", /^(\S+ ){9}\S+$/);
@@ -68,6 +78,7 @@ test("Learn: the panel draws the speed line, the next letter and the streak dots
 });
 
 test("Learn: typing dims the line above the text and moves nothing", async ({ page }) => {
+  await withHistory(page);
   await openApp(page, { "tt.mode.en": "learn", "tt.length.learn": "words-15", "tt.live": "1" });
   const last = page.locator("#lp-cols .lp-last"), streak = page.locator("#lp-cols .lp-streak");
   const goal = page.locator("#lp-cols .lp-goal"), round = page.locator("#round-switch");

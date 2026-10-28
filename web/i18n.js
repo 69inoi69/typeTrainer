@@ -196,6 +196,7 @@ const I18N = {
     "tip.nextNeeds": "Master {list} to open {l}",
     "lp.last": "Last round",
     "lp.first": "Finish your first round to see your speed and accuracy",
+    "lp.introLbl": "To unlock {l}, master each open letter", "lp.intro": "{min} presses, under {err}% mistakes, {wpm} wpm",
     "lp.faster": "You're {d} wpm faster than your average over the previous {n} rounds ({avg} wpm)",
     "lp.slower": "You're {d} wpm slower than your average over the previous {n} rounds ({avg} wpm)",
     "lp.accUp": "You're {d}% more accurate than your average over the previous {n} rounds ({avg}%)",
