@@ -404,6 +404,20 @@ test("the text stands at the same place for the same keyboard state", async ({ p
   }
 });
 
+test("Climb: the live numbers show from the first key, not as zeros at rest", async ({ page }) => {
+  await openApp(page, { "tt.mode.en": "climb", "tt.length.climb": "words-10", "tt.live": "1" });
+  const wpm = page.locator(".live > .metric.num").first();
+  await expect(wpm, "no zeros before the round").toHaveCSS("opacity", "0");
+  await page.keyboard.type(await nextChar(page));
+  await expect(wpm, "the numbers after the first key").toHaveCSS("opacity", "1");
+  await typeRound(page);
+  await expectResult(page);
+  await page.keyboard.press("Tab");
+  await waitForText(page);
+  await expect(wpm, "the last round's numbers stay until the next one starts").toHaveCSS("opacity", "1");
+  await expect(wpm.locator(".live-n")).not.toHaveAttribute("data-v", "0");
+});
+
 test("Climb: the result opens in place and the round switches do not move", async ({ page }) => {
   await openApp(page, { "tt.mode.en": "climb", "tt.length.climb": "words-10" });
   const bar = page.locator("#mode-bar");
