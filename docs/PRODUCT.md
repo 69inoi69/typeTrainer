@@ -44,6 +44,11 @@ are thesis items and stay.
   What a round is belongs to each mode and sits in the round bar above the
   text (`web/modebar.js`). The settings window (`web/settings.js`) holds
   what applies to the whole app.
+- **The site feels cozy and answers with motion, not sentences.** Every
+  change of state gets a short, pleasant answer from the interface (a dot
+  fills, a step lights up, a letter opens). A rule that does not change is
+  spelled out once, then lives in a tooltip. Text only where nothing else
+  can say it. The motion is cheap (transform and opacity, measured).
 - **The letter model is Learn's core.** Do not change the formulas in
   `internal/engine/model.go` or their values in `config.go` on your own: a
   silent change moves every user's progress. Explain the change, show it

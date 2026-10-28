@@ -1,7 +1,7 @@
 // The result screen.
 
 import { t } from "./i18n.js";
-import { $, el, S, isTouch, reducedMotion, levelWords, boxState } from "./state.js";
+import { $, el, isTouch, reducedMotion, boxState } from "./state.js";
 import { FEEL } from "./feel.js";
 import { FX } from "./fx.js";
 import { showTip } from "./tools.js";
@@ -43,11 +43,7 @@ export function showResult(r) {
     if (c.missed) facts.push(fact(`<b>${c.missed}</b> ${t("result.missed")}`, " bad", "result.missedTip"));
   }
   let note = "";
-  if (r.climb?.place) {
-    const c = S.climb;
-    if (r.climb.weak?.length) facts.push(fact(`${t("climb.weak")} <b>${r.climb.weak.map((w) => w.pair).join(" ")}</b>`, "", "climb.weakTip"));
-    if (c) note = `<p class="r-climb ${r.climb.verdict}">${climbNote(r.climb, c)}</p>`;
-  }
+  if (r.climb?.weak?.length) facts.push(fact(`${t("climb.weak")} <b>${r.climb.weak.map((w) => w.pair).join(" ")}</b>`, "", "climb.weakTip"));
 
   if (r.unsaved) note = `<p class="r-unsaved" role="status"><span>${r.unsaved.text}</span>` +
     (r.unsaved.retry ? ` <button type="button" class="btn r-again">${t("save.again")}</button>` : "") + `</p>`;
@@ -67,31 +63,15 @@ function saveAgain(r) {
     el.input.focus({ preventScroll: true });
     btn.disabled = true;
     try {
-      const climb = await r.unsaved.retry();
-      line.className = "r-climb";
+      await r.unsaved.retry();
+      line.className = "r-saved";
       line.textContent = t("save.done");
-      if (r.climb && S.climb) {
-        const cl = { ...r.climb, ...climb };
-        line.className = `r-climb ${cl.verdict}`;
-        line.innerHTML = climbNote(cl, S.climb);
-      }
     } catch (err) {
       line.firstChild.textContent = err.message;
       btn.disabled = false;
       if (!err.retryable) btn.remove();
     }
   });
-}
-
-function climbNote(cl, c) {
-  const p = cl.place, top = c.levels.length;
-  const v = { level: p.level, words: levelWords(p.level), up: c.passesUp, pass: c.passAccuracy, fail: c.failAccuracy,
-    next: cl.level + 1, prev: cl.level - 1, k: p.passes, left: c.passesUp - p.passes };
-  if (p.moved > 0) return t("climb.up", v);
-  if (p.moved < 0) return t("climb.down", v);
-  if (cl.verdict === "pass") return t(cl.level < top ? "climb.pass" : "climb.passTop", v);
-  if (cl.verdict === "hold") return t("climb.hold", v);
-  return t(cl.level > 1 && p.fails > 0 ? "climb.fail" : "climb.failCount", v);
 }
 
 const SPEED_BANDS = 5;

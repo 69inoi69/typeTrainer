@@ -1,7 +1,7 @@
 // The round bar above the text.
 
 import { t } from "./i18n.js";
-import { $, S, listLabel, levelWords, listless } from "./state.js";
+import { $, S, listLabel, levelWords, listless, store } from "./state.js";
 import { LENGTHS, LEARN_LENGTHS, lengthOf, lengthLabel, setSetting } from "./settings.js";
 import { hasCustomText } from "./customtext.js";
 import { ring, ringBtn } from "./minipop.js";
@@ -55,17 +55,36 @@ function climbSteps() {
       `aria-label="${t("climb.level")} ${l}" data-tip-text="${t("climb.levelTip", { words: levelWords(l) })}"><i></i>${kLabel(n)}</button>`;
   }).join("") + `</div>`;
 }
+// the rule is spelled out until the first Climb round; after that it lives in the tooltip
+const SEEN = "tt.climbSeen";
 function climbStatus() {
   const c = S.climb, level = S.climbLevel ?? c.place?.level, top = c.levels.length;
   if (!c.place || level == null) return "";
   const own = level === c.place.level;
   const passes = own ? c.place.passes : 0, fails = own ? c.place.fails : 0;
-  const pips = `<span class="pips" aria-hidden="true">${Array.from({ length: c.passesUp }, (_, i) => `<i${i < passes ? ' class="on"' : ""}></i>`).join("")}</span>`;
   const slip = fails > 0 && level > 1;
-  const note = slip ? t("climb.slip", { fail: c.failAccuracy, prev: level - 1 }) : level < top ? t("climb.words", { up: c.passesUp, pass: c.passAccuracy }) : t("climb.top");
-  return `<span class="climb-status" data-tip-text="${t("climb.ruleTip", { fail: c.failAccuracy })}">` +
-    `<span>${t("climb.level")} <b>${level}</b></span><span class="climb-words">${t("climb.levelTip", { words: levelWords(level) })}</span>` +
-    `${pips}<span class="climb-note${slip ? " slip" : ""}">${note}</span></span>`;
+  const pips = `<span class="pips" aria-hidden="true">${Array.from({ length: c.passesUp }, (_, i) => `<i${i < passes ? ' class="on"' : ""}></i>`).join("")}` +
+    (slip ? `<i class="slip"></i>` : "") + `</span>`;
+  const words = t("climb.levelTip", { words: levelWords(level) });
+  const rule = level < top ? t("climb.words", { up: c.passesUp, pass: c.passAccuracy }) : t("climb.top");
+  const tip = [words, rule, slip ? t("climb.slip", { fail: c.failAccuracy, prev: level - 1 }) : t("climb.ruleTip", { fail: c.failAccuracy })].join(". ");
+  const intro = store.get(SEEN) ? "" : `<span class="climb-words">${words}</span><span class="climb-note">${rule}</span>`;
+  return `<span class="climb-status" tabindex="0" data-tip-text="${tip}">` +
+    `<span>${t("climb.level")} <b>${level}</b></span>${pips}${intro}</span>`;
+}
+
+// ---------- Climb: the bar answers a round with motion ----------
+export function climbAnswer(verdict, place) {
+  store.set(SEEN, "1");
+  renderModeBar();
+  const at = (sel) => bar.querySelector(sel);
+  let node, cls;
+  if (place.moved > 0) [node, cls] = [at(".step.on"), "up"];
+  else if (place.moved < 0) [node, cls] = [at(".step.on"), "down"];
+  else if (verdict === "pass") [node, cls] = [at(`.pips > i:nth-child(${place.passes})`), "pop"];
+  else if (verdict === "hold") [node, cls] = [at(".pips"), "nope"];
+  else [node, cls] = [at(".pips > i.slip") ?? at(".pips"), at(".pips > i.slip") ? "pop" : "nope"];
+  if (node) node.classList.add(cls);
 }
 
 let pickListener = () => {};

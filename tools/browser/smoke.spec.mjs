@@ -197,7 +197,8 @@ test("Climb: an unsaved round still shows its result and can be saved again", as
   await page.unroute("**/api/v1/freeplay/results*");
   await line.getByRole("button", { name: "Save again" }).click();
   await expect(line).toHaveCount(0);
-  await expect(page.locator("#result .r-climb")).toBeVisible();
+  await expect(page.locator("#result .r-saved")).toBeVisible();
+  await expect(page.locator("#mode-bar .pips > i.on"), "the saved round fills its dot").toHaveCount(1);
   expectedOnly(info, "/freeplay/results");
 });
 
@@ -210,7 +211,7 @@ test("Climb: a round whose answer was lost is sent again and kept once", async (
   });
   await typeRound(page);
   await expectResult(page);
-  await expect(page.locator("#result .r-climb")).toBeVisible();
+  await expect(page.locator("#mode-bar .pips > i.on")).toHaveCount(1);
   expect(tries).toBe(2);
   const count = await page.evaluate(async () =>
     (await (await fetch("/api/v1/freeplay/stats?lang=en&length=words-10")).json()).sessionCount);
@@ -716,11 +717,14 @@ test("Climb: the levels stand as steps, and the level shows once", async ({ page
   await steps.nth(2).click();
   await expect(page.locator("#mode-bar .step.on")).toHaveText("1k");
   await expect(page.locator("#mode-bar .climb-status b")).toHaveText("3");
+  await expect(page.locator("#mode-bar .climb-note")).toBeVisible();
   await waitForText(page);
   await typeRound(page);
   await expectResult(page);
   await expect(page.locator("#result .r-num")).toHaveCount(2);
-  await expect(page.locator("#result .r-climb")).toHaveCount(1);
+  await expect(page.locator("#mode-bar .pips > i.pop"), "a clean round fills a dot with a pop").toHaveCount(1);
+  await expect(page.locator("#mode-bar .climb-note"), "the rule is spelled out only before the first round").toHaveCount(0);
+  await expect(page.locator("#mode-bar .climb-status")).toHaveAttribute("data-tip-text", /rounds at \d+%\+ to level up/);
   await expect(page.locator("#result .r-fact.bad"), "zero counters stay out").toHaveCount(0);
   await expect(page.locator("#result .r-wordlist .r-w").first()).toBeVisible();
   await expect(page.locator("#result .r-dot").first()).toHaveAttribute("data-tip-text", /^\d+ wpm$/);
