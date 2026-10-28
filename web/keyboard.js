@@ -282,9 +282,12 @@ function fitKeyboard() {
     + (centred ? -2 * parseFloat(getComputedStyle(lettersBar).marginTop) : parseFloat(getComputedStyle(el.viewType).marginTop))
     + document.querySelector(".bottom").offsetHeight + 12
     + parseFloat(getComputedStyle(document.body).paddingBottom);
-  let fit = Math.floor((innerHeight - rest - 4) / KB_PER_U);
+  const room = innerHeight - rest - 4;
+  let fit = Math.floor(room / KB_PER_U), bare = Math.floor(room / (KB_PER_U - FEEL.handRoom));
   if (!baseU || devicePixelRatio === baseDpr) { baseU = fit; baseDpr = devicePixelRatio; }
-  else fit = Math.min(fit, baseU);
-  document.body.classList.toggle("kb-nofit", fit < KB_MIN_U);
-  root.setProperty("--u-fit", Math.max(KB_MIN_U, fit) + "px");
+  else { fit = Math.min(fit, baseU); bare = Math.min(bare, baseU); }
+  const noHand = fit < KB_MIN_U && bare >= KB_MIN_U;
+  document.body.classList.toggle("kb-nohand", noHand);
+  document.body.classList.toggle("kb-nofit", bare < KB_MIN_U);
+  root.setProperty("--u-fit", Math.max(KB_MIN_U, noHand ? bare : fit) + "px");
 }

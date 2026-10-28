@@ -734,3 +734,14 @@ test("Climb: the levels stand as steps, and the level shows once", async ({ page
   await expect(page.locator("#result .r-wordlist .r-w").first()).toBeVisible();
   await expect(page.locator("#result .r-dot").first()).toHaveAttribute("data-tip-text", /^\d+ wpm$/);
 });
+
+test("Learn: a keyboard that can't fit leaves one line in its place", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 560 });
+  await openApp(page, { "tt.mode.en": "learn" });
+  await expect(page.locator("body")).toHaveClass(/\bkb-nofit\b/);
+  await expect(page.locator("#keyboard")).toBeHidden();
+  await expect(page.locator("#kb-away")).toHaveText("Zoom out to see the keyboard");
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect(page.locator("#keyboard")).toBeVisible();
+  await expect(page.locator("#kb-away")).toBeHidden();
+});
