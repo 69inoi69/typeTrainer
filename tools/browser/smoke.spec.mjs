@@ -705,6 +705,8 @@ test("the stats screen opens after a round and shows it", async ({ page }) => {
   await expect(page.locator("#view-stats")).toBeVisible();
   await expect(page.locator("#view-type")).toBeHidden();
   await expect(page.locator("#tiles > *").first()).toBeVisible();
+  const [bar, svg] = await Promise.all([page.locator("#chart .bar.last").boundingBox(), page.locator("#chart svg").boundingBox()]);
+  expect(svg.x + svg.width - (bar.x + bar.width), "with one round the bar stands at the right edge").toBeLessThan(svg.width * 0.1);
 });
 
 test("Climb: the levels stand as steps, and the level shows once", async ({ page }) => {
