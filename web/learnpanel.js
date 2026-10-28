@@ -76,7 +76,7 @@ export function renderPanel() {
   if (!show) { drawn = drawnNews = ""; return; }
   if (news && news.lang !== S.lang) news = null;
   const first = !(S.lastStats.sessions ?? []).length && S.exercise.locked.length > 0;
-  const html = [...(first ? [intro()] : [lastRound(), forecast(), accStreak()]), dailyGoal()].join("");
+  const html = (first ? [intro()] : [lastRound(), forecast(), accStreak(), dailyGoal()]).join("");
   if (html !== drawn) {
     drawn = html;
     redraw(cols, ".lp-val", html);

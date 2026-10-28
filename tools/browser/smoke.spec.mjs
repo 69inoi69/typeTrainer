@@ -55,10 +55,12 @@ test("Learn: a round can be typed to the end and is saved", async ({ page }) => 
   await expect(page.locator("#lp-cols .lp-intro .lp-key"), "before the first round: how to open the next letter").toHaveText(next);
   await expect(page.locator("#lp-cols .lp-intro .lp-val")).toHaveText("20 presses, under 5% mistakes, 30 wpm");
   await expect(page.locator("#lp-cols .lp-last")).toHaveCount(0);
+  await expect(page.locator("#lp-cols .lp-goal"), "the daily goal waits for the first round").toHaveCount(0);
   await typeRound(page, { done: async () => saved });
   await expect(page.locator("#round-line")).toHaveAttribute("data-tip-text", /^0\/15 /);
   await expect(page.locator("#lp-cols .lp-intro")).toHaveCount(0);
   await expect(page.locator("#lp-cols .lp-last [data-n]").first()).toHaveAttribute("data-n", /^[1-9]/);
+  await expect(page.locator("#lp-cols .lp-goal"), "the daily goal after the first round").toBeVisible();
 });
 
 test("Learn: the panel draws the speed line, the next letter and the streak dots, with equal gaps", async ({ page }) => {
@@ -286,6 +288,7 @@ test("the caret is still at rest, spaces have a dot, the settings are fewer", as
 });
 
 test("the settings of one screen live on that screen", async ({ page }) => {
+  await withHistory(page);
   await openApp(page, { "tt.mode.en": "freetype" });
   const streak = page.locator('#mode-bar button[data-streak]');
   await expect(streak).toHaveAttribute("aria-pressed", "false");
