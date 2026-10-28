@@ -94,6 +94,29 @@ func TestApp_Accounts(t *testing.T) {
 	}
 }
 
+func TestApp_SignUpKeepsGuestProgress(t *testing.T) {
+	h, _, _ := newApp()
+	round := `{"samples":[{"char":"ж","errors":0,"ms":300}],"wpm":30,"accuracy":100}`
+	if code, _, _ := callAs(t, h, "", "POST", "/api/v1/results?lang=ru", round); code != 200 {
+		t.Fatalf("guest's round: %d", code)
+	}
+	_, _, ann := callAs(t, h, "", "POST", "/api/v1/auth/register", `{"name":"ann","password":"secret-ann"}`)
+	_, mine, _ := callAs(t, h, ann, "GET", "/api/v1/stats?lang=ru", "")
+	_, guest, _ := callAs(t, h, "", "GET", "/api/v1/stats?lang=ru", "")
+	if mine["sessionCount"].(float64) != 1 || guest["sessionCount"].(float64) != 0 {
+		t.Fatalf("after sign up: ann=%v guest=%v", mine["sessionCount"], guest["sessionCount"])
+	}
+
+	callAs(t, h, "", "POST", "/api/v1/results?lang=ru", round)
+	callAs(t, h, "", "POST", "/api/v1/results?lang=ru", round)
+	_, _, again := callAs(t, h, "", "POST", "/api/v1/auth/login", `{"name":"ann","password":"secret-ann"}`)
+	_, mine, _ = callAs(t, h, again, "GET", "/api/v1/stats?lang=ru", "")
+	_, guest, _ = callAs(t, h, "", "GET", "/api/v1/stats?lang=ru", "")
+	if mine["sessionCount"].(float64) != 1 || guest["sessionCount"].(float64) != 2 {
+		t.Fatalf("log in must not mix the two: ann=%v guest=%v", mine["sessionCount"], guest["sessionCount"])
+	}
+}
+
 func cookieOf(rec *httptest.ResponseRecorder, name string) *http.Cookie {
 	for _, c := range rec.Result().Cookies() {
 		if c.Name == name {

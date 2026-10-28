@@ -392,17 +392,33 @@ func (p *PostgresStore) Reset(user, lang string) error {
 
 func userID(n int64) string { return "u" + strconv.FormatInt(n, 10) }
 
-func (p *PostgresStore) CreateUser(name, passwordHash string, now time.Time) (User, error) {
-	var n int64
-	err := p.db.QueryRow(`INSERT INTO users (name, password_hash, created_at) VALUES ($1, $2, $3)
-		ON CONFLICT (name) DO NOTHING RETURNING id`, name, passwordHash, now).Scan(&n)
-	if errors.Is(err, sql.ErrNoRows) {
-		return User{}, ErrNameTaken
-	}
+func (p *PostgresStore) CreateUser(name, passwordHash string, now time.Time, from string) (User, error) {
+	var u User
+	err := p.inTx(func(tx *sql.Tx) error {
+		var n int64
+		err := tx.QueryRow(`INSERT INTO users (name, password_hash, created_at) VALUES ($1, $2, $3)
+			ON CONFLICT (name) DO NOTHING RETURNING id`, name, passwordHash, now).Scan(&n)
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrNameTaken
+		}
+		if err != nil {
+			return err
+		}
+		u = User{ID: userID(n), Name: name, PasswordHash: passwordHash, CreatedAt: now}
+		if from == "" {
+			return nil
+		}
+		for _, table := range []string{"progress", "key_stats", "sessions"} {
+			if _, err := tx.Exec(`UPDATE `+table+` SET user_id = $1 WHERE user_id = $2`, u.ID, from); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 	if err != nil {
 		return User{}, err
 	}
-	return User{ID: userID(n), Name: name, PasswordHash: passwordHash, CreatedAt: now}, nil
+	return u, nil
 }
 
 func (p *PostgresStore) user(where string, arg any) (User, error) {

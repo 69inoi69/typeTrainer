@@ -162,7 +162,7 @@ type Store interface {
 
 	Reset(user, lang string) error
 
-	CreateUser(name, passwordHash string, now time.Time) (User, error)
+	CreateUser(name, passwordHash string, now time.Time, from string) (User, error)
 	UserByName(name string) (User, error)
 	UserByID(id string) (User, error)
 

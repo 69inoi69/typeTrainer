@@ -320,7 +320,7 @@ func (m *MemoryStore) Reset(user, lang string) error {
 	return nil
 }
 
-func (m *MemoryStore) CreateUser(name, passwordHash string, now time.Time) (User, error) {
+func (m *MemoryStore) CreateUser(name, passwordHash string, now time.Time, from string) (User, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if _, ok := m.users[name]; ok {
@@ -329,6 +329,14 @@ func (m *MemoryStore) CreateUser(name, passwordHash string, now time.Time) (User
 	u := User{ID: "u" + strconv.Itoa(len(m.users)+1), Name: name, PasswordHash: passwordHash, CreatedAt: now}
 	m.users[name] = u
 	m.names[u.ID] = name
+	if from != "" {
+		for k, d := range m.langs {
+			if k.user == from {
+				delete(m.langs, k)
+				m.langs[key{u.ID, k.lang}] = d
+			}
+		}
+	}
 	return u, nil
 }
 

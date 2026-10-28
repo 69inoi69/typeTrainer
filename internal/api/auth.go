@@ -131,7 +131,15 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
-	u, err := s.store.CreateUser(c.Name, hash, time.Now())
+	from, err := s.userOf(r)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	if from == storage.LocalUser || !storage.IsGuest(from) {
+		from = ""
+	}
+	u, err := s.store.CreateUser(c.Name, hash, time.Now(), from)
 	if errors.Is(err, storage.ErrNameTaken) {
 		writeJSON(w, http.StatusConflict, map[string]string{"error": "name taken"})
 		return
