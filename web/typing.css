@@ -232,7 +232,7 @@ body.typing-now:not(.live-off) .lp-cols > :is(.lp-last, .lp-intro) { opacity: 0;
     content: ""; position: absolute; z-index: -1; pointer-events: none; background: var(--panel);
   }
   #view-type > .letters::after { inset: calc(-1 * var(--card-pad)) -24px 0; border-radius: var(--r-lg) var(--r-lg) 0 0; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04); }
-  body:not([data-mode="learn"]) #view-type > .letters::after { top: calc(100% - 28px - var(--card-pad)); }
+  body[data-mode="freetype"] #view-type > .letters::after { top: calc(100% - 28px - var(--card-pad)); }
   #view-type > .text-box::after { inset: -20px -24px calc(-1 * var(--card-pad)); border-radius: 0 0 var(--r-lg) var(--r-lg); box-shadow: 0 1px 2px rgba(0, 0, 0, .35); }
 }
 .text-box.blurred .text { filter: blur(3px); opacity: .5; }
