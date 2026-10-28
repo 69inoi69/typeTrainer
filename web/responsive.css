@@ -43,4 +43,3 @@
   .note-bar { animation-duration: var(--ms, 3500ms) !important; }
 }
 
-.confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 30; }
