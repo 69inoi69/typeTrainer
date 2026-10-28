@@ -701,3 +701,23 @@ test("the stats screen opens after a round and shows it", async ({ page }) => {
   await expect(page.locator("#view-type")).toBeHidden();
   await expect(page.locator("#tiles > *").first()).toBeVisible();
 });
+
+test("Climb: the levels stand as steps, and the level shows once", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await openApp(page, { "tt.mode.en": "climb", "tt.length.climb": "words-10" });
+  const steps = page.locator("#mode-bar .step");
+  await expect(steps).toHaveCount(10);
+  await expect(steps.first()).toHaveText("200");
+  await expect(steps.last()).toHaveText("25k");
+  await expect(page.locator("#mode-bar .step.on")).toHaveText("200");
+  const heights = await steps.evaluateAll((s) => s.map((b) => b.querySelector("i").getBoundingClientRect().height));
+  expect(heights.every((h, i) => !i || h > heights[i - 1]), "each step is taller than the one before").toBe(true);
+  await steps.nth(2).click();
+  await expect(page.locator("#mode-bar .step.on")).toHaveText("1k");
+  await expect(page.locator("#mode-bar .climb-status b")).toHaveText("3");
+  await waitForText(page);
+  await typeRound(page);
+  await expectResult(page);
+  await expect(page.locator("#result .r-lbl", { hasText: "Level" })).toHaveCount(0);
+  await expect(page.locator("#result .r-climb")).toHaveCount(1);
+});

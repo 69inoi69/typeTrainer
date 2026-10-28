@@ -21,10 +21,10 @@ export function renderModeBar() {
     return;
   }
   learnBar.innerHTML = "";
+  let steps = "";
   if (S.mode === "climb" && S.climb?.levels) {
-    const at = S.climbLevel ?? S.climb.place?.level;
-    parts.push(ring(t("climb.level"), [`<span class="ring-lbl" aria-hidden="true">${t("climb.level")}</span>`,
-      ...S.climb.levels.map((_, i) => ringBtn(`data-level="${i + 1}"`, String(i + 1), i + 1 === at, t("climb.levelTip", { words: levelWords(i + 1) })))]));
+    steps = climbSteps();
+    parts.push(climbStatus());
   }
   if (S.mode === "freetype") {
     const v = S.freetypeVariant;
@@ -42,7 +42,30 @@ export function renderModeBar() {
   end.push(ring(t("bar.length"), LENGTHS.filter((id) => lengthOf(id).kind === kind).map((id) =>
     ringBtn(`data-length="${id}"`, String(lengthOf(id).n), id === cur, lengthLabel(id)))));
   if (S.mode === "freetype") end.push(ring(t("settings.streak"), [ringBtn(`data-streak="1"`, t("settings.streak"), S.settings.streak, t("settings.streakDesc"))]));
-  bar.innerHTML = `<span class="bar-side">${parts.join("")}</span><span class="bar-side">${end.join("")}</span>`;
+  bar.innerHTML = steps + `<span class="bar-side">${parts.join("")}</span><span class="bar-side">${end.join("")}</span>`;
+}
+
+// ---------- Climb: the levels as steps, and where you stand ----------
+const kLabel = (n) => n >= 1000 ? `${Math.round(n / 500) / 2}k` : String(n);
+function climbSteps() {
+  const c = S.climb, at = S.climbLevel ?? c.place?.level, reached = c.place?.level ?? 0;
+  return `<div class="steps" role="group" aria-label="${t("climb.level")}">` + c.levels.map((n, i) => {
+    const l = i + 1, cls = l === at ? " on" : l <= reached ? " past" : "";
+    return `<button type="button" class="step${cls}" data-level="${l}" aria-pressed="${l === at}" style="--i:${i}" ` +
+      `aria-label="${t("climb.level")} ${l}" data-tip-text="${t("climb.levelTip", { words: levelWords(l) })}"><i></i>${kLabel(n)}</button>`;
+  }).join("") + `</div>`;
+}
+function climbStatus() {
+  const c = S.climb, level = S.climbLevel ?? c.place?.level, top = c.levels.length;
+  if (!c.place || level == null) return "";
+  const own = level === c.place.level;
+  const passes = own ? c.place.passes : 0, fails = own ? c.place.fails : 0;
+  const pips = `<span class="pips" aria-hidden="true">${Array.from({ length: c.passesUp }, (_, i) => `<i${i < passes ? ' class="on"' : ""}></i>`).join("")}</span>`;
+  const slip = fails > 0 && level > 1;
+  const note = slip ? t("climb.slip", { fail: c.failAccuracy, prev: level - 1 }) : level < top ? t("climb.words", { up: c.passesUp, pass: c.passAccuracy }) : t("climb.top");
+  return `<span class="climb-status" data-tip-text="${t("climb.ruleTip", { fail: c.failAccuracy })}">` +
+    `<span>${t("climb.level")} <b>${level}</b></span><span class="climb-words">${t("climb.levelTip", { words: levelWords(level) })}</span>` +
+    `${pips}<span class="climb-note${slip ? " slip" : ""}">${note}</span></span>`;
 }
 
 let pickListener = () => {};

@@ -790,7 +790,7 @@ level 1. The passes need not be in a row (a hold between them does not
 matter), but a fail between them starts them again: three clean rounds
 with no bad one between. Nothing is stored for the counts: every round
 keeps its level, and a run at another level (the level moved, or the
-typist picked one in the round bar) starts them again. A new typist
+typist picked one on the steps above the round bar) starts them again. A new typist
 starts at `LevelStart` = 1 and can pick any level before any round.
 
 **Old history** (rounds from before 2026-10-20, level 0..1) gets the new

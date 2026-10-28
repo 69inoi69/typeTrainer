@@ -76,7 +76,29 @@
 .learn-panel { display: flex; align-items: center; height: var(--lp-room); margin-bottom: 12px; font-size: 1rem; transition: opacity .4s var(--ease); }
 .learn-panel[hidden] { visibility: hidden; }
 #view-type > .letters { position: relative; }
-body:not([data-mode="learn"]) #view-type > .letters > .mode-bar { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; }
+body[data-mode="freetype"] #view-type > .letters > .mode-bar { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; }
+body:not([data-mode="learn"]) #view-type > .letters > :is(.learn-panel, .letter-row) { display: none; }
+/* Climb's steps and Freetype's empty room are as tall, so the text stands at one place in both */
+body:not([data-mode="learn"]) #view-type > .letters { height: calc(var(--steps-h) + 50px); }
+
+/* ---------- Climb: the levels as steps (modebar.js) ---------- */
+:root { --steps-h: 96px; }
+.steps { flex: 0 0 100%; display: flex; gap: 6px; align-items: flex-end; height: var(--steps-h); margin-bottom: 8px; }
+.step {
+  flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px;
+  padding: 0; border: 0; background: none; color: var(--sub); font: inherit; font-size: var(--fs-min); cursor: pointer;
+}
+.step i { width: 100%; height: calc(14px + var(--i) * 6px); border-radius: 6px 6px 2px 2px; background: var(--panel-2); box-shadow: var(--ring); transition: background-color .15s; }
+.step:hover i { background: color-mix(in srgb, var(--text) 10%, var(--panel-2)); }
+.step.past { color: var(--text); }
+.step.past i { background: color-mix(in srgb, var(--accent) 35%, var(--panel-2)); }
+.step.on { color: var(--accent-text); }
+.step.on i { background: var(--accent-fill); box-shadow: var(--accent-glow); }
+.climb-status { display: flex; align-items: center; gap: 10px; min-width: 0; color: var(--sub); font-size: var(--fs-min); white-space: nowrap; cursor: default; }
+.climb-status b { color: var(--text); font-weight: 500; }
+.climb-status .pips { margin-left: 0; }
+.climb-words, .climb-note { overflow: hidden; text-overflow: ellipsis; }
+.climb-note.slip { color: var(--error); }
 body.typing-now .learn-panel { opacity: 0; pointer-events: none; }
 :root { --lp-room: 1.9rem; --text-l: 32px; --text-r: 32px; }
 .lp-cols { display: contents; }
@@ -135,7 +157,6 @@ body[data-mode="learn"] .live { --lp-gap: 28px; display: grid; grid-template-col
 body[data-mode="learn"] :is(.live > *, .lp-cols > .lp-cell) { grid-row: 1; }
 body[data-mode="learn"] .lp-cols > .lp-cell { min-width: max-content; }
 @media (max-width: 1100px) { body[data-mode="learn"] .live { --lp-gap: 14px; } }
-body[data-mode="learn"] .letters-caption { display: none; }
 body[data-mode="learn"] .live > .metric > span { font-size: 1rem; line-height: 1.3; font-weight: 600; letter-spacing: 0; }
 body[data-mode="learn"] .live > .metric small { font-size: 1rem; line-height: 1.3; margin-left: .5ch; }
 body[data-mode="learn"] .live > .metric > span.pct { margin-left: 0; }
@@ -157,31 +178,8 @@ body.typing-now:not(.live-off) .lp-cols > :is(.lp-last, .lp-intro) { opacity: 0;
 .wl[aria-pressed="true"] { color: var(--accent-text); }
 
 
-.letters-caption {
-  display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-start; gap: 18px; white-space: nowrap;
-  flex: 0 1 auto; min-width: 0; overflow: hidden;
-  color: var(--label); font-size: var(--fs-min); transition: opacity .4s var(--ease), transform var(--med) var(--ease);
-}
-body:not(.live-off) .letters-caption::before { content: ""; width: 1px; height: 1.2em; margin-left: 4px; background: var(--line); }
-.letters-caption:empty { display: none; }
-.text-box.blurred .letters-caption { opacity: .5; }
-.stat {
-  display: inline-flex; align-items: center; gap: 7px; flex: none;
-  color: color-mix(in srgb, var(--text) 70%, var(--sub)); cursor: default;
-}
-.stat svg {
-  width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor;
-  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; color: var(--sub);
-}
-.stat b { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; font-size: .9rem; }
-.stat.focus svg { color: var(--accent-text); }
-.letters-caption .begin { padding: 0; font-size: var(--fs-min); min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: left; }
-.text-box.typing .letters-caption .begin { display: none; }
 @media (min-width: 900px) and (pointer: fine) {
   .letters { margin-bottom: 12px; }
-  .letters-caption { font-size: .95rem; gap: 22px; }
-  .stat svg { width: 1.1em; height: 1.1em; }
-  .stat .lbl, .stat b, .letters-caption .begin { font-size: 1em; }
   .letter-row { gap: 6px; min-height: calc(1.05rem * 1.75); }
   .chip { font-size: 1.05rem; border-radius: 7px; }
   .chip.locked { color: color-mix(in srgb, var(--sub) 80%, transparent); }
@@ -234,7 +232,7 @@ body:not(.live-off) .letters-caption::before { content: ""; width: 1px; height: 
     content: ""; position: absolute; z-index: -1; pointer-events: none; background: var(--panel);
   }
   #view-type > .letters::after { inset: calc(-1 * var(--card-pad)) -24px 0; border-radius: var(--r-lg) var(--r-lg) 0 0; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04); }
-  body:not([data-mode="learn"]) #view-type > .letters::after { top: calc(100% - 28px - var(--card-pad)); }
+  body[data-mode="freetype"] #view-type > .letters::after { top: calc(100% - 28px - var(--card-pad)); }
   #view-type > .text-box::after { inset: -20px -24px calc(-1 * var(--card-pad)); border-radius: 0 0 var(--r-lg) var(--r-lg); box-shadow: 0 1px 2px rgba(0, 0, 0, .35); }
 }
 .text-box.blurred .text { filter: blur(3px); opacity: .5; }
@@ -507,11 +505,8 @@ body.kb-nofit #keyboard { display: none; }
 .pips { display: inline-flex; gap: 5px; margin-left: 8px; vertical-align: middle; }
 .pips i { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--sub); }
 .pips i.on { background: var(--ok); border-color: var(--ok); }
-.r-num .pips { margin-left: 12px; gap: 7px; }
-.r-num .pips i { width: 13px; height: 13px; border-width: 2px; }
 .r-climb { margin: 0; font-size: 1.25rem; color: var(--text); }
 .r-climb.pass { color: var(--ok); }
 .r-climb.fail { color: var(--error); }
 .r-unsaved { margin: 0; font-size: 1.25rem; color: var(--error); display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; }
 .r-unsaved .btn { font-size: 1rem; }
-.letters-caption .mode-note.slip { color: var(--error); }

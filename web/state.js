@@ -6,7 +6,7 @@ export const el = {
   textBox: $("text-box"), text: $("text"), caret: $("caret"), input: $("hidden-input"),
   keyboard: $("keyboard"), hint: $("finger-hint"),
   live: $("live"), wpm: $("wpm"), raw: $("raw"), acc: $("acc"), roundLine: $("round-line"),
-  letters: $("letters"), lettersCaption: $("letters-caption"),
+  letters: $("letters"),
   tooltip: $("tooltip"),
   hands: $("hands"),
   intro: $("intro"),

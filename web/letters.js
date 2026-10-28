@@ -3,6 +3,7 @@
 import { t } from "./i18n.js";
 import { el, S } from "./state.js";
 import { learning } from "./modes.js";
+import { renderModeBar } from "./modebar.js";
 
 let popLetter = null;
 let justMastered = new Set();
@@ -10,9 +11,6 @@ let justMastered = new Set();
 export function markNewLetter(l) { popLetter = l; }
 export function markMastered(list) { justMastered = new Set(list); }
 
-const STAT_ICONS = {
-  level: '<path d="M3 19l6.5-10 4 6 2.5-3.5L21 19z"/><path d="M9.5 9V4l3.5 1.4-3.5 1.4"/>',
-};
 let builtFor = "";
 let chipOf = {};
 export function renderLetters() {
@@ -81,7 +79,6 @@ export function renderLetters() {
     chipOf[c]?.classList.toggle("focus", c === focus);
   }
 
-  if (el.lettersCaption.firstChild) el.lettersCaption.replaceChildren();
   popLetter = null;
   justMastered = new Set();
 }
@@ -90,18 +87,7 @@ function renderFreeLetters() {
   el.letters.replaceChildren();
   for (const key of Object.values(S.keyEls)) key.classList.remove("locked", "known");
   if (S.altgrEl) S.altgrEl.classList.remove("locked");
-  if (S.mode !== "climb" || S.climbLevel == null || !S.climb?.place) { el.lettersCaption.innerHTML = ""; return; }
-  const c = S.climb, level = S.climbLevel, top = c.levels.length;
-  const own = level === c.place.level;
-  const passes = own ? c.place.passes : 0, fails = own ? c.place.fails : 0;
-  const pips = `<span class="pips" aria-hidden="true">${Array.from({ length: c.passesUp }, (_, i) => `<i${i < passes ? ' class="on"' : ""}></i>`).join("")}</span>`;
-  const rule = t("climb.ruleTip", { fail: c.failAccuracy });
-  const slip = fails > 0 && level > 1;
-  const note = slip ? t("climb.slip", { fail: c.failAccuracy, prev: level - 1 }) : level < top ? t("climb.words", { up: c.passesUp, pass: c.passAccuracy }) : t("climb.top");
-  el.lettersCaption.innerHTML =
-    `<span class="stat focus" data-tip-text="${rule}"><svg viewBox="0 0 24 24" aria-hidden="true">${STAT_ICONS.level}</svg>` +
-    `<span class="lbl">${t("climb.level")}</span><b>${level}</b>${pips}</span>` +
-    `<span class="begin mode-note${slip ? " slip" : ""}">${note}</span>`;
+  if (S.mode === "climb") renderModeBar();
 }
 
 // ---------- one letter's progress ----------

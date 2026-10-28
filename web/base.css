@@ -99,12 +99,12 @@ input, textarea { user-select: text; -webkit-user-select: text; }
 ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); color: var(--text); }
 
 /* ---------- two kinds of text ---------- */
-.lbl-ui, .metric small, .stat .lbl, .tile small, .r-lbl,
+.lbl-ui, .metric small, .tile small, .r-lbl,
 .panel-note, .profile-field small, .profile-label, .intro-kicker {
   font-family: var(--ui); font-size: var(--fs-min); font-weight: 500; color: var(--label);
 }
 button, .tooltip, .hints, .rail small, .intro p, .intro h2, .account-msg,
-.account-as, .profile-soon, .focus-hint, .letters-caption .begin, .warn, .panel h2 {
+.account-as, .profile-soon, .focus-hint, .warn, .panel h2 {
   font-family: var(--ui);
 }
 

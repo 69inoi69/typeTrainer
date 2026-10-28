@@ -52,8 +52,8 @@ export function restoreMode() {
   S.mode = saved === "free" ? "climb" : MODES.includes(saved) ? saved : "learn";
   S.settings.length = lengthFor(S.mode);
   renderModeBar();
-  autoKb();
   renderNav();
+  autoKb();
 }
 
 export function setMode(m) {
@@ -61,8 +61,8 @@ export function setMode(m) {
   S.settings.length = lengthFor(m);
   renderModeBar();
   store.set(`tt.mode.${S.lang}`, m);
-  autoKb(true);
   renderNav();
+  autoKb(true);
 }
 
 export function renderNav() {
