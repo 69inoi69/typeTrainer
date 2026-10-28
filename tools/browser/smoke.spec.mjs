@@ -277,10 +277,43 @@ test("the settings of one screen live on that screen", async ({ page }) => {
   expect(await page.evaluate(() => localStorage.getItem("tt.daily"))).toBe("0");
 
   await page.keyboard.press("Shift+Tab");
-  const line = page.locator('#goal-pick button[data-goal="50"]');
-  await line.click();
-  await expect(line).toHaveAttribute("aria-pressed", "true");
+  await page.locator('#stats-pick button[data-mode="climb"]').click();
+  await page.locator("#goal-pick button.goal-chip").click();
+  await page.keyboard.type("50");
+  await page.keyboard.press("Enter");
   expect(await page.evaluate(() => localStorage.getItem("tt.goal"))).toBe("50");
+});
+
+test("stats: the goal line is a number of your own, and Learn's is its target", async ({ page }) => {
+  await withHistory(page);
+  await openApp(page, { "tt.mode.en": "climb", "tt.goal": "100" });
+  await page.locator("#tab-stats").click();
+  const chip = page.locator("#goal-pick .goal-chip");
+  await expect(chip).toHaveText(/^Goal 100 wpm/);
+
+  await chip.click();
+  await page.keyboard.type("x137");
+  await page.keyboard.press("Enter");
+  await expect(chip, "letters are ignored").toHaveText(/^Goal 137 wpm/);
+  expect(await page.evaluate(() => localStorage.getItem("tt.goal"))).toBe("137");
+  await expect(page.locator("#tiles .tile.goal b")).toHaveText("137");
+
+  await chip.click();
+  await page.keyboard.type("90");
+  await page.keyboard.press("Escape");
+  await expect(chip, "Esc keeps the old goal").toHaveText(/^Goal 137 wpm/);
+  await expect(page.locator("#settings-win")).not.toHaveAttribute("open", "");
+
+  await chip.click();
+  await page.keyboard.press("Backspace");
+  await page.keyboard.press("Enter");
+  await expect(chip, "an empty field turns it off").toHaveText(/^Goal: off/);
+  await expect(page.locator("#tiles .tile.goal")).toHaveCount(0);
+
+  await page.locator('#stats-pick button[data-mode="learn"]').click();
+  const target = await page.evaluate(() => fetch("/api/v1/stats?length=words-30").then((r) => r.json()).then((s) => s.targetWpm));
+  await expect(page.locator("#goal-pick span.goal-chip"), "Learn shows its own target, not a button").toHaveText(`Goal ${target} wpm`);
+  await expect(page.locator("#goal-pick button")).toHaveCount(0);
 });
 
 test("browser zoom 200% keeps the desktop layout and nothing overlaps", async ({ browser }) => {

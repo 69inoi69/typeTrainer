@@ -3,21 +3,51 @@
 import { i18nVars, t, applyI18n } from "./i18n.js";
 import { $, el, S, store, reducedMotion, levelWords, listLabel, listless } from "./state.js";
 import { getJSON } from "./api.js";
-import { LENGTHS, GOALS, lengthLabel, lengthFor, firstRoundDone, setSetting } from "./settings.js";
+import { LENGTHS, lengthLabel, lengthFor, firstRoundDone, setSetting } from "./settings.js";
 import { ring, ringBtn } from "./minipop.js";
 import { renderLearnStats, learnStatsStale } from "./learnstats.js";
 import { freetypeUrl, toggledVariant } from "./modes.js";
 
 // ---------- the goal line ----------
 const goalPick = $("goal-pick");
-function drawGoalPick() {
-  goalPick.innerHTML = `<span class="ring-lbl" data-tip-text="${t("settings.goalDesc")}">${t("settings.goal")}</span>` +
-    ring(t("settings.goal"), GOALS.map((g) => ringBtn(`data-goal="${g}"`, g ? String(g) : t("settings.off"), S.settings.goal === g)));
+let goalEditing = false;
+export const goalFor = (mode) => (mode === "learn" ? S.lastStats?.targetWpm ?? 0 : S.settings.goal);
+function drawGoalPick(mode) {
+  if (goalEditing) return;
+  const g = goalFor(mode);
+  goalPick.innerHTML = mode === "learn"
+    ? `<span class="goal-chip" data-tip-text="${t("stats.goalLearnTip")}">${t("stats.goalIs", { wpm: `<b>${g}</b>` })}</span>`
+    : `<button type="button" class="goal-chip" data-tip-text="${t("settings.goalDesc")}">` +
+      (g ? t("stats.goalIs", { wpm: `<b>${g}</b>` }) : t("stats.goalOff")) + `<span class="goal-pen" aria-hidden="true">✎</span></button>`;
+}
+function editGoal() {
+  goalEditing = true;
+  goalPick.innerHTML = `<label class="goal-chip editing">${t("stats.goalIs", {
+    wpm: `<input type="text" inputmode="numeric" maxlength="3" aria-label="${t("stats.goalAria")}" value="${S.settings.goal || ""}">`,
+  })}</label><span class="goal-hint">${t("stats.goalHint")}</span>`;
+  const input = goalPick.querySelector("input");
+  input.focus();
+  input.select();
+}
+function stopEditing(save) {
+  if (!goalEditing) return;
+  const v = goalPick.querySelector("input").value.trim();
+  goalEditing = false;
+  if (save) setSetting("goal", v);
+  else drawGoalPick(shownStats().mode);
 }
 goalPick.addEventListener("click", (e) => {
-  const b = e.target.closest("button[data-goal]");
-  if (b && b.getAttribute("aria-pressed") !== "true") setSetting("goal", b.dataset.goal);
+  if (e.target.closest("button.goal-chip")) editGoal();
 });
+goalPick.addEventListener("keydown", (e) => {
+  if (e.target.tagName !== "INPUT") return;
+  if (e.key === "Enter" || e.key === "Escape") {
+    e.preventDefault();
+    e.stopPropagation();
+    stopEditing(e.key === "Enter");
+  } else if (e.key.length === 1 && !/[0-9]/.test(e.key) && !e.ctrlKey && !e.metaKey) e.preventDefault();
+});
+goalPick.addEventListener("focusout", (e) => { if (e.target.tagName === "INPUT") stopEditing(true); });
 
 let introVars = "";
 export async function refreshStats() {
@@ -62,12 +92,13 @@ export function renderStats() {
   document.getElementById("len-head").textContent = lengthLabel(length);
   const sessions = [...s.sessions].reverse();
   document.getElementById("btn-image").disabled = !s.sessionCount;
-  el.tiles.innerHTML = tiles(sessions, s.sessionCount, S.settings.goal, mode === "climb" ? s.place?.level : null, s.streaks ?? []);
+  const goal = goalFor(mode);
+  el.tiles.innerHTML = tiles(sessions, s.sessionCount, goal, mode === "climb" ? s.place?.level : null, s.streaks ?? []);
   drawActivity();
   if (activityStale) loadActivity();
 
-  drawChart(sessions, S.settings.goal, s.sessionCount, mode === "learn" ? s.order : null);
-  drawGoalPick();
+  drawChart(sessions, goal, s.sessionCount, mode === "learn" ? s.order : null);
+  drawGoalPick(mode);
   renderLearnStats(mode === "learn").catch(console.error);
 }
 
