@@ -1,8 +1,8 @@
 // Sharing the stats screen as an image.
 
 import { t, variantLabel } from "./i18n.js";
-import { $, S, listLabel, listless } from "./state.js";
-import { shownStats, summary } from "./stats.js";
+import { $, listLabel, listless } from "./state.js";
+import { shownStats, summary, goalFor } from "./stats.js";
 import { lengthLabel } from "./settings.js";
 
 const btnImage = $("btn-image");
@@ -66,7 +66,7 @@ function drawCard() {
 
   const rounds = [...s.sessions].reverse().slice(-30);
   const cy = ty + tileH + 40, ch = H - cy - pad;
-  const goal = S.settings.goal;
+  const goal = goalFor(mode);
   const max = Math.max(goal, ...rounds.map((x) => x.wpm), 1) * 1.1;
   const slot = (W - pad * 2) / 30, bw = Math.min(26, slot - 6);
   rounds.forEach((x, i) => {
