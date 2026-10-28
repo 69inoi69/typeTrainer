@@ -78,7 +78,6 @@
   --palm-shade: rgba(60, 50, 30, .18);
 }
 :root[data-theme="light"] .text, :root[data-theme="light"] .text span { text-shadow: none !important; }
-:root[data-theme="light"] .text-box::before { text-shadow: none; }
 :root[data-theme="light"] .switch-thumb::after { box-shadow: none; }
 :root[data-theme="light"] .hand { --skin: color-mix(in srgb, var(--text) 16%, var(--bg)); }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -151,7 +150,6 @@ dialog.settings-win:focus { outline: none; }
 .sw-row { display: contents; }
 .sw-row > span { display: flex; align-items: center; gap: 6px; min-height: 32px; padding: 2px 8px; }
 .sw-name { position: relative; font-size: var(--fs-min); color: var(--text); border-radius: 8px 0 0 8px; }
-.sw-name.danger { color: color-mix(in srgb, var(--error) 75%, var(--sub)); }
 .sw-ctl { padding-left: 16px !important; border-radius: 0 8px 8px 0; }
 .sw-row.on > span { background: var(--track); }
 .sw-row.on .sw-name::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: var(--accent); }

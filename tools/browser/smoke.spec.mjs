@@ -273,13 +273,8 @@ test("the caret is still at rest, spaces have a dot, the settings are fewer", as
   await page.waitForTimeout(1500);
   const caretAnims = await page.evaluate(() => document.getElementById("caret").getAnimations().length);
   expect(caretAnims, "animations on the caret at rest").toBe(0);
-  const dot = await page.evaluate(() => {
-    const sp = document.querySelector("#text span[data-sp]");
-    const a = getComputedStyle(sp, "::after");
-    return { content: a.content, w: parseFloat(a.width) };
-  });
-  expect(dot.content).not.toBe("none");
-  expect(dot.w).toBeGreaterThan(0);
+  const dot = await page.evaluate(() => getComputedStyle(document.querySelector("#text span[data-sp]")).backgroundImage);
+  expect(dot, "a space has its dot").toContain("radial-gradient");
   await page.keyboard.press("Escape");
   await expect(page.getByText("Caret movement")).toBeVisible();
   await expect(page.getByText("Caret at rest")).toHaveCount(0);
@@ -531,6 +526,17 @@ test("the hand over the keyboard shows the finger of the next key", async ({ pag
   }
 });
 
+test("a space that ends a line has no width, so its dot can't hang at the edge", async ({ page }) => {
+  await openApp(page, { "tt.mode.en": "freetype", "tt.length.freetype": "words-50" });
+  const ends = await page.evaluate(() => {
+    const spans = [...document.querySelectorAll("#text > span")];
+    return spans.flatMap((s, i) => s.hasAttribute("data-sp") && i > 0 && spans[i + 1] && spans[i + 1].offsetTop > spans[i - 1].offsetTop
+      ? [s.getBoundingClientRect().width] : []);
+  });
+  expect(ends.length, "the text wraps at least once").toBeGreaterThan(0);
+  for (const w of ends) expect(w).toBe(0);
+});
+
 test("the caret stays one line tall with space marks across line wraps", async ({ page }) => {
   await openApp(page, { "tt.mode.en": "freetype", "tt.length.freetype": "words-30" });
   await typeRound(page, { afterKey: () => expectCaretInLine(page) });
@@ -607,6 +613,19 @@ test("stats on a desktop: every tile holds its own text", async ({ page }) => {
     }));
     await expect.poll(past, { message: `text past its tile, ${mode} at ${width}px`, timeout: 3000 }).toEqual([]);
   }
+});
+
+test("a click on the logo goes home: from the stats and from a result", async ({ page }) => {
+  await openApp(page, { "tt.mode.en": "climb", "tt.length.climb": "words-10" });
+  await page.locator("#tab-stats").click();
+  await expect(page.locator("#view-stats")).toBeVisible();
+  await page.locator("#logo").click();
+  await expect(page.locator("#view-type")).toBeVisible();
+  await typeRound(page);
+  await expectResult(page);
+  await page.locator("#logo").click();
+  await expect(page.locator("body")).not.toHaveClass(/\btb-resulting\b/);
+  await expect(page.locator(".mascot"), "one click doesn't wake the mascot").toHaveCount(0);
 });
 
 test("the stats screen opens after a round and shows it", async ({ page }) => {

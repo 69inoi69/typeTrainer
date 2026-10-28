@@ -81,6 +81,10 @@ function chooseMode(m) {
 el.tabLearn.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("learn"); });
 el.tabClimb.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("climb"); });
 el.tabFreetype.addEventListener("click", (e) => { e.currentTarget.blur(); chooseMode("freetype"); });
+document.getElementById("logo").addEventListener("click", () => {
+  if (S.view !== "type") setView("type");
+  else if (resultOpen()) closeResult();
+});
 async function barPick(pick) {
   if (S.busy && !resultOpen()) return;
   if (pick.edit || (pick.toggle === "custom" && S.freetypeVariant !== "custom" && !hasCustomText())) {
