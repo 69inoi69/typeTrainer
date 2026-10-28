@@ -94,7 +94,7 @@ body.tb-ending #view-type > .keyboard {
   font-size: var(--fs-min); line-height: 1; color: var(--label); font-variant-numeric: tabular-nums; pointer-events: none;
 }
 .r-xaxis span { translate: -50% 0; }
-.r-xaxis span:last-child { translate: 50% 0; }
+.r-xaxis span:last-child { translate: none; }
 .r-line { stroke: color-mix(in srgb, var(--text) 45%, transparent); stroke-width: 2; vector-effect: non-scaling-stroke; fill: none; stroke-linejoin: round; }
 .r-dot, .r-err { position: absolute; translate: -50% -50%; }
 .r-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sp); box-shadow: 0 0 0 2px var(--bg); cursor: default; }

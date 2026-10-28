@@ -470,6 +470,52 @@ test("one grid in all three modes: the progress line and the round switches stan
   }
 });
 
+// Everything visible in the given parts that stands outside the text's left and right edges.
+const textEdges = (page) => page.evaluate(() => {
+  const r = document.getElementById("text").getBoundingClientRect();
+  return { left: r.left, right: r.right };
+});
+const outsideColumn = async (page, parts, text) => page.evaluate(([parts, text]) => {
+  const out = [];
+  for (const part of parts) {
+    for (const e of [document.querySelector(part), ...document.querySelectorAll(`${part} *`)]) {
+      if (!e) continue;
+      const r = e.getBoundingClientRect();
+      if (r.width && r.height && getComputedStyle(e).visibility !== "hidden" && (r.left < text.left - 1 || r.right > text.right + 1)) {
+        out.push(`${e.tagName.toLowerCase()}.${e.getAttribute("class") ?? ""} ${Math.round(r.left)}-${Math.round(r.right)} (text ${Math.round(text.left)}-${Math.round(text.right)})`);
+      }
+    }
+  }
+  return out;
+}, [parts, text ?? await textEdges(page)]);
+
+for (const width of [1280, 1600]) {
+  test(`one column at ${width}: the letters, the line above the text, the keyboard and its gear, the result stand between the text edges`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    for (const mode of ["learn", "climb", "freetype"]) {
+      await openApp(page, { "tt.mode.en": mode });
+      expect(await outsideColumn(page, ["#view-type > .letters", "#keyboard"]), mode).toEqual([]);
+    }
+    await openApp(page, { "tt.mode.en": "climb", "tt.length.climb": "words-10" });
+    const text = await textEdges(page);
+    await typeRound(page);
+    await expectResult(page);
+    await page.waitForTimeout(800);
+    expect(await outsideColumn(page, ["#result"], text), "result").toEqual([]);
+  });
+}
+
+test("stats: the mode tabs start at the edge of the tiles under them", async ({ page }) => {
+  await openApp(page, { "tt.mode.en": "learn" });
+  await page.keyboard.press("Shift+Tab");
+  const m = await page.evaluate(() => {
+    const tab = document.querySelector(".stats-modes button"), r = document.createRange();
+    r.selectNodeContents(tab);
+    return { text: r.getBoundingClientRect().left, view: document.getElementById("view-stats").getBoundingClientRect().left };
+  });
+  expect(m.text).toBeCloseTo(m.view, 0);
+});
+
 for (const [w, h] of [[1920, 1080], [1366, 768]]) {
   test(`Freetype at ${w}: the switches stand on one line at the text edges, and a line shows the round`, async ({ page }) => {
     await page.setViewportSize({ width: w, height: h });

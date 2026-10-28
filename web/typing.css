@@ -379,7 +379,7 @@ body:not([data-caret]) .caret, body[data-caret="line"] .caret {
 }
 body.hand-off .keyboard > .hands { display: none; }
 .kb-gear {
-  position: absolute; left: calc(100% + 8px); top: 4px; display: grid; place-items: center; width: 34px; height: 34px;
+  position: absolute; right: 12px; bottom: 12px; display: grid; place-items: center; width: 34px; height: 34px;
   padding: 0; border: 0; border-radius: 9px; background: none; color: var(--sub); cursor: pointer; transition: color .15s, opacity .4s var(--ease);
 }
 .kb-gear:hover, .kb-gear[aria-expanded="true"] { color: var(--text); }
