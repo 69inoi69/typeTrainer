@@ -40,6 +40,7 @@ async function withHistory(page) {
     const res = await route.fetch(), body = await res.json();
     body.sessions = wpms.map((wpm, i) => ({ ...(body.sessions?.[0] ?? {}), wpm, accuracy: i < 4 ? 97 : 90 }));
     body.forecast = { known: true, rounds: 4, letter: "e" };
+    body.streaks = [{ min: 95, current: 4, longest: 6 }, { min: 97, current: 4, longest: 4 }, { min: 100, current: 0, longest: 1 }];
     return route.fulfill({ response: res, json: body });
   });
 }
@@ -74,6 +75,8 @@ test("Learn: the panel draws the speed line, the next letter and the streak dots
   const next = await page.locator("#letters .locked.next").first().textContent();
   await expect(page.locator("#lp-cols .lp-fc .lp-key")).toHaveText(next.trim());
   await expect(page.locator("#lp-cols .lp-streak .lp-dots i.on")).toHaveCount(4);
+  await expect(page.locator("#lp-cols .lp-streak .lp-lbl"), "the same streak and name as the stats tile").toHaveText("95%+ in a row");
+  await expect(page.locator("#lp-cols .lp-streak")).toHaveAttribute("data-tip-text", /95%\+ accuracy\. Best 6$/);
   const boxes = await Promise.all(["#lp-cols .lp-last", "#lp-cols .lp-fc", "#lp-cols .lp-streak", "#lp-cols .lp-goal", "#round-switch"]
     .map((s) => page.locator(s).boundingBox()));
   const gaps = boxes.slice(1).map((b, i) => b.x - (boxes[i].x + boxes[i].width));

@@ -12,7 +12,7 @@ import { FX } from "./fx.js";
 const box = $("learn-panel"), cols = $("lp-cols");
 
 const AVG_ROUNDS = 10, AVG_MIN = 3;
-const STREAK_LEVELS = [100, 98, 97, 95, 90], STREAK_DOTS = 10;
+const STREAK_DOTS = 10;
 
 let activity = null, activityLang = "";
 export async function refreshActivity() {
@@ -164,18 +164,13 @@ function forecast() {
   return cell("lp-fc", label, (next ? `<b class="lp-key">${next}</b>` : "") + value, tip);
 }
 
+// the stats tile's streak (#239): rounds in a row at the first of StreakAccuracies
 function accStreak() {
-  const list = S.lastStats.sessions ?? [];
-  for (const level of STREAK_LEVELS) {
-    let n = 0;
-    while (n < list.length && list[n].accuracy >= level) n++;
-    if (n >= 2) {
-      const dots = Array.from({ length: STREAK_DOTS }, (_, i) => `<i${i < n ? ` class="on"` : ""}></i>`).join("");
-      return cell("lp-streak", t("lp.streakLbl"), `<span class="lp-dots" aria-hidden="true">${dots}</span>${num(n)}`,
-        t("lp.streak", { a: level }));
-    }
-  }
-  return cell("lp-streak", t("lp.streakLbl"), NONE, t("lp.streak", { a: STREAK_LEVELS.at(-1) }));
+  const s = S.lastStats.streaks?.[0];
+  if (!s) return cell("lp-streak", "", NONE);
+  const dots = Array.from({ length: STREAK_DOTS }, (_, i) => `<i${i < s.current ? ` class="on"` : ""}></i>`).join("");
+  return cell("lp-streak", t("tile.streak", { min: s.min }), `<span class="lp-dots" aria-hidden="true">${dots}</span>${num(s.current)}`,
+    t("lp.streak", { a: s.min, n: s.longest }));
 }
 
 let goalNow = null;
