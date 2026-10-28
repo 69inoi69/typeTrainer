@@ -529,6 +529,31 @@ test("stats on a phone: nothing is wider than the screen", async ({ page }) => {
   }
 });
 
+test("stats on a desktop: every tile holds its own text", async ({ page }) => {
+  await page.route(/\/api\/v1\/(freeplay\/)?stats\?/, async (route) => {
+    const res = await route.fetch(), body = await res.json();
+    body.sessions = Array.from({ length: 20 }, (_, i) => ({ ...(body.sessions?.[0] ?? {}), wpm: 52 - i, accuracy: 96, consistency: 80 }));
+    body.sessionCount = 128;
+    body.streaks = [{ min: 95, longest: 14, current: 3 }, { min: 97, longest: 10, current: 3 }, { min: 100, longest: 10, current: 0 }];
+    if (body.place) body.place.level = 10;
+    return route.fulfill({ response: res, json: body });
+  });
+  for (const mode of ["climb", "learn"]) for (const [width, height] of [[1024, 768], [1366, 768], [1920, 1080]]) {
+    await page.setViewportSize({ width, height });
+    await openApp(page, { "tt.mode.en": mode, "tt.goal": "50" });
+    await page.locator("#tab-stats").click();
+    await expect(page.locator("#tiles .tile.goal")).toBeVisible();
+    await expect(page.locator("#tiles")).toContainText("best 14");
+    const past = () => page.evaluate(() => [...document.querySelectorAll("#tiles .tile")].flatMap((tile) => {
+      const edge = tile.getBoundingClientRect().right - parseFloat(getComputedStyle(tile).paddingRight);
+      return [...tile.querySelectorAll("small, b, .meta, .meta *")]
+        .filter((n) => n.getBoundingClientRect().right > edge + 0.5 || n.scrollWidth > n.clientWidth + 1)
+        .map((n) => `${tile.querySelector("small").textContent}: "${n.textContent}" ${n.scrollWidth}/${n.clientWidth}`);
+    }));
+    await expect.poll(past, { message: `text past its tile, ${mode} at ${width}px`, timeout: 3000 }).toEqual([]);
+  }
+});
+
 test("the stats screen opens after a round and shows it", async ({ page }) => {
   await openApp(page, { "tt.mode.en": "climb", "tt.length.climb": "words-10" });
   await typeRound(page);

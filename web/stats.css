@@ -18,19 +18,18 @@
 #view-stats[hidden] { display: none; }
 .btn.done { color: var(--ok); animation: done-hold 1.6s; }
 @keyframes done-hold { from { color: var(--ok); } to { color: var(--ok); } }
-.tiles { flex: 1; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; min-width: min(100%, 560px); }
+.tiles { flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr)); gap: 8px; min-width: min(100%, 560px); }
 .tile {
   background: var(--panel); border-radius: var(--r-md); box-shadow: var(--lift); min-width: 0;
   padding: 12px 14px 11px; display: flex; flex-direction: column; gap: 4px;
 }
 .tile small { order: -1; }
-.tile .meta { display: flex; align-items: center; gap: 6px; min-height: 1.2em; font-size: var(--fs-min); color: var(--label); white-space: nowrap; }
+.tile .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-height: 1.2em; font-size: var(--fs-min); color: var(--label); }
 .tile b { display: block; font-size: 1.75rem; font-weight: 500; letter-spacing: -.02em; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1.05; }
 .tile.speed b { color: var(--accent-text); }
 .tile.level b { color: var(--accent-text); }
-.tile.level { cursor: default; }
 .tile b i { font-style: normal; font-size: .55em; color: var(--sub); }
-.tile small { display: block; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile small { display: block; line-height: 1.3; }
 .trend { font-weight: 500; padding: 0 6px; border-radius: 999px; cursor: default; }
 .trend.up { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
 .trend.down { color: var(--error); background: color-mix(in srgb, var(--error) 12%, transparent); }
