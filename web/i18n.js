@@ -127,7 +127,7 @@ const I18N = {
     "result.wpm": "wpm", "result.acc": "% acc", "result.cons": "consistency", "result.sec": "s",
     "result.nextBtn": "Next round", "result.newBest": "New best", "result.axisWord": "word",
     "result.wordWpm": "{wpm} wpm",
-    "result.chartTip": "{word}: {wpm} wpm", "result.chartLabel": "Speed of each word",
+    "result.chartLabel": "Speed of each word",
     "result.correct": "correct", "result.wrong": "wrong", "result.extra": "extra", "result.missed": "missed",
     "result.extraTip": "Typed past the end of a word", "result.missedTip": "Skipped by pressing space early",
     "result.consTip": "How even your speed was",

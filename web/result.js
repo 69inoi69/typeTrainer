@@ -118,10 +118,9 @@ function speedChart(words, bands) {
   const y = (v) => 100 - (v / top) * 100;
   const line = pts.map((w, i) => `${x(i).toFixed(2)},${y(w.wpm).toFixed(2)}`).join(" ");
   const dots = pts.map((w, i) => {
-    const text = w.letters.map((l) => l.c).join("");
     const pos = `left:${x(i).toFixed(2)}%;top:${y(w.wpm).toFixed(2)}%`;
     const bad = w.letters.some((l) => l.bad) ? `<i class="r-err" style="${pos}"></i>` : "";
-    return `<i class="r-dot s${bands.level(w.wpm)}" style="${pos}" data-tip-text="${t("result.chartTip", { word: text, wpm: w.wpm })}"></i>` + bad;
+    return `<i class="r-dot s${bands.level(w.wpm)}" style="${pos}" data-tip-text="${t("result.wordWpm", { wpm: w.wpm })}"></i>` + bad;
   }).join("");
   return `<div class="r-chart" role="img" aria-label="${t("result.chartLabel")}">` +
     `<span class="r-axis" aria-hidden="true"><span>${top}</span><span>${top / 2}</span><span>0</span></span>` +
