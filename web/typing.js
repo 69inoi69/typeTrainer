@@ -11,7 +11,7 @@ import { showResult } from "./result.js";
 import { renderLetters, markNewLetter, markMastered } from "./letters.js";
 import { renderPanel, roundNews, compareStats, refreshActivity, tickGoal } from "./learnpanel.js";
 import { learning, refreshFreeplay } from "./modes.js";
-import { renderModeBar } from "./modebar.js";
+import { renderModeBar, climbAnswer } from "./modebar.js";
 import { lengthOf } from "./settings.js";
 import { keySound } from "./sound.js";
 import { customPortions, customRoundDone } from "./customtext.js";
@@ -266,7 +266,7 @@ export async function loadExercise() {
   el.textBox.classList.remove("typing");
   setTyping(false);
   if (!el.live.classList.contains("final")) { setLive(el.wpm, 0); setLive(el.raw, 0); setLive(el.acc, 100); }
-  lightNext();
+  highlightNextKey();
   showPortion(0);
   placeCaret(true);
   requestAnimationFrame(keepTextInView);
@@ -284,17 +284,6 @@ function setState(i, s) {
   if (s === 1) correctChars++;
   state[i] = s;
   spans[i].className = s === 0 && focusMask[i] ? "fx" : ["", "ok", "bad", "miss"][s];
-}
-let tinted = null;
-export function lightNext() {
-  highlightNextKey();
-  if (tinted) { tinted.classList.remove("fnext"); tinted = null; }
-  if (!S.settings.fingerText || S.kbHidden || !S.nextFc) return;
-  const s = spans[S.pos];
-  if (!s) return;
-  s.style.setProperty("--fc", S.nextFc);
-  s.classList.add("fnext");
-  tinted = s;
 }
 
 function record(i, wrong, now, typed) {
@@ -418,7 +407,7 @@ export function handleChar(ch) {
   }
   lastTime = now; afterBackspace = false; afterPause = false;
   if (roundOver) { placeCaret(false, true); finishRound(true); return; }
-  lightNext();
+  highlightNextKey();
   placeCaret(false);
 }
 
@@ -445,7 +434,7 @@ export function backspace(wholeWord) {
     setState(--S.pos, 0);
   }
   afterBackspace = true;
-  lightNext();
+  highlightNextKey();
   placeCaret(false);
 }
 function wordErrors(start, end) {
@@ -664,6 +653,7 @@ async function finishFree(wpm, accuracy, keys, perSecond) {
     refreshActivity();
     await refreshFreeplay();
     renderLetters();
+    climbAnswer(res.verdict, res.place);
     return { verdict: res.verdict, place: res.place, weak: res.weak };
   };
   const shown = { wpm, accuracy, words: typedWords(), ...roundFacts() };

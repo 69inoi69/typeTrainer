@@ -38,7 +38,6 @@ const SWITCHES = {
   stop: { key: "tt.stop", on: false },
   nextKey: { key: "tt.nextKey", on: true },
   hand: { key: "tt.hand", on: true },
-  fingerText: { key: "tt.fingerText", on: true },
 };
 
 export function lengthOf(id) {
@@ -152,7 +151,7 @@ export function setSetting(key, value) {
   } else if (SWITCHES[key]) {
     S.settings[key] = value === "1";
     store.set(SWITCHES[key].key, value === "1" ? "1" : "0");
-    if (key === "nextKey" || key === "hand" || key === "fingerText") typingListener();
+    if (key === "nextKey" || key === "hand") typingListener();
   } else if (key === "live") {
     S.settings.live = value === "1";
     store.set("tt.live", value === "1" ? "1" : "0");

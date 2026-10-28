@@ -1,23 +1,24 @@
 // The result screen.
 
-import { t, variantLabel } from "./i18n.js";
-import { $, el, S, isTouch, reducedMotion, levelWords, listLabel, boxState } from "./state.js";
+import { t } from "./i18n.js";
+import { $, el, isTouch, reducedMotion, boxState } from "./state.js";
 import { FEEL } from "./feel.js";
 import { FX } from "./fx.js";
 import { showTip } from "./tools.js";
 
 const box = $("result");
 
-const num = (value, unit, label, size, tip) =>
-  `<span class="r-num ${size}"${tip ? ` tabindex="0" data-tip-text="${t(tip)}"` : ""}><span class="r-lbl">${t(label)}</span><b>${value}<small>${unit}</small></b></span>`;
+const num = (value, unit, size) => `<span class="r-num ${size}"><b>${value}<small>${unit}</small></b></span>`;
+const fact = (text, cls = "", tip = "") =>
+  `<span class="r-fact${cls}"${tip ? ` tabindex="0" data-tip-text="${t(tip)}"` : ""}>${text}</span>`;
 let done = null;
 
 export const resultOpen = () => done !== null;
 
 export function showResult(r) {
 
-  const hero = `<div class="r-hero${r.best ? " best" : ""}">${num(Math.round(r.wpm), "", "result.wpm", "big hero")}` +
-    `${num(Math.round(r.accuracy), "%", "result.acc", "big")}</div>`;
+  const hero = `<div class="r-hero${r.best ? " best" : ""}">${num(Math.round(r.wpm), t("result.wpm"), "big hero")}` +
+    `${num(Math.round(r.accuracy), t("result.acc"), "big")}</div>`;
   let graph = "", list = "";
   if (r.words?.length) {
     const bands = speedBands(r.words.map((w) => w.wpm).filter((v) => v != null));
@@ -27,35 +28,28 @@ export function showResult(r) {
     };
     const legend = bands.labels.length
       ? `<span class="r-legend" aria-hidden="true">${bands.labels.map((l, i) => `<span class="s${i + 1}">${l}</span>`).join("")}</span>` : "";
-    graph = `<div class="r-graph"><p class="r-words-head"><span class="lbl-ui">${t("result.words")}</span>${legend}</p>${speedChart(r.words, bands)}</div>`;
+    graph = `<div class="r-graph">${legend}${speedChart(r.words, bands)}</div>`;
     list = `<p class="r-wordlist">${r.words.map(word).join(" ")}</p>`;
   }
 
-  const row = [];
-  if (r.consistency != null) row.push(num(Math.round(r.consistency), "%", "result.cons", "mid", "result.consTip"));
-  if (r.seconds != null) row.push(num(Math.round(r.seconds), "s", "result.time", "mid"));
+  const facts = [];
+  if (r.consistency != null) facts.push(fact(`<b>${Math.round(r.consistency)}%</b> ${t("result.cons")}`, "", "result.consTip"));
+  if (r.seconds != null) facts.push(fact(`<b>${Math.round(r.seconds)}</b>${t("result.sec")}`));
   if (r.chars) {
     const c = r.chars;
-    const part = (n, key, cls, tip) =>
-      `<span class="r-cc${cls}"${tip ? ` tabindex="0" data-tip-text="${t(tip)}"` : ""}><b>${n}</b> ${t(key)}</span>`;
-    row.push(`<span class="r-num mid"><span class="r-lbl">${t("result.chars")}</span><span class="r-chars">` +
-      `${part(c.correct, "result.correct", "")}${part(c.wrong, "result.wrong", c.wrong ? " bad" : "")}` +
-      `${part(c.extra, "result.extra", c.extra ? " bad" : "", "result.extraTip")}${part(c.missed, "result.missed", "", "result.missedTip")}</span></span>`);
+    facts.push(fact(`<b>${c.correct}</b> ${t("result.correct")}`));
+    if (c.wrong) facts.push(fact(`<b>${c.wrong}</b> ${t("result.wrong")}`, " bad"));
+    if (c.extra) facts.push(fact(`<b>${c.extra}</b> ${t("result.extra")}`, " bad", "result.extraTip"));
+    if (c.missed) facts.push(fact(`<b>${c.missed}</b> ${t("result.missed")}`, " bad", "result.missedTip"));
   }
   let note = "";
-  if (r.climb?.place) {
-    const c = S.climb;
-    if (r.climb.weak?.length) row.push(num(r.climb.weak.map((w) => w.pair).join(" "), "", "climb.weak", "mid", "climb.weakTip"));
-    if (c) note = `<p class="r-climb ${r.climb.verdict}">${climbNote(r.climb, c)}</p>`;
-  }
-  if (r.list) row.push(num(listLabel(r.list), "", "freetype.list", "mid"));
-  if (r.variant) row.push(num(variantLabel(r.variant), "", "ft.text", "mid"));
+  if (r.climb?.weak?.length) facts.push(fact(`${t("climb.weak")} <b>${r.climb.weak.map((w) => w.pair).join(" ")}</b>`, "", "climb.weakTip"));
 
   if (r.unsaved) note = `<p class="r-unsaved" role="status"><span>${r.unsaved.text}</span>` +
     (r.unsaved.retry ? ` <button type="button" class="btn r-again">${t("save.again")}</button>` : "") + `</p>`;
 
-  const body = `<div class="r-top${graph ? "" : " solo"}">${hero}${graph}</div>` +
-    (row.length ? `<div class="r-row">${row.join("")}</div>` : "") + note + list;
+  const body = `<div class="r-top${graph ? "" : " solo"}">${hero}${graph}</div>` + list +
+    (facts.length ? `<p class="r-facts">${facts.join("")}</p>` : "") + note;
   const shown = open(body, "result.nextBtn");
   if (r.unsaved?.retry) saveAgain(r);
   if (r.best) newBest();
@@ -69,31 +63,15 @@ function saveAgain(r) {
     el.input.focus({ preventScroll: true });
     btn.disabled = true;
     try {
-      const climb = await r.unsaved.retry();
-      line.className = "r-climb";
+      await r.unsaved.retry();
+      line.className = "r-saved";
       line.textContent = t("save.done");
-      if (r.climb && S.climb) {
-        const cl = { ...r.climb, ...climb };
-        line.className = `r-climb ${cl.verdict}`;
-        line.innerHTML = climbNote(cl, S.climb);
-      }
     } catch (err) {
       line.firstChild.textContent = err.message;
       btn.disabled = false;
       if (!err.retryable) btn.remove();
     }
   });
-}
-
-function climbNote(cl, c) {
-  const p = cl.place, top = c.levels.length;
-  const v = { level: p.level, words: levelWords(p.level), up: c.passesUp, pass: c.passAccuracy, fail: c.failAccuracy,
-    next: cl.level + 1, prev: cl.level - 1, k: p.passes, left: c.passesUp - p.passes };
-  if (p.moved > 0) return t("climb.up", v);
-  if (p.moved < 0) return t("climb.down", v);
-  if (cl.verdict === "pass") return t(cl.level < top ? "climb.pass" : "climb.passTop", v);
-  if (cl.verdict === "hold") return t("climb.hold", v);
-  return t(cl.level > 1 && p.fails > 0 ? "climb.fail" : "climb.failCount", v);
 }
 
 const SPEED_BANDS = 5;
@@ -120,10 +98,9 @@ function speedChart(words, bands) {
   const y = (v) => 100 - (v / top) * 100;
   const line = pts.map((w, i) => `${x(i).toFixed(2)},${y(w.wpm).toFixed(2)}`).join(" ");
   const dots = pts.map((w, i) => {
-    const text = w.letters.map((l) => l.c).join("");
     const pos = `left:${x(i).toFixed(2)}%;top:${y(w.wpm).toFixed(2)}%`;
     const bad = w.letters.some((l) => l.bad) ? `<i class="r-err" style="${pos}"></i>` : "";
-    return `<i class="r-dot s${bands.level(w.wpm)}" style="${pos}" data-tip-text="${t("result.chartTip", { word: text, wpm: w.wpm })}"></i>` + bad;
+    return `<i class="r-dot s${bands.level(w.wpm)}" style="${pos}" data-tip-text="${t("result.wordWpm", { wpm: w.wpm })}"></i>` + bad;
   }).join("");
   return `<div class="r-chart" role="img" aria-label="${t("result.chartLabel")}">` +
     `<span class="r-axis" aria-hidden="true"><span>${top}</span><span>${top / 2}</span><span>0</span></span>` +
@@ -135,11 +112,11 @@ function speedChart(words, bands) {
 
 const ICON_NEXT = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>`;
 
-// ---------- a new best: the speed and its label as trading-card foil ----------
+// ---------- a new best: the speed and a badge above it as trading-card foil ----------
 function newBest() {
-  const lbl = box.querySelector(".r-hero .r-num.hero .r-lbl");
-  lbl.insertAdjacentHTML("beforeend", `<span class="r-best"><span>${t("result.newBest")}</span></span>`);
-  const nodes = [box.querySelector(".r-num.hero > b"), lbl.querySelector(".r-best > span")];
+  const hero = box.querySelector(".r-hero .r-num.hero");
+  hero.insertAdjacentHTML("afterbegin", `<span class="r-best"><span>${t("result.newBest")}</span></span>`);
+  const nodes = [hero.querySelector(":scope > b"), hero.querySelector(".r-best > span")];
   document.fonts.ready.then(() => nodes.forEach(FX.foil));
 }
 function open(body, btn) {

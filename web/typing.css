@@ -132,7 +132,7 @@ body.typing-now .lp-best > i { animation-play-state: paused; }
 .lp-news b { color: var(--accent-text); font-weight: 600; }
 
 /* ---------- typing settings (settings.js CHOICES and SWITCHES) ---------- */
-:root { --text-size: 2.15rem; }
+:root { --text-size: 2.4rem; }
 body[data-glide="jump"], body[data-glide="jump"] :is(.caret, .streak) { --feel-caret-ms: 0ms !important; }
 /* the space mark is the space's own background: a space that ends a line has no width, so no mark hangs at the edge (#248) */
 .text span[data-sp] {
@@ -204,7 +204,7 @@ body.typing-now:not(.live-off) .lp-cols > :is(.lp-last, .lp-intro) { opacity: 0;
   position: relative;
   font-size: clamp(1.1rem, 3.6vw, 1.6rem); line-height: 1.7;
   height: calc(3 * 1.7em); overflow: hidden;
-  letter-spacing: .02em; color: var(--sub); word-break: break-word;
+  letter-spacing: .02em; color: color-mix(in srgb, var(--text) 30%, var(--sub)); word-break: break-word;
   text-align: left;
   transition: filter var(--med), opacity var(--med);
 }
@@ -221,19 +221,6 @@ body.typing-now:not(.live-off) .lp-cols > :is(.lp-last, .lp-intro) { opacity: 0;
   :root { --view-top: max(16px, 50vh - 360px); }
   body.kb-hidden #keyboard { display: none; }
   body.kb-hidden #view-type > .letters, body.kb-hidden.tb-resulting #view-type > .letters { margin-top: var(--view-top); }
-
-  /* the text sits in a niche, a shade darker than the page */
-  :root { --niche: 14px; --card-pad: 20px; }
-  .text { margin-top: var(--niche); background: var(--bg); border-radius: 2px; box-shadow: 0 0 0 var(--niche) var(--bg); }
-  .text-box { padding-bottom: var(--niche); margin-bottom: var(--card-pad); }
-
-  /* the mode's row and the text share one card */
-  #view-type > :is(.letters, .text-box)::after {
-    content: ""; position: absolute; z-index: -1; pointer-events: none; background: var(--panel);
-  }
-  #view-type > .letters::after { inset: calc(-1 * var(--card-pad)) -24px 0; border-radius: var(--r-lg) var(--r-lg) 0 0; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04); }
-  body[data-mode="freetype"] #view-type > .letters::after { top: calc(100% - 28px - var(--card-pad)); }
-  #view-type > .text-box::after { inset: -20px -24px calc(-1 * var(--card-pad)); border-radius: 0 0 var(--r-lg) var(--r-lg); box-shadow: 0 1px 2px rgba(0, 0, 0, .35); }
 }
 .text-box.blurred .text { filter: blur(3px); opacity: .5; }
 .focus-hint {
@@ -267,17 +254,15 @@ body.typing-now:not(.live-off) .lp-cols > :is(.lp-last, .lp-intro) { opacity: 0;
 .text-box.goal .pause-note > :is([data-i18n="pause.title"], [data-i18n="pause.away"]) { display: none; }
 .text-box.goal .pause-note .goal-only, .text-box.goal .pause-ic .goal-ic { display: revert; }
 .text-box.goal .pause-ic { color: var(--ok); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ok) 60%, transparent); animation: none; }
-.text-box :is(.text, .live), .text-box::before, #view-type > :not(.text-box, .letters), #view-type > .letters > * { transition: opacity var(--med), filter var(--med); }
+.text-box :is(.text, .live), .text-box::before, #view-type > :not(.text-box) { transition: opacity var(--med), filter var(--med); }
 .text-box.paused :is(.text, .live) { filter: blur(5px); opacity: .2; }
 .text-box.paused::before { opacity: .25; }
-.text-box.snap, .text-box.snap *, .text-box.snap::before, body.tb-snap #view-type > :not(.text-box, .letters), body.tb-snap #view-type > .letters > * { transition: none; }
-body.tb-paused #view-type > :not(.text-box, .letters), body.tb-paused #view-type > .letters > * { filter: blur(5px); opacity: .25; }
+.text-box.snap, .text-box.snap *, .text-box.snap::before, body.tb-snap #view-type > :not(.text-box) { transition: none; }
+body.tb-paused #view-type > :not(.text-box) { filter: blur(5px); opacity: .25; }
 .text-box.paused :is(.caret, .focus-hint) { opacity: 0; }
 
 .text span.ok { color: var(--text); }
 .text span.fx { color: color-mix(in srgb, var(--accent) 46%, var(--sub)); }
-.text span.fnext { color: var(--fc); }
-:root[data-theme="light"] .text span.fnext { color: color-mix(in oklab, var(--fc) 60%, #1d1428); }
 :root[data-theme="light"] .text span.fx { color: color-mix(in srgb, var(--accent-text) 80%, var(--sub)); }
 .text span.bad, .text span.extra { text-shadow: 0 0 10px color-mix(in srgb, var(--error) 45%, transparent); }
 .text span.bad {
@@ -505,8 +490,16 @@ body.kb-nofit #keyboard { display: none; }
 .pips { display: inline-flex; gap: 5px; margin-left: 8px; vertical-align: middle; }
 .pips i { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--sub); }
 .pips i.on { background: var(--ok); border-color: var(--ok); }
-.r-climb { margin: 0; font-size: 1.25rem; color: var(--text); }
-.r-climb.pass { color: var(--ok); }
-.r-climb.fail { color: var(--error); }
+.pips i.slip { background: var(--error); border-color: var(--error); }
+/* the bar's answer to a Climb round (climbAnswer): a dot pops in, a step rises or sinks, a round that didn't count shakes the dots */
+.pips i.pop { animation: pip-pop .5s cubic-bezier(.3, 1.6, .5, 1); }
+.pips.nope { animation: pips-nope .4s var(--ease); }
+.step.up i { animation: step-up .7s cubic-bezier(.3, 1.5, .5, 1); transform-origin: bottom; }
+.step.down i { animation: step-down .6s var(--ease); transform-origin: bottom; }
+@keyframes pip-pop { from { transform: scale(0); } 60% { transform: scale(1.5); } }
+@keyframes pips-nope { 20%, 60% { transform: translateX(-3px); } 40%, 80% { transform: translateX(3px); } }
+@keyframes step-up { from { transform: scaleY(.6); } 55% { transform: scaleY(1.12); } }
+@keyframes step-down { 40% { transform: scaleY(.8); } }
+@media (prefers-reduced-motion: reduce) { .pips i.pop, .pips.nope, .step.up i, .step.down i { animation: none; } }
 .r-unsaved { margin: 0; font-size: 1.25rem; color: var(--error); display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; }
 .r-unsaved .btn { font-size: 1rem; }

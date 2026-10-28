@@ -156,9 +156,12 @@ function forecast() {
   const s = S.lastStats;
   const f = forecastText(s.forecast, S.exercise.locked.length === 0);
   const label = s.lap ? `${t("lp.lap")} ${t("lp.lapOf", { n: s.lap + 1, all: s.lastLap + 1 })}` : t("fc.next");
-  const tip = [s.lap ? t("lp.lapTip", { w: s.targetWpm }) : "", f ? f.tip : t("fc.none")].filter(Boolean).join(". ");
+  const stuck = !f && s.forecast?.letter && !s.forecast.few;
+  const why = stuck ? t("fc.stuckTip", { l: s.forecast.letter }) : t("fc.fewTip");
+  const tip = [s.lap ? t("lp.lapTip", { w: s.targetWpm }) : "", f ? f.tip : why].filter(Boolean).join(". ");
   const next = s.lap ? "" : S.exercise.locked[0];
-  return cell("lp-fc", label, (next ? `<b class="lp-key">${next}</b>` : "") + (f ? `<b>${f.value}</b>` : NONE), tip);
+  const value = f ? `<b>${f.value}</b>` : `<b class="lp-none">${t(stuck ? "fc.stuck" : "fc.few")}</b>`;
+  return cell("lp-fc", label, (next ? `<b class="lp-key">${next}</b>` : "") + value, tip);
 }
 
 // the stats tile's streak (#239): rounds in a row at the first of StreakAccuracies
