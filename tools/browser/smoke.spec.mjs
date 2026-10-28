@@ -374,6 +374,20 @@ test("stats: the goal line is a number of your own, and Learn's is its target", 
   await expect(page.locator("#goal-pick button")).toHaveCount(0);
 });
 
+test("Learn at 200% zoom with round history: the line stays inside the letter row", async ({ page }) => {
+  await withHistory(page);
+  await page.setViewportSize({ width: 960, height: 540 });
+  await openApp(page, { "tt.mode.en": "learn", "tt.goal": "15" });
+  await expect(page.locator("#lp-cols .lp-streak")).toBeVisible();
+  const edge = await page.evaluate(() => ({
+    row: document.querySelector("#letters").getBoundingClientRect().right,
+    sw: document.querySelector("#round-switch").getBoundingClientRect().right,
+    page: document.documentElement.scrollWidth - innerWidth,
+  }));
+  expect(edge.sw, "the round switch ends at the letter row's edge").toBeLessThanOrEqual(edge.row + 0.5);
+  expect(edge.page, "no sideways scroll").toBeLessThanOrEqual(0);
+});
+
 test("browser zoom 200% keeps the desktop layout and nothing overlaps", async ({ browser }) => {
   const ctx = await browser.newContext({ baseURL: "http://localhost:3000", viewport: { width: 960, height: 500 }, deviceScaleFactor: 2 });
   const page = await ctx.newPage();
