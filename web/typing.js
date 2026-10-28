@@ -265,7 +265,7 @@ export async function loadExercise() {
   el.text.classList.add("swap");
   el.textBox.classList.remove("typing");
   setTyping(false);
-  if (!el.live.classList.contains("final")) { setLive(el.wpm, 0, true); setLive(el.raw, 0, true); setLive(el.acc, 100, true); }
+  if (!el.live.classList.contains("final")) { setLive(el.wpm, 0); setLive(el.raw, 0); setLive(el.acc, 100); }
   lightNext();
   showPortion(0);
   placeCaret(true);
@@ -523,14 +523,10 @@ function updateLive() {
   setLive(el.raw, Math.round(currentRaw()));
   setLive(el.acc, Math.round(currentAccuracy()));
 }
-function setLive(node, n, instant = false) {
-  if (instant) {
-    node.classList.add("snap");
-    requestAnimationFrame(() => node.classList.remove("snap"));
-  }
-  node.style.setProperty("--v", n);
+function setLive(node, n) {
+  if (node.dataset.v === String(n)) return;
+  node.textContent = n;
   node.dataset.v = n;
-  node.setAttribute("aria-label", n);
 }
 
 // ---------- "typing now": the header steps back ----------

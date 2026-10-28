@@ -73,9 +73,7 @@ body:not(.typing-now) .live:not(.final) > .metric.num { opacity: 0; pointer-even
 .metric small { margin-left: 6px; white-space: nowrap; }
 .metric > span.pct { font-size: .9rem; margin-left: 1px; }
 @property --v { syntax: "<integer>"; inherits: false; initial-value: 0; }
-.metric > .live-n { counter-reset: v var(--v); transition: --v 450ms cubic-bezier(.2, .7, .3, 1), color var(--med); }
-.metric > .live-n::after { content: counter(v); }
-.metric > .live-n.snap { transition: none; }
+.metric > .live-n { transition: color var(--med); }
 .metric:has(#wpm), .metric.raw { min-width: 4rem; }
 .metric:has(#acc) { min-width: 4.6rem; }
 .live.final .metric > span { color: var(--text); }
