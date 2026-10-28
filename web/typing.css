@@ -490,8 +490,16 @@ body.kb-nofit #keyboard { display: none; }
 .pips { display: inline-flex; gap: 5px; margin-left: 8px; vertical-align: middle; }
 .pips i { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--sub); }
 .pips i.on { background: var(--ok); border-color: var(--ok); }
-.r-climb { margin: 0; font-size: 1.25rem; color: var(--text); }
-.r-climb.pass { color: var(--ok); }
-.r-climb.fail { color: var(--error); }
+.pips i.slip { background: var(--error); border-color: var(--error); }
+/* the bar's answer to a Climb round (climbAnswer): a dot pops in, a step rises or sinks, a round that didn't count shakes the dots */
+.pips i.pop { animation: pip-pop .5s cubic-bezier(.3, 1.6, .5, 1); }
+.pips.nope { animation: pips-nope .4s var(--ease); }
+.step.up i { animation: step-up .7s cubic-bezier(.3, 1.5, .5, 1); transform-origin: bottom; }
+.step.down i { animation: step-down .6s var(--ease); transform-origin: bottom; }
+@keyframes pip-pop { from { transform: scale(0); } 60% { transform: scale(1.5); } }
+@keyframes pips-nope { 20%, 60% { transform: translateX(-3px); } 40%, 80% { transform: translateX(3px); } }
+@keyframes step-up { from { transform: scaleY(.6); } 55% { transform: scaleY(1.12); } }
+@keyframes step-down { 40% { transform: scaleY(.8); } }
+@media (prefers-reduced-motion: reduce) { .pips i.pop, .pips.nope, .step.up i, .step.down i { animation: none; } }
 .r-unsaved { margin: 0; font-size: 1.25rem; color: var(--error); display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; }
 .r-unsaved .btn { font-size: 1rem; }

@@ -40,6 +40,7 @@ async function withHistory(page) {
     const res = await route.fetch(), body = await res.json();
     body.sessions = wpms.map((wpm, i) => ({ ...(body.sessions?.[0] ?? {}), wpm, accuracy: i < 4 ? 97 : 90 }));
     body.forecast = { known: true, rounds: 4, letter: "e" };
+    body.streaks = [{ min: 95, current: 4, longest: 6 }, { min: 97, current: 4, longest: 4 }, { min: 100, current: 0, longest: 1 }];
     return route.fulfill({ response: res, json: body });
   });
 }
@@ -61,6 +62,7 @@ test("Learn: a round can be typed to the end and is saved", async ({ page }) => 
   await expect(page.locator("#lp-cols .lp-intro")).toHaveCount(0);
   await expect(page.locator("#lp-cols .lp-last [data-n]").first()).toHaveAttribute("data-n", /^[1-9]/);
   await expect(page.locator("#lp-cols .lp-goal"), "the daily goal after the first round").toBeVisible();
+  await expect(page.locator("#lp-cols .lp-fc .lp-none"), "no bare dash before a forecast").toHaveText("estimating");
 });
 
 test("Learn: the panel draws the speed line, the next letter and the streak dots, with equal gaps", async ({ page }) => {
@@ -73,6 +75,8 @@ test("Learn: the panel draws the speed line, the next letter and the streak dots
   const next = await page.locator("#letters .locked.next").first().textContent();
   await expect(page.locator("#lp-cols .lp-fc .lp-key")).toHaveText(next.trim());
   await expect(page.locator("#lp-cols .lp-streak .lp-dots i.on")).toHaveCount(4);
+  await expect(page.locator("#lp-cols .lp-streak .lp-lbl"), "the same streak and name as the stats tile").toHaveText("95%+ in a row");
+  await expect(page.locator("#lp-cols .lp-streak")).toHaveAttribute("data-tip-text", /95%\+ accuracy\. Best 6$/);
   const boxes = await Promise.all(["#lp-cols .lp-last", "#lp-cols .lp-fc", "#lp-cols .lp-streak", "#lp-cols .lp-goal", "#round-switch"]
     .map((s) => page.locator(s).boundingBox()));
   const gaps = boxes.slice(1).map((b, i) => b.x - (boxes[i].x + boxes[i].width));
@@ -173,7 +177,7 @@ test("Freetype: a faster round shows New best in foil, and the small button star
   await typeRound(page, { delay: 40 });
   await expectResult(page);
   await expect(page.locator("#result .r-best")).toHaveText("New best");
-  await expect(page.locator("#result .r-num.hero > b.foil")).toHaveCount(1);
+  await expect(page.locator("#result .r-num.hero .r-v > b.foil")).toHaveCount(1);
   expect(await page.locator(".confetti").count(), "no confetti").toBe(0);
   await page.keyboard.press("Enter");
   await expect(page.locator("body")).not.toHaveClass(/\btb-resulting\b/);
@@ -196,7 +200,8 @@ test("Climb: an unsaved round still shows its result and can be saved again", as
   await page.unroute("**/api/v1/freeplay/results*");
   await line.getByRole("button", { name: "Save again" }).click();
   await expect(line).toHaveCount(0);
-  await expect(page.locator("#result .r-climb")).toBeVisible();
+  await expect(page.locator("#result .r-saved")).toBeVisible();
+  await expect(page.locator("#mode-bar .pips > i.on"), "the saved round fills its dot").toHaveCount(1);
   expectedOnly(info, "/freeplay/results");
 });
 
@@ -209,7 +214,7 @@ test("Climb: a round whose answer was lost is sent again and kept once", async (
   });
   await typeRound(page);
   await expectResult(page);
-  await expect(page.locator("#result .r-climb")).toBeVisible();
+  await expect(page.locator("#mode-bar .pips > i.on")).toHaveCount(1);
   expect(tries).toBe(2);
   const count = await page.evaluate(async () =>
     (await (await fetch("/api/v1/freeplay/stats?lang=en&length=words-10")).json()).sessionCount);
@@ -717,11 +722,14 @@ test("Climb: the levels stand as steps, and the level shows once", async ({ page
   await steps.nth(2).click();
   await expect(page.locator("#mode-bar .step.on")).toHaveText("1k");
   await expect(page.locator("#mode-bar .climb-status b")).toHaveText("3");
+  await expect(page.locator("#mode-bar .climb-note")).toBeVisible();
   await waitForText(page);
   await typeRound(page);
   await expectResult(page);
   await expect(page.locator("#result .r-num")).toHaveCount(2);
-  await expect(page.locator("#result .r-climb")).toHaveCount(1);
+  await expect(page.locator("#mode-bar .pips > i.pop"), "a clean round fills a dot with a pop").toHaveCount(1);
+  await expect(page.locator("#mode-bar .climb-note"), "the rule is spelled out only before the first round").toHaveCount(0);
+  await expect(page.locator("#mode-bar .climb-status")).toHaveAttribute("data-tip-text", /rounds at \d+%\+ to level up/);
   await expect(page.locator("#result .r-fact.bad"), "zero counters stay out").toHaveCount(0);
   await expect(page.locator("#result .r-wordlist .r-w").first()).toBeVisible();
   await expect(page.locator("#result .r-dot").first()).toHaveAttribute("data-tip-text", /^\d+ wpm$/);

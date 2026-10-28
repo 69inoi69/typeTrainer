@@ -49,12 +49,15 @@ body.tb-ending #view-type > .keyboard {
 .r-graph { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .r-graph .r-chart { flex: 1; min-height: 120px; margin: 0; }
 .r-num { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
-.r-num.big > b { font-size: 2.6rem; line-height: 1; letter-spacing: -.03em; color: var(--text); }
-.r-num.hero > b { font-size: 4.6rem; letter-spacing: -.04em; color: var(--accent-big); text-shadow: 0 0 40px color-mix(in srgb, var(--accent) 25%, transparent); }
-:root[data-theme="light"] .r-num.hero > b { text-shadow: none; }
-.r-num > b { font-weight: 500; color: var(--accent-big); font-variant-numeric: tabular-nums; }
-.r-num > b small { font-size: .4em; margin-left: 2px; letter-spacing: 0; color: var(--sub); }
-.r-num.hero > b small { margin-left: .3em; }
+.r-v { display: flex; align-items: baseline; line-height: 1; }
+.r-num.big .r-v { font-size: 2.6rem; letter-spacing: -.03em; }
+.r-num.big .r-v > b { color: var(--text); }
+.r-num.hero .r-v { font-size: 4.6rem; letter-spacing: -.04em; }
+.r-num.hero .r-v > b { color: var(--accent-big); text-shadow: 0 0 40px color-mix(in srgb, var(--accent) 25%, transparent); }
+:root[data-theme="light"] .r-num.hero .r-v > b { text-shadow: none; }
+.r-v > b { font-weight: 500; font-variant-numeric: tabular-nums; }
+.r-v > small { font-size: .4em; margin-left: 2px; letter-spacing: 0; color: var(--sub); }
+.r-num.hero .r-v > small { margin-left: .3em; }
 .r-facts { display: flex; flex-wrap: wrap; gap: 4px 0; font-size: 1.05rem; color: var(--label); }
 .r-fact + .r-fact::before { content: "·"; margin: 0 .7em; color: var(--sub); }
 .r-fact { outline: none; cursor: default; }
@@ -69,8 +72,8 @@ body.tb-ending #view-type > .keyboard {
 .r-chart { display: flex; gap: 8px; padding-bottom: 1.3em; }
 @media (max-height: 720px) and (min-width: 641px) {
   .r-body { gap: 16px; }
-  .r-num.big > b { font-size: 2.2rem; }
-  .r-num.hero > b { font-size: 3.6rem; }
+  .r-num.big .r-v { font-size: 2.2rem; }
+  .r-num.hero .r-v { font-size: 3.6rem; }
   .r-hero { gap: 10px; }
   .r-wordlist { max-height: calc(1.75em * 2); }
   .result .r-foot { margin-top: 8px; }
@@ -118,9 +121,9 @@ body.tb-ending #view-type > .keyboard {
 .r-axis-name { color: color-mix(in srgb, var(--text) 58%, var(--sub)); }
 .r-xaxis > .r-axis-name { translate: none; }
 
-/* ---------- a new best: trading-card foil on the speed and a badge above it ---------- */
+/* ---------- a new best: trading-card foil on the speed and a badge under it ---------- */
 .r-best {
-  display: inline-block; margin-bottom: 4px; padding: 1px 8px; border-radius: 6px; font-size: var(--fs-min);
+  display: inline-block; margin-top: 6px; padding: 1px 8px; border-radius: 6px; font-size: var(--fs-min);
   box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 60%, transparent);
 }
 :root[data-theme="light"] .r-best { box-shadow: inset 0 0 0 1.5px var(--accent-text); }
