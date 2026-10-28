@@ -37,8 +37,15 @@ export function renderLetters() {
       chip.className = "chip " + cls;
       chip.textContent = c;
       if (!cls.includes("locked")) chip.appendChild(document.createElement("i")).className = "prog";
-      if (c === popLetter) chip.classList.add("pop");
-      if (justMastered.has(c)) chip.classList.add("shine");
+      if (c === popLetter) {
+        chip.classList.add("pop");
+        chip.appendChild(document.createElement("i")).className = "ring";
+      }
+      if (popLetter && c === S.exercise.locked[0]) chip.classList.add("arrive");
+      if (justMastered.has(c)) {
+        chip.classList.add("shine");
+        chip.appendChild(document.createElement("i")).className = "fill";
+      }
       chipOf[c] = chip;
       frag.appendChild(chip);
     };

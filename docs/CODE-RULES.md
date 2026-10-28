@@ -49,7 +49,7 @@ comments. How the parts fit together is in `docs/HOW-THE-CODE-WORKS.md`.
   browser's guest (cookie `tt_guest`, `storage.IsGuest`). Password and token
   handling lives in `internal/auth` (standard library only); never store a
   password or a login token itself, only its hash.
-- Visual rewards (confetti, bumps, toasts) live in `web/fx.js` and must never
+- Visual rewards (the foil, the wave along the letters, bumps, toasts) live in `web/fx.js` and must never
   change what is measured or sent to the server. Tab starts a new round, as
   on Monkeytype: the dropped round is not saved, its presses already sent
   stay learned.

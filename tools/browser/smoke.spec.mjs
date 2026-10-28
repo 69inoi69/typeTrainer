@@ -77,6 +77,34 @@ test("Learn: the panel draws the speed line, the next letter and the streak dots
   for (const g of gaps) expect(g, `gaps ${gaps.map(Math.round)}`).toBeCloseTo(gaps[0], 0);
 });
 
+test("Learn: its events animate the letters row, a best round wears the foil, no confetti", async ({ page }) => {
+  await withHistory(page);
+  await openApp(page, { "tt.mode.en": "learn" });
+  const chips = page.locator("#letters .chip");
+  const open = (await chips.first().textContent()).trim();
+  await page.evaluate(async (c) => {
+    const m = await import("/letters.js");
+    m.markNewLetter(c);
+    m.markMastered([c]);
+    m.renderLetters();
+  }, open);
+  await expect(chips.first(), "a new letter flips open with a ring").toHaveClass(/\bpop\b/);
+  await expect(chips.first().locator("> .ring")).toHaveCount(1);
+  await expect(chips.first().locator("> .fill"), "a mastered letter fills green").toHaveCount(1);
+  await expect(page.locator("#letters .chip.locked.next"), "the dashed frame arrives on the next letter").toHaveClass(/\barrive\b/);
+  const n = await chips.count();
+  await page.evaluate(async () => (await import("/fx.js")).FX.wave(document.getElementById("letters")));
+  await expect(page.locator("#letters .chip > .wave"), "a wave runs along every letter").toHaveCount(n);
+  await expect(page.locator("#letters .chip > .wave"), "and cleans up after itself").toHaveCount(0, { timeout: 5000 });
+  await page.evaluate(async () => {
+    const m = await import("/learnpanel.js");
+    m.roundNews({ best: true, mastered: [] });
+    m.renderPanel();
+  });
+  await expect(page.locator("#lp-cols .lp-last .lp-best.foil"), "a best round's speed wears the foil").toHaveCount(1);
+  await expect(page.locator("canvas.confetti")).toHaveCount(0);
+});
+
 test("Learn: typing dims the line above the text and moves nothing", async ({ page }) => {
   await withHistory(page);
   await openApp(page, { "tt.mode.en": "learn", "tt.length.learn": "words-15", "tt.live": "1" });
