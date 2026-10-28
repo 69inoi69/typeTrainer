@@ -31,41 +31,11 @@
   .rail .switch button small, .rail-btn small { font-size: var(--fs-min); }
   .rail .switch button, .rail-btn { height: 54px; }
   .lang-switch button { padding: 0 6px; }
-  .live { gap: 12px; margin-bottom: 6px; }
-  .metric > span { font-size: 1.1rem; }
-  .metric small { margin-left: 4px; font-size: var(--fs-min); }
-  .metric:has(#wpm) { min-width: 3.5rem; }
-  .metric:has(#acc) { min-width: 4.1rem; }
-  .metric.raw { display: none; }
   .tiles { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 100%; }
   .tiles > .tile:first-child:nth-last-child(odd) { grid-column: 1 / -1; }
   .tile { padding: 10px 10px 9px; }
   .tile b { font-size: 1.3rem; }
-  .letter-row { display: grid; grid-template-columns: repeat(13, auto); justify-content: center; gap: 4px; }
-  .chip { font-size: clamp(.8rem, 3.6vw, .95rem); flex: none; width: 1.6em; height: 1.6em; }
-  .letters-caption:has(.mode-note) { flex-wrap: wrap; row-gap: 2px; }
-  .letters-caption .mode-note { flex-basis: 100%; text-align: left; white-space: nowrap; }
-  .letters-caption { gap: 12px; }
-  .live { flex-wrap: wrap; height: auto; min-height: 28px; }
-  .letters-caption { order: 1; flex-basis: 100%; }
-  .letters-caption::before { display: none; }
-  .stat { gap: 5px; }
-  #view-type { margin-block: 4px auto; }
   .note { font-size: var(--fs-min); border-radius: 14px; }
-  :root { --text-l: 34px; --text-r: 16px; }
-  .text-box { padding: 14px var(--text-r) 14px var(--text-l); }
-  .text-box::before { left: 14px; top: 48px; }
-  .text, .text-box::before { font-size: clamp(1.1rem, 5.2vw, 1.4rem); }
-  .r-body { gap: 18px; }
-  .r-top { grid-template-columns: 1fr; gap: 14px; }
-  .r-hero { display: grid; grid-template-columns: auto auto; justify-content: center; gap: 10px 32px; }
-  .r-graph .r-chart { flex: none; height: 90px; min-height: 0; }
-  .r-row { gap: 12px 28px; }
-  .r-num.big > b { font-size: 2.2rem; }
-  .r-num.hero > b { font-size: 3rem; }
-  .r-num.mid > b { font-size: 1.5rem; }
-  .r-chars { font-size: .9rem; }
-  .result .r-foot { margin-top: 18px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
