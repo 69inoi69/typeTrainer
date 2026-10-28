@@ -3,7 +3,7 @@
 import { t } from "./i18n.js";
 import { $, S, store } from "./state.js";
 import { getJSON } from "./api.js";
-import { forecastText } from "./letters.js";
+import { forecastText, rule } from "./letters.js";
 import { learning } from "./modes.js";
 import { DAILY, setSetting } from "./settings.js";
 import { openPop, ring as ringGroup, ringBtn } from "./minipop.js";
@@ -73,7 +73,8 @@ export function renderPanel() {
   box.hidden = cols.hidden = !show;
   if (!show) { drawn = drawnNews = ""; return; }
   if (news && news.lang !== S.lang) news = null;
-  const html = [lastRound(), forecast(), accStreak(), dailyGoal()].join("");
+  const first = !(S.lastStats.sessions ?? []).length && S.exercise.locked.length > 0;
+  const html = [...(first ? [intro()] : [lastRound(), forecast(), accStreak()]), dailyGoal()].join("");
   if (html !== drawn) { drawn = html; redraw(cols, ".lp-val", html); }
   const line = news ? `<p class="lp-news${news.big ? " big" : ""}"${news.tip ? ` tabindex="0" data-tip-text="${news.tip}"` : ""}>${news.text}</p>` : "";
   if (line !== drawnNews) { drawnNews = line; box.innerHTML = line; }
@@ -137,6 +138,12 @@ function spark(wpms, avg, tip) {
   return `<svg class="lp-spark" viewBox="0 0 ${SPARK_W} ${SPARK_H}"${tip ? ` tabindex="0" data-tip-text="${tip}"` : ` aria-hidden="true"`}>` +
     (avg === undefined ? "" : `<line class="avg" x1="0" x2="${SPARK_W}" y1="${y(avg)}" y2="${y(avg)}"/>`) +
     `<polyline points="${wpms.map((v, i) => `${x(i)},${y(v)}`).join(" ")}"/><circle cx="${x(end)}" cy="${y(wpms[end])}" r="3"/></svg>`;
+}
+
+function intro() {
+  const r = rule();
+  return cell("lp-intro", t("lp.introLbl", { l: `<b class="lp-key">${S.exercise.locked[0]}</b>` }),
+    t("lp.intro", { min: r.min, err: Math.round(r.err * 100), wpm: S.lastStats.targetWpm || 30 }));
 }
 
 function forecast() {
