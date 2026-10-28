@@ -2,6 +2,8 @@
 package config
 
 import (
+	"time"
+
 	"typingtrainer/internal/auth"
 	"typingtrainer/internal/engine"
 	"typingtrainer/internal/freeplay"
@@ -10,6 +12,7 @@ import (
 
 type Config struct {
 	Addr      string
+	Server    Server
 	MaxEvents int
 
 	MaxBodyBytes      int
@@ -38,9 +41,24 @@ type Config struct {
 	Sim                   sim.Params
 }
 
+type Server struct {
+	ReadHeader time.Duration
+	Read       time.Duration
+	Write      time.Duration
+	Idle       time.Duration
+	Shutdown   time.Duration
+}
+
 func Default() Config {
 	return Config{
-		Addr:      "localhost:3000",
+		Addr: "localhost:3000",
+		Server: Server{
+			ReadHeader: 10 * time.Second,
+			Read:       2 * time.Minute,
+			Write:      2 * time.Minute,
+			Idle:       2 * time.Minute,
+			Shutdown:   20 * time.Second,
+		},
 		MaxEvents: 5000,
 
 		MaxBodyBytes:      1 << 20,

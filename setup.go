@@ -15,6 +15,7 @@ import (
 	"typingtrainer/internal/freeplay"
 	"typingtrainer/internal/language"
 	"typingtrainer/internal/layout"
+	"typingtrainer/internal/static"
 	"typingtrainer/internal/storage"
 )
 
@@ -59,7 +60,7 @@ func newAppWith(open func() (storage.Store, error)) (http.Handler, config.Config
 	if err != nil {
 		return nil, cfg, err
 	}
-	mux.Handle("/", http.FileServerFS(webFS))
+	mux.Handle("/", static.New(webFS))
 	return server.WithGuest(mux), cfg, nil
 }
 

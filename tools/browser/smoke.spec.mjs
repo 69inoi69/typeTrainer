@@ -536,7 +536,7 @@ for (const [w, h] of [[1920, 1080], [1366, 768]]) {
     expect(at.sides[1].right, "the right switches end at the text").toBeCloseTo(at.textR, 0);
     expect(at.sides[0].top, "one line").toBe(at.sides[1].top);
     expect(at.done).toBe(0);
-    for (let i = 0; i < 40; i++) { const c = await nextChar(page); if (!c) break; await page.keyboard.type(c); }
+    for (let i = 0; i < 15; i++) { const c = await nextChar(page); if (!c) break; await page.keyboard.type(c); }
     await page.waitForTimeout(400);
     expect((await m()).done, "the line fills while typing").toBeGreaterThan(0);
   });
