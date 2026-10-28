@@ -64,7 +64,6 @@ body.tb-ending #view-type > .keyboard {
 .r-cc b { font-size: inherit; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
 .r-cc.bad b { color: var(--error); }
 .r-cc[data-tip-text] { text-decoration: underline dotted color-mix(in srgb, var(--sub) 60%, transparent); text-underline-offset: 4px; }
-.r-num .trend { font-size: .5em; vertical-align: middle; margin-left: 6px; }
 .result .s1 { --sp: var(--error); }
 .result .s2 { --sp: color-mix(in srgb, var(--error) 50%, var(--accent-text)); }
 .result .s3 { --sp: var(--accent-text); }
@@ -240,7 +239,6 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 @keyframes splash-letter { to { opacity: 1; } }
 body.splashing .top .logo { visibility: hidden; }
 
-.letters-caption .begin + .begin::before { content: "·"; margin-right: 10px; color: var(--sub); }
 
 /* ---------- profile: the account card in the header (profile.js) ---------- */
 .profile { position: relative; }

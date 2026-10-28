@@ -167,7 +167,6 @@ const I18N = {
     "ls.lap": "Lap {n} of {all}, goal {w} wpm", "ls.instead": "you press", "ls.times": "{n} times",
     "ls.noMix": "No pairs yet",
     "climb.level": "Level",
-    "tip.level": "Words from the {words} most common",
     "climb.words": "{up} rounds at {pass}%+ to level up", "climb.top": "Top level",
     "climb.levelTip": "The {words} most common words",
     "climb.ruleTip": "Below {fail}% resets the dots. Two in a row drop a level",
