@@ -12,6 +12,7 @@
 body.typing-now .top .logo-name, body.typing-now .top .logo-name span { color: var(--sub); }
 body.typing-now .top .logo-key { filter: grayscale(1) brightness(.7); }
 body.typing-now .lang-switch, body.typing-now .profile, body.typing-now .rail { opacity: .35; }
+#letters .chip:not(.focus, .next, :hover) { opacity: .6; }
 body.typing-now #letters .chip:not(.focus, .next) { opacity: .4; }
 body.typing-now .bottom { opacity: .15; }
 body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.typing-now .rail:hover { opacity: 1; }
@@ -60,7 +61,7 @@ body.typing-now .mascot, body.splashing .mascot { opacity: 0; visibility: hidden
 
 /* ---------- the top line of the text card ---------- */
 .live {
-  position: relative;
+  position: relative; opacity: .8;
   display: flex; gap: 6px 18px; align-items: center; height: 44px; margin: 0 0 6px; min-width: 0;
 }
 .live > .metric { transition: opacity .4s var(--ease), transform var(--med) var(--ease); }
