@@ -28,7 +28,6 @@ export function makeKey(k) {
     key.appendChild(alt);
   }
   if (k.modifier) key.classList.add("mod");
-  key.title = t(`fingerName.${k.finger}`);
   return key;
 }
 
@@ -69,6 +68,7 @@ export function drawKeyboard() {
 
 // ---------- the keyboard's own settings ----------
 const KB_SWITCHES = ["nextKey", "hand", "fingerText"];
+const KB_DESC = { hand: "settings.handDesc" };
 const gear = Object.assign(document.createElement("button"), { type: "button", className: "kb-gear" });
 gear.appendChild($("btn-settings").querySelector("svg").cloneNode(true));
 gear.dataset.tip = "tip.kb";
@@ -76,8 +76,8 @@ gear.setAttribute("aria-label", t("tip.kb"));
 gear.setAttribute("aria-haspopup", "dialog");
 gear.setAttribute("aria-expanded", "false");
 const kbRows = () => KB_SWITCHES.map((k) => {
-  const on = S.settings[k], desc = t(`settings.${k}Desc`).replace(/"/g, "&quot;");
-  return `<div class="mp-row"><span class="mp-name" data-tip-text="${desc}">${t("settings." + k)}</span>` +
+  const on = S.settings[k], desc = KB_DESC[k] ? ` data-tip-text="${t(KB_DESC[k])}"` : "";
+  return `<div class="mp-row"><span class="mp-name"${desc}>${t("settings." + k)}</span>` +
     ring(t("settings." + k), [ringBtn(`data-key="${k}" data-value=""`, t("settings.off"), !on), ringBtn(`data-key="${k}" data-value="1"`, t("settings.on"), on)]) + `</div>`;
 }).join("");
 gear.addEventListener("click", () => openPop(gear, t("settings.kbGroup"), kbRows, setSetting));

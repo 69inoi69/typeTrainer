@@ -619,7 +619,7 @@ async function finishRound(byLastKey = false) {
     if (milestone) FX.wave(el.letters);
   } catch (err) {
     console.error(err);
-    FX.toast(t("err.load"));
+    FX.toast(t("err.server"));
     loadExercise().catch(console.error);
   } finally {
     boxState(false, "ending");
