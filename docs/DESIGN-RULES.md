@@ -86,7 +86,10 @@ there is a reason not to).
   picked), not for labels people must read.
 - One accent colour (`--accent`, gold) for the caret, the focus letter and
   the selected option; a filled gold thing uses `--accent-fill` (a slight
-  gradient) and `--accent-glow`; gold as text is `--accent-text`. Green
+  gradient) and `--accent-glow`; gold as text is `--accent-text` (4.5:1 on
+  the page in both themes), and gold numbers of 24px and more (the result,
+  the stats tiles and records) and the logo use `--accent-big` (3:1, the
+  contrast large text needs), so the light theme keeps some gold. Green
   (`--ok`) for mastered; red (`--error`) for mistakes and destructive
   actions. Colours are CSS variables; the light theme has its own palette.
 - Surfaces in three steps: the page (`--bg`), cards (`--panel`) and small

@@ -514,6 +514,31 @@ test("light theme: a round finishes and the caret stays in its line", async ({ p
   await expectResult(page);
 });
 
+test("gold text reads on the page in both themes: 4.5:1, big numbers 3:1", async ({ page }) => {
+  for (const theme of ["dark", "light"]) {
+    await openApp(page, { "tt.theme": theme });
+    const ratio = await page.evaluate(() => {
+      const rgb = (v) => {
+        const probe = document.createElement("i");
+        probe.style.color = `var(${v})`;
+        document.body.append(probe);
+        const c = getComputedStyle(probe).color.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number);
+        probe.remove();
+        return c;
+      };
+      const lum = (c) => c.map((x) => x / 255).map((x) => x <= .03928 ? x / 12.92 : ((x + .055) / 1.055) ** 2.4)
+        .reduce((s, x, i) => s + x * [.2126, .7152, .0722][i], 0);
+      const on = (v) => {
+        const [a, b] = [lum(rgb(v)), lum(rgb("--bg"))].sort((x, y) => y - x);
+        return (a + .05) / (b + .05);
+      };
+      return { text: on("--accent-text"), big: on("--accent-big") };
+    });
+    expect(ratio.text, `${theme}: --accent-text on --bg`).toBeGreaterThanOrEqual(4.5);
+    expect(ratio.big, `${theme}: --accent-big on --bg`).toBeGreaterThanOrEqual(3);
+  }
+});
+
 test("stats on a phone: nothing is wider than the screen", async ({ page }) => {
   await withHistory(page);
   for (const width of [390, 375]) {

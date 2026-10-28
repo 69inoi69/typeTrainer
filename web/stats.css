@@ -26,8 +26,8 @@
 .tile small { order: -1; }
 .tile .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-height: 1.2em; font-size: var(--fs-min); color: var(--label); }
 .tile b { display: block; font-size: 1.75rem; font-weight: 500; letter-spacing: -.02em; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1.05; }
-.tile.speed b { color: var(--accent-text); }
-.tile.level b { color: var(--accent-text); }
+.tile.speed b { color: var(--accent-big); }
+.tile.level b { color: var(--accent-big); }
 .tile b i { font-style: normal; font-size: .55em; color: var(--sub); }
 .tile small { display: block; line-height: 1.3; }
 .trend { font-weight: 500; padding: 0 6px; border-radius: 999px; cursor: default; }
@@ -59,7 +59,7 @@
 .pb span { font-size: var(--fs-min); }
 .pb:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
 .pb[aria-selected="true"] { background: color-mix(in srgb, var(--accent) 7%, transparent); }
-.pb[aria-selected="true"] b { color: var(--accent-text); }
+.pb[aria-selected="true"] b { color: var(--accent-big); }
 .pb[aria-selected="true"]::after {
   content: ""; position: absolute; left: 30%; right: 30%; bottom: 5px; height: 2px; border-radius: 2px; background: var(--accent);
 }
