@@ -18,7 +18,7 @@ body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.ty
 .logo { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .logo-key { width: 34px; height: 34px; flex: none; }
 .logo-text { display: flex; flex-direction: column; line-height: 1; min-width: 0; }
-.logo-name { font-family: var(--logo); font-size: 1.75rem; font-weight: 600; letter-spacing: -.03em; color: var(--accent-text); white-space: nowrap; transition: color .4s var(--ease); }
+.logo-name { font-family: var(--logo); font-size: 1.75rem; font-weight: 600; letter-spacing: -.03em; color: var(--accent-big); white-space: nowrap; transition: color .4s var(--ease); }
 .logo-name span { color: var(--text); transition: color .4s var(--ease); }
 
 /* ---------- the logo's keycap and the mascot (#207) ---------- */

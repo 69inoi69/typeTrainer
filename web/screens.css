@@ -52,11 +52,11 @@ body.tb-ending #view-type > .keyboard {
 @media (min-width: 900px) { .r-row { flex-wrap: nowrap; gap: 16px 32px; } .r-row > .r-num { flex: none; } .r-row > .r-num:has(.r-chars) { flex: 0 1 auto; min-width: 0; } }
 .r-num { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .r-num.big > b { font-size: 2.6rem; line-height: 1; letter-spacing: -.03em; color: var(--text); }
-.r-num.hero > b { font-size: 4.6rem; letter-spacing: -.04em; color: var(--accent-text); text-shadow: 0 0 40px color-mix(in srgb, var(--accent) 25%, transparent); }
+.r-num.hero > b { font-size: 4.6rem; letter-spacing: -.04em; color: var(--accent-big); text-shadow: 0 0 40px color-mix(in srgb, var(--accent) 25%, transparent); }
 :root[data-theme="light"] .r-num.hero > b { text-shadow: none; }
 .r-num.mid > b { font-size: 2.1rem; line-height: 1.1; }
 .r-num .r-lbl, .result .lbl-ui { font-size: var(--fs-min); }
-.r-num > b { font-weight: 500; color: var(--accent-text); font-variant-numeric: tabular-nums; }
+.r-num > b { font-weight: 500; color: var(--accent-big); font-variant-numeric: tabular-nums; }
 .r-num > b small { font-size: .45em; margin-left: 2px; color: var(--sub); }
 .r-num[data-tip-text] { outline: none; cursor: default; }
 .r-chars { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: .55em; font-size: 1.05rem; color: var(--label); }

@@ -20,6 +20,7 @@
   --accent: #f2c230;
   --accent-deep: #e0a21a;
   --accent-text: var(--accent);
+  --accent-big: var(--accent);
   --accent-fill: linear-gradient(180deg, #f6cf47 0%, #e8ad1f 100%);
   --accent-glow: 0 0 0 1px rgba(242, 194, 48, .35), 0 6px 22px -6px rgba(242, 194, 48, .45);
   --on-accent: #17130a;
@@ -60,7 +61,8 @@
   --text: #1a1d24;
   --label: color-mix(in srgb, var(--text) 35%, var(--sub));
   --accent: #f2c230;
-  --accent-text: #d49a00;
+  --accent-text: #8a6400;
+  --accent-big: #a87b00;
   --accent-glow: 0 0 0 1px rgba(200, 150, 20, .35), 0 6px 18px -6px rgba(220, 160, 20, .5);
   --on-accent: #17130a;
   --error: #d93a40;
