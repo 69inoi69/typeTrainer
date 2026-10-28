@@ -97,6 +97,12 @@ there is a reason not to).
   short soft shadow), never a heavy shadow. Glass (`--glass`, a blurred
   see-through background) only for what floats over the page: windows,
   tooltips, the phone's bottom bar. Corners: `--r-sm`, `--r-md`, `--r-lg`.
+- The typing screen has one theme in every mode, with its own parts per
+  mode: one card (`--panel`) holds the mode's row (Learn's letters, Climb's
+  levels, Freetype's switches) and the text, and the text sits in a niche a
+  shade darker (`--bg`). The card is drawn by `::after` of `.letters` and
+  `.text-box`, the niche by the shadow of `.text`, so neither moves the
+  column edges.
 - One font: Geist Mono (`--mono`, `--ui`), served from `web/fonts`
   (SIL Open Font License, `web/fonts/OFL.txt`). The one exception is the
   logo, "typeTrainer" in the header, the start screen and the stats picture:
