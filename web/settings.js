@@ -21,7 +21,11 @@ export function setLength(mode, id) {
   if (mode === S.mode) S.settings.length = id;
 }
 const CARETS = ["line", "block"];
-export const GOALS = [0, 30, 40, 50, 75, 100, 125, 150, 200];
+const GOAL_MAX = 300;
+const goalOf = (v) => {
+  const n = Number(v);
+  return Number.isInteger(n) && n > 0 ? Math.min(n, GOAL_MAX) : 0;
+};
 export const DAILY = [0, 5, 10, 15, 20, 30, 45, 60];
 const DAILY_DEFAULT = 15;
 const CHOICES = {
@@ -56,8 +60,7 @@ export function loadSettings() {
   const caret = store.get("tt.caret");
   S.settings.caret = CARETS.includes(caret) ? caret : "line";
   S.settings.theme = store.get("tt.theme") === "light" ? "light" : "dark";
-  const goal = Number(store.get("tt.goal"));
-  S.settings.goal = GOALS.includes(goal) ? goal : 0;
+  S.settings.goal = goalOf(store.get("tt.goal"));
   const daily = store.get("tt.daily");
   S.settings.daily = daily !== null && DAILY.includes(Number(daily)) ? Number(daily) : DAILY_DEFAULT;
   for (const [name, c] of Object.entries(CHOICES)) {
@@ -175,8 +178,8 @@ export function setSetting(key, value) {
     S.settings.theme = value;
     store.set("tt.theme", value);
   } else if (key === "goal") {
-    S.settings.goal = Number(value);
-    store.set("tt.goal", value);
+    S.settings.goal = goalOf(value);
+    store.set("tt.goal", String(S.settings.goal));
     goalListener();
   } else if (key === "daily") {
     S.settings.daily = Number(value);

@@ -41,7 +41,7 @@ async function joinStudy() {
     await loadLanguage(initialLanguage());
   } catch (err) {
     console.error(err);
-    el.text.textContent = t("err.load");
+    el.text.textContent = t("err.server");
   }
   startView();
   buildAmbient();
