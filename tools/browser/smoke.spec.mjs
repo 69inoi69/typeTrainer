@@ -718,6 +718,9 @@ test("Climb: the levels stand as steps, and the level shows once", async ({ page
   await waitForText(page);
   await typeRound(page);
   await expectResult(page);
-  await expect(page.locator("#result .r-lbl", { hasText: "Level" })).toHaveCount(0);
+  await expect(page.locator("#result .r-num")).toHaveCount(2);
   await expect(page.locator("#result .r-climb")).toHaveCount(1);
+  await expect(page.locator("#result .r-fact.bad"), "zero counters stay out").toHaveCount(0);
+  await expect(page.locator("#result .r-wordlist .r-w").first()).toBeVisible();
+  await expect(page.locator("#result .r-dot").first()).toHaveAttribute("data-tip-text", /: \d+ wpm$/);
 });
