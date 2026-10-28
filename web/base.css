@@ -99,7 +99,7 @@ input, textarea { user-select: text; -webkit-user-select: text; }
 ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); color: var(--text); }
 
 /* ---------- two kinds of text ---------- */
-.lbl-ui, .metric small, .tile small, .r-lbl,
+.metric small, .tile small,
 .panel-note, .profile-field small, .profile-label, .intro-kicker {
   font-family: var(--ui); font-size: var(--fs-min); font-weight: 500; color: var(--label);
 }

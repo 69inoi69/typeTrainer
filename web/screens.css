@@ -48,22 +48,19 @@ body.tb-ending #view-type > .keyboard {
 .r-hero { display: flex; flex-direction: column; justify-content: center; gap: 18px; }
 .r-graph { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .r-graph .r-chart { flex: 1; min-height: 120px; margin: 0; }
-.r-row { display: flex; align-items: flex-start; gap: 16px 40px; flex-wrap: wrap; }
-@media (min-width: 900px) { .r-row { flex-wrap: nowrap; gap: 16px 32px; } .r-row > .r-num { flex: none; } .r-row > .r-num:has(.r-chars) { flex: 0 1 auto; min-width: 0; } }
 .r-num { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .r-num.big > b { font-size: 2.6rem; line-height: 1; letter-spacing: -.03em; color: var(--text); }
 .r-num.hero > b { font-size: 4.6rem; letter-spacing: -.04em; color: var(--accent-big); text-shadow: 0 0 40px color-mix(in srgb, var(--accent) 25%, transparent); }
 :root[data-theme="light"] .r-num.hero > b { text-shadow: none; }
-.r-num.mid > b { font-size: 2.1rem; line-height: 1.1; }
-.r-num .r-lbl, .result .lbl-ui { font-size: var(--fs-min); }
 .r-num > b { font-weight: 500; color: var(--accent-big); font-variant-numeric: tabular-nums; }
-.r-num > b small { font-size: .45em; margin-left: 2px; color: var(--sub); }
-.r-num[data-tip-text] { outline: none; cursor: default; }
-.r-chars { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: .55em; font-size: 1.05rem; color: var(--label); }
-.r-cc { outline: none; cursor: default; }
-.r-cc b { font-size: inherit; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
-.r-cc.bad b { color: var(--error); }
-.r-cc[data-tip-text] { text-decoration: underline dotted color-mix(in srgb, var(--sub) 60%, transparent); text-underline-offset: 4px; }
+.r-num > b small { font-size: .4em; margin-left: 2px; letter-spacing: 0; color: var(--sub); }
+.r-num.hero > b small { margin-left: .3em; }
+.r-facts { display: flex; flex-wrap: wrap; gap: 4px 0; font-size: 1.05rem; color: var(--label); }
+.r-fact + .r-fact::before { content: "·"; margin: 0 .7em; color: var(--sub); }
+.r-fact { outline: none; cursor: default; }
+.r-fact b { font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+.r-fact.bad b { color: var(--error); }
+.r-fact[data-tip-text] { text-decoration: underline dotted color-mix(in srgb, var(--sub) 60%, transparent); text-underline-offset: 4px; }
 .result .s1 { --sp: var(--error); }
 .result .s2 { --sp: color-mix(in srgb, var(--error) 50%, var(--accent-text)); }
 .result .s3 { --sp: var(--accent-text); }
@@ -74,7 +71,6 @@ body.tb-ending #view-type > .keyboard {
   .r-body { gap: 16px; }
   .r-num.big > b { font-size: 2.2rem; }
   .r-num.hero > b { font-size: 3.6rem; }
-  .r-num.mid > b { font-size: 1.7rem; }
   .r-hero { gap: 10px; }
   .r-wordlist { max-height: calc(1.75em * 2); }
   .result .r-foot { margin-top: 8px; }
@@ -103,11 +99,10 @@ body.tb-ending #view-type > .keyboard {
   background: linear-gradient(45deg, transparent 42%, var(--error) 42% 58%, transparent 58%),
               linear-gradient(-45deg, transparent 42%, var(--error) 42% 58%, transparent 58%);
 }
-.result .r-words-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.r-legend { display: flex; flex-basis: 100%; border-radius: 999px; overflow: hidden; font-size: var(--fs-min); height: 16px; line-height: 16px; font-variant-numeric: tabular-nums; }
+.r-legend { display: flex; border-radius: 999px; overflow: hidden; font-size: var(--fs-min); height: 16px; line-height: 16px; font-variant-numeric: tabular-nums; }
 .r-legend > span { flex: 1; text-align: center; padding: 0 6px; background: var(--sp); color: var(--on-band); }
 .r-wordlist {
-  font-family: var(--mono); font-size: .95rem; line-height: 1.75; color: color-mix(in srgb, var(--text) 80%, var(--sub));
+  font-family: var(--mono); font-size: 1.1rem; line-height: 1.75; color: color-mix(in srgb, var(--text) 80%, var(--sub));
   max-height: calc(1.75em * 5); overflow-y: auto; scrollbar-width: thin;
 }
 .r-w { border-radius: 4px; padding: 1px 0; cursor: default; color: var(--sp, inherit); transition: background var(--fast); }
@@ -123,9 +118,9 @@ body.tb-ending #view-type > .keyboard {
 .r-axis-name { color: color-mix(in srgb, var(--text) 58%, var(--sub)); }
 .r-xaxis > .r-axis-name { translate: none; }
 
-/* ---------- a new best: trading-card foil on the speed and its label ---------- */
+/* ---------- a new best: trading-card foil on the speed and a badge above it ---------- */
 .r-best {
-  display: inline-block; margin-left: 10px; padding: 1px 8px; border-radius: 6px;
+  display: inline-block; margin-bottom: 4px; padding: 1px 8px; border-radius: 6px; font-size: var(--fs-min);
   box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 60%, transparent);
 }
 :root[data-theme="light"] .r-best { box-shadow: inset 0 0 0 1.5px var(--accent-text); }
