@@ -8,7 +8,7 @@ import { showTip } from "./tools.js";
 
 const box = $("result");
 
-const num = (value, unit, size) => `<span class="r-num ${size}"><b>${value}<small>${unit}</small></b></span>`;
+const num = (value, unit, size) => `<span class="r-num ${size}"><span class="r-v"><b>${value}</b><small>${unit}</small></span></span>`;
 const fact = (text, cls = "", tip = "") =>
   `<span class="r-fact${cls}"${tip ? ` tabindex="0" data-tip-text="${t(tip)}"` : ""}>${text}</span>`;
 let done = null;
@@ -112,11 +112,11 @@ function speedChart(words, bands) {
 
 const ICON_NEXT = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>`;
 
-// ---------- a new best: the speed and a badge above it as trading-card foil ----------
+// ---------- a new best: the speed and a badge under it as trading-card foil ----------
 function newBest() {
   const hero = box.querySelector(".r-hero .r-num.hero");
-  hero.insertAdjacentHTML("afterbegin", `<span class="r-best"><span>${t("result.newBest")}</span></span>`);
-  const nodes = [hero.querySelector(":scope > b"), hero.querySelector(".r-best > span")];
+  hero.insertAdjacentHTML("beforeend", `<span class="r-best"><span>${t("result.newBest")}</span></span>`);
+  const nodes = [hero.querySelector(".r-v > b"), hero.querySelector(".r-best > span")];
   document.fonts.ready.then(() => nodes.forEach(FX.foil));
 }
 function open(body, btn) {
