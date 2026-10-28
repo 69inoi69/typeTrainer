@@ -1,7 +1,7 @@
 // The stats screen.
 
 import { i18nVars, t, applyI18n } from "./i18n.js";
-import { $, el, S, store, reducedMotion, levelWords, listLabel, listless } from "./state.js";
+import { $, el, S, store, reducedMotion, listLabel, listless } from "./state.js";
 import { getJSON } from "./api.js";
 import { LENGTHS, GOALS, lengthLabel, lengthFor, firstRoundDone, setSetting } from "./settings.js";
 import { ring, ringBtn } from "./minipop.js";
@@ -72,6 +72,7 @@ export function renderStats() {
 }
 
 // ---------- the tiles ----------
+const compact = new Intl.NumberFormat("en", { notation: "compact" });
 function tiles(sessions, count, goal, level, streaks) {
   const avg = (arr, f) => arr.length ? arr.reduce((a, x) => a + f(x), 0) / arr.length : null;
   const last = sessions.slice(-10), before = sessions.slice(-20, -10);
@@ -88,19 +89,17 @@ function tiles(sessions, count, goal, level, streaks) {
   const last10 = (f) => t("tile.last10") + trend(f);
   const wpm = avg(last, (x) => x.wpm);
   const out = [
-    level != null ? `<div class="tile level" data-tip-text="${t("tile.levelTip", { words: levelWords(level) })}"><b>${level}</b><small>${t("tile.level")}</small><span class="meta">${t("tile.levelNote")}</span></div>` : "",
+    level != null ? `<div class="tile level"><b>${level}</b><small>${t("tile.level")}</small><span class="meta">${t("tile.levelNote", { list: compact.format(S.climb?.levels?.[level - 1] ?? 0).toLowerCase() })}</span></div>` : "",
     tile(count, t("tile.exercises")),
     tile(num(wpm), t("tile.wpm"), last10((x) => x.wpm), " speed"),
     tile(num(avg(last, (x) => x.accuracy), "%"), t("tile.acc"), last10((x) => x.accuracy)),
     tile(num(avg(last.filter((x) => x.consistency != null), (x) => x.consistency), "%"), t("tile.cons"), last10((x) => x.consistency)),
   ];
   if (count && streaks.length) {
-    const [first, ...rest] = streaks;
-    const meta = rest.map((x) => t("tile.streakAt", { min: x.min, n: x.longest })).join(", ");
-    const now = streaks.filter((x) => x.current).at(-1);
-    const tip = t("tile.streakTip", { min: first.min }) + " " +
-      (now ? t("tile.streakNow", { n: now.current, min: now.min }) : t("tile.streakNone", { min: first.min }));
-    out.push(`<div class="tile" data-tip-text="${tip}"><b>${first.longest}</b><small>${t("tile.streak", { min: first.min })}</small><span class="meta">${meta}</span></div>`);
+    const [first] = streaks;
+    const runs = streaks.map((x) => t("tile.streakAt", { min: x.min, n: x.longest })).join(", ");
+    const tip = t("tile.streakTip", { min: first.min, runs });
+    out.push(`<div class="tile" data-tip-text="${tip}"><b>${first.current}</b><small>${t("tile.streak", { min: first.min })}</small><span class="meta">${t("tile.streakBest", { n: first.longest })}</span></div>`);
   }
   if (goal) {
     const left = wpm === null ? null : Math.max(0, Math.round(goal - wpm));
