@@ -69,6 +69,7 @@ const I18N = {
     "phone.note": "Typing practice needs a computer keyboard. Here you can look at your stats.",
     "pause.goalTitle": "Daily goal reached",
     "pause.title": "Paused", "pause.press": "Press", "pause.key": "any key", "pause.go": "to resume", "pause.away": "Paused time doesn't count",
+    "kb.away": "Zoom out to see the keyboard",
     "key.space": "Space", "key.tab": "Tab", "key.caps": "Caps", "key.shift": "Shift", "key.enter": "Enter",
     "tip.next": "Opens when you've mastered every open letter",
     "hint.press": "Press <kbd class='hk'>{key}</kbd> with your <b>{finger}</b>",

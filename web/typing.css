@@ -386,6 +386,10 @@ body.typing-now .kb-gear:hover { opacity: 1; }
 .keyboard.off { visibility: hidden; }
 @media not ((min-width: 900px) and (pointer: fine)) { .keyboard.off { display: none; } }
 body.kb-nofit #keyboard { display: none; }
+body.kb-nohand .keyboard { margin-top: 0; }
+body.kb-nohand .keyboard > .hands { display: none; }
+.kb-away { display: none; margin: 18px 0 0; text-align: center; color: var(--label); }
+body.kb-nofit:not(.kb-hidden) .kb-away { display: block; }
 .kb-row { display: flex; gap: calc(var(--u) * .12); width: calc(var(--u) * 13.4); }
 .key {
   --fc: #888;
