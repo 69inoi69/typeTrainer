@@ -173,7 +173,7 @@ test("Freetype: a faster round shows New best in foil, and the small button star
   await typeRound(page, { delay: 40 });
   await expectResult(page);
   await expect(page.locator("#result .r-best")).toHaveText("New best");
-  await expect(page.locator("#result .r-num.hero > b.foil")).toHaveCount(1);
+  await expect(page.locator("#result .r-num.hero .r-v > b.foil")).toHaveCount(1);
   expect(await page.locator(".confetti").count(), "no confetti").toBe(0);
   await page.keyboard.press("Enter");
   await expect(page.locator("body")).not.toHaveClass(/\btb-resulting\b/);
