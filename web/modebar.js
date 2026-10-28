@@ -17,7 +17,7 @@ export function renderModeBar() {
   if (learn) {
     bar.innerHTML = "";
     learnBar.innerHTML = ring(t("bar.round"), LEARN_LENGTHS.map((id) =>
-      ringBtn(`data-length="${id}"`, lengthLabel(id), id === cur)));
+      ringBtn(`data-length="${id}" aria-label="${lengthLabel(id)}"`, lengthLabel(id).replace(/^(\d+)(.*)$/, `$1<span class="rs-u">$2</span>`), id === cur)));
     return;
   }
   learnBar.innerHTML = "";
