@@ -1,9 +1,9 @@
 // Keys and buttons, routed to the modules that handle them.
 
 import { $, el, S, introOpen, isTouch, focusText } from "./state.js";
-import { requestFit } from "./keyboard.js";
+import { requestFit, highlightNextKey } from "./keyboard.js";
 import { refreshStats, renderStats, resetStatsPick } from "./stats.js";
-import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, loadExercise, roundStarted, pauseRound, checkLayout, lightNext } from "./typing.js";
+import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, loadExercise, roundStarted, pauseRound, checkLayout } from "./typing.js";
 import { checkCaps } from "./warn.js";
 import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
@@ -111,7 +111,7 @@ onTypingLook(() => {
   fitText();
   requestFit();
   placeCaret(true);
-  lightNext();
+  highlightNextKey();
 });
 onSoundPick((mode) => keySound(mode !== "errors", mode));
 
