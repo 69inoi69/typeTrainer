@@ -110,7 +110,8 @@ export const FX = (() => {
 export const Splash = (() => {
   const MIN_MS = 1750;
   const FADE_MS = 450;
-  function start() {
+  const AGAIN_FADE_MS = 150;
+  function start(firstVisit) {
     const root = document.getElementById("splash");
     const t0 = performance.now();
     let skipped = false;
@@ -124,8 +125,8 @@ export const Splash = (() => {
 
     async function done() {
       const wait = MIN_MS - (performance.now() - t0);
-      if (!skipped && wait > 0) await new Promise((r) => setTimeout(r, wait));
-      const fade = root.animate([{ opacity: 1 }, { opacity: 0 }], { duration: FADE_MS, easing: "ease-in-out", fill: "forwards" });
+      if (firstVisit && !skipped && wait > 0) await new Promise((r) => setTimeout(r, wait));
+      const fade = root.animate([{ opacity: 1 }, { opacity: 0 }], { duration: firstVisit ? FADE_MS : AGAIN_FADE_MS, easing: "ease-in-out", fill: "forwards" });
       document.body.classList.remove("splashing");
       await fade.finished;
       root.remove();

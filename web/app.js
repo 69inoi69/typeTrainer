@@ -28,7 +28,8 @@ async function joinStudy() {
 // ---------- start ----------
 (async function init() {
   renderProfile();
-  const splash = Splash.start();
+  const splash = Splash.start(store.get("tt.splashSeen") === null);
+  store.set("tt.splashSeen", "1");
   loadSettings();
   autoKb();
   labelTips();

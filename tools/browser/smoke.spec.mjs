@@ -243,6 +243,20 @@ test("Learn: an unsaved round offers to save it again", async ({ page }, info) =
   expectedOnly(info, "/api/v1/results");
 });
 
+test("the start screen plays its full length only on the first visit", async ({ page }) => {
+  const ready = async () => {
+    const t0 = Date.now();
+    await page.goto("/");
+    await waitForText(page);
+    return Date.now() - t0;
+  };
+  await page.addInitScript(() => localStorage.setItem("tt.introDone", "1"));
+  const first = await ready();
+  expect(first, "the first visit shows the whole splash").toBeGreaterThanOrEqual(1750);
+  const again = await ready();
+  expect(again, "a later visit doesn't wait for it").toBeLessThan(1500);
+});
+
 test("Live stats is on for a new user and doesn't switch itself", async ({ page }) => {
   await openApp(page, { "tt.mode.en": "climb", "tt.length.climb": "words-10" });
   await expect(page.locator("body")).not.toHaveClass(/\blive-off\b/);
