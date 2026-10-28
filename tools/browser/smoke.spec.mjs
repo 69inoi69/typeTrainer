@@ -241,6 +241,20 @@ test("Learn: an unsaved round offers to save it again", async ({ page }, info) =
   expectedOnly(info, "/api/v1/results");
 });
 
+test("the start screen plays its full length only on the first visit", async ({ page }) => {
+  const ready = async () => {
+    const t0 = Date.now();
+    await page.goto("/");
+    await waitForText(page);
+    return Date.now() - t0;
+  };
+  await page.addInitScript(() => localStorage.setItem("tt.introDone", "1"));
+  const first = await ready();
+  expect(first, "the first visit shows the whole splash").toBeGreaterThanOrEqual(1750);
+  const again = await ready();
+  expect(again, "a later visit doesn't wait for it").toBeLessThan(1500);
+});
+
 test("the background is off by default and on when chosen", async ({ page }) => {
   await openApp(page);
   await expect(page.locator(".ambient")).toHaveAttribute("data-kind", "off");
