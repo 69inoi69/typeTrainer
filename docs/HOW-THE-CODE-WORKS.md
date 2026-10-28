@@ -205,7 +205,7 @@ All responses are JSON. Every route except `/languages` and `/auth/*` takes `?la
 | Method | Path | Request | Response |
 |---|---|---|---|
 | GET | `/api/v1/languages` | | `[{id, name, label, layout, alphabet, systemLayout}]` |
-| POST | `/api/v1/auth/register` | `{name, password}` | `{name}` and a login cookie; 400 if a rule is broken, 409 if the name is taken, 429 after too many attempts (Retry-After), 404 where accounts are off |
+| POST | `/api/v1/auth/register` | `{name, password}` | `{name}` and a login cookie; this browser's guest progress moves to the new account; 400 if a rule is broken, 409 if the name is taken, 429 after too many attempts (Retry-After), 404 where accounts are off |
 | POST | `/api/v1/auth/login` | `{name, password}` | `{name}` and a login cookie; 401 for a wrong name or password (one answer for both), 429 after too many attempts |
 | POST | `/api/v1/auth/logout` | | `{ok: true}`; ends this login and deletes the cookie |
 | GET | `/api/v1/auth/me` | | `{accounts, name}`; `name` is null for a guest, `accounts` false where they cannot work (GitHub Pages) |
@@ -308,8 +308,13 @@ that browser works with that user's data.
 - **Wrong name or wrong password** get the same 401 answer, and an unknown
   name is still checked against a dummy hash, so neither the answer nor its
   time tells which names exist.
-- **A new account starts empty.** The guest's progress stays with the guest;
-  to move it, export it as a guest and import it after logging in.
+- **Signing up keeps the guest's progress.** `CreateUser` moves the
+  guest's rows (letters, rounds, Climb, Freetype, every language) to the
+  new account in the same transaction, so the guest is left empty. Logging
+  in to an existing account moves nothing: the account keeps its own data
+  and the guest's stays with the guest cookie (two letter models are never
+  mixed). The shared fallback guest of a browser without cookies is never
+  moved.
 - **Guests**: every browser without a login is its own guest. `WithGuest`
   (`internal/api/auth.go`) wraps the whole site: a request without the
   cookie `tt_guest` gets a new random token in it (same kind as a login

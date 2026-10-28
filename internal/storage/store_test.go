@@ -23,6 +23,7 @@ var storeTests = map[string]func(*testing.T, Store){
 	"FreetypeModes":             testFreetypeModes,
 	"UsersAreSeparate":          testUsersAreSeparate,
 	"Users":                     testUsers,
+	"SignUpTakesGuest":          testSignUpTakesGuest,
 	"Logins":                    testLogins,
 	"SessionFields":             testSessionFields,
 	"KeyStatsFields":            testKeyStatsFields,
@@ -292,14 +293,14 @@ func TestSession_Summary(t *testing.T) {
 
 func testUsers(t *testing.T, m Store) {
 	now := time.Now()
-	a, err := m.CreateUser("ann", "hash-a", now)
+	a, err := m.CreateUser("ann", "hash-a", now, "")
 	if err != nil || a.ID == "" || a.ID == LocalUser {
 		t.Fatalf("create: %+v %v", a, err)
 	}
-	if _, err := m.CreateUser("ann", "other", now); !errors.Is(err, ErrNameTaken) {
+	if _, err := m.CreateUser("ann", "other", now, ""); !errors.Is(err, ErrNameTaken) {
 		t.Fatalf("second ann: %v, want ErrNameTaken", err)
 	}
-	b, _ := m.CreateUser("bob", "hash-b", now)
+	b, _ := m.CreateUser("bob", "hash-b", now, "")
 	if b.ID == a.ID {
 		t.Fatal("two users got the same id")
 	}
@@ -314,6 +315,52 @@ func testUsers(t *testing.T, m Store) {
 	}
 	if _, err := m.UserByName("nobody"); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("unknown name: %v, want ErrNotFound", err)
+	}
+}
+
+func testSignUpTakesGuest(t *testing.T, m Store) {
+	const guest, other = GuestPrefix + "1", GuestPrefix + "2"
+	m.SaveKeyStats(guest, "en", map[string]engine.KeyStat{"e": {Count: 5}})
+	m.SetUnlocked(guest, "en", 9)
+	m.SetLap(guest, "en", 2)
+	m.AddSession(guest, "en", Session{WPM: 40})
+	m.AddFreeplaySession(guest, "en", ModeClimb, Session{WPM: 50, Level: 3})
+	m.AddFreeplaySession(guest, "en", FreetypeMode(200, ""), Session{WPM: 60})
+	m.AddSession(guest, "uk", Session{WPM: 30})
+	m.AddSession(other, "en", Session{WPM: 20})
+
+	a, err := m.CreateUser("ann", "hash", time.Now(), guest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stats, _ := m.KeyStats(a.ID, "en")
+	unlocked, _ := m.Unlocked(a.ID, "en")
+	lap, _ := m.Lap(a.ID, "en")
+	learn, _ := m.SessionCount(a.ID, "en", "")
+	climb, _ := m.FreeplaySessionCount(a.ID, "en", ModeClimb, "")
+	free, _ := m.FreeplaySessionCount(a.ID, "en", FreetypeMode(200, ""), "")
+	uk, _ := m.SessionCount(a.ID, "uk", "")
+	if stats["e"].Count != 5 || unlocked != 9 || lap != 2 || learn != 1 || climb != 1 || free != 1 || uk != 1 {
+		t.Fatalf("account: stats=%v unlocked=%d lap=%d learn=%d climb=%d freetype=%d uk=%d", stats, unlocked, lap, learn, climb, free, uk)
+	}
+	left, _ := m.SessionCount(guest, "en", "")
+	leftStats, _ := m.KeyStats(guest, "en")
+	if left != 0 || len(leftStats) != 0 {
+		t.Fatalf("the guest kept a copy: rounds=%d stats=%v", left, leftStats)
+	}
+	if n, _ := m.SessionCount(other, "en", ""); n != 1 {
+		t.Fatal("another guest's rounds moved too")
+	}
+
+	b, _ := m.CreateUser("bob", "hash", time.Now(), guest)
+	if n, _ := m.SessionCount(b.ID, "en", ""); n != 0 {
+		t.Fatal("an empty guest gave the next account rounds")
+	}
+	if _, err := m.CreateUser("ann", "hash", time.Now(), other); !errors.Is(err, ErrNameTaken) {
+		t.Fatalf("taken name: %v", err)
+	}
+	if n, _ := m.SessionCount(other, "en", ""); n != 1 {
+		t.Fatal("a failed sign up moved the guest's rounds")
 	}
 }
 

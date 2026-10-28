@@ -54,7 +54,7 @@ export function renderProfile() {
   $("account-form").hidden = !!account.name;
   $("account-in").hidden = !account.name;
   if (account.name) $("account-as").innerHTML = t("account.as", { name: account.name });
-  else if (!msg.classList.contains("bad")) msg.textContent = t("account.note");
+  else if (!msg.classList.contains("bad")) msg.textContent = "";
   btn.title = t("profile.open");
   picks.innerHTML = COLORS.map((c) =>
     `<button type="button" data-c="${c}" style="--av:${c}" aria-label="${c}" aria-pressed="${avatar() === c}"></button>`).join("") +
@@ -114,7 +114,7 @@ file.addEventListener("change", () => {
 // ---------- account ----------
 function setMsg(key) {
   msg.classList.toggle("bad", !!key);
-  msg.textContent = t(key || "account.note");
+  msg.textContent = key ? t(key) : "";
 }
 const ERRORS = { 400: "account.rules", 401: "account.wrong", 409: "account.taken", 429: "account.slow" };
 
