@@ -388,6 +388,19 @@ test("Learn at 200% zoom with round history: the line stays inside the letter ro
   expect(edge.page, "no sideways scroll").toBeLessThanOrEqual(0);
 });
 
+test("text can't be selected with the mouse, also in windows; only fields can", async ({ page }) => {
+  await openApp(page, {});
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#settings-win")).toBeVisible();
+  const odd = await page.evaluate(() => [...document.querySelectorAll("body, dialog, [popover], dialog *")]
+    .filter((e) => !e.matches("input, textarea") && getComputedStyle(e).userSelect !== "none")
+    .map((e) => e.id || e.className || e.tagName).slice(0, 5));
+  expect(odd, "these can be selected").toEqual([]);
+  const fields = await page.evaluate(() => [...document.querySelectorAll("textarea, input[type=text], input[type=password]")]
+    .filter((e) => getComputedStyle(e).userSelect === "none").length);
+  expect(fields, "fields stay selectable").toBe(0);
+});
+
 test("browser zoom 200% keeps the desktop layout and nothing overlaps", async ({ browser }) => {
   const ctx = await browser.newContext({ baseURL: "http://localhost:3000", viewport: { width: 960, height: 500 }, deviceScaleFactor: 2 });
   const page = await ctx.newPage();
