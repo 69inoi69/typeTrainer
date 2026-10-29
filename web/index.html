@@ -13,7 +13,7 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="theme-color" content="#0e0f12">
-  <script>try { if (localStorage.getItem("tt.theme") === "light") document.documentElement.dataset.theme = "light"; } catch {}</script>
+  <script>try { if (localStorage.getItem("tt.theme") === "light") document.documentElement.dataset.theme = "light"; if (localStorage.getItem("tt.splashSeen")) document.documentElement.dataset.splash = "again"; } catch {}</script>
 </head>
 <body class="splashing">
   <div class="splash" id="splash" aria-hidden="true">

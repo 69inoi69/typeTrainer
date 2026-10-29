@@ -258,8 +258,10 @@ test("the start screen plays its full length only on the first visit", async ({ 
   await page.addInitScript(() => localStorage.setItem("tt.introDone", "1"));
   const first = await ready();
   expect(first, "the first visit shows the whole splash").toBeGreaterThanOrEqual(1750);
+  expect(await page.evaluate(() => document.documentElement.dataset.splash), "the first visit types the logo").toBeUndefined();
   const again = await ready();
   expect(again, "a later visit doesn't wait for it").toBeLessThan(1500);
+  expect(await page.evaluate(() => document.documentElement.dataset.splash), "a later visit only fades in, no logo").toBe("again");
 });
 
 test("Live stats is on for a new user and doesn't switch itself", async ({ page }) => {

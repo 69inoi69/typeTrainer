@@ -110,7 +110,7 @@ export const FX = (() => {
 export const Splash = (() => {
   const MIN_MS = 1750;
   const FADE_MS = 450;
-  const AGAIN_FADE_MS = 150;
+  const AGAIN_FADE_MS = 300;
   function start(firstVisit) {
     const root = document.getElementById("splash");
     const t0 = performance.now();
