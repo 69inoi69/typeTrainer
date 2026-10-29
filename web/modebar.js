@@ -66,7 +66,7 @@ function climbStatus() {
     (slip ? `<i class="slip"></i>` : "") + `</span>`;
   const words = t("climb.levelTip", { words: levelWords(level) });
   const rule = level < top ? t("climb.words", { up: c.passesUp, pass: c.passAccuracy }) : t("climb.top");
-  const tip = [words, rule, slip ? t("climb.slip", { fail: c.failAccuracy, prev: level - 1 }) : t("climb.ruleTip", { fail: c.failAccuracy })].join(". ");
+  const tip = [words + ".", rule, slip ? t("climb.slip", { fail: c.failAccuracy, prev: level - 1 }) : t("climb.ruleTip", { fail: c.failAccuracy })].join(" ");
   const intro = store.get(SEEN) ? "" : `<span class="climb-words">${words}</span><span class="climb-note">${rule}</span>`;
   return `<span class="climb-status" tabindex="0" data-tip-text="${tip}">` +
     `<span>${t("climb.level")} <b>${level}</b></span>${pips}${intro}</span>`;

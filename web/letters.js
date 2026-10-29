@@ -113,11 +113,11 @@ export function letterNeeds(k) {
   return out;
 }
 function letterTip(c, k) {
-  if (!k?.count) return `${c}: ${t("letter.noData")}`;
+  if (!k?.count) return `${c}: ${t("letter.noData")}.`;
   const parts = [t("heat.count", { n: k.count }), t("letter.err", { e: Math.round(k.errorRate * 100) })];
   if (k.avgMs) parts.push(t("letter.ms", { wpm: Math.round(12000 / k.avgMs) }));
   const needs = letterNeeds(k);
-  return `${c}: ${parts.join(", ")}. ${k.mastered ? t("letter.mastered") : t("letter.needs", { list: needs.map((n) => t(n)).join(", ") })}`;
+  return `${c}: ${parts.join(", ")}. ${k.mastered ? t("letter.mastered") : t("letter.needs", { list: needs.map((n) => t(n)).join(", ") })}.`;
 }
 
 // ---------- the forecast ----------

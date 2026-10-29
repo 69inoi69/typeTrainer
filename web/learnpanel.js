@@ -127,7 +127,7 @@ function lastRound() {
     return d ? t(d > 0 ? up : down, { d: Math.abs(d), n: before.length, avg: Math.round(was) }) : "";
   };
   const tip = avg ? [delta(last.wpm, avg.wpm, "lp.faster", "lp.slower"), delta(last.accuracy, avg.acc, "lp.accUp", "lp.accDown")]
-    .filter(Boolean).join(". ") : "";
+    .filter(Boolean).join(" ") : "";
   return cell("lp-last", t("lp.last"),
     `${bestLang === S.lang ? `<b class="lp-best" data-n="${Math.round(last.wpm)}">${Math.round(last.wpm)}</b>` : num(last.wpm)}<small>wpm</small>${spark(list.slice(0, AVG_ROUNDS).map((x) => x.wpm).reverse(), avg?.wpm, tip)}` +
     `${num(last.accuracy, "%", "lp-gap")}<small>${t("metric.acc")}</small>`);
@@ -158,7 +158,7 @@ function forecast() {
   const label = s.lap ? `${t("lp.lap")} ${t("lp.lapOf", { n: s.lap + 1, all: s.lastLap + 1 })}` : t("fc.next");
   const stuck = !f && s.forecast?.letter && !s.forecast.few;
   const why = stuck ? t("fc.stuckTip", { l: s.forecast.letter }) : t("fc.fewTip");
-  const tip = [s.lap ? t("lp.lapTip", { w: s.targetWpm }) : "", f ? f.tip : why].filter(Boolean).join(". ");
+  const tip = [s.lap ? t("lp.lapTip", { w: s.targetWpm }) : "", f ? f.tip : why].filter(Boolean).join(" ");
   const next = s.lap ? "" : S.exercise.locked[0];
   const value = f ? `<b>${f.value}</b>` : `<b class="lp-none">${t(stuck ? "fc.stuck" : "fc.few")}</b>`;
   return cell("lp-fc", label, (next ? `<b class="lp-key">${next}</b>` : "") + value, tip);

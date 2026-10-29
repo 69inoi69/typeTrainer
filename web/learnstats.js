@@ -53,8 +53,7 @@ function gridPanel(rounds, order, open) {
       const k = r.letters[i];
       if (!k) return `<i class="off"></i>`;
       const p = k.mastered ? 1 : letterProgress(k);
-      const tip = t("ls.cellTip", { n: first + j, l: c, p: Math.round(p * 100) }) +
-        (k.mastered ? " · " + t("ls.mastered") : "");
+      const tip = t(k.mastered ? "ls.mastered" : "ls.cellTip", { n: first + j, l: c, p: Math.round(p * 100) });
       return `<i class="${k.mastered ? "done" : k.count ? "" : "fresh"}" style="--p:${p.toFixed(2)}" data-tip-text="${tip}"></i>`;
     }).join("");
     return `<button type="button" class="ls-l${c === letter ? " on" : ""}" data-letter="${c}" aria-pressed="${c === letter}">${c}</button><div class="ls-row">${cells}</div>`;

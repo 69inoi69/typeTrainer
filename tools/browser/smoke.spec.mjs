@@ -76,7 +76,7 @@ test("Learn: the panel draws the speed line, the next letter and the streak dots
   await expect(page.locator("#lp-cols .lp-fc .lp-key")).toHaveText(next.trim());
   await expect(page.locator("#lp-cols .lp-streak .lp-dots i.on")).toHaveCount(4);
   await expect(page.locator("#lp-cols .lp-streak .lp-lbl"), "the same streak and name as the stats tile").toHaveText("95%+ in a row");
-  await expect(page.locator("#lp-cols .lp-streak")).toHaveAttribute("data-tip-text", /95%\+ accuracy\. Best 6$/);
+  await expect(page.locator("#lp-cols .lp-streak")).toHaveAttribute("data-tip-text", /95% accuracy or better\. Your best is 6\.$/);
   const boxes = await Promise.all(["#lp-cols .lp-last", "#lp-cols .lp-fc", "#lp-cols .lp-streak", "#lp-cols .lp-goal", "#round-switch"]
     .map((s) => page.locator(s).boundingBox()));
   const gaps = boxes.slice(1).map((b, i) => b.x - (boxes[i].x + boxes[i].width));
@@ -195,7 +195,7 @@ test("Climb: an unsaved round still shows its result and can be saved again", as
   await typeRound(page);
   await expectResult(page);
   const line = page.locator("#result .r-unsaved");
-  await expect(line).toContainText("Not saved: no connection");
+  await expect(line).toContainText("isn't saved yet");
   expect(tries, "the save and its two retries").toBe(3);
   await page.unroute("**/api/v1/freeplay/results*");
   await line.getByRole("button", { name: "Save again" }).click();
@@ -743,7 +743,7 @@ test("Climb: the levels stand as steps, and the level shows once", async ({ page
   await expect(page.locator("#result .r-num")).toHaveCount(2);
   await expect(page.locator("#mode-bar .pips > i.pop"), "a clean round fills a dot with a pop").toHaveCount(1);
   await expect(page.locator("#mode-bar .climb-note"), "the rule is spelled out only before the first round").toHaveCount(0);
-  await expect(page.locator("#mode-bar .climb-status")).toHaveAttribute("data-tip-text", /rounds at \d+%\+ to level up/);
+  await expect(page.locator("#mode-bar .climb-status")).toHaveAttribute("data-tip-text", /rounds at \d+% to level up\./);
   await expect(page.locator("#result .r-fact.bad"), "zero counters stay out").toHaveCount(0);
   await expect(page.locator("#result .r-wordlist .r-w").first()).toBeVisible();
   await expect(page.locator("#result .r-dot").first()).toHaveAttribute("data-tip-text", /^\d+ wpm$/);
@@ -754,7 +754,7 @@ test("Learn: a keyboard that can't fit leaves one line in its place", async ({ p
   await openApp(page, { "tt.mode.en": "learn" });
   await expect(page.locator("body")).toHaveClass(/\bkb-nofit\b/);
   await expect(page.locator("#keyboard")).toBeHidden();
-  await expect(page.locator("#kb-away")).toHaveText("Zoom out to see the keyboard");
+  await expect(page.locator("#kb-away")).toHaveText("Zoom out to see the keyboard.");
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(page.locator("#keyboard")).toBeVisible();
   await expect(page.locator("#kb-away")).toBeHidden();
