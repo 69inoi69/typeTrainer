@@ -37,6 +37,7 @@
   --fast: 70ms;
   --med: 180ms;
   --ease: cubic-bezier(.2, .8, .2, 1);
+  --grow: cubic-bezier(.34, 1.45, .64, 1);
 
   --ctl: 38px;
   --track: color-mix(in srgb, var(--text) 5%, var(--panel));

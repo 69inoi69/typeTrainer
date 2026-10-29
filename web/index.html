@@ -75,13 +75,13 @@
       </div>
 
       <div id="text-box" class="text-box" tabindex="0" aria-label="Exercise text">
-        <div id="round-line" class="round-line"><i></i></div>
         <div class="live" id="live">
           <div class="metric num"><span id="wpm" class="live-n" data-v="0">0</span><small>wpm</small></div>
           <div class="metric num raw" data-tip="tip.raw"><span id="raw" class="live-n" data-v="0">0</span><small data-i18n="metric.raw">Raw</small></div>
           <div class="metric num"><span id="acc" class="live-n" data-v="100">100</span><span class="pct">%</span><small data-i18n="metric.acc">Acc</small></div>
           <div id="lp-cols" class="lp-cols" hidden></div>
           <div id="round-switch" class="round-switch" hidden></div>
+          <span id="round-ring" class="round-ring" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" pathLength="100"/><circle class="fill" cx="12" cy="12" r="9" pathLength="100"/></svg></span>
           <div class="warn" id="layout-warn" role="status" aria-live="polite"></div>
           <div class="notice" id="notice" role="status" aria-live="polite"></div>
         </div>

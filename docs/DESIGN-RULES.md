@@ -141,8 +141,9 @@ consequences, the same word for the same thing. All text lives in
 - When a round starts, nothing moves and nothing disappears just because
   typing began. What is not needed right now dims (the header, the round
   switches, the Learn cells) and comes back on hover; only what has lost
-  its meaning goes (the news of the last round). Each dim or fade has a
-  reason (#201).
+  its meaning goes (the news of the last round). The progress ring beside
+  the round switch stays bright: it is what you glance at while typing.
+  Each dim or fade has a reason (#201).
 - A screen that opens (the result, the stats) does it as one short
   sequence of small rises (`rise` in `stats.css`), not as scattered effects;
   a redraw on resize does not replay it.

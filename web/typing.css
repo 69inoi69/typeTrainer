@@ -140,18 +140,23 @@ body[data-glide="jump"], body[data-glide="jump"] :is(.caret, .streak) { --feel-c
 }
 .mode-bar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
 body:not([data-mode="learn"]) .mode-bar { padding-inline: calc((100% - var(--tw)) / 2 + var(--text-l)) calc((100% - var(--tw)) / 2 + var(--text-r)); }
-.bar-side { display: flex; flex-wrap: wrap; gap: 8px; }
-.round-line { position: absolute; left: var(--text-l); right: var(--text-r); top: -12px; height: 9px; padding-top: 3px; cursor: default; }
-.round-line::before, .round-line > i { content: ""; position: absolute; left: 0; right: 0; top: 3px; height: 3px; border-radius: 2px; }
-.round-line::before { background: color-mix(in srgb, var(--sub) 18%, transparent); }
-.round-line > i { background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform .2s var(--ease); }
-.round-line.time > i { transition-duration: .5s; transition-timing-function: linear; }
+.bar-side { display: flex; flex-wrap: wrap; gap: 8px; position: relative; }
+.round-ring { display: inline-flex; align-self: center; width: 18px; height: 18px; flex: none; cursor: default; will-change: scale; }
+.round-switch .round-ring { margin-right: 10px; }
+.bar-side > .round-ring { position: absolute; right: calc(100% + 9px); top: calc(50% - 9px); }
+.round-ring svg { width: 100%; height: 100%; rotate: -90deg; overflow: visible; }
+.round-ring circle { fill: none; stroke-width: 3; stroke: color-mix(in srgb, var(--sub) 28%, transparent); }
+.round-ring .fill { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 100 100; stroke-dashoffset: 100;
+  transition: stroke-dashoffset 420ms var(--grow), stroke 380ms ease-out; }
+.round-ring.time .fill { transition: stroke-dashoffset .5s linear; }
+.round-ring.back .fill { stroke: var(--error); transition: stroke-dashoffset 300ms var(--ease), stroke 380ms ease-out; }
+@media (prefers-reduced-motion: reduce) { .round-ring .fill { transition: none; } }
 .mode-bar[hidden], .round-switch[hidden] { display: none; }
 .round-switch { display: flex; align-items: center; }
 /* ---------- while typing: dim what is not needed now, move nothing ---------- */
-:is(.mode-bar, .round-switch) { transition: opacity .4s var(--ease); }
-body.typing-now :is(.mode-bar, .round-switch, .lp-cols > .lp-cell:not(.lp-goal)) { opacity: .35; }
-body.typing-now :is(.mode-bar, .round-switch, .lp-cols > .lp-cell):hover { opacity: 1; }
+:is(.mode-bar > .steps, .bar-side > :not(.round-ring), .round-switch > :not(.round-ring)) { transition: opacity .4s var(--ease); }
+body.typing-now :is(.mode-bar > .steps, .bar-side > :not(.round-ring), .round-switch > :not(.round-ring), .lp-cols > .lp-cell:not(.lp-goal)) { opacity: .35; }
+body.typing-now :is(.mode-bar:hover > .steps, .mode-bar:hover .bar-side > :not(.round-ring), .round-switch:hover > :not(.round-ring), .lp-cols > .lp-cell:hover) { opacity: 1; }
 /* ---------- the Learn line above the text: cells, round switch ---------- */
 body[data-mode="learn"] .live { --lp-gap: 28px; display: grid; grid-template-columns: auto var(--lp-gap) auto repeat(4, minmax(10px, 1fr) auto); column-gap: 0; }
 body[data-mode="learn"] :is(.live > *, .lp-cols > .lp-cell) { grid-row: 1; }

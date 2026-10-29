@@ -58,7 +58,7 @@ test("Learn: a round can be typed to the end and is saved", async ({ page }) => 
   await expect(page.locator("#lp-cols .lp-last")).toHaveCount(0);
   await expect(page.locator("#lp-cols .lp-goal"), "the daily goal waits for the first round").toHaveCount(0);
   await typeRound(page, { done: async () => saved });
-  await expect(page.locator("#round-line")).toHaveAttribute("data-tip-text", /^0\/15 /);
+  await expect(page.locator("#round-ring")).toHaveAttribute("data-tip-text", /^0\/15 /);
   await expect(page.locator("#lp-cols .lp-intro")).toHaveCount(0);
   await expect(page.locator("#lp-cols .lp-last [data-n]").first()).toHaveAttribute("data-n", /^[1-9]/);
   await expect(page.locator("#lp-cols .lp-goal"), "the daily goal after the first round").toBeVisible();
@@ -125,7 +125,8 @@ test("Learn: typing dims the line above the text and moves nothing", async ({ pa
   expect(lastX, "the cells start at the text").toBeCloseTo((await page.locator("#text").boundingBox()).x, 0);
   await page.keyboard.type(await nextChar(page));
   await expect(streak).toHaveCSS("opacity", "0.35");
-  await expect(round).toHaveCSS("opacity", "0.35");
+  await expect(round.locator(".ring")).toHaveCSS("opacity", "0.35");
+  await expect(page.locator("#round-ring"), "the progress ring stays bright").toHaveCSS("opacity", "1");
   await expect(goal).toHaveCSS("opacity", "1");
   await expect(last).toHaveCSS("opacity", "0");
   const wpm = page.locator(".live > .metric.num").first();
@@ -153,13 +154,14 @@ for (const mode of MODES) {
 
   test(`${mode.name}: typing dims the round switches and moves nothing`, async ({ page }) => {
     await openApp(page, mode.storage);
-    const bar = page.locator("#mode-bar");
-    await expect(bar).toHaveCSS("opacity", "1");
+    const bar = page.locator("#mode-bar"), length = bar.locator(".bar-side:last-child > .ring").last();
+    await expect(length).toHaveCSS("opacity", "1");
     const before = await bar.boundingBox();
     await page.keyboard.type(await nextChar(page));
-    await expect(bar).toHaveCSS("opacity", "0.35");
+    await expect(length).toHaveCSS("opacity", "0.35");
+    await expect(page.locator("#round-ring"), "the progress ring stays bright").toHaveCSS("opacity", "1");
     await bar.hover();
-    await expect(bar).toHaveCSS("opacity", "1");
+    await expect(length).toHaveCSS("opacity", "1");
     expect(await bar.boundingBox(), "the bar stays where it was").toEqual(before);
   });
 }
@@ -478,18 +480,20 @@ test("Climb: the result opens in place and the round switches do not move", asyn
   expect(box.y + box.height, "the result fits the window").toBeLessThanOrEqual(page.viewportSize().height);
 });
 
-test("one grid in all three modes: the progress line and the round switches stand at the text edges", async ({ page }) => {
+test("one grid in all three modes: the round switches end at the text, the progress ring stands just before them", async ({ page }) => {
   for (const mode of ["learn", "climb", "freetype"]) {
     await openApp(page, { "tt.mode.en": mode });
     const m = await page.evaluate(() => {
       const text = document.getElementById("text").getBoundingClientRect();
-      const line = document.getElementById("round-line").getBoundingClientRect();
-      const right = (document.querySelector("#round-switch:not([hidden]) .ring") ?? document.querySelector("#mode-bar > .bar-side:last-child")).getBoundingClientRect();
-      return { textL: text.left, textR: text.right, lineL: line.left, lineR: line.right, rightR: right.right };
+      const ring = document.getElementById("round-ring");
+      const side = ring.parentElement.getBoundingClientRect();
+      const next = ring.nextElementSibling.getBoundingClientRect(), r = ring.getBoundingClientRect();
+      return { textR: text.right, sideR: side.right, ringR: r.right, ringW: r.width, nextL: next.left, mid: Math.abs((r.top + r.bottom) / 2 - (next.top + next.bottom) / 2) };
     });
-    expect(m.lineL, `${mode}: line starts at the text`).toBeCloseTo(m.textL, 0);
-    expect(m.lineR, `${mode}: line ends at the text`).toBeCloseTo(m.textR, 0);
-    expect(m.rightR, `${mode}: the round switches end at the text`).toBeCloseTo(m.textR, 0);
+    expect(m.sideR, `${mode}: the round switches end at the text`).toBeCloseTo(m.textR, 0);
+    expect(m.ringW, `${mode}: the ring is shown`).toBeGreaterThan(10);
+    expect(m.ringR, `${mode}: the ring stands left of the switch`).toBeLessThanOrEqual(m.nextL);
+    expect(m.mid, `${mode}: the ring sits on the switch's middle`).toBeLessThan(2);
   }
 });
 
@@ -540,15 +544,14 @@ test("stats: the mode tabs start at the edge of the tiles under them", async ({ 
 });
 
 for (const [w, h] of [[1920, 1080], [1366, 768]]) {
-  test(`Freetype at ${w}: the switches stand on one line at the text edges, and a line shows the round`, async ({ page }) => {
+  test(`Freetype at ${w}: the switches stand on one line at the text edges, and the ring shows the round`, async ({ page }) => {
     await page.setViewportSize({ width: w, height: h });
     await openApp(page, { "tt.mode.en": "freetype", "tt.length.freetype": "words-10" });
     const m = () => page.evaluate(() => {
       const text = document.getElementById("text").getBoundingClientRect();
       const sides = [...document.querySelectorAll("#mode-bar > .bar-side")].map((e) => e.getBoundingClientRect());
-      const fill = document.querySelector("#round-line > i").getBoundingClientRect();
-      const line = document.getElementById("round-line").getBoundingClientRect();
-      return { textL: text.left, textR: text.right, sides, done: fill.width / line.width };
+      const done = 1 - parseFloat(document.querySelector("#round-ring .fill").style.strokeDashoffset || "100") / 100;
+      return { textL: text.left, textR: text.right, sides, done };
     });
     const at = await m();
     expect(at.sides[0].left, "the left switches start at the text").toBeCloseTo(at.textL, 0);
@@ -557,9 +560,20 @@ for (const [w, h] of [[1920, 1080], [1366, 768]]) {
     expect(at.done).toBe(0);
     for (let i = 0; i < 15; i++) { const c = await nextChar(page); if (!c) break; await page.keyboard.type(c); }
     await page.waitForTimeout(400);
-    expect((await m()).done, "the line fills while typing").toBeGreaterThan(0);
+    expect((await m()).done, "the ring fills while typing").toBeGreaterThan(0);
   });
 }
+
+test("the progress ring fills with each word and turns back, red for a moment, when a word is undone", async ({ page }) => {
+  await openApp(page, { "tt.mode.en": "freetype", "tt.length.freetype": "words-10" });
+  const done = () => page.evaluate(() => 1 - parseFloat(document.querySelector("#round-ring .fill").style.strokeDashoffset) / 100);
+  for (;;) { const c = await nextChar(page); await page.keyboard.type(c); if (c === " ") break; }
+  await expect.poll(done).toBeCloseTo(0.1, 5);
+  await page.keyboard.press("Backspace");
+  await expect(page.locator("#round-ring")).toHaveClass(/\bback\b/);
+  expect(await done(), "the ring went back").toBe(0);
+  await expect(page.locator("#round-ring")).not.toHaveClass(/\bback\b/);
+});
 
 test("no text on the typing, result, settings and stats screens is smaller than 14px", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
