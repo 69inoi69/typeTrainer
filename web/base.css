@@ -95,7 +95,7 @@ body {
   font-feature-settings: "zero";
 }
 button, input { font: inherit; }
-body { user-select: none; -webkit-user-select: none; }
+body, dialog, [popover] { user-select: none; -webkit-user-select: none; }
 input, textarea { user-select: text; -webkit-user-select: text; }
 ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); color: var(--text); }
 

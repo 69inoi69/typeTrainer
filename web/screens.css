@@ -236,6 +236,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .splash-type i { font-style: normal; opacity: 0; will-change: opacity; animation: splash-letter 40ms linear calc(var(--t0) + var(--i) * var(--step)) forwards; }
 @keyframes splash-letter { to { opacity: 1; } }
 body.splashing .top .logo { visibility: hidden; }
+:root[data-splash="again"] .splash-logo { display: none; }
 
 
 /* ---------- profile: the account card in the header (profile.js) ---------- */

@@ -117,7 +117,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 
 - `i18n.js`: Every interface text (English only while only English is shown), `t()`, `applyI18n()`.
 
-- `fx.js`: Visual rewards: the trading-card foil of a new best (`foil()`), a wave of light along the letters row when Learn reaches a milestone (every letter open, a lap, Learn complete; `wave()`), bumps, the message queue on the top line of the text block (outside typing), the start screen (it types the logo for at least 1.75 s on the first visit only; later it covers the page just while it loads and fades in 150 ms, `tt.splashSeen`, #245). They never affect what is measured.
+- `fx.js`: Visual rewards: the trading-card foil of a new best (`foil()`), a wave of light along the letters row when Learn reaches a milestone (every letter open, a lap, Learn complete; `wave()`), bumps, the message queue on the top line of the text block (outside typing), the start screen (it types the logo for at least 1.75 s on the first visit only; later it shows no logo, only covers the page while it loads and fades out in 300 ms; the inline script in `index.html` reads `tt.splashSeen` before the first paint, #245). They never affect what is measured.
 
 - `feel.js`: `FEEL`: every knob of how a keypress feels (caret glide, the dip of the lit key, red tint of a wrong key, caret flinch, shake, the hand above the keyboard, mistake marks), also given to the CSS as `--feel-*` (`applyFeel()` at load). Tuning the feel = changing a number here.
 

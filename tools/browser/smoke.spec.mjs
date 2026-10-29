@@ -260,8 +260,10 @@ test("the start screen plays its full length only on the first visit", async ({ 
   await page.addInitScript(() => localStorage.setItem("tt.introDone", "1"));
   const first = await ready();
   expect(first, "the first visit shows the whole splash").toBeGreaterThanOrEqual(1750);
+  expect(await page.evaluate(() => document.documentElement.dataset.splash), "the first visit types the logo").toBeUndefined();
   const again = await ready();
   expect(again, "a later visit doesn't wait for it").toBeLessThan(1500);
+  expect(await page.evaluate(() => document.documentElement.dataset.splash), "a later visit only fades in, no logo").toBe("again");
 });
 
 test("Live stats is on for a new user and doesn't switch itself", async ({ page }) => {
@@ -388,6 +390,19 @@ test("Learn at 200% zoom with round history: the line stays inside the letter ro
   }));
   expect(edge.sw, "the round switch ends at the letter row's edge").toBeLessThanOrEqual(edge.row + 0.5);
   expect(edge.page, "no sideways scroll").toBeLessThanOrEqual(0);
+});
+
+test("text can't be selected with the mouse, also in windows; only fields can", async ({ page }) => {
+  await openApp(page, {});
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#settings-win")).toBeVisible();
+  const odd = await page.evaluate(() => [...document.querySelectorAll("body, dialog, [popover], dialog *")]
+    .filter((e) => !e.matches("input, textarea") && getComputedStyle(e).userSelect !== "none")
+    .map((e) => e.id || e.className || e.tagName).slice(0, 5));
+  expect(odd, "these can be selected").toEqual([]);
+  const fields = await page.evaluate(() => [...document.querySelectorAll("textarea, input[type=text], input[type=password]")]
+    .filter((e) => getComputedStyle(e).userSelect === "none").length);
+  expect(fields, "fields stay selectable").toBe(0);
 });
 
 test("browser zoom 200% keeps the desktop layout and nothing overlaps", async ({ browser }) => {
