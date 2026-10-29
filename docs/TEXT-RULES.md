@@ -12,10 +12,12 @@ calling the work done.
 
 ## Principles
 
-1. **The interface explains itself; text names things.** A label is
-   usually one or two words. A tooltip says what a thing means only when
-   its look doesn't, and, if it matters, when to turn it off. It never
-   retells the whole mechanism and never gives advice.
+1. **Names are short, sentences are human.** A label (button, tab,
+   setting name) is one or two words. Everything that is a sentence
+   (tooltips, messages, Learn news, the mascot) is a whole, living sentence,
+   the way a friend next to you would say it. A tooltip appears
+   only when the look doesn't say enough, and says what the thing means
+   for you, not how it is computed.
 2. **Every text earns its place.** If removing it does not make the
    interface less clear, remove it.
 3. **Don't explain the obvious.** Familiar labels such as "Theme" or "Your
@@ -36,7 +38,8 @@ calling the work done.
    another. Count what is already around it: the heading, the controls, the
    icons, what the user likely knows.
 8. **Precise, natural language.** No repetition, filler, generic AI
-   phrasing, forced friendliness or vague claims. One thing has one name
+   phrasing or vague claims. Words from the code (dots, estimate, focus,
+   separate stats) never reach the screen. One thing has one name
    everywhere (word list below).
 9. **Spell out consequences that matter.** "Load replaces your current
    progress with the one in the file". "This cannot be undone".
@@ -59,33 +62,68 @@ calling the work done.
   without it? If not, drop it.
 - **Guide step:** does it tell something the screen does not already show?
 
-## Style
+## Voice
 
-- **Calm and plain.** No exclamation marks, no CAPS, no emoji, no jokes.
-  Praise is a fact ("New best speed"), not a cheer.
-- **Speak to one person:** "you", present tense, active voice ("Deletes all
-  your rounds", not "All rounds will be deleted").
+The site sounds like a friend who types well and is glad you came: warm,
+lively, with a bit of humour. Never a manual, never a cheerleader.
+
+- **Whole sentences, not fragments.** "Only words of 6 letters or more.",
+  not "Words of 6+ letters. Separate stats". No "A: B" shorthand
+  ("Goal now 35 wpm", "Line: average of 10", "empty = off") outside a
+  field label or a rule list such as the account rules.
+- **Say what it means for you, not how it works.** "{l} is holding things
+  up right now.", not "Estimate from your last 10 rounds. Slowest letter:
+  {l}". Numbers stay when the user runs into the rule.
+- **Keep the facts.** A livelier line still says everything the user
+  needs: a limit, a consequence, what to do next. "Try Save again before
+  you move on, or the round is lost." keeps the consequence; dropping it to
+  sound friendly is wrong.
+- **Contractions everywhere:** you've, isn't, can't, we'll, I'll. "I will
+  have something to say" sounds like a robot.
+- **"You" and "we".** Talk to the user as "you". The site may speak as
+  "we", and often does ("We'll mix in more of these."). The mascot speaks
+  as "I". Present tense, active voice.
+- **A little humour everywhere.** A light touch fits any text: a tooltip,
+  a toast, a Learn news line ("Your fingers have earned a break."). The
+  mascot may joke and tease more. Humour never hides a fact and never
+  makes fun of the user's mistakes. Errors, the reset window and anything
+  that deletes data stay plain. Never emoji, never CAPS; an exclamation
+  mark only from the mascot.
 - **Mistakes are information.** Never blame: a failed test is "Not passed
-  yet", not "Failed".
+  yet", not "Failed". A setback says what to do next ("Twice in a row and
+  you slide down one.").
 - **Sentence case everywhere.** Every text starts with a capital letter,
   labels and buttons too; the rest is lower case except names.
+
+### Before and after
+
+| Robotic | Natural |
+|---|---|
+| Below 92% resets the dots. Two in a row drop a level | Slip under 92% and you start this level over. Twice in a row and you slide down one. |
+| WPM, raw and accuracy as you type. Turn off if they distract you | Live numbers while you type. Hide them if they make you nervous. |
+| Your slowest or least accurate pairs. Half the next words have one | The pairs you stumble on. About half of the next words sneak one in. |
+| {m} minutes of typing. Time for a short break | {m} minutes straight. Your fingers have earned a break. |
+| Not saved: no connection. Leaving this screen drops the round | No connection, so this round isn't saved yet. Try Save again before you move on, or the round is lost. |
+| Type a round and I will have something to say | Nothing to say yet. Type something and I'll judge it. |
 
 ## Where each kind of text goes
 
 | Kind | Form | Example |
 |---|---|---|
 | Label (button, tab, option name) | One to three words, no full stop | "Next round", "Export" |
-| Option description (Settings) | Only when the name and the control are not enough: one line on what it does, a second sentence for a consequence | "Shows your WPM and accuracy as you type" |
-| Tooltip | Only when the look doesn't say it: what the thing means, when to turn it off if that matters, the shortcut after "·". Short, no mechanics, no advice, no full stop at the end | "Settings · Esc", "Every keypress, mistakes included" |
-| Status line, short messages | One short line, a number in `<b>` | "Type the text to begin" |
-| Result screen | Speed and accuracy big, the chart of word speeds, a row of facts (consistency, time, characters) ending in what happened, then the words. No tips | "New letter opened: r" |
+| Option description (Settings) | Only when the name and the control are not enough: one sentence on what it does, a second for a consequence | "Live numbers while you type. Hide them if they make you nervous." |
+| Tooltip | Only when the look doesn't say it: what the thing means for you, when to turn it off if that matters, the shortcut after "·". One or two whole sentences, no mechanics | "Settings · Esc", "Every keypress, mistakes included." |
+| Status line, short messages | One short line, a number in `<b>` | "Type the text to begin." |
+| Result screen | Speed and accuracy big, the chart of word speeds, a row of facts (consistency, time, characters) ending in what happened, then the words. No tips | "A new letter is open: r." |
 | The first-visit guide | One to three short sentences per step, the key idea first in `<b>` | "<b>Weak letters come back.</b> Letters you miss or type slowly get more words." |
-| Error | What went wrong and what to do | "Could not load this file. Use one made with Save" |
+| Error | What went wrong and what to do, plainly | "Couldn't load this file. Use one made with Export." |
 
 Join parts with words or a comma, not "A · B"; only a tooltip uses "·",
-before its shortcut. Labels, descriptions, tooltips and messages have no full stop at the end
-(a full stop only between two sentences). The first-visit guide is full
-sentences and ends with a full stop.
+before its shortcut. Labels, buttons, headings and short name-like values ("New best",
+"Mastered", "≈ 3 rounds") have no full stop. Every text that is a
+sentence (a description, tooltip, message, news line, guide step, the
+mascot) ends with a full stop, a question mark or, for the mascot, an
+exclamation mark.
 
 ## Word list
 
@@ -120,4 +158,6 @@ grey. One font everywhere: the monospace one, Geist Mono (`.lbl-ui` in `base.css
   `data-i18n` element in `index.html` keeps the same English text as a
   fallback.
 - Check the word list. A new term goes into the list first.
-- Read it once aloud. If a word can go without losing meaning, cut it.
+- Read it once aloud. If it sounds like a manual or a telegram, rewrite
+  it as you would say it. If a word can go without losing meaning or
+  warmth, cut it.
