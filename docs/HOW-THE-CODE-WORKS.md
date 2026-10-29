@@ -208,9 +208,11 @@ Three fixed places, the same in every view (`index.html`, `layout.css`):
   of a narrow one (the same element, moved by CSS). Hidden while only one
   language is offered (`"hidden": true` in `data/languages.json`).
 
-On the typing screen the text block holds, top to bottom, a thin line of
-the round's progress along its top edge in every mode (`#round-line`, as
-wide as the text, filled by words or by time; the numbers on hover), one
+On the typing screen the round's progress is a small ring just left of the
+round length switch in every mode (`#round-ring`; `modebar.js` moves it
+there on each render; it fills by words or by time, the numbers on hover,
+and turns back, red for a moment, when a word is undone). The text block
+holds, top to bottom, one
 line with the live numbers and the status line (Climb's level; in Learn the
 Learn panel's cells and the round switch on the right, the live numbers in
 the first cell's place while typing), with the

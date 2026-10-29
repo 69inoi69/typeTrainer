@@ -6,7 +6,7 @@ import { LENGTHS, LEARN_LENGTHS, lengthOf, lengthLabel, setSetting } from "./set
 import { hasCustomText } from "./customtext.js";
 import { ring, ringBtn } from "./minipop.js";
 
-const bar = $("mode-bar"), learnBar = $("round-switch");
+const bar = $("mode-bar"), learnBar = $("round-switch"), roundRing = $("round-ring");
 
 export function renderModeBar() {
   const cur = S.settings.length;
@@ -18,6 +18,7 @@ export function renderModeBar() {
     bar.innerHTML = "";
     learnBar.innerHTML = ring(t("bar.round"), LEARN_LENGTHS.map((id) =>
       ringBtn(`data-length="${id}" aria-label="${lengthLabel(id)}"`, lengthLabel(id).replace(/^(\d+)(.*)$/, `$1<span class="rs-u">$2</span>`), id === cur)));
+    learnBar.prepend(roundRing);
     return;
   }
   learnBar.innerHTML = "";
@@ -43,6 +44,7 @@ export function renderModeBar() {
     ringBtn(`data-length="${id}"`, String(lengthOf(id).n), id === cur, lengthLabel(id)))));
   if (S.mode === "freetype") end.push(ring(t("settings.streak"), [ringBtn(`data-streak="1"`, t("settings.streak"), S.settings.streak, t("settings.streakDesc"))]));
   bar.innerHTML = steps + `<span class="bar-side">${parts.join("")}</span><span class="bar-side">${end.join("")}</span>`;
+  bar.lastElementChild.prepend(roundRing);
 }
 
 // ---------- Climb: the levels as steps, and where you stand ----------

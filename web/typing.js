@@ -3,7 +3,7 @@
 import { FEEL } from "./feel.js";
 import { t } from "./i18n.js";
 import { FX } from "./fx.js";
-import { el, S, introOpen, isTouch, roundList, boxState } from "./state.js";
+import { el, S, introOpen, isTouch, roundList, boxState, reducedMotion } from "./state.js";
 import { postJSON, saveRound, retryable } from "./api.js";
 import { highlightNextKey, pulseKey, glowKey, requestFit, autoKb } from "./keyboard.js";
 import { refreshStats } from "./stats.js";
@@ -257,7 +257,7 @@ export async function loadExercise() {
   limit = lengthOf(S.settings.length);
   roundWords = limit.kind === "words" ? limit.n : 0;
   appendPortions(res.portions);
-  renderProgress();
+  renderProgress(true);
   fitText();
   requestFit();
   el.text.classList.remove("swap");
@@ -462,7 +462,9 @@ function endWord() {
   if (wordClean) cleanWord();
   wordClean = true;
 }
-function renderProgress() {
+const ringFill = el.roundRing.querySelector(".fill");
+let ringDone = 0, ringBack = 0;
+function renderProgress(fresh = false) {
   const time = limit.kind === "time";
   let done, tip;
   if (!time) {
@@ -474,9 +476,19 @@ function renderProgress() {
     done = Math.min(1, passed / limit.n);
     tip = t("round.seconds", { n: Math.max(0, Math.ceil(limit.n - passed)) });
   }
-  el.roundLine.classList.toggle("time", time);
-  el.roundLine.firstChild.style.transform = `scaleX(${done})`;
-  el.roundLine.dataset.tipText = tip;
+  const ring = el.roundRing;
+  ring.classList.toggle("time", time);
+  if (!fresh && !time && done < ringDone) {
+    ring.classList.add("back");
+    clearTimeout(ringBack);
+    ringBack = setTimeout(() => ring.classList.remove("back"), 380);
+  } else if (!fresh && !time && done > ringDone && !reducedMotion()) {
+    ring.animate([{ scale: 1 }, { scale: 1.18, offset: .4 }, { scale: 1 }], { duration: 300, easing: "cubic-bezier(.34, 1.45, .64, 1)" });
+  }
+  ringDone = done;
+  ringFill.style.strokeDashoffset = String(100 - done * 100);
+  ring.setAttribute("aria-valuenow", String(Math.round(done * 100)));
+  ring.dataset.tipText = tip;
 }
 // ---------- Tab: start the round again ----------
 export function restartRound() {
