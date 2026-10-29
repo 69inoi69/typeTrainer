@@ -92,7 +92,7 @@ The website on GitHub Pages is the same Go code compiled to WebAssembly
 - Every number you might want to tune goes into `internal/config/config.go`,
   not into the logic.
 - Every text a user sees lives in `web/i18n.js` and follows
-  [docs/TEXT-RULES.md](docs/TEXT-RULES.md): short, plain, and only where it helps.
+  [docs/TEXT-RULES.md](docs/TEXT-RULES.md): short names, lively whole sentences, and only where it helps.
 - The code that runs on every keypress stays light (the rules are in
   `docs/CODE-RULES.md`, "Architecture rules"); measure it with `perf.mjs` before
   and after.
