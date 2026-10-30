@@ -84,7 +84,7 @@ lively, with a bit of humour. Never a manual, never a cheerleader.
   "we", and often does ("We'll mix in more of these."). The mascot speaks
   as "I". Present tense, active voice.
 - **A little humour everywhere.** A light touch fits any text: a tooltip,
-  a toast, a Learn news line ("Your fingers have earned a break."). The
+  a toast ("Your fingers have earned a break."). The
   mascot may joke and tease more. Humour never hides a fact and never
   makes fun of the user's mistakes. Errors, the reset window and anything
   that deletes data stay plain. Never emoji, never CAPS; an exclamation

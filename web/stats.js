@@ -3,8 +3,8 @@
 import { i18nVars, t, applyI18n } from "./i18n.js";
 import { $, el, S, store, reducedMotion, listLabel, listless } from "./state.js";
 import { getJSON } from "./api.js";
-import { LENGTHS, DAILY, lengthLabel, lengthFor, setSetting } from "./settings.js";
-import { ring, ringBtn, openPop } from "./minipop.js";
+import { LENGTHS, lengthLabel, lengthFor, setSetting, pickDaily } from "./settings.js";
+import { ring, ringBtn } from "./minipop.js";
 import { renderLearnStats, learnStatsStale } from "./learnstats.js";
 import { freetypeUrl, toggledVariant } from "./modes.js";
 
@@ -287,11 +287,9 @@ function renderPick(mode, list, variant) {
     (lists.length ? `<div class="stats-lists" role="tablist" aria-label="${t("freetype.list")}">` + lists.map((n) =>
       `<button type="button" role="tab" class="wl" data-list="${n}" aria-selected="${n === list}" data-tip-text="${t("freetype.listN", { n })}">${listLabel(n)}</button>`).join("") + `</div>` : "");
 }
-const goalRow = () => `<div class="mp-row"><span class="mp-name">${t("settings.daily")}</span>` +
-  ring(t("settings.daily"), DAILY.map((m) => ringBtn(`data-key="daily" data-value="${m}"`, m ? String(m) : t("settings.off"), S.settings.daily === m))) + `</div>`;
 document.getElementById("activity").addEventListener("click", (e) => {
   const g = e.target.closest(".act-goal");
-  if (g) { openPop(g, t("settings.daily"), goalRow, (k, v) => { setSetting(k, v); drawActivity(); }); return; }
+  if (g) { pickDaily(g, drawActivity); return; }
   const b = e.target.closest("[data-period]");
   if (!b || b.dataset.period === period) return;
   period = b.dataset.period;

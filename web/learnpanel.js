@@ -5,6 +5,7 @@ import { $, S, store } from "./state.js";
 import { getJSON } from "./api.js";
 import { learning } from "./modes.js";
 import { FX } from "./fx.js";
+import { pickDaily } from "./settings.js";
 
 const box = $("learn-panel"), cols = $("lp-cols");
 
@@ -97,30 +98,55 @@ function lastRound() {
     ...(avg ? [delta(last.wpm, avg.wpm, "lp.faster", "lp.slower"), delta(last.accuracy, avg.acc, "lp.accUp", "lp.accDown")] : [])]
     .filter(Boolean).join(" ");
   const n = Math.round(last.wpm);
-  return cell("lp-last", `${bestLang === S.lang ? `<b class="lp-best" data-n="${n}">${n}</b>` : num(last.wpm)}<small>wpm</small>` +
-    `${num(last.accuracy, "%", "lp-acc")}<small>${t("metric.acc")}</small>`, tip);
+  return cell("lp-last", `<span class="lp-pair">${bestLang === S.lang ? `<b class="lp-best" data-n="${n}">${n}</b>` : num(last.wpm)}<small>wpm</small></span>` +
+    `<span class="lp-pair">${num(last.accuracy, "%")}<small>${t("metric.acc")}</small></span>`, tip);
 }
 
+// ---------- the daily goal: the outer ring around the round's ring ----------
+const goalBtn = $("goal-ring"), goalSvg = goalBtn?.querySelector("svg");
 let goalNow = null;
 let goalTyping = false;
+let roundTip = "", goalTip = "";
+const dayKey = (back) => {
+  const d = new Date();
+  d.setDate(d.getDate() - back);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+const showTip = () => { goalBtn.dataset.tipText = [roundTip.replace(/\.?$/, "."), goalTip].filter(Boolean).join(" "); };
+export function ringTip(tip) {
+  roundTip = tip;
+  if (goalBtn) showTip();
+}
+const fillGoal = (share) => goalSvg.style.setProperty("--g", Math.min(1, share).toFixed(3));
 function goalState() {
   goalNow = null;
   goalTyping = document.body.classList.contains("typing-now");
   const goal = S.settings.daily;
-  if (!goal || !goalTyping || activityLang !== S.lang || !activity) return;
-  const d = new Date();
-  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  const base = activity.find((x) => x.date === key)?.seconds ?? 0;
-  if (base + S.roundSeconds < goal * 60) goalNow = { base, need: goal * 60 };
+  goalBtn.classList.toggle("off", !goal);
+  goalBtn.classList.remove("met");
+  if (!goal) { fillGoal(0); goalTip = t("lp.goalOff"); showTip(); return; }
+  const byDate = activityLang === S.lang && activity ? Object.fromEntries(activity.map((d) => [d.date, d.seconds])) : {};
+  const need = goal * 60, base = byDate[dayKey(0)] ?? 0, today = base + (goalTyping ? S.roundSeconds : 0);
+  const met = today >= need;
+  let days = 0;
+  for (let back = met ? 0 : 1; (byDate[dayKey(back)] ?? 0) >= need; back++) days++;
+  if (goalTyping && !met) goalNow = { base, need };
+  goalBtn.classList.toggle("met", met);
+  fillGoal(today / need);
+  const m = Math.floor(today / 60);
+  goalTip = [t(met ? "lp.goalMet" : "lp.goal", { m, g: goal }), days >= 2 ? t("lp.goalDays", { n: days }) : "", t("lp.goalClick")].filter(Boolean).join(" ");
+  showTip();
 }
 export function tickGoal() {
   if (!box || box.hidden) return false;
   if (!goalTyping) renderPanel();
   if (!goalNow) return false;
   const today = goalNow.base + S.roundSeconds;
+  fillGoal(today / goalNow.need);
   if (today >= goalNow.need) { renderPanel(); return true; }
   return false;
 }
+goalBtn?.addEventListener("click", () => pickDaily(goalBtn, renderPanel));
 
 const cell = (cls, value, tip = "") =>
   `<span class="lp-cell ${cls}"${tip ? ` tabindex="0" data-tip-text="${tip}"` : ""}>${value}</span>`;

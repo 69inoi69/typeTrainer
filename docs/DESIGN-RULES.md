@@ -157,8 +157,8 @@ consequences, the same word for the same thing. All text lives in
 - Results stay on screen until the user presses Next round, Enter or Tab
   (Tab = new round everywhere). Esc opens the settings on every screen
   (a round being typed pauses behind it), never "next round".
-- Short messages go in a toast (`web/fx.js`); live areas use
-  `aria-live="polite"`.
+- Short messages go in a toast (`web/fx.js`) that floats under the header
+  and never pushes the page; live areas use `aria-live="polite"`.
 
 **Recommended**
 - Every action gives visible feedback: something changes, a toast appears,

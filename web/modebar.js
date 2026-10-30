@@ -17,7 +17,7 @@ export function renderModeBar() {
   if (learn) {
     bar.innerHTML = "";
     learnLive.append(wpmM, accM);
-    learnLive.parentElement.append(roundRing);
+    $("goal-ring").append(roundRing);
     return;
   }
   if (wpmM.parentElement === learnLive) {

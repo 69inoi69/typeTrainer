@@ -2,6 +2,7 @@
 
 import { t } from "./i18n.js";
 import { $, S, store, isTouch } from "./state.js";
+import { openPop, ring, ringBtn } from "./minipop.js";
 
 export const LENGTHS = ["words-10", "words-20", "words-30", "words-40", "words-50", "time-15", "time-30", "time-60", "time-90"];
 const DEFAULT_LENGTH = "words-30";
@@ -275,3 +276,8 @@ export function openSettings() {
   btn.setAttribute("aria-expanded", "true");
 }
 btn.addEventListener("click", () => { btn.blur(); settingsOpen() ? closeSettings() : openSettings(); });
+
+// ---------- the daily goal picker (Learn's ring, the stats activity legend) ----------
+const dailyRow = () => `<div class="mp-row"><span class="mp-name">${t("settings.daily")}</span>` +
+  ring(t("settings.daily"), DAILY.map((m) => ringBtn(`data-key="daily" data-value="${m}"`, m ? String(m) : t("settings.off"), S.settings.daily === m))) + `</div>`;
+export const pickDaily = (anchor, after) => openPop(anchor, t("settings.daily"), dailyRow, (k, v) => { setSetting(k, v); after?.(); });

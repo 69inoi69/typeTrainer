@@ -53,7 +53,7 @@ test("Learn: a round can be typed to the end and is saved", async ({ page }) => 
   await openApp(page, { "tt.mode.en": "learn", "tt.length.learn": "words-15" });
   await expect(page.locator("body")).toHaveAttribute("data-mode", "learn");
   await expect(page.locator("#round-ring"), "one round length: an old 15 becomes 30").toHaveAttribute("data-tip-text", /^0\/30 /);
-  await expect(page.locator("#learn-panel > #round-ring"), "Learn's ring stands over the letter row").toBeVisible();
+  await expect(page.locator("#learn-panel > #goal-ring > #round-ring"), "Learn's round ring sits inside the daily goal ring").toBeVisible();
   await expect(page.locator("#letters .locked.next").first(), "before the first round: how to open the next letter")
     .toHaveAttribute("data-tip-text", /Mastered means 20 presses, under 5% mistakes and 30 wpm\.$/);
   await expect(page.locator("#lp-cols .lp-cell"), "the last round waits for the first round").toHaveCount(0);
@@ -62,19 +62,29 @@ test("Learn: a round can be typed to the end and is saved", async ({ page }) => 
   await expect(page.locator("#lp-cols .lp-last [data-n]").first()).toHaveAttribute("data-n", /^[1-9]/);
 });
 
-test("Learn: over the letter row only the last round and the round's ring; the rest is tooltips", async ({ page }) => {
+test("Learn: only the last round and the double ring; the rest is tooltips; wide screens put them right of the text", async ({ page }) => {
   await withHistory(page);
   await openApp(page, { "tt.mode.en": "learn" });
-  await expect(page.locator("#learn-panel > *"), "no news line, no daily goal: the last round, the live numbers, the ring").toHaveCount(3);
-  const last = page.locator("#lp-cols .lp-last"), ring = page.locator("#round-ring");
+  await expect(page.locator("#learn-panel > *"), "no news line: the last round, the live numbers, the double ring").toHaveCount(3);
+  const last = page.locator("#lp-cols .lp-last"), ring = page.locator("#goal-ring");
   await expect(last.locator("[data-n]")).toHaveCount(2);
   await expect(last.locator("[data-n]").first()).toHaveAttribute("data-n", /^[1-9]\d*$/);
   await expect(last).toHaveAttribute("data-tip-text", /^Your last round\. .*faster/);
+  await expect(ring, "one tip for both rings").toHaveAttribute("data-tip-text", /^0\/30 .*(No daily goal|Daily goal)/);
   await expect(page.locator("#letters .locked.next").first()).toHaveAttribute("data-tip-text", /rounds? away\. Mastered means/);
-  const [r, row, l] = await Promise.all([ring.boundingBox(), page.locator("#letters").boundingBox(), last.boundingBox()]);
-  expect(r.x + r.width, "the ring ends where the letter row ends").toBeCloseTo(row.x + row.width, -1);
-  expect(r.y + r.height, "above the letter row").toBeLessThanOrEqual(row.y);
+  const box = () => Promise.all([ring.boundingBox(), page.locator("#text").boundingBox(), last.boundingBox(), page.locator("#letters").boundingBox()]);
+  let [r, text, l, row] = await box();
+  expect(r.x, "1600: the ring stands right of the text").toBeGreaterThan(text.x + text.width);
+  expect(r.x + r.width, "and inside the window").toBeLessThanOrEqual(1600);
+  expect(l.y, "the last round stands under the ring").toBeGreaterThanOrEqual(r.y + r.height);
+  await page.setViewportSize({ width: 1100, height: 900 });
+  [r, text, l, row] = await box();
+  expect(r.x + r.width, "1100: the ring ends where the letter row ends").toBeCloseTo(row.x + row.width, -1);
+  expect(r.y, "under the letter row").toBeGreaterThanOrEqual(row.y + row.height);
+  expect(r.y + r.height, "over the text").toBeLessThanOrEqual(text.y + 1);
   expect(l.x + l.width, "the last round stands just left of the ring").toBeLessThan(r.x);
+  await ring.click();
+  await expect(page.locator("#mini-pop button[data-key=\"daily\"]").first(), "the ring changes the daily goal").toBeVisible();
 });
 
 test("Learn: its events animate the letters row, a best round wears the foil, no confetti", async ({ page }) => {
@@ -570,9 +580,11 @@ test("Climb: the result opens in place and the round switches do not move", asyn
 });
 
 test("one grid in all modes: Climb's and Freetype's round switches end at the text, the progress ring just before them; Learn's ring ends at the text", async ({ page }) => {
+  await page.setViewportSize({ width: 1100, height: 900 });
   await openApp(page, { "tt.mode.en": "learn" });
-  const edges = await page.evaluate(() => [document.getElementById("text"), document.getElementById("round-ring")].map((e) => e.getBoundingClientRect().right));
+  const edges = await page.evaluate(() => [document.getElementById("text"), document.getElementById("goal-ring")].map((e) => e.getBoundingClientRect().right));
   expect(edges[1], "Learn's ring ends at the text").toBeCloseTo(edges[0], 0);
+  await page.setViewportSize({ width: 1600, height: 900 });
   for (const mode of ["climb", "freetype"]) {
     await openApp(page, { "tt.mode.en": mode });
     const m = await page.evaluate(() => {

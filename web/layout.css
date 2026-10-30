@@ -12,7 +12,6 @@
 body.typing-now .top .logo-name, body.typing-now .top .logo-name span { color: var(--sub); }
 body.typing-now .top .logo-key { filter: grayscale(1) brightness(.7); }
 body.typing-now .lang-switch, body.typing-now .profile, body.typing-now .rail { opacity: .35; }
-#letters .chip:not(.focus, .next, :hover) { opacity: .6; }
 body.typing-now #letters .chip:not(.focus, .next) { opacity: .4; }
 body.typing-now .bottom { opacity: .15; }
 body.typing-now .lang-switch:hover, body.typing-now .top:hover .profile, body.typing-now .rail:hover { opacity: 1; }
@@ -224,13 +223,14 @@ button:disabled:active { transform: none; }
 .tooltip.show { opacity: 1; }
 .tooltip span { color: var(--sub); }
 
-/* ---------- messages: on top of the top line of the text card ---------- */
-.live:is(.warning, .noticing) > .metric { opacity: 0; transform: translateY(4px); pointer-events: none; }
-.live.warning .notice { opacity: 0; }
-.notice {
-  position: absolute; left: 0; right: 0; top: 0; z-index: 1;
-  display: flex; justify-content: flex-start; pointer-events: none; transition: opacity var(--med);
+/* ---------- messages: notifications that float over the page, under the header ---------- */
+.toasts {
+  position: fixed; top: 74px; left: 50%; translate: -50% 0; z-index: 30; width: max-content; max-width: min(92vw, 56rem);
+  display: grid; justify-items: center; pointer-events: none;
 }
+.toasts > * { grid-area: 1 / 1; }
+.toasts.warning .notice { opacity: 0; }
+.notice { display: flex; justify-content: center; pointer-events: none; transition: opacity var(--med); }
 .note {
   --tc: var(--accent);
   position: relative; overflow: hidden; pointer-events: auto; cursor: pointer;

@@ -175,6 +175,8 @@ const I18N = {
     "lp.accUp": "{d}% more accurate than your average ({avg}%).",
     "lp.accDown": "{d}% less accurate than your average ({avg}%).",
     "lp.lastTip": "Your last round.",
+    "lp.goal": "Daily goal: {m} of {g} min today.", "lp.goalMet": "Daily goal reached: {m} min today.", "lp.goalDays": "{n} days in a row.",
+    "lp.goalClick": "Click to change it.", "lp.goalOff": "No daily goal. Click to set one.",
     "lp.lap": "Lap", "lp.lapOf": "{n} of {all}",
     "lp.lapTip": "The goal is {w} wpm now. Every lap adds 5, up to 60.",
     "fc.next": "Next letter", "fc.lap": "Lap done in",
