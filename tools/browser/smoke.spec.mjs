@@ -279,15 +279,30 @@ test("Live stats is on for a new user and doesn't switch itself", async ({ page 
   await expect(page.locator("body")).toHaveClass(/\blive-off\b/);
 });
 
-test("the background is off by default and on when chosen", async ({ page }) => {
+test("the background is off by default, alt+k fades it in and out, holding the keys toggles it once", async ({ page }) => {
   await openApp(page);
-  await expect(page.locator(".ambient")).toHaveAttribute("data-kind", "off");
+  const layer = page.locator(".ambient");
+  await expect(layer).toHaveAttribute("data-kind", "off");
   await expect(page.locator(".ambient > *")).toHaveCount(0);
+  await page.keyboard.down("Alt");
+  await page.keyboard.down("k");
+  await page.evaluate(() => {
+    for (let i = 0; i < 5; i++) dispatchEvent(new KeyboardEvent("keydown", { key: "k", code: "KeyK", altKey: true, repeat: true, bubbles: true }));
+  });
+  await page.keyboard.up("k");
+  await page.keyboard.up("Alt");
+  await expect(layer, "on, and the repeats did nothing").toHaveAttribute("data-kind", "keys");
+  await expect(page.locator(".ambient > *").first()).toBeAttached();
+  expect(await layer.evaluate((l) => l.getAnimations().length), "it fades in").toBe(1);
+  expect(await page.evaluate(() => localStorage.getItem("tt.bg"))).toBe("keys");
+  await page.keyboard.press("Alt+k");
+  expect(await layer.evaluate((l) => l.getAnimations().length), "it fades out").toBe(1);
+  await expect(page.locator(".ambient > *")).toHaveCount(0);
+  await expect(layer).toHaveAttribute("data-kind", "off");
   await page.evaluate(() => localStorage.setItem("tt.bg", "letters"));
   await page.reload();
   await waitForText(page);
-  await expect(page.locator(".ambient")).toHaveAttribute("data-kind", "keys");
-  await expect(page.locator(".ambient > *").first()).toBeAttached();
+  await expect(layer, "an old stored value still means on").toHaveAttribute("data-kind", "keys");
 });
 
 test("the caret is still at rest, spaces have a dot, the settings are fewer", async ({ page }) => {
@@ -303,7 +318,7 @@ test("the caret is still at rest, spaces have a dot, the settings are fewer", as
   await expect(page.getByText("Caret at rest")).toHaveCount(0);
   await expect(page.getByText("Space marks")).toHaveCount(0);
   const names = await page.locator("#settings-win .sw-name").allTextContents();
-  expect(names, "only what holds for the whole site").toEqual(["Theme", "Caret", "Caret movement", "Falling keycaps",
+  expect(names, "only what holds for the whole site").toEqual(["Theme", "Caret", "Caret movement",
     "Live stats", "Stop on a mistake", "Sounds", "Break reminder", "Progress data", "Reset progress"]);
   await expect(page.locator("#settings-win input[type=text]"), "no search").toHaveCount(0);
   const preview = page.locator("#settings-win .sw-preview");
@@ -313,7 +328,7 @@ test("the caret is still at rest, spaces have a dot, the settings are fewer", as
   await page.keyboard.press("ArrowDown");
   await expect(preview, "the preview next to Caret movement").toBeVisible();
   await page.keyboard.press("ArrowDown");
-  await expect(preview, "no preview on Falling keycaps").toBeHidden();
+  await expect(preview, "no preview on Live stats").toBeHidden();
   const list = await page.locator("#settings-win .sw-list").evaluate((l) => l.scrollHeight <= l.clientHeight);
   expect(list, "every row fits without scrolling").toBe(true);
 });

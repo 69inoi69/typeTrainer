@@ -113,7 +113,6 @@ const ROWS = [
   { group: "settings.look", name: "settings.caret", ctl: () => seg(CARETS.map((id) =>
     choice("caret", id, `<i class="cs ${id}"></i>${t("settings." + id)}`, S.settings.caret === id))) },
   { group: "settings.look", name: "settings.glide", ctl: () => pick("glide", (v) => t("settings.glide_" + v)) },
-  { group: "settings.look", name: "settings.background", ctl: () => onOff("bg", S.settings.bg !== "off") },
   { group: "settings.look", name: "settings.live", desc: "settings.liveDesc", ctl: () => onOff("live", S.settings.live) },
   { group: "settings.typing", name: "settings.stop", desc: "settings.stopDesc", ctl: () => onOff("stop", S.settings.stop) },
   { group: "settings.typing", name: "settings.sound", ctl: () => pick("sound", (v) => t("settings.sound_" + v)) },
@@ -161,7 +160,7 @@ export function setSetting(key, value) {
   } else if (key === "bg") {
     S.settings.bg = value ? "keys" : "off";
     store.set("tt.bg", S.settings.bg);
-    bgListener();
+    bgListener(true);
   } else if (key === "caret") {
     S.settings.caret = value;
     store.set("tt.caret", value);

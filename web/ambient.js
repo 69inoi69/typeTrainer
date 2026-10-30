@@ -14,6 +14,7 @@ const WIDE = 0.2;
 const WIDE_W = [1.5, 2];
 const WIDE_TURN = 10;
 const FILL = 0.3;
+const FADE_MS = 700;
 const WIDE_NAMES = ["key.tab", "key.caps", "key.shift", "key.enter", "key.space"];
 const LANE = Math.ceil(SIZE[1] * Math.SQRT2 + 2 * DRIFT + 8);
 const MIN_SIDE = LANE;
@@ -47,9 +48,18 @@ function keycap(size, letters) {
   return { b, turn };
 }
 
-export function buildAmbient() {
-  layer.replaceChildren();
+let fading = null;
+export function buildAmbient(fade = false) {
+  fading?.cancel();
+  fading = null;
   const kind = S.settings.bg;
+  if (fade && kind === "off" && layer.childElementCount && !reducedMotion()) {
+    const out = layer.animate([{ opacity: 1 }, { opacity: 0 }], { duration: FADE_MS, easing: "ease-out", fill: "forwards" });
+    out.onfinish = () => { buildAmbient(); out.cancel(); };
+    fading = out;
+    return;
+  }
+  layer.replaceChildren();
   layer.dataset.kind = kind;
   if (reducedMotion() || kind === "off") return;
   const top = document.querySelector(".top")?.getBoundingClientRect();
@@ -79,6 +89,7 @@ export function buildAmbient() {
       { duration: dur, delay: -(phase + k * dur / PER_LANE), easing: "linear", iterations: Infinity });
     }
   }
+  if (fade && layer.childElementCount) fading = layer.animate([{ opacity: 0 }, { opacity: 1 }], { duration: FADE_MS, easing: "ease-in" });
 }
 
 // ---------- the screen saver ----------

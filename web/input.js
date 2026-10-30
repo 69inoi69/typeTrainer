@@ -9,7 +9,7 @@ import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
 import { resultOpen, closeResult, settleResult } from "./result.js";
-import { settingsOpen, openSettings, onSettingsClose, onGoalChange, onBgChange, onTypingLook, onSoundPick, setLength } from "./settings.js";
+import { settingsOpen, openSettings, onSettingsClose, onGoalChange, onBgChange, onTypingLook, onSoundPick, setLength, setSetting } from "./settings.js";
 import { setMode, refreshFreeplay, renderNav, setFreetypeList, setFreetypeVariant, toggledVariant } from "./modes.js";
 import { openCustomText, hasCustomText } from "./customtext.js";
 import { onBarPick, renderModeBar } from "./modebar.js";
@@ -136,12 +136,17 @@ document.addEventListener("keydown", (e) => {
     openSettings();
     return;
   }
+  const altGr = e.getModifierState?.("AltGraph");
+  if (e.altKey && !e.ctrlKey && !e.metaKey && !altGr && e.code === "KeyK") {
+    e.preventDefault();
+    if (!e.repeat) setSetting("bg", S.settings.bg === "off" ? "1" : "");
+    return;
+  }
   if (e.key === "Tab" && e.shiftKey) {
     e.preventDefault();
     setView(S.view === "type" ? "stats" : "type");
     return;
   }
-  const altGr = e.getModifierState?.("AltGraph");
   if (e.altKey && !e.ctrlKey && !e.metaKey && !altGr && /^Digit[1-9]$/.test(e.code)) {
     const l = S.languages[Number(e.code.slice(5)) - 1];
     if (l) { e.preventDefault(); switchLanguage(l.id); }
