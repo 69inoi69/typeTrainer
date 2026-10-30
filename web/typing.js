@@ -471,6 +471,8 @@ function renderProgress(fresh = false) {
     const words = Math.min(wordsTyped, roundWords);
     done = words / roundWords;
     tip = t("round.words", { n: words, of: roundWords });
+    const s = learning() && S.lastStats;
+    if (s?.lap) tip += `. ${t("lp.lap")} ${t("lp.lapOf", { n: s.lap + 1, all: s.lastLap + 1 })}. ${t("lp.lapTip", { w: s.targetWpm })}`;
   } else {
     const passed = startTime === null ? 0 : (performance.now() - startTime) / 1000;
     done = Math.min(1, passed / limit.n);

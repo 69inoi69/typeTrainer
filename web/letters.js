@@ -71,9 +71,10 @@ export function renderLetters() {
   }
   const next = chipOf[S.exercise.locked[0]];
   if (next) {
-    next.dataset.tipText = needs.length
+    const f = forecastText(S.lastStats?.forecast, false);
+    next.dataset.tipText = (needs.length
       ? t("tip.nextNeeds", { l: S.exercise.locked[0], list: needs.join(" ") })
-      : t("tip.next");
+      : t("tip.next")) + (f ? " " + t("tip.nextIn", { when: f.value }) : "");
   }
   for (const c of S.exercise.unlocked) {
     chipOf[c]?.classList.toggle("focus", c === focus);

@@ -63,20 +63,18 @@ test("Learn: a round can be typed to the end and is saved", async ({ page }) => 
   await expect(page.locator("#lp-cols .lp-intro")).toHaveCount(0);
   await expect(page.locator("#lp-cols .lp-last [data-n]").first()).toHaveAttribute("data-n", /^[1-9]/);
   await expect(page.locator("#lp-cols .lp-goal"), "the daily goal after the first round").toBeVisible();
-  await expect(page.locator("#lp-cols .lp-fc .lp-none"), "no bare dash before a forecast").toHaveText("estimating");
 });
 
-test("Learn: the panel draws the speed line, the next letter and the daily goal, with equal gaps", async ({ page }) => {
+test("Learn: the panel holds the last round and the daily goal, with equal gaps; the next letter's forecast is its tooltip", async ({ page }) => {
   await withHistory(page);
   await openApp(page, { "tt.mode.en": "learn" });
   const spark = page.locator("#lp-cols .lp-last .lp-spark");
   await expect(spark.locator("polyline")).toHaveAttribute("points", /^(\S+ ){9}\S+$/);
   await expect(spark.locator("line.avg")).toHaveCount(1);
   await expect(spark).toHaveAttribute("data-tip-text", /faster/);
-  const next = await page.locator("#letters .locked.next").first().textContent();
-  await expect(page.locator("#lp-cols .lp-fc .lp-key")).toHaveText(next.trim());
-  await expect(page.locator("#lp-cols .lp-streak"), "no accuracy streak in Learn's line").toHaveCount(0);
-  const boxes = await Promise.all(["#lp-cols .lp-last", "#lp-cols .lp-fc", "#lp-cols .lp-goal", "#round-switch"]
+  await expect(page.locator("#lp-cols > .lp-cell"), "only the last round and the daily goal").toHaveCount(2);
+  await expect(page.locator("#letters .locked.next").first()).toHaveAttribute("data-tip-text", /rounds? away\.$/);
+  const boxes = await Promise.all(["#lp-cols .lp-last", "#lp-cols .lp-goal", "#round-switch"]
     .map((s) => page.locator(s).boundingBox()));
   const gaps = boxes.slice(1).map((b, i) => b.x - (boxes[i].x + boxes[i].width));
   for (const g of gaps) expect(g, `gaps ${gaps.map(Math.round)}`).toBeCloseTo(gaps[0], 0);
@@ -113,17 +111,15 @@ test("Learn: its events animate the letters row, a best round wears the foil, no
 test("Learn: typing dims the line above the text and moves nothing", async ({ page }) => {
   await withHistory(page);
   await openApp(page, { "tt.mode.en": "learn", "tt.live": "1" });
-  const last = page.locator("#lp-cols .lp-last"), fc = page.locator("#lp-cols .lp-fc");
+  const last = page.locator("#lp-cols .lp-last");
   const goal = page.locator("#lp-cols .lp-goal"), round = page.locator("#round-switch");
   const row = page.locator("#letters");
   await expect(last).toBeVisible();
-  await expect(fc).toHaveCSS("opacity", "1");
-  const at = async () => Promise.all([row, last, fc, goal, round].map(async (l) => (await l.boundingBox()).y));
+  const at = async () => Promise.all([row, last, goal, round].map(async (l) => (await l.boundingBox()).y));
   const before = await at();
   const lastX = (await last.boundingBox()).x;
   expect(lastX, "the cells start at the text").toBeCloseTo((await page.locator("#text").boundingBox()).x, 0);
   await page.keyboard.type(await nextChar(page));
-  await expect(fc).toHaveCSS("opacity", "0.35");
   await expect(page.locator("#round-ring"), "the progress ring stays bright").toHaveCSS("opacity", "1");
   await expect(goal).toHaveCSS("opacity", "1");
   await expect(last).toHaveCSS("opacity", "0");
@@ -448,7 +444,7 @@ test("Learn at 200% zoom with round history: the line stays inside the letter ro
   await withHistory(page);
   await page.setViewportSize({ width: 960, height: 540 });
   await openApp(page, { "tt.mode.en": "learn", "tt.goal": "15" });
-  await expect(page.locator("#lp-cols .lp-fc")).toBeVisible();
+  await expect(page.locator("#lp-cols .lp-goal")).toBeVisible();
   const edge = await page.evaluate(() => ({
     row: document.querySelector("#letters").getBoundingClientRect().right,
     sw: document.querySelector("#round-switch").getBoundingClientRect().right,

@@ -3,7 +3,7 @@
 import { t } from "./i18n.js";
 import { $, S, store } from "./state.js";
 import { getJSON } from "./api.js";
-import { forecastText, rule } from "./letters.js";
+import { rule } from "./letters.js";
 import { learning } from "./modes.js";
 import { DAILY, setSetting } from "./settings.js";
 import { openPop, ring as ringGroup, ringBtn } from "./minipop.js";
@@ -75,7 +75,7 @@ export function renderPanel() {
   if (!show) { drawn = drawnNews = ""; return; }
   if (news && news.lang !== S.lang) news = null;
   const first = !(S.lastStats.sessions ?? []).length && S.exercise.locked.length > 0;
-  const html = (first ? [intro()] : [lastRound(), forecast(), dailyGoal()]).join("");
+  const html = (first ? [intro()] : [lastRound(), dailyGoal()]).join("");
   if (html !== drawn) {
     drawn = html;
     redraw(cols, ".lp-val", html);
@@ -149,18 +149,6 @@ function intro() {
   const r = rule();
   return cell("lp-intro", t("lp.introLbl", { l: `<b class="lp-key">${S.exercise.locked[0]}</b>` }),
     t("lp.intro", { min: r.min, err: Math.round(r.err * 100), wpm: S.lastStats.targetWpm || 30 }));
-}
-
-function forecast() {
-  const s = S.lastStats;
-  const f = forecastText(s.forecast, S.exercise.locked.length === 0);
-  const label = s.lap ? `${t("lp.lap")} ${t("lp.lapOf", { n: s.lap + 1, all: s.lastLap + 1 })}` : t("fc.next");
-  const stuck = !f && s.forecast?.letter && !s.forecast.few;
-  const why = stuck ? t("fc.stuckTip", { l: s.forecast.letter }) : t("fc.fewTip");
-  const tip = [s.lap ? t("lp.lapTip", { w: s.targetWpm }) : "", f ? f.tip : why].filter(Boolean).join(" ");
-  const next = s.lap ? "" : S.exercise.locked[0];
-  const value = f ? `<b>${f.value}</b>` : `<b class="lp-none">${t(stuck ? "fc.stuck" : "fc.few")}</b>`;
-  return cell("lp-fc", label, (next ? `<b class="lp-key">${next}</b>` : "") + value, tip);
 }
 
 let goalNow = null;
