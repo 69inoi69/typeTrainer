@@ -19,6 +19,7 @@ import (
 type freeplayPortionRequest struct {
 	Recent []string `json:"recent"`
 	Start  bool     `json:"start"`
+	Words  int      `json:"words"`
 	Level  int      `json:"level"`
 }
 
@@ -36,6 +37,16 @@ func (s *Server) standing(user string, l *Language) (freeplay.Place, error) {
 }
 
 func (s *Server) validLevel(level int) bool { return level >= 1 && level <= len(s.cfg.Freeplay.Levels) }
+
+func (s *Server) validStartWords(n int) bool { return n >= 0 && n <= s.cfg.Freeplay.MaxStartWords }
+
+func (s *Server) startPortions(start bool, words int) int {
+	if !start || words <= 0 {
+		return 1
+	}
+	p := s.cfg.Freeplay
+	return (words + p.PortionWords - 1) / p.PortionWords
+}
 
 func (s *Server) weakPairs(user string, l *Language) ([]freeplay.Pair, error) {
 	rounds, err := s.store.RecentFreeplaySessions(user, l.Info.ID, storage.ModeClimb, "", s.cfg.Freeplay.WeakRounds)
@@ -62,6 +73,10 @@ func (s *Server) handleFreeplayPortion(w http.ResponseWriter, r *http.Request, u
 		badRequest(w, "recent: out of range")
 		return
 	}
+	if !s.validStartWords(req.Words) {
+		badRequest(w, "words: out of range")
+		return
+	}
 	if req.Level != 0 && !s.validLevel(req.Level) {
 		badRequest(w, "level: out of range")
 		return
@@ -76,10 +91,7 @@ func (s *Server) handleFreeplayPortion(w http.ResponseWriter, r *http.Request, u
 		}
 		level = at.Level
 	}
-	count := 1
-	if req.Start {
-		count = min(p.AheadPortions+1, p.RoundPortions)
-	}
+	count := s.startPortions(req.Start, req.Words)
 	pairs, err := s.weakPairs(user, l)
 	if err != nil {
 		serverError(w, err)
@@ -100,7 +112,7 @@ func (s *Server) handleFreeplayPortion(w http.ResponseWriter, r *http.Request, u
 		recent = append(recent, out[i].Words...)
 	}
 	s.genMu.Unlock()
-	writeJSON(w, http.StatusOK, map[string]any{"portions": out, "round": p.RoundPortions, "level": level})
+	writeJSON(w, http.StatusOK, map[string]any{"portions": out, "level": level})
 }
 
 func inRange(v, lo, hi float64) bool { return v >= lo && v <= hi }

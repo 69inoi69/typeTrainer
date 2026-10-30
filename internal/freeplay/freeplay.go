@@ -11,8 +11,7 @@ import (
 
 type Params struct {
 	PortionWords  int
-	AheadPortions int
-	RoundPortions int
+	MaxStartWords int
 	RecentWords   int
 	RepeatPenalty float64
 

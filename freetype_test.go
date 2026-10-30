@@ -19,8 +19,8 @@ func TestApp_Freetype(t *testing.T) {
 	if _, ru := call(t, h, "GET", "/api/v1/freetype/stats?lang=ru", ""); fmt.Sprint(ru["lists"]) != "[200 1000]" {
 		t.Fatalf("ru lists: %v", ru["lists"])
 	}
-	code, out := call(t, h, "POST", "/api/v1/freetype/portion?lang=en", `{"start":true,"list":200}`)
-	if code != 200 || len(out["portions"].([]any)) != 3 || out["level"] != nil {
+	code, out := call(t, h, "POST", "/api/v1/freetype/portion?lang=en", `{"start":true,"list":200,"words":10}`)
+	if code != 200 || len(out["portions"].([]any)) != 2 || out["level"] != nil {
 		t.Fatalf("first portions: %d %v", code, out)
 	}
 	for _, p := range out["portions"].([]any) {
@@ -30,7 +30,7 @@ func TestApp_Freetype(t *testing.T) {
 			}
 		}
 	}
-	for _, bad := range []string{`{"start":true,"list":300}`, `{"start":true}`} {
+	for _, bad := range []string{`{"start":true,"list":300}`, `{"start":true}`, `{"start":true,"list":200,"words":61}`} {
 		if code, _ := call(t, h, "POST", "/api/v1/freetype/portion?lang=en", bad); code != 400 {
 			t.Fatalf("%s: a list not offered must be rejected", bad)
 		}

@@ -17,8 +17,8 @@ func TestApp_Climb(t *testing.T) {
 	if place(st)["level"] != float64(1) || st["sessionCount"] != float64(0) || len(st["levels"].([]any)) != 10 {
 		t.Fatalf("new user: %v", st)
 	}
-	code, out := call(t, h, "POST", "/api/v1/freeplay/portion?lang=en", `{"start":true}`)
-	if code != 200 || len(out["portions"].([]any)) != 3 || out["round"] != float64(5) || out["level"] != float64(1) {
+	code, out := call(t, h, "POST", "/api/v1/freeplay/portion?lang=en", `{"start":true,"words":50}`)
+	if code != 200 || len(out["portions"].([]any)) != 9 || out["level"] != float64(1) {
 		t.Fatalf("first portions: %d %v", code, out)
 	}
 	for range 20 {
@@ -56,7 +56,7 @@ func TestApp_Climb(t *testing.T) {
 	if beyond < 20 {
 		t.Fatalf("level 10 drew only %d of 30 words past words.txt", beyond)
 	}
-	for _, bad := range []string{`{"level":11}`, `{"level":-1}`} {
+	for _, bad := range []string{`{"level":11}`, `{"level":-1}`, `{"start":true,"words":61}`, `{"start":true,"words":-1}`} {
 		if code, _ := call(t, h, "POST", "/api/v1/freeplay/portion?lang=en", bad); code != 400 {
 			t.Fatalf("%s must be rejected", bad)
 		}

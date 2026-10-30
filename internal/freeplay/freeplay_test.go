@@ -9,7 +9,7 @@ import (
 )
 
 var testParams = Params{
-	PortionWords: 6, AheadPortions: 2, RoundPortions: 5, RecentWords: 20, RepeatPenalty: 0.3,
+	PortionWords: 6, MaxStartWords: 60, RecentWords: 20, RepeatPenalty: 0.3,
 	Levels: []int{200, 500, 1000, 2000, 3000, 5000, 7500, 10000, 15000, 25000}, LevelStart: 1,
 	PassAccuracy: 96, FailAccuracy: 92, PassesUp: 3, FailsDown: 2, History: 50, MinLetters: 2,
 	WeakRounds: 20, WeakMinSamples: 15, WeakMissMs: 1000, WeakPairs: 3, WeakShare: 0.5, WeakMinWords: 10,

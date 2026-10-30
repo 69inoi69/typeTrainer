@@ -4,7 +4,7 @@ import { t } from "./i18n.js";
 import { $, S, store } from "./state.js";
 
 const MAX = 5000;
-const PORTION_WORDS = 6, START_PORTIONS = 3;
+const PORTION_WORDS = 6;
 const MARKS = ".,?!;:'-";
 const key = (k) => `tt.${k}.${S.lang}`;
 
@@ -27,12 +27,12 @@ function savedWords() {
 export const hasCustomText = () => savedWords().length > 0;
 
 let next = 0, roundAt = 0;
-export function customPortions(start) {
+export function customPortions(start, words) {
   const all = savedWords();
   if (!all.length) return { portions: [] };
   if (start) next = roundAt = Math.min(Number(store.get(key("customAt"))) || 0, all.length - 1);
   return {
-    portions: Array.from({ length: start ? START_PORTIONS : 1 }, () => ({
+    portions: Array.from({ length: start ? Math.max(1, Math.ceil(words / PORTION_WORDS)) : 1 }, () => ({
       words: Array.from({ length: PORTION_WORDS }, () => { const w = all[next]; next = (next + 1) % all.length; return w; }),
     })),
   };

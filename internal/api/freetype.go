@@ -66,6 +66,7 @@ func (s *Server) handleFreetypePortion(w http.ResponseWriter, r *http.Request, u
 	var req struct {
 		Recent  []string `json:"recent"`
 		Start   bool     `json:"start"`
+		Words   int      `json:"words"`
 		List    int      `json:"list"`
 		Variant string   `json:"variant"`
 	}
@@ -77,15 +78,16 @@ func (s *Server) handleFreetypePortion(w http.ResponseWriter, r *http.Request, u
 		badRequest(w, "recent: too long")
 		return
 	}
+	if !s.validStartWords(req.Words) {
+		badRequest(w, "words: out of range")
+		return
+	}
 	if req.Variant == storage.VariantCustom || !s.validVariant(l, req.List, req.Variant) {
 		badRequest(w, "list or variant: not offered")
 		return
 	}
 	p := s.cfg.Freeplay
-	count := 1
-	if req.Start {
-		count = min(p.AheadPortions+1, p.RoundPortions)
-	}
+	count := s.startPortions(req.Start, req.Words)
 	type portion struct {
 		Words []string `json:"words"`
 	}
@@ -101,7 +103,7 @@ func (s *Server) handleFreetypePortion(w http.ResponseWriter, r *http.Request, u
 		recent = append(recent, out[i].Words...)
 	}
 	s.genMu.Unlock()
-	writeJSON(w, http.StatusOK, map[string]any{"portions": out, "round": p.RoundPortions})
+	writeJSON(w, http.StatusOK, map[string]any{"portions": out})
 }
 
 func (s *Server) handleFreetypeResults(w http.ResponseWriter, r *http.Request, user string, l *Language) {

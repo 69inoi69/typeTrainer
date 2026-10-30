@@ -212,6 +212,8 @@ body.typing-now:not(.live-off) .lp-cols > :is(.lp-last, .lp-intro) { opacity: 0;
 .text.swap { animation: text-in var(--med) var(--ease); }
 @keyframes text-in { from { opacity: 0; transform: translateY(4px); } }
 .text span.later { visibility: hidden; }
+.text span.new { animation: word-in 320ms var(--ease) both; }
+@keyframes word-in { from { opacity: 0; } }
 @media (min-width: 900px) and (pointer: fine) {
   :root { --tw: min(100vw - 32px - 2 * var(--side), 56rem); --u-max: calc((var(--tw) - 24px) / 13.4); --text-l: 0px; --text-r: 0px; }
   .text-box, .text-box:focus-within, .text-box:focus { background: none; box-shadow: none; padding: 0 var(--text-r) 0 var(--text-l); }
