@@ -63,7 +63,7 @@ const I18N = {
     "metric.acc": "Acc", "round.words": "{n}/{of} words", "round.seconds": "{n} s left",
     "metric.raw": "Raw", "tip.raw": "Every keypress counts here, mistakes included.",
     "hint.tab": "New round", "hint.next": "Next round", "hint.settings": "Settings", "hint.stats": "Stats", "hint.typing": "Typing",
-    "hint.word": "Delete word", "hint.bg": "Falling keycaps", "hint.lang": "Language",
+    "hint.word": "Delete word", "hint.bg": "Falling keycaps", "hint.kb": "Keyboard", "hint.lang": "Language",
     "focusHint": "Click here and start typing.",
     "phone.note": "Typing practice needs a real keyboard, so here you can just look at your stats.",
     "pause.goalTitle": "Daily goal reached",

@@ -1,7 +1,7 @@
 // Keys and buttons, routed to the modules that handle them.
 
 import { $, el, S, introOpen, isTouch, focusText } from "./state.js";
-import { requestFit, highlightNextKey } from "./keyboard.js";
+import { requestFit, highlightNextKey, toggleKb } from "./keyboard.js";
 import { refreshStats, renderStats, resetStatsPick } from "./stats.js";
 import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, loadExercise, roundStarted, pauseRound, checkLayout } from "./typing.js";
 import { checkCaps } from "./warn.js";
@@ -148,6 +148,10 @@ document.addEventListener("keydown", (e) => {
   }
   const altGr = e.getModifierState?.("AltGraph");
   if (e.altKey && !e.ctrlKey && !e.metaKey && !altGr && e.code === "KeyK") {
+    if (shortcut(e, "kb") && S.view === "type") toggleKb();
+    return;
+  }
+  if (e.altKey && !e.ctrlKey && !e.metaKey && !altGr && e.code === "KeyB") {
     if (shortcut(e, "bg")) setSetting("bg", S.settings.bg === "off" ? "1" : "");
     return;
   }
