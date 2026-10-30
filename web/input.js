@@ -121,6 +121,16 @@ onGoalChange(() => {
 });
 
 // ---------- input ----------
+const COOLDOWN_MS = 300;
+const lastPress = {};
+function shortcut(e, name) {
+  e.preventDefault();
+  const now = performance.now();
+  if (e.repeat || now - (lastPress[name] ?? -Infinity) < COOLDOWN_MS) return false;
+  lastPress[name] = now;
+  return true;
+}
+
 document.addEventListener("keydown", (e) => {
   if (document.querySelector("dialog[open]")) return;
   if (questOpen()) { questKey(e); return; }
@@ -131,34 +141,33 @@ document.addEventListener("keydown", (e) => {
   }
   if (document.body.classList.contains("splashing")) return;
   if (e.key === "Escape") {
-    e.preventDefault();
+    if (!shortcut(e, "esc")) return;
     if (S.view === "type" && !resultOpen() && roundStarted()) pauseRound();
     openSettings();
     return;
   }
   const altGr = e.getModifierState?.("AltGraph");
   if (e.altKey && !e.ctrlKey && !e.metaKey && !altGr && e.code === "KeyK") {
-    e.preventDefault();
-    if (!e.repeat) setSetting("bg", S.settings.bg === "off" ? "1" : "");
+    if (shortcut(e, "bg")) setSetting("bg", S.settings.bg === "off" ? "1" : "");
     return;
   }
   if (e.key === "Tab" && e.shiftKey) {
-    e.preventDefault();
+    if (!shortcut(e, "view")) return;
     setView(S.view === "type" ? "stats" : "type");
     return;
   }
   if (e.altKey && !e.ctrlKey && !e.metaKey && !altGr && /^Digit[1-9]$/.test(e.code)) {
     const l = S.languages[Number(e.code.slice(5)) - 1];
-    if (l) { e.preventDefault(); switchLanguage(l.id); }
+    if (l && shortcut(e, "lang")) switchLanguage(l.id);
     return;
   }
   if (resultOpen()) {
-    if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); closeResult(); }
+    if (e.key === "Enter" || e.key === "Tab") { if (shortcut(e, "tab")) closeResult(); }
     else if (e.key.length === 1) e.preventDefault();
     return;
   }
   if (S.view !== "type") return;
-  if (e.key === "Tab") { e.preventDefault(); restartRound(); return; }
+  if (e.key === "Tab") { if (shortcut(e, "tab")) restartRound(); return; }
   if (e.key === "Backspace") {
     e.preventDefault(); focusText(); hidePointer(); backspace(e.ctrlKey || e.altKey);
     keyBackspace = true;
@@ -214,7 +223,7 @@ el.input.addEventListener("focus", resetInput);
 resetInput();
 
 let tapClosedPanel = false;
-onSettingsClose(() => { if (S.view === "type" && !resultOpen() && !isTouch()) focusText(); });
+onSettingsClose(() => { lastPress.esc = performance.now(); if (S.view === "type" && !resultOpen() && !isTouch()) focusText(); });
 document.addEventListener("pointerdown", () => {
   tapClosedPanel = settingsOpen() || profileOpen();
 }, true);

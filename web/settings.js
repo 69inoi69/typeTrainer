@@ -236,6 +236,7 @@ win.addEventListener("click", (e) => {
 });
 
 win.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && e.repeat) { e.preventDefault(); return; }
   if ((e.key === "Enter" || e.key === " ") && e.target !== win) return;
   const row = body.querySelectorAll(".sw-row")[cur];
   const btns = row ? [...row.querySelectorAll("button")] : [];

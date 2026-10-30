@@ -287,7 +287,7 @@ test("the background is off by default, alt+k fades it in and out, holding the k
   await page.keyboard.down("Alt");
   await page.keyboard.down("k");
   await page.evaluate(() => {
-    for (let i = 0; i < 5; i++) dispatchEvent(new KeyboardEvent("keydown", { key: "k", code: "KeyK", altKey: true, repeat: true, bubbles: true }));
+    for (let i = 0; i < 5; i++) document.activeElement.dispatchEvent(new KeyboardEvent("keydown", { key: "k", code: "KeyK", altKey: true, repeat: true, bubbles: true, cancelable: true }));
   });
   await page.keyboard.up("k");
   await page.keyboard.up("Alt");
@@ -295,6 +295,7 @@ test("the background is off by default, alt+k fades it in and out, holding the k
   await expect(page.locator(".ambient > *").first()).toBeAttached();
   expect(await layer.evaluate((l) => l.getAnimations().length), "it fades in").toBe(1);
   expect(await page.evaluate(() => localStorage.getItem("tt.bg"))).toBe("keys");
+  await page.waitForTimeout(350);
   await page.keyboard.press("Alt+k");
   expect(await layer.evaluate((l) => l.getAnimations().length), "it fades out").toBe(1);
   await expect(page.locator(".ambient > *")).toHaveCount(0);
@@ -303,6 +304,40 @@ test("the background is off by default, alt+k fades it in and out, holding the k
   await page.reload();
   await waitForText(page);
   await expect(layer, "an old stored value still means on").toHaveAttribute("data-kind", "keys");
+});
+
+test("a held or hammered shortcut fires once: tab, shift+tab, esc", async ({ page }) => {
+  await openApp(page, {});
+  const text = () => page.evaluate(() => document.getElementById("text").textContent);
+  const held = (key, extra = {}) => page.evaluate(([key, extra]) => {
+    for (let i = 0; i < 5; i++) document.activeElement.dispatchEvent(new KeyboardEvent("keydown", { key, code: key, repeat: true, bubbles: true, cancelable: true, ...extra }));
+  }, [key, extra]);
+  const before = await text();
+  await page.keyboard.press("Tab");
+  await expect.poll(text).not.toBe(before);
+  const once = await text();
+  await held("Tab");
+  await page.keyboard.press("Tab");
+  await page.waitForTimeout(150);
+  expect(await text(), "repeats and a second press within the cooldown do nothing").toBe(once);
+  await page.waitForTimeout(250);
+  await page.keyboard.press("Tab");
+  await expect.poll(text, "a press after the cooldown works").not.toBe(once);
+
+  await page.keyboard.press("Shift+Tab");
+  await expect(page.locator("#view-stats")).toBeVisible();
+  await held("Tab", { shiftKey: true });
+  await page.waitForTimeout(100);
+  await expect(page.locator("#view-stats"), "still on the stats").toBeVisible();
+  await page.waitForTimeout(300);
+  await page.keyboard.press("Shift+Tab");
+
+  await page.waitForTimeout(350);
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#settings-win")).toBeVisible();
+  await held("Escape");
+  await page.waitForTimeout(100);
+  await expect(page.locator("#settings-win"), "a held esc doesn't close what it opened").toBeVisible();
 });
 
 test("the caret is still at rest, spaces have a dot, the settings are fewer", async ({ page }) => {
