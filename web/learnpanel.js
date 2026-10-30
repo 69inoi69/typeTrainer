@@ -12,7 +12,6 @@ import { FX } from "./fx.js";
 const box = $("learn-panel"), cols = $("lp-cols");
 
 const AVG_ROUNDS = 10, AVG_MIN = 3;
-const STREAK_DOTS = 10;
 
 let activity = null, activityLang = "";
 export async function refreshActivity() {
@@ -76,7 +75,7 @@ export function renderPanel() {
   if (!show) { drawn = drawnNews = ""; return; }
   if (news && news.lang !== S.lang) news = null;
   const first = !(S.lastStats.sessions ?? []).length && S.exercise.locked.length > 0;
-  const html = (first ? [intro()] : [lastRound(), forecast(), accStreak(), dailyGoal()]).join("");
+  const html = (first ? [intro()] : [lastRound(), forecast(), dailyGoal()]).join("");
   if (html !== drawn) {
     drawn = html;
     redraw(cols, ".lp-val", html);
@@ -162,14 +161,6 @@ function forecast() {
   const next = s.lap ? "" : S.exercise.locked[0];
   const value = f ? `<b>${f.value}</b>` : `<b class="lp-none">${t(stuck ? "fc.stuck" : "fc.few")}</b>`;
   return cell("lp-fc", label, (next ? `<b class="lp-key">${next}</b>` : "") + value, tip);
-}
-
-function accStreak() {
-  const s = S.lastStats.streaks?.[0];
-  if (!s) return cell("lp-streak", "", NONE);
-  const dots = Array.from({ length: STREAK_DOTS }, (_, i) => `<i${i < s.current ? ` class="on"` : ""}></i>`).join("");
-  return cell("lp-streak", t("tile.streak", { min: s.min }), `<span class="lp-dots" aria-hidden="true">${dots}</span>${num(s.current)}`,
-    t("lp.streak", { a: s.min, n: s.longest }));
 }
 
 let goalNow = null;

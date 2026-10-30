@@ -2,7 +2,7 @@
 
 import { t } from "./i18n.js";
 import { $, S, listLabel, levelWords, listless, store } from "./state.js";
-import { LENGTHS, LEARN_LENGTHS, lengthOf, lengthLabel, setSetting } from "./settings.js";
+import { LENGTHS, lengthOf, lengthLabel, setSetting } from "./settings.js";
 import { hasCustomText } from "./customtext.js";
 import { ring, ringBtn } from "./minipop.js";
 
@@ -16,9 +16,7 @@ export function renderModeBar() {
   learnBar.hidden = !learn;
   if (learn) {
     bar.innerHTML = "";
-    learnBar.innerHTML = ring(t("bar.round"), LEARN_LENGTHS.map((id) =>
-      ringBtn(`data-length="${id}" aria-label="${lengthLabel(id)}"`, lengthLabel(id).replace(/^(\d+)(.*)$/, `$1<span class="rs-u">$2</span>`), id === cur)));
-    learnBar.prepend(roundRing);
+    learnBar.replaceChildren(roundRing);
     return;
   }
   learnBar.innerHTML = "";

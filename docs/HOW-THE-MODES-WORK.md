@@ -513,8 +513,7 @@ seconds without a key, pauses it: the time away is taken out of the round
 the last key on), and the first key after the pause is not measured, like
 the first key after a Backspace.
 
-A Learn round is 15 or 30 words (the round bar, `web/modebar.js`; 30 =
-`RoundPortions` portions); Climb and Freetype also offer 10 to 50 words or
+A Learn round is 30 words (`RoundPortions` portions); Climb and Freetype also offer 10 to 50 words or
 15 to 90 seconds (`web/settings.js`, `LENGTHS`). Only the end of the round moves: the stream
 keeps asking for portions until the round has enough words (a time round
 until the time is up), and a words round ends on the last letter of its

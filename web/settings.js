@@ -5,7 +5,7 @@ import { $, S, store, isTouch } from "./state.js";
 
 export const LENGTHS = ["words-10", "words-20", "words-30", "words-40", "words-50", "time-15", "time-30", "time-60", "time-90"];
 const DEFAULT_LENGTH = "words-30";
-export const LEARN_LENGTHS = ["words-15", "words-30"];
+const LEARN_LENGTHS = ["words-30"];
 
 const lengthsOf = (mode) => (mode === "learn" ? LEARN_LENGTHS : LENGTHS);
 export function lengthFor(mode) {
