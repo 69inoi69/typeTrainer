@@ -173,7 +173,7 @@ The frontend is plain JavaScript split into native ES modules (`import` /
 
 **Top layer**
 
-- `input.js`: Keydown and phone input (with the one-space sentinel that makes Backspace work on phone keyboards), the navigation (learn · climb · stats), window resize: sends each action to the module that handles it.
+- `input.js`: Keydown and phone input (with the one-space sentinel that makes Backspace work on phone keyboards), the navigation (learn · climb · stats), window resize: sends each action to the module that handles it. Hides the mouse pointer from the first typed key until the mouse moves (`no-pointer`).
 
 - `app.js`: Entry point: `init()`.
 
