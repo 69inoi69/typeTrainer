@@ -108,21 +108,25 @@
 .chart { height: clamp(200px, 50vh, 520px); }
 .panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin-bottom: 10px; }
 .goal-pick { display: flex; align-items: center; gap: 4px 10px; flex-wrap: wrap; margin-left: auto; }
-.goal-chip {
-  display: inline-flex; align-items: baseline; gap: 6px; padding: 3px 10px; border: 0; border-radius: 10px;
-  background: none; color: var(--label); font: inherit; font-size: .9rem; white-space: nowrap;
+.goal-chip { display: inline-flex; align-items: baseline; gap: 6px; color: var(--label); font-size: .9rem; white-space: nowrap; }
+.goal-chip b { font-weight: 500; color: var(--accent-text); font-variant-numeric: tabular-nums; }
+span.goal-chip { cursor: help; }
+.goal-step {
+  display: inline-flex; align-items: center; border-radius: 10px;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 40%, var(--line));
 }
-.goal-chip b { font-weight: 500; color: var(--accent-text); }
-span.goal-chip { box-shadow: none; padding-inline: 0; cursor: help; }
-button.goal-chip { cursor: pointer; }
-button.goal-chip:hover { color: var(--text); background: color-mix(in srgb, var(--text) 5%, transparent); }
-.goal-pen { opacity: .7; }
-.goal-chip input {
-  width: 4ch; padding: 0 4px; border: 0; border-radius: 6px; outline: 2px solid var(--accent); outline-offset: 0;
-  background: color-mix(in srgb, var(--text) 6%, transparent); color: var(--text); font: inherit; text-align: right;
+.goal-step b { display: inline-block; }
+.goal-toggle { border: 0; background: none; font: inherit; font-size: .9rem; border-radius: 6px; cursor: pointer; }
+.goal-toggle:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent); }
+.goal-step .goal-chip { min-width: 11ch; justify-content: center; padding: 3px 2px; }
+.goal-btn {
+  width: 28px; align-self: stretch; padding: 0; border: 0; border-radius: 10px; background: none;
+  color: var(--label); font: inherit; font-size: 1rem; line-height: 1; cursor: pointer;
+  transition: color var(--fast), background-color var(--fast);
 }
-.goal-hint { font-size: var(--fs-min); color: var(--label); }
+.goal-btn:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent); }
+.goal-btn:active { background: color-mix(in srgb, var(--text) 10%, transparent); }
+.goal-btn:focus-visible { outline: 1px solid color-mix(in srgb, var(--sub) 70%, transparent); outline-offset: -1px; }
 .panel h2 { font-size: .9rem; font-weight: 500; letter-spacing: -.01em; margin: 0; color: var(--text); }
 .empty { color: var(--label); padding: 28px 0; text-align: center; }
 
