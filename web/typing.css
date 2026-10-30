@@ -141,15 +141,15 @@ body[data-glide="jump"], body[data-glide="jump"] :is(.caret, .streak) { --feel-c
 .mode-bar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
 body:not([data-mode="learn"]) .mode-bar { padding-inline: calc((100% - var(--tw)) / 2 + var(--text-l)) calc((100% - var(--tw)) / 2 + var(--text-r)); }
 .bar-side { display: flex; flex-wrap: wrap; gap: 8px; position: relative; }
-.round-ring { display: inline-flex; align-self: center; width: 18px; height: 18px; flex: none; cursor: default; will-change: scale; }
+.round-ring { display: inline-flex; align-self: center; width: 26px; height: 26px; flex: none; cursor: default; will-change: scale; }
 .round-switch .round-ring { margin-right: 10px; }
-.bar-side > .round-ring { position: absolute; right: calc(100% + 9px); top: calc(50% - 9px); }
+.bar-side > .round-ring { position: absolute; right: calc(100% + 9px); top: calc(50% - 13px); }
 .round-ring svg { width: 100%; height: 100%; rotate: -90deg; overflow: visible; }
-.round-ring circle { fill: none; stroke-width: 3; stroke: color-mix(in srgb, var(--sub) 28%, transparent); }
-.round-ring .fill { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 100 100; stroke-dashoffset: 100;
-  transition: stroke-dashoffset 420ms var(--grow), stroke 380ms ease-out; }
+.round-ring circle { fill: none; stroke-width: 4; stroke: color-mix(in srgb, var(--sub) 60%, transparent); }
+.round-ring .fill { color: var(--accent); stroke: currentColor; stroke-linecap: round; filter: drop-shadow(0 0 2px currentColor); stroke-dasharray: 100 100; stroke-dashoffset: 100;
+  transition: stroke-dashoffset 420ms var(--grow), color 380ms ease-out; }
 .round-ring.time .fill { transition: stroke-dashoffset .5s linear; }
-.round-ring.back .fill { stroke: var(--error); transition: stroke-dashoffset 300ms var(--ease), stroke 380ms ease-out; }
+.round-ring.back .fill { color: var(--error); transition: stroke-dashoffset 300ms var(--ease), color 380ms ease-out; }
 @media (prefers-reduced-motion: reduce) { .round-ring .fill { transition: none; } }
 .mode-bar[hidden], .round-switch[hidden] { display: none; }
 .round-switch { display: flex; align-items: center; }
@@ -161,7 +161,7 @@ body.typing-now :is(.mode-bar:hover > .steps, .mode-bar:hover .bar-side > :not(.
 body[data-mode="learn"] .live { --lp-gap: 28px; display: grid; grid-template-columns: auto var(--lp-gap) auto repeat(4, minmax(10px, 1fr) auto); column-gap: 0; }
 body[data-mode="learn"] :is(.live > *, .lp-cols > .lp-cell) { grid-row: 1; }
 body[data-mode="learn"] .lp-cols > .lp-cell { min-width: max-content; }
-@media (max-width: 1100px) { body[data-mode="learn"] .live { --lp-gap: 6px; } .round-switch .rs-u { display: none; } .round-switch .round-ring { margin-right: 6px; width: 14px; height: 14px; } }
+@media (max-width: 1100px) { body[data-mode="learn"] .live { --lp-gap: 6px; } .round-switch .rs-u { display: none; } .round-switch .round-ring { margin-right: 4px; width: 16px; height: 16px; } }
 body[data-mode="learn"] .live > .metric > span { font-size: 1rem; line-height: 1.3; font-weight: 600; letter-spacing: 0; }
 body[data-mode="learn"] .live > .metric small { font-size: 1rem; line-height: 1.3; margin-left: .5ch; }
 body[data-mode="learn"] .live > .metric > span.pct { margin-left: 0; }
