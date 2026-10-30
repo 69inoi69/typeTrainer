@@ -2,7 +2,7 @@
 
 import { FEEL } from "./feel.js";
 import { t } from "./i18n.js";
-import { $, el, S, isTouch, themeColor, reducedMotion } from "./state.js";
+import { $, el, S, isTouch, themeColor, reducedMotion, store } from "./state.js";
 import { setSetting } from "./settings.js";
 import { openPop, ring, ringBtn } from "./minipop.js";
 
@@ -216,7 +216,8 @@ let applied = false;
 
 export function autoKb(animate = false) {
   const allOpen = S.exercise?.locked?.length === 0;
-  const hide = isTouch() || S.mode !== "learn" || allOpen;
+  const own = store.get("tt.kb." + S.mode);
+  const hide = isTouch() || (own ? own === "off" : S.mode !== "learn" || allOpen);
   if (hide === S.kbHidden && applied) return;
   applied = true;
   S.kbHidden = hide;
@@ -225,6 +226,11 @@ export function autoKb(animate = false) {
     setOff(S.kbHidden);
     requestFit();
   }
+}
+export function toggleKb() {
+  if (isTouch()) return;
+  store.set("tt.kb." + S.mode, S.kbHidden ? "on" : "off");
+  autoKb(true);
 }
 function setOff(hide) {
   el.keyboard.classList.toggle("off", hide);
