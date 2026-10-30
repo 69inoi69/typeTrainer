@@ -141,8 +141,9 @@ consequences, the same word for the same thing. All text lives in
 - When a round starts, nothing moves and nothing disappears just because
   typing began. What is not needed right now dims (the header, the round
   switches, the Learn cells) and comes back on hover; only what has lost
-  its meaning goes (the news of the last round). The round's progress ring
-  stays bright: it is what you glance at while typing.
+  its meaning goes (the news of the last round). The round's progress (the
+  ring, in Learn the bar under the text) and Learn's daily goal stay
+  bright: they are what you glance at while typing.
   The mouse pointer hides with the first key and comes back as soon as the
   mouse really moves (`no-pointer` on `<html>`, set by `input.js`).
   Each dim or fade has a reason (#201).

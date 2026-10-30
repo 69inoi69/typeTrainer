@@ -6,20 +6,17 @@ import { LENGTHS, lengthOf, lengthLabel, setSetting } from "./settings.js";
 import { hasCustomText } from "./customtext.js";
 import { ring, ringBtn } from "./minipop.js";
 
-const bar = $("mode-bar"), learnBar = $("round-switch"), roundRing = $("round-ring");
+const bar = $("mode-bar"), roundRing = $("round-ring");
 
 export function renderModeBar() {
   const cur = S.settings.length;
   const parts = [];
   const learn = S.mode === "learn";
   bar.hidden = learn;
-  learnBar.hidden = !learn;
   if (learn) {
     bar.innerHTML = "";
-    learnBar.replaceChildren(roundRing);
     return;
   }
-  learnBar.innerHTML = "";
   let steps = "";
   if (S.mode === "climb" && S.climb?.levels) {
     steps = climbSteps();
@@ -101,4 +98,3 @@ const onClick = (e) => {
   else if (b.dataset.length) pickListener({ length: b.dataset.length });
 };
 bar.addEventListener("click", onClick);
-learnBar.addEventListener("click", onClick);

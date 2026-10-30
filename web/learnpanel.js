@@ -9,7 +9,7 @@ import { DAILY, setSetting } from "./settings.js";
 import { openPop, ring as ringGroup, ringBtn } from "./minipop.js";
 import { FX } from "./fx.js";
 
-const box = $("learn-panel"), cols = $("lp-cols");
+const box = $("learn-panel"), newsBox = $("lp-news"), cols = $("lp-cols");
 
 const AVG_ROUNDS = 10, AVG_MIN = 3;
 
@@ -71,22 +71,22 @@ let drawn = "", drawnNews = "";
 export function renderPanel() {
   if (!box) return;
   const show = learning() && !!S.lastStats && !!S.exercise;
-  box.hidden = cols.hidden = !show;
+  box.hidden = !show;
   if (!show) { drawn = drawnNews = ""; return; }
   if (news && news.lang !== S.lang) news = null;
   const first = !(S.lastStats.sessions ?? []).length && S.exercise.locked.length > 0;
-  const html = (first ? [intro()] : [lastRound(), dailyGoal()]).join("");
+  const html = first ? "" : lastRound() + dailyGoal();
   if (html !== drawn) {
     drawn = html;
-    redraw(cols, ".lp-val", html);
+    redraw(cols, html);
     document.fonts.ready.then(() => cols.querySelectorAll(".lp-best:not(.foil)").forEach(FX.foil));
   }
-  const line = news ? `<p class="lp-news${news.big ? " big" : ""}"${news.tip ? ` tabindex="0" data-tip-text="${news.tip}"` : ""}>${news.text}</p>` : "";
-  if (line !== drawnNews) { drawnNews = line; box.innerHTML = line; }
+  const line = first ? intro() : news ? `<p class="lp-news${news.big ? " big" : ""}"${news.tip ? ` tabindex="0" data-tip-text="${news.tip}"` : ""}>${news.text}</p>` : "";
+  if (line !== drawnNews) { drawnNews = line; newsBox.innerHTML = line; }
 }
 
-function redraw(el, sel, html) {
-  const nums = (root) => [...root.querySelectorAll(`${sel} :is(.lp-n, .lp-best)`)];
+function redraw(el, html) {
+  const nums = (root) => [...root.querySelectorAll(".lp-cell :is(.lp-n, .lp-best)")];
   const before = nums(el).map((v) => +v.dataset.n);
   const metBefore = [...el.querySelectorAll(".lp-cell")].map((c) => c.classList.contains("met"));
   el.innerHTML = html;
@@ -99,7 +99,7 @@ function redraw(el, sel, html) {
   });
   [...el.querySelectorAll(".lp-cell")].forEach((c, i) => {
     if (c.classList.contains("met") && metBefore[i] === false) {
-      c.querySelector(".lp-val")?.animate([{ transform: "scale(1.12)" }, { transform: "scale(1)" }],
+      c.querySelector(".lp-ring")?.animate([{ transform: "scale(1.12)" }, { transform: "scale(1)" }],
         { duration: 450, easing: "cubic-bezier(.2, .7, .3, 1)" });
     }
   });
@@ -115,7 +115,7 @@ const num = (x, unit = "", cls = "") => {
 function lastRound() {
   const list = S.lastStats.sessions ?? [];
   const last = list[0];
-  if (!last) return cell("lp-last", t("lp.last"), NONE);
+  if (!last) return "";
   const before = list.slice(1, 1 + AVG_ROUNDS);
   const avg = before.length >= AVG_MIN ? {
     wpm: before.reduce((a, x) => a + x.wpm, 0) / before.length,
@@ -125,30 +125,17 @@ function lastRound() {
     const d = Math.round(now) - Math.round(was);
     return d ? t(d > 0 ? up : down, { d: Math.abs(d), n: before.length, avg: Math.round(was) }) : "";
   };
-  const tip = avg ? [delta(last.wpm, avg.wpm, "lp.faster", "lp.slower"), delta(last.accuracy, avg.acc, "lp.accUp", "lp.accDown")]
-    .filter(Boolean).join(" ") : "";
-  return cell("lp-last", t("lp.last"),
-    `${bestLang === S.lang ? `<b class="lp-best" data-n="${Math.round(last.wpm)}">${Math.round(last.wpm)}</b>` : num(last.wpm)}<small>wpm</small>${spark(list.slice(0, AVG_ROUNDS).map((x) => x.wpm).reverse(), avg?.wpm, tip)}` +
-    `${num(last.accuracy, "%", "lp-gap")}<small>${t("metric.acc")}</small>`);
-}
-
-const SPARK_W = 64, SPARK_H = 18;
-function spark(wpms, avg, tip) {
-  if (wpms.length < 2) return "";
-  const all = avg === undefined ? wpms : [...wpms, avg];
-  const lo = Math.min(...all), span = Math.max(...all) - lo || 1;
-  const x = (i) => (i * SPARK_W / (wpms.length - 1)).toFixed(1);
-  const y = (v) => (SPARK_H - 2 - (v - lo) / span * (SPARK_H - 4)).toFixed(1);
-  const end = wpms.length - 1;
-  return `<svg class="lp-spark" viewBox="0 0 ${SPARK_W} ${SPARK_H}"${tip ? ` tabindex="0" data-tip-text="${tip}"` : ` aria-hidden="true"`}>` +
-    (avg === undefined ? "" : `<line class="avg" x1="0" x2="${SPARK_W}" y1="${y(avg)}" y2="${y(avg)}"/>`) +
-    `<polyline points="${wpms.map((v, i) => `${x(i)},${y(v)}`).join(" ")}"/><circle cx="${x(end)}" cy="${y(wpms[end])}" r="3"/></svg>`;
+  const tip = [t("lp.lastTip", { acc: Math.round(last.accuracy) }),
+    ...(avg ? [delta(last.wpm, avg.wpm, "lp.faster", "lp.slower"), delta(last.accuracy, avg.acc, "lp.accUp", "lp.accDown")] : [])]
+    .filter(Boolean).join(" ");
+  const n = Math.round(last.wpm);
+  return cell("lp-last", `${bestLang === S.lang ? `<b class="lp-best" data-n="${n}">${n}</b>` : num(last.wpm)}<small>wpm</small>`, tip);
 }
 
 function intro() {
   const r = rule();
-  return cell("lp-intro", t("lp.introLbl", { l: `<b class="lp-key">${S.exercise.locked[0]}</b>` }),
-    t("lp.intro", { min: r.min, err: Math.round(r.err * 100), wpm: S.lastStats.targetWpm || 30 }));
+  return `<p class="lp-news lp-intro">${t("lp.introLbl", { l: `<b class="lp-key">${S.exercise.locked[0]}</b>` })}: ` +
+    `${t("lp.intro", { min: r.min, err: Math.round(r.err * 100), wpm: S.lastStats.targetWpm || 30 })}.</p>`;
 }
 
 let goalNow = null;
@@ -157,8 +144,8 @@ function dailyGoal() {
   goalNow = null;
   goalTyping = document.body.classList.contains("typing-now");
   const goal = S.settings.daily;
-  if (!goal) return cell("lp-goal", t("lp.today"), `<b class="lp-none">${t("settings.off")}</b>`, t("lp.goalOffTip"));
-  if (activityLang !== S.lang || !activity) return cell("lp-goal", t("lp.today"), NONE, t("lp.goalTip", { g: goal }));
+  if (!goal) return cell("lp-goal off", ring(0), t("lp.goalOffTip"));
+  if (activityLang !== S.lang || !activity) return cell("lp-goal", ring(0), t("lp.goalTip"));
   const byDate = Object.fromEntries(activity.map((d) => [d.date, d.seconds]));
   const day = (back) => {
     const d = new Date();
@@ -171,14 +158,13 @@ function dailyGoal() {
   let streak = 0;
   for (let back = met ? 0 : 1; (byDate[day(back)] ?? 0) >= need; back++) streak++;
   if (typing && !met) goalNow = { base, need };
-  const label = streak >= 2 ? t("lp.todayDays", { n: streak }) : t("lp.today");
-  const value = ring(today / need) +
-    `<b>${Math.floor(today / 60)}</b><small>${met ? t("lp.goalMet") : t("lp.goalOf", { g: goal })}</small>`;
-  return cell(`lp-goal${met ? " met" : ""}`, label, value, t("lp.goalTip", { g: goal }));
+  const m = Math.floor(today / 60);
+  const tip = [t(met ? "lp.goalDone" : "lp.goalNow", { m, g: goal }), streak >= 2 ? t("lp.goalDays", { n: streak }) : "", t("lp.goalTip")];
+  return cell(`lp-goal${met ? " met" : ""}`, ring(today / need), tip.filter(Boolean).join(" "));
 }
 const ring = (share) =>
-  `<svg class="lp-ring" viewBox="0 0 20 20" aria-hidden="true" style="--g:${Math.min(1, share).toFixed(3)}">` +
-  `<circle cx="10" cy="10" r="8"/><circle class="fill" cx="10" cy="10" r="8" pathLength="100"/></svg>`;
+  `<svg class="lp-ring" viewBox="0 0 24 24" aria-hidden="true" style="--g:${Math.min(1, share).toFixed(3)}">` +
+  `<circle cx="12" cy="12" r="9"/><circle class="fill" cx="12" cy="12" r="9" pathLength="100"/></svg>`;
 export function tickGoal() {
   if (!box || box.hidden) return false;
   if (!goalTyping) renderPanel();
@@ -204,7 +190,5 @@ cols?.addEventListener("keydown", (e) => {
   pickGoal(c);
 });
 
-const NONE = `<b class="lp-none">—</b>`;
-const cell = (cls, label, value, tip = "") =>
-  `<span class="lp-cell ${cls}"${tip ? ` tabindex="0" data-tip-text="${tip}"` : ""}>` +
-  `<span class="lp-lbl">${label}</span><span class="lp-val">${value}</span></span>`;
+const cell = (cls, value, tip = "") =>
+  `<span class="lp-cell ${cls}"${tip ? ` tabindex="0" data-tip-text="${tip}"` : ""}>${value}</span>`;

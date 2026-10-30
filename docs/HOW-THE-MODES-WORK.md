@@ -501,7 +501,7 @@ is a delay: a new portion is typed about 12 words after the data it was built
 from.
 
 **The round.** The stream is cut into rounds of `RoundPortions = 5` portions
-(30 words), so the user always sees how much is left (a progress ring beside the round length switch) and
+(30 words), so the user always sees how much is left (a progress ring beside the round length switch, in Learn a bar under the text) and
 gets a result at a clear point. The last letter of the last word ends it (no space after it is needed,
 right or wrong). The WPM and accuracy of the round go to
 the history, and the next round starts from scratch: new waiting portions, an

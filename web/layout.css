@@ -225,7 +225,7 @@ button:disabled:active { transform: none; }
 .tooltip span { color: var(--sub); }
 
 /* ---------- messages: on top of the top line of the text card ---------- */
-.live:is(.warning, .noticing) > :is(.metric, .round-switch), #live:is(.warning, .noticing) > .lp-cols > .lp-cell { opacity: 0; transform: translateY(4px); pointer-events: none; }
+.live:is(.warning, .noticing) > .metric { opacity: 0; transform: translateY(4px); pointer-events: none; }
 .live.warning .notice { opacity: 0; }
 .notice {
   position: absolute; left: 0; right: 0; top: 0; z-index: 1;

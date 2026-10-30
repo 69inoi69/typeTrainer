@@ -462,7 +462,7 @@ function endWord() {
   if (wordClean) cleanWord();
   wordClean = true;
 }
-const ringFill = el.roundRing.querySelector(".fill");
+const ringFill = el.roundRing.querySelector(".fill"), barFill = el.roundBar.firstElementChild;
 let ringDone = 0, ringBack = 0;
 function renderProgress(fresh = false) {
   const time = limit.kind === "time";
@@ -478,19 +478,23 @@ function renderProgress(fresh = false) {
     done = Math.min(1, passed / limit.n);
     tip = t("round.seconds", { n: Math.max(0, Math.ceil(limit.n - passed)) });
   }
-  const ring = el.roundRing;
+  const ring = el.roundRing, bar = el.roundBar;
   ring.classList.toggle("time", time);
   if (!fresh && !time && done < ringDone) {
     ring.classList.add("back");
+    bar.classList.add("back");
     clearTimeout(ringBack);
-    ringBack = setTimeout(() => ring.classList.remove("back"), 380);
+    ringBack = setTimeout(() => { ring.classList.remove("back"); bar.classList.remove("back"); }, 380);
   } else if (!fresh && !time && done > ringDone && !reducedMotion()) {
     ring.animate([{ scale: 1 }, { scale: 1.18, offset: .4 }, { scale: 1 }], { duration: 300, easing: "cubic-bezier(.34, 1.45, .64, 1)" });
   }
   ringDone = done;
   ringFill.style.strokeDashoffset = String(100 - done * 100);
-  ring.setAttribute("aria-valuenow", String(Math.round(done * 100)));
-  ring.dataset.tipText = tip;
+  barFill.style.scale = `${done} 1`;
+  for (const n of [ring, bar]) {
+    n.setAttribute("aria-valuenow", String(Math.round(done * 100)));
+    n.dataset.tipText = tip;
+  }
 }
 // ---------- Tab: start the round again ----------
 export function restartRound() {
