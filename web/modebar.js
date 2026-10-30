@@ -6,7 +6,8 @@ import { LENGTHS, lengthOf, lengthLabel, setSetting } from "./settings.js";
 import { hasCustomText } from "./customtext.js";
 import { ring, ringBtn } from "./minipop.js";
 
-const bar = $("mode-bar"), roundRing = $("round-ring");
+const bar = $("mode-bar"), roundRing = $("round-ring"), learnLive = $("lp-live");
+const [wpmM, rawM, accM] = ["wpm", "raw", "acc"].map((id) => $(id).parentElement);
 
 export function renderModeBar() {
   const cur = S.settings.length;
@@ -15,7 +16,13 @@ export function renderModeBar() {
   bar.hidden = learn;
   if (learn) {
     bar.innerHTML = "";
+    learnLive.append(wpmM, accM);
+    learnLive.parentElement.append(roundRing);
     return;
+  }
+  if (wpmM.parentElement === learnLive) {
+    rawM.before(wpmM);
+    rawM.after(accM);
   }
   let steps = "";
   if (S.mode === "climb" && S.climb?.levels) {

@@ -9,7 +9,7 @@ import { highlightNextKey, pulseKey, glowKey, requestFit, autoKb } from "./keybo
 import { refreshStats } from "./stats.js";
 import { showResult } from "./result.js";
 import { renderLetters, markNewLetter, markMastered } from "./letters.js";
-import { renderPanel, roundNews, compareStats, refreshActivity, tickGoal } from "./learnpanel.js";
+import { renderPanel, roundMilestone, compareStats, refreshActivity, tickGoal } from "./learnpanel.js";
 import { learning, refreshFreeplay } from "./modes.js";
 import { renderModeBar, climbAnswer } from "./modebar.js";
 import { lengthOf } from "./settings.js";
@@ -462,7 +462,7 @@ function endWord() {
   if (wordClean) cleanWord();
   wordClean = true;
 }
-const ringFill = el.roundRing.querySelector(".fill"), barFill = el.roundBar.firstElementChild;
+const ringFill = el.roundRing.querySelector(".fill");
 let ringDone = 0, ringBack = 0;
 function renderProgress(fresh = false) {
   const time = limit.kind === "time";
@@ -478,23 +478,19 @@ function renderProgress(fresh = false) {
     done = Math.min(1, passed / limit.n);
     tip = t("round.seconds", { n: Math.max(0, Math.ceil(limit.n - passed)) });
   }
-  const ring = el.roundRing, bar = el.roundBar;
+  const ring = el.roundRing;
   ring.classList.toggle("time", time);
   if (!fresh && !time && done < ringDone) {
     ring.classList.add("back");
-    bar.classList.add("back");
     clearTimeout(ringBack);
-    ringBack = setTimeout(() => { ring.classList.remove("back"); bar.classList.remove("back"); }, 380);
+    ringBack = setTimeout(() => ring.classList.remove("back"), 380);
   } else if (!fresh && !time && done > ringDone && !reducedMotion()) {
     ring.animate([{ scale: 1 }, { scale: 1.18, offset: .4 }, { scale: 1 }], { duration: 300, easing: "cubic-bezier(.34, 1.45, .64, 1)" });
   }
   ringDone = done;
   ringFill.style.strokeDashoffset = String(100 - done * 100);
-  barFill.style.scale = `${done} 1`;
-  for (const n of [ring, bar]) {
-    n.setAttribute("aria-valuenow", String(Math.round(done * 100)));
-    n.dataset.tipText = tip;
-  }
+  ring.setAttribute("aria-valuenow", String(Math.round(done * 100)));
+  ring.dataset.tipText = tip;
 }
 // ---------- Tab: start the round again ----------
 export function restartRound() {
@@ -614,7 +610,7 @@ async function finishRound(byLastKey = false) {
 
     const r = compareStats(roundBefore, S.lastStats);
     markMastered(r.mastered);
-    const milestone = roundNews({ ...r, wpm, newLetter: roundNewLetter, newLap: roundNewLap });
+    const milestone = roundMilestone({ ...r, wpm, newLetter: roundNewLetter, newLap: roundNewLap });
     refreshActivity();
     el.live.classList.remove("final");
     await loadExercise();

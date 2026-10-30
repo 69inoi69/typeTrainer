@@ -69,8 +69,9 @@
 
 .chip:not(.locked):hover { transform: translateY(-2px); }
 /* ---------- the Learn panel (learnpanel.js) ---------- */
-.learn-panel { display: flex; align-items: center; gap: 16px; height: var(--lp-room); margin-bottom: 12px; font-size: 1rem; }
-.lp-newsbox { flex: 1; min-width: 0; display: flex; align-items: center; transition: opacity .4s var(--ease); }
+.learn-panel { display: grid; grid-template-columns: 1fr auto auto; align-items: center; column-gap: 14px; height: var(--lp-room); margin-bottom: 12px; font-size: 1rem; }
+.learn-panel > :is(.lp-cols, .lp-live) { grid-area: 1 / 2; justify-self: end; transition: opacity .4s var(--ease); }
+.learn-panel > .round-ring { grid-area: 1 / 3; }
 .learn-panel[hidden] { visibility: hidden; }
 #view-type > .letters { position: relative; }
 body[data-mode="freetype"] #view-type > .letters > .mode-bar { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; }
@@ -96,28 +97,15 @@ body:not([data-mode="learn"]) #view-type > .letters { height: calc(var(--steps-h
 .climb-status .pips { margin-left: 0; }
 .climb-words, .climb-note { overflow: hidden; text-overflow: ellipsis; }
 .climb-note.slip { color: var(--error); }
-body.typing-now .lp-newsbox { opacity: 0; pointer-events: none; }
 :root { --lp-room: 1.9rem; --text-l: 32px; --text-r: 32px; }
-.lp-cols { display: flex; align-items: center; gap: 16px; flex: none; }
-.lp-cols:empty { display: none; }
-.lp-cols[hidden] { display: none; }
+.lp-cols { display: flex; align-items: center; }
 .lp-cell { display: flex; align-items: baseline; gap: .5ch; font-size: 1rem; line-height: 1.3; color: var(--text); white-space: nowrap; cursor: default; transition: opacity .4s var(--ease); }
 .lp-cell b { font-size: 1.15rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .lp-cell small { font-size: 1em; color: color-mix(in srgb, var(--text) 70%, var(--sub)); }
-.lp-none { color: var(--sub); }
+.lp-cell .lp-acc { margin-left: 1.2ch; }
 .lp-n { counter-reset: v var(--v); }
 .lp-n::after { content: counter(v) attr(data-u); }
-.lp-ring { align-self: center; width: 26px; height: 26px; transform: rotate(-90deg); flex: none; overflow: visible; }
-.lp-ring circle { fill: none; stroke: color-mix(in srgb, var(--sub) 60%, transparent); stroke-width: 2.6; }
-.lp-ring .fill { stroke: var(--accent); stroke-linecap: round; filter: drop-shadow(0 0 2px var(--accent)); stroke-dasharray: 100; stroke-dashoffset: calc(100 - var(--g) * 100); transition: stroke-dashoffset .5s linear, stroke .4s; }
-.lp-goal.met .lp-ring .fill { stroke: var(--ok); filter: drop-shadow(0 0 2px var(--ok)); }
-.lp-goal.off .lp-ring circle { stroke-dasharray: 3 3; }
-.lp-cols > .lp-goal { cursor: pointer; }
 body.typing-now .lp-best > i { animation-play-state: paused; }
-.lp-news .lp-key { display: inline-grid; place-items: center; min-width: 1.5em; height: 1.4em; border: 1px solid var(--line); border-radius: 4px; color: var(--accent-text); }
-.lp-news { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 1rem; color: var(--text); cursor: default; }
-.lp-news.big { color: var(--accent-text); }
-.lp-news b { color: var(--accent-text); font-weight: 600; }
 
 /* ---------- typing settings (settings.js CHOICES and SWITCHES) ---------- */
 :root { --text-size: 2.4rem; }
@@ -141,22 +129,18 @@ body:not([data-mode="learn"]) .mode-bar { padding-inline: calc((100% - var(--tw)
 .mode-bar[hidden] { display: none; }
 /* ---------- while typing: dim what is not needed now, move nothing ---------- */
 :is(.mode-bar > .steps, .bar-side > :not(.round-ring)) { transition: opacity .4s var(--ease); }
-body.typing-now :is(.mode-bar > .steps, .bar-side > :not(.round-ring), .lp-cols > .lp-cell:not(.lp-goal)) { opacity: .35; }
-body.typing-now :is(.mode-bar:hover > .steps, .mode-bar:hover .bar-side > :not(.round-ring), .lp-cols > .lp-cell:hover) { opacity: 1; }
+body.typing-now :is(.mode-bar > .steps, .bar-side > :not(.round-ring), .lp-cols) { opacity: .35; }
+body.typing-now :is(.mode-bar:hover > .steps, .mode-bar:hover .bar-side > :not(.round-ring), .lp-cols:hover) { opacity: 1; }
 /* ---------- Learn: this round's numbers while typing; no raw speed ---------- */
-body[data-mode="learn"] .live > .metric > span { font-size: 1rem; line-height: 1.3; font-weight: 600; letter-spacing: 0; }
-body[data-mode="learn"] .live > .metric small { font-size: 1rem; line-height: 1.3; margin-left: .5ch; }
-body[data-mode="learn"] .live > .metric > span.pct { margin-left: 0; }
-body[data-mode="learn"] .live > .metric.raw, body[data-mode="learn"] .round-ring { display: none; }
-body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; pointer-events: none; }
-/* ---------- Learn: the round as a thin bar under the text ---------- */
-.round-bar { display: none; }
-body[data-mode="learn"] .round-bar { display: block; position: absolute; left: var(--text-l); right: var(--text-r); bottom: -2px; height: 3px; border-radius: 3px; background: color-mix(in srgb, var(--sub) 25%, transparent); cursor: default; }
-body[data-mode="learn"] .round-bar::before { content: ""; position: absolute; inset: -8px 0; }
-.round-bar > i { position: absolute; inset: 0; border-radius: inherit; background: var(--accent); box-shadow: 0 0 6px var(--accent); transform-origin: left; scale: 0 1; will-change: scale;
-  transition: scale 420ms var(--grow), background-color 380ms ease-out; }
-.round-bar.back > i { background: var(--error); transition: scale 300ms var(--ease), background-color 380ms ease-out; }
-@media (prefers-reduced-motion: reduce) { .round-bar > i { transition: none; } }
+/* ---------- Learn: this round's speed and accuracy take the last round's place while typing ---------- */
+.lp-live { display: flex; align-items: baseline; gap: 1.2ch; }
+.lp-live > .metric > span { font-size: 1.15rem; line-height: 1.3; font-weight: 600; letter-spacing: 0; }
+.lp-live > .metric small { font-size: 1rem; margin-left: .5ch; }
+.lp-live > .metric > span.pct { font-size: 1.15rem; margin-left: 0; }
+.lp-live > .metric { min-width: 0; }
+body[data-mode="learn"] .live > .metric.raw { display: none; }
+body:not(.typing-now) .lp-live, body.live-off .lp-live { opacity: 0; pointer-events: none; }
+body.typing-now:not(.live-off) .learn-panel > .lp-cols { opacity: 0; pointer-events: none; }
 .wl { padding: 2px 8px; border: 0; border-radius: 6px; background: none; color: var(--sub); font: inherit; font-size: .9rem; cursor: pointer; transition: color .15s, opacity .4s var(--ease); }
 .wl:hover { color: var(--text); }
 .wl[aria-pressed="true"] { color: var(--accent-text); }

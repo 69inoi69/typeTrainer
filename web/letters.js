@@ -74,7 +74,8 @@ export function renderLetters() {
     const f = forecastText(S.lastStats?.forecast, false);
     next.dataset.tipText = (needs.length
       ? t("tip.nextNeeds", { l: S.exercise.locked[0], list: needs.join(" ") })
-      : t("tip.next")) + (f ? " " + t("tip.nextIn", { when: f.value }) : "");
+      : t("tip.next")) + (f ? " " + t("tip.nextIn", { when: f.value }) : "") +
+      " " + t("tip.rule", { min: rule().min, err: Math.round(rule().err * 100), wpm: S.lastStats?.targetWpm || 30 });
   }
   for (const c of S.exercise.unlocked) {
     chipOf[c]?.classList.toggle("focus", c === focus);
