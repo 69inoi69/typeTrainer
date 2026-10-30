@@ -579,6 +579,22 @@ for (const [w, h] of [[1920, 1080], [1366, 768]]) {
   });
 }
 
+test("the mouse pointer hides while you type and comes back when the mouse moves", async ({ page }) => {
+  await openApp(page, {});
+  const box = await page.locator(".logo").boundingBox();
+  const x = box.x + box.width / 2, y = box.y + box.height / 2;
+  const under = () => page.evaluate(([x, y]) => {
+    const e = document.elementFromPoint(x, y);
+    return getComputedStyle(e, e === document.documentElement ? "::after" : null).cursor;
+  }, [x, y]);
+  await page.mouse.move(x, y);
+  expect(await under()).toBe("pointer");
+  await page.keyboard.type(await nextChar(page));
+  expect(await under(), "hidden while typing").toBe("none");
+  await page.mouse.move(x + 2, y + 1);
+  expect(await under(), "back after a move").toBe("pointer");
+});
+
 test("the progress ring fills with each word and turns back, red for a moment, when a word is undone", async ({ page }) => {
   await openApp(page, { "tt.mode.en": "freetype", "tt.length.freetype": "words-10" });
   const done = () => page.evaluate(() => 1 - parseFloat(document.querySelector("#round-ring .fill").style.strokeDashoffset) / 100);

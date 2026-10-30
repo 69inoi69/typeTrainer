@@ -155,7 +155,7 @@ document.addEventListener("keydown", (e) => {
   if (S.view !== "type") return;
   if (e.key === "Tab") { e.preventDefault(); restartRound(); return; }
   if (e.key === "Backspace") {
-    e.preventDefault(); focusText(); backspace(e.ctrlKey || e.altKey);
+    e.preventDefault(); focusText(); hidePointer(); backspace(e.ctrlKey || e.altKey);
     keyBackspace = true;
     requestAnimationFrame(() => { keyBackspace = false; });
     return;
@@ -165,8 +165,24 @@ document.addEventListener("keydown", (e) => {
   if (e.key.length !== 1) return;
   e.preventDefault();
   focusText();
+  hidePointer();
   handleChar(e.key);
 });
+
+// ---------- mouse pointer: hidden while typing, back on a real move ----------
+let pointerHidden = false, lastX = -1, lastY = -1;
+function hidePointer() {
+  if (pointerHidden) return;
+  pointerHidden = true;
+  document.documentElement.classList.add("no-pointer");
+}
+addEventListener("pointermove", (e) => {
+  if (e.screenX === lastX && e.screenY === lastY) return;
+  lastX = e.screenX; lastY = e.screenY;
+  if (!pointerHidden) return;
+  pointerHidden = false;
+  document.documentElement.classList.remove("no-pointer");
+}, { passive: true });
 
 addEventListener("blur", pauseRound);
 document.addEventListener("visibilitychange", () => { if (document.hidden) pauseRound(); else checkLayout(); });
