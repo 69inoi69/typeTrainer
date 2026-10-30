@@ -92,8 +92,7 @@ function solidColor(css) {
   return getComputedStyle(colorProbe).color;
 }
 function handPicture(side, ids) {
-  const theme = document.documentElement.dataset.theme || "dark";
-  const key = `${theme} ${side} ${ids.join(",")}`;
+  const key = `${side} ${ids.join(",")}`;
   let url = handPics.get(key);
   if (url) return url;
   const hand = el.hands.querySelector(side === "l" ? ".hand.left" : ".hand.right");
@@ -138,8 +137,7 @@ function toPixels(key, svgUrl, side) {
   img.src = svgUrl;
 }
 function showHandPic(side, ids) {
-  const theme = document.documentElement.dataset.theme || "dark";
-  if (![...handPics.keys()].some((k) => k.startsWith(theme + " "))) {
+  if (!handPics.size) {
     for (const f of el.hands.querySelectorAll("[data-f]")) {
       const id = f.dataset.f;
       handPicture(id === "thl" || id[0] === "l" ? "l" : "r", [id]);

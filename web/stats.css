@@ -135,7 +135,6 @@ button.goal-chip:hover { color: var(--text); background: color-mix(in srgb, var(
 :is(.chart, .ls-chart) .axis { fill: var(--label); font-size: var(--fs-min); font-family: var(--mono); }
 .chart .bar { fill: color-mix(in srgb, var(--accent) 55%, var(--panel)); transition: fill var(--fast); }
 .chart .bar.last { fill: var(--accent); }
-:root[data-theme="light"] .chart .bar.last { fill: #e8ad1f; }
 .chart .hit { fill: transparent; cursor: default; }
 .chart .bar.hover { fill: var(--text); }
 

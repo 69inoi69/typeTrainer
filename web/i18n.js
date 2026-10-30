@@ -31,7 +31,6 @@ const I18N = {
     "settings.dataDesc": "All your progress in one file. Import replaces your progress with the file's, your settings stay.",
     "settings.dangerDesc": "Deletes all your rounds, letters and settings.",
     "settings.caret": "Caret", "settings.line": "Line", "settings.block": "Block",
-    "settings.theme": "Theme", "settings.dark": "Dark", "settings.light": "Light",
     "settings.on": "On", "settings.off": "Off",
     "settings.keyPick": "pick", "settings.keyChange": "change", "settings.keyPress": "press", "settings.keyClose": "close",
     "len.words": "{n} words", "len.time": "{n} s",

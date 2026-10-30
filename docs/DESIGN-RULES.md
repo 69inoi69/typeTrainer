@@ -87,11 +87,11 @@ there is a reason not to).
 - One accent colour (`--accent`, gold) for the caret, the focus letter and
   the selected option; a filled gold thing uses `--accent-fill` (a slight
   gradient) and `--accent-glow`; gold as text is `--accent-text` (4.5:1 on
-  the page in both themes), and gold numbers of 24px and more (the result,
-  the stats tiles and records) and the logo use `--accent-big` (3:1, the
-  contrast large text needs), so the light theme keeps some gold. Green
-  (`--ok`) for mastered; red (`--error`) for mistakes and destructive
-  actions. Colours are CSS variables; the light theme has its own palette.
+  the page), and gold numbers of 24px and more (the result, the stats
+  tiles and records) and the logo use `--accent-big` (3:1, the contrast
+  large text needs). Green (`--ok`) for mastered; red (`--error`) for
+  mistakes and destructive actions. Colours are CSS variables. There is one
+  theme, dark: a light one was removed, so every colour is tuned once.
 - Surfaces in three steps: the page (`--bg`), cards (`--panel`) and small
   things on them (`--panel-2`). Depth is `--lift` (a hairline edge and a
   short soft shadow), never a heavy shadow. Glass (`--glass`, a blurred
@@ -196,7 +196,7 @@ consequences, the same word for the same thing. All text lives in
 - Decorative icons have `aria-hidden="true"`.
 
 **Recommended**
-- Text contrast high enough to read in both themes; never grey on grey for
+- Text contrast high enough to read; never grey on grey for
   something the user must read.
 - Touch targets at least about 40 px high on a phone (`--ctl` is 38 px plus
   spacing); never two small targets right next to each other.
@@ -214,7 +214,7 @@ consequences, the same word for the same thing. All text lives in
 **Recommended**
 - Read the code and try the feature before changing it. Look at the
   neighbours: shared CSS classes, other screens that use the same module,
-  the phone layout, the Pages build, both themes.
+  the phone layout, the Pages build.
 - Prefer the smallest change that solves the problem in the right place
   over a workaround somewhere else.
 - When the change touches behaviour, update the docs that describe it in the
@@ -228,7 +228,7 @@ consequences, the same word for the same thing. All text lives in
 
 **Recommended**
 - Look at the real result in a browser, not just the code: the screen that
-  changed, in both themes when colours change.
+  changed.
 - Check the edges: no data yet, a very long name, the first and the last
   letter, a time round that runs out, Climb at a low and a high level.
 - Check what is next to the change, not only the element that was asked

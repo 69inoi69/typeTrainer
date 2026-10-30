@@ -353,12 +353,10 @@ test("the caret is still at rest, spaces have a dot, the settings are fewer", as
   await expect(page.getByText("Caret at rest")).toHaveCount(0);
   await expect(page.getByText("Space marks")).toHaveCount(0);
   const names = await page.locator("#settings-win .sw-name").allTextContents();
-  expect(names, "only what holds for the whole site").toEqual(["Theme", "Caret", "Caret movement",
+  expect(names, "only what holds for the whole site").toEqual(["Caret", "Caret movement",
     "Live stats", "Stop on a mistake", "Sounds", "Break reminder", "Progress data", "Reset progress"]);
   await expect(page.locator("#settings-win input[type=text]"), "no search").toHaveCount(0);
   const preview = page.locator("#settings-win .sw-preview");
-  await expect(preview, "no preview on Theme").toBeHidden();
-  await page.keyboard.press("ArrowDown");
   await expect(preview, "the preview next to Caret").toBeVisible();
   await page.keyboard.press("ArrowDown");
   await expect(preview, "the preview next to Caret movement").toBeVisible();
@@ -737,36 +735,28 @@ test("the caret stays one line tall with space marks across line wraps", async (
   await expectResult(page);
 });
 
-test("light theme: a round finishes and the caret stays in its line", async ({ page }) => {
-  await openApp(page, { "tt.theme": "light", "tt.mode.en": "climb", "tt.length.climb": "words-10" });
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-  await typeRound(page, { afterKey: () => expectCaretInLine(page) });
-  await expectResult(page);
-});
-
-test("gold text reads on the page in both themes: 4.5:1, big numbers 3:1", async ({ page }) => {
-  for (const theme of ["dark", "light"]) {
-    await openApp(page, { "tt.theme": theme });
-    const ratio = await page.evaluate(() => {
-      const rgb = (v) => {
-        const probe = document.createElement("i");
-        probe.style.color = `var(${v})`;
-        document.body.append(probe);
-        const c = getComputedStyle(probe).color.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number);
-        probe.remove();
-        return c;
-      };
-      const lum = (c) => c.map((x) => x / 255).map((x) => x <= .03928 ? x / 12.92 : ((x + .055) / 1.055) ** 2.4)
-        .reduce((s, x, i) => s + x * [.2126, .7152, .0722][i], 0);
-      const on = (v) => {
-        const [a, b] = [lum(rgb(v)), lum(rgb("--bg"))].sort((x, y) => y - x);
-        return (a + .05) / (b + .05);
-      };
-      return { text: on("--accent-text"), big: on("--accent-big") };
-    });
-    expect(ratio.text, `${theme}: --accent-text on --bg`).toBeGreaterThanOrEqual(4.5);
-    expect(ratio.big, `${theme}: --accent-big on --bg`).toBeGreaterThanOrEqual(3);
-  }
+test("gold text reads on the page: 4.5:1, big numbers 3:1; an old light-theme choice is ignored", async ({ page }) => {
+  await openApp(page, { "tt.theme": "light" });
+  await expect(page.locator("html")).not.toHaveAttribute("data-theme", /./);
+  const ratio = await page.evaluate(() => {
+    const rgb = (v) => {
+      const probe = document.createElement("i");
+      probe.style.color = `var(${v})`;
+      document.body.append(probe);
+      const c = getComputedStyle(probe).color.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number);
+      probe.remove();
+      return c;
+    };
+    const lum = (c) => c.map((x) => x / 255).map((x) => x <= .03928 ? x / 12.92 : ((x + .055) / 1.055) ** 2.4)
+      .reduce((s, x, i) => s + x * [.2126, .7152, .0722][i], 0);
+    const on = (v) => {
+      const [a, b] = [lum(rgb(v)), lum(rgb("--bg"))].sort((x, y) => y - x);
+      return (a + .05) / (b + .05);
+    };
+    return { text: on("--accent-text"), big: on("--accent-big") };
+  });
+  expect(ratio.text, "--accent-text on --bg").toBeGreaterThanOrEqual(4.5);
+  expect(ratio.big, "--accent-big on --bg").toBeGreaterThanOrEqual(3);
 });
 
 test("stats on a phone: nothing is wider than the screen", async ({ page }) => {

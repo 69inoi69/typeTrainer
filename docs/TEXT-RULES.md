@@ -20,7 +20,7 @@ calling the work done.
    for you, not how it is computed.
 2. **Every text earns its place.** If removing it does not make the
    interface less clear, remove it.
-3. **Don't explain the obvious.** Familiar labels such as "Theme" or "Your
+3. **Don't explain the obvious.** Familiar labels such as "Caret" or "Your
    progress" need no description. Never add text to fill space or to keep a
    pattern.
 4. **Explain what isn't obvious:** unusual behaviour, unfamiliar ideas,
