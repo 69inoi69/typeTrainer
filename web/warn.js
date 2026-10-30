@@ -27,14 +27,14 @@ export function showWarn(kind) {
     `<span class="warn-text">${text}</span>${keys ? `<span class="warn-keys">${keys}</span>` : ""}`;
   el.warn.dataset.kind = kind;
   el.warn.classList.add("show");
-  el.live.classList.add("warning");
+  el.toasts.classList.add("warning");
 }
 export function hideWarn() {
   wrongScript = 0;
   capsOn = false;
   delete el.warn.dataset.kind;
   el.warn.classList.remove("show");
-  el.live.classList.remove("warning");
+  el.toasts.classList.remove("warning");
 }
 export const warnShowing = () => wrongScript > 0 || el.warn.classList.contains("show");
 

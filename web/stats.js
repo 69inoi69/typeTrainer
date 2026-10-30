@@ -3,7 +3,7 @@
 import { i18nVars, t, applyI18n } from "./i18n.js";
 import { $, el, S, store, reducedMotion, listLabel, listless } from "./state.js";
 import { getJSON } from "./api.js";
-import { LENGTHS, lengthLabel, lengthFor, setSetting } from "./settings.js";
+import { LENGTHS, lengthLabel, lengthFor, setSetting, pickDaily } from "./settings.js";
 import { ring, ringBtn } from "./minipop.js";
 import { renderLearnStats, learnStatsStale } from "./learnstats.js";
 import { freetypeUrl, toggledVariant } from "./modes.js";
@@ -229,7 +229,8 @@ function drawActivity() {
   const dayName = new Intl.DateTimeFormat(lang, { weekday: "short" });
   const dayNames = [0, 2, 4].map((i) => `<span style="grid-row:${i + 1}">${dayName.format(new Date(2026, 9, 19 + i))}</span>`).join("");
   const legend = `<span class="act-legend">${t("act.less")}<i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i>${t("act.more")}` +
-    (goal ? `<i class="l2 met"></i>${t("act.goalLegend")}` : "") + `</span>`;
+    `<button type="button" class="act-goal" aria-haspopup="dialog" data-tip-text="${t("settings.dailyDesc")}">` +
+    (goal ? `<i class="l2 met"></i>${t("act.goalLegend", { g: goal })}` : t("act.goalOff")) + `</button></span>`;
   const periods = `<div class="ring act-period" role="group" aria-label="${t("act.period")}">` +
     Object.keys(PERIODS).map((p) => `<button type="button" data-period="${p}" aria-pressed="${p === period}">${t("act." + p)}</button>`).join("") + `</div>`;
   box.innerHTML = `<div class="act-head"><div class="act-stats" data-tip="act.${period}Tip">` +
@@ -287,6 +288,8 @@ function renderPick(mode, list, variant) {
       `<button type="button" role="tab" class="wl" data-list="${n}" aria-selected="${n === list}" data-tip-text="${t("freetype.listN", { n })}">${listLabel(n)}</button>`).join("") + `</div>` : "");
 }
 document.getElementById("activity").addEventListener("click", (e) => {
+  const g = e.target.closest(".act-goal");
+  if (g) { pickDaily(g, drawActivity); return; }
   const b = e.target.closest("[data-period]");
   if (!b || b.dataset.period === period) return;
   period = b.dataset.period;

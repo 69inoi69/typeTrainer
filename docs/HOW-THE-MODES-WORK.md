@@ -304,9 +304,9 @@ goal of lap n = min(TargetWPM + n * StepWPM, MaxWPM)
 
 ### 6.2 The forecast: rounds to the next letter
 
-The Learn panel says about how many
-rounds the next letter is away ("Next letter ≈ 6 rounds"; with every letter
-open, "Lap done in ≈ 6 rounds"). It only reads the numbers; nothing in the
+The next letter's tooltip and the Learn stats screen say about how many
+rounds the next letter is away ("≈ 6 rounds"; with every letter
+open, on the stats screen, "Lap done in ≈ 6 rounds"). It only reads the numbers; nothing in the
 model or the word choice sees it (`engine.RoundsToMastery`,
 `history.NextForecast`).
 
@@ -501,7 +501,7 @@ is a delay: a new portion is typed about 12 words after the data it was built
 from.
 
 **The round.** The stream is cut into rounds of `RoundPortions = 5` portions
-(30 words), so the user always sees how much is left (a progress ring beside the round length switch) and
+(30 words), so the user always sees how much is left (a progress ring) and
 gets a result at a clear point. The last letter of the last word ends it (no space after it is needed,
 right or wrong). The WPM and accuracy of the round go to
 the history, and the next round starts from scratch: new waiting portions, an
@@ -513,8 +513,7 @@ seconds without a key, pauses it: the time away is taken out of the round
 the last key on), and the first key after the pause is not measured, like
 the first key after a Backspace.
 
-A Learn round is 15 or 30 words (the round bar, `web/modebar.js`; 30 =
-`RoundPortions` portions); Climb and Freetype also offer 10 to 50 words or
+A Learn round is 30 words (`RoundPortions` portions); Climb and Freetype also offer 10 to 50 words or
 15 to 90 seconds (`web/settings.js`, `LENGTHS`). Only the end of the round moves: the stream
 keeps asking for portions until the round has enough words (a time round
 until the time is up), and a words round ends on the last letter of its

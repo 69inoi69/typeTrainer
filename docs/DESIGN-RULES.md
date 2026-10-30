@@ -140,9 +140,9 @@ consequences, the same word for the same thing. All text lives in
   follow goes on `<body>` as a class instead (`boxState` in `state.js`).
 - When a round starts, nothing moves and nothing disappears just because
   typing began. What is not needed right now dims (the header, the round
-  switches, the Learn cells) and comes back on hover; only what has lost
-  its meaning goes (the news of the last round). The progress ring beside
-  the round switch stays bright: it is what you glance at while typing.
+  switches) and comes back on hover; only what has lost its meaning gives
+  way (Learn's last round makes room for this round's live numbers). The round's progress ring
+  stays bright: it is what you glance at while typing.
   The mouse pointer hides with the first key and comes back as soon as the
   mouse really moves (`no-pointer` on `<html>`, set by `input.js`).
   Each dim or fade has a reason (#201).
@@ -157,8 +157,8 @@ consequences, the same word for the same thing. All text lives in
 - Results stay on screen until the user presses Next round, Enter or Tab
   (Tab = new round everywhere). Esc opens the settings on every screen
   (a round being typed pauses behind it), never "next round".
-- Short messages go in a toast (`web/fx.js`); live areas use
-  `aria-live="polite"`.
+- Short messages go in a toast (`web/fx.js`) that floats under the header
+  and never pushes the page; live areas use `aria-live="polite"`.
 
 **Recommended**
 - Every action gives visible feedback: something changes, a toast appears,

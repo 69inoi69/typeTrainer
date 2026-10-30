@@ -13,7 +13,7 @@ export const el = {
   nav: $("nav-switch"), tabLearn: $("tab-learn"), tabClimb: $("tab-climb"), tabFreetype: $("tab-freetype"), tabStats: $("tab-stats"),
   viewType: $("view-type"), viewStats: $("view-stats"),
   lengthFilter: $("length-filter"), tiles: $("tiles"), chart: $("chart"), chartNote: $("chart-note"),
-  langSwitch: $("lang-switch"), warn: $("layout-warn"),
+  langSwitch: $("lang-switch"), warn: $("layout-warn"), toasts: $("toasts"),
   streak: $("streak"), streakN: $("streak-n"),
 };
 

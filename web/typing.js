@@ -9,7 +9,7 @@ import { highlightNextKey, pulseKey, glowKey, requestFit, autoKb } from "./keybo
 import { refreshStats } from "./stats.js";
 import { showResult } from "./result.js";
 import { renderLetters, markNewLetter, markMastered } from "./letters.js";
-import { renderPanel, roundNews, compareStats, refreshActivity, tickGoal } from "./learnpanel.js";
+import { renderPanel, roundMilestone, compareStats, refreshActivity, tickGoal, ringTip } from "./learnpanel.js";
 import { learning, refreshFreeplay } from "./modes.js";
 import { renderModeBar, climbAnswer } from "./modebar.js";
 import { lengthOf } from "./settings.js";
@@ -471,6 +471,8 @@ function renderProgress(fresh = false) {
     const words = Math.min(wordsTyped, roundWords);
     done = words / roundWords;
     tip = t("round.words", { n: words, of: roundWords });
+    const s = learning() && S.lastStats;
+    if (s?.lap) tip += `. ${t("lp.lap")} ${t("lp.lapOf", { n: s.lap + 1, all: s.lastLap + 1 })}. ${t("lp.lapTip", { w: s.targetWpm })}`;
   } else {
     const passed = startTime === null ? 0 : (performance.now() - startTime) / 1000;
     done = Math.min(1, passed / limit.n);
@@ -489,6 +491,7 @@ function renderProgress(fresh = false) {
   ringFill.style.strokeDashoffset = String(100 - done * 100);
   ring.setAttribute("aria-valuenow", String(Math.round(done * 100)));
   ring.dataset.tipText = tip;
+  if (learning()) ringTip(tip);
 }
 // ---------- Tab: start the round again ----------
 export function restartRound() {
@@ -608,7 +611,7 @@ async function finishRound(byLastKey = false) {
 
     const r = compareStats(roundBefore, S.lastStats);
     markMastered(r.mastered);
-    const milestone = roundNews({ ...r, wpm, newLetter: roundNewLetter, newLap: roundNewLap });
+    const milestone = roundMilestone({ ...r, wpm, newLetter: roundNewLetter, newLap: roundNewLap });
     refreshActivity();
     el.live.classList.remove("final");
     await loadExercise();

@@ -8,9 +8,9 @@
   background: var(--panel-2); box-shadow: var(--lift); position: relative;
   transition: background var(--med), color var(--med), transform var(--med);
 }
-.chip.mastered { color: var(--text); }
+.chip.mastered { color: var(--text); background: color-mix(in oklab, var(--ok) 20%, var(--panel-2)); }
 .chip .prog {
-  position: absolute; left: 18%; right: 18%; bottom: 3px; height: 2px; border-radius: 2px;
+  position: absolute; left: 16%; right: 16%; bottom: 4px; height: 3px; border-radius: 2px;
   background: color-mix(in srgb, var(--sub) 30%, transparent); pointer-events: none;
 }
 .chip .prog::after {
@@ -19,9 +19,6 @@
   transition: transform .5s var(--ease);
 }
 .chip.mastered .prog { display: none; }
-.chip:not(.locked, .focus, .fresh) {
-  background: color-mix(in oklab, color-mix(in oklab, var(--ok) calc(var(--p, 0) * 100%), var(--error)) 22%, var(--panel-2));
-}
 .chip.focus .prog { background: color-mix(in srgb, var(--on-accent) 25%, transparent); }
 .chip.focus .prog::after { background: var(--on-accent); }
 .chip.mastered::before {
@@ -35,11 +32,8 @@
 }
 :root { --tick: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 12.5l5 5L20 6.5' fill='none' stroke='black' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 .chip.focus { background: var(--accent-fill); color: var(--on-accent); box-shadow: var(--accent-glow); }
-.chip.locked {
-  background: linear-gradient(to top right, transparent calc(50% - .5px), color-mix(in srgb, var(--sub) 40%, transparent) 50%, transparent calc(50% + .5px));
-  color: color-mix(in srgb, var(--sub) 55%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 25%, transparent);
-}
-.chip.locked.next { color: var(--accent-text); box-shadow: none; outline: 1px dashed color-mix(in srgb, var(--accent) 70%, transparent); outline-offset: -1px; }
+.chip.locked { background: none; color: color-mix(in srgb, var(--sub) 50%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 22%, transparent); }
+.chip.locked.next { color: var(--accent-text); box-shadow: none; outline: 1.5px dashed color-mix(in srgb, var(--accent) 80%, transparent); outline-offset: -1.5px; }
 .chip.pop { animation: chip-flip .7s cubic-bezier(.3, 1.4, .5, 1); }
 .chip > .ring {
   position: absolute; inset: -1px; border-radius: inherit; border: 2px solid var(--accent);
@@ -69,7 +63,20 @@
 
 .chip:not(.locked):hover { transform: translateY(-2px); }
 /* ---------- the Learn panel (learnpanel.js) ---------- */
-.learn-panel { display: flex; align-items: center; height: var(--lp-room); margin-bottom: 12px; font-size: 1rem; transition: opacity .4s var(--ease); }
+.learn-panel { display: grid; grid-template-columns: 1fr auto auto; align-items: center; column-gap: 14px; height: var(--lp-room); margin-bottom: 12px; font-size: 1rem; }
+body:not([data-mode="learn"]) .learn-panel { display: none; }
+.learn-panel > :is(.lp-cols, .lp-live) { grid-area: 1 / 2; justify-self: end; transition: opacity .4s var(--ease); }
+.learn-panel > .goal-ring { grid-area: 1 / 3; }
+/* the daily goal around the round: outer ring today's minutes, inner ring this round's words */
+.goal-ring { position: relative; display: grid; place-items: center; width: 38px; height: 38px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
+.goal-ring > svg { position: absolute; inset: 0; width: 100%; height: 100%; rotate: -90deg; overflow: visible; }
+.goal-ring circle { fill: none; stroke-width: 2.4; stroke: color-mix(in srgb, var(--sub) 40%, transparent); }
+.goal-ring .fill { stroke: var(--ok); stroke-linecap: round; stroke-dasharray: 100 100; stroke-dashoffset: calc(100 - var(--g, 0) * 100); filter: drop-shadow(0 0 2px var(--ok)); transition: stroke-dashoffset .5s linear; }
+.goal-ring.off circle { stroke-dasharray: 2 4; }
+.goal-ring.off .fill { display: none; }
+.goal-ring.met .fill { filter: drop-shadow(0 0 4px var(--ok)); }
+.goal-ring > .round-ring { width: 24px; height: 24px; pointer-events: none; }
+.goal-ring:hover circle:not(.fill) { stroke: color-mix(in srgb, var(--sub) 70%, transparent); }
 .learn-panel[hidden] { visibility: hidden; }
 #view-type > .letters { position: relative; }
 body[data-mode="freetype"] #view-type > .letters > .mode-bar { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; }
@@ -95,37 +102,16 @@ body:not([data-mode="learn"]) #view-type > .letters { height: calc(var(--steps-h
 .climb-status .pips { margin-left: 0; }
 .climb-words, .climb-note { overflow: hidden; text-overflow: ellipsis; }
 .climb-note.slip { color: var(--error); }
-body.typing-now .learn-panel { opacity: 0; pointer-events: none; }
 :root { --lp-room: 1.9rem; --text-l: 32px; --text-r: 32px; }
-.lp-cols { display: contents; }
-.lp-cols[hidden] { display: none; }
-.lp-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; cursor: default; transition: opacity .4s var(--ease); }
-.lp-lbl { font-size: .875rem; line-height: 1.3; color: color-mix(in srgb, var(--text) 58%, var(--sub)); white-space: nowrap; }
-.lp-val { display: flex; align-items: baseline; gap: .5ch; font-size: 1rem; line-height: 1.3; color: var(--text); white-space: nowrap; }
-.lp-val b { font-weight: 600; font-variant-numeric: tabular-nums; }
-.lp-val small { font-size: 1em; color: color-mix(in srgb, var(--text) 70%, var(--sub)); }
-.lp-val .lp-gap { margin-left: 2ch; }
-.lp-none { color: var(--sub); }
+.lp-cols { display: flex; align-items: center; }
+.lp-cell { display: flex; align-items: baseline; gap: .5ch; font-size: 1rem; line-height: 1.3; color: var(--text); white-space: nowrap; cursor: default; transition: opacity .4s var(--ease); }
+.lp-cell b { font-size: 1.15rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.lp-cell small { font-size: 1em; color: color-mix(in srgb, var(--text) 70%, var(--sub)); }
+.lp-cell { gap: 1.2ch; }
+.lp-pair { display: inline-flex; align-items: baseline; gap: .5ch; }
 .lp-n { counter-reset: v var(--v); }
 .lp-n::after { content: counter(v) attr(data-u); }
-.lp-ring { align-self: center; width: 16px; height: 16px; margin-right: 3px; transform: rotate(-90deg); flex: none; }
-.lp-ring circle { fill: none; stroke: color-mix(in srgb, var(--sub) 30%, transparent); stroke-width: 3; }
-.lp-ring .fill { stroke: var(--accent); stroke-dasharray: 100; stroke-dashoffset: calc(100 - var(--g) * 100); transition: stroke-dashoffset .5s linear, stroke .4s; }
-.lp-goal.met .lp-ring .fill { stroke: var(--ok); }
-.lp-cols > .lp-goal { cursor: pointer; }
 body.typing-now .lp-best > i { animation-play-state: paused; }
-.lp-spark { align-self: center; width: 64px; height: 18px; margin-inline: .5ch; overflow: visible; flex: none; }
-.lp-spark polyline { fill: none; stroke: color-mix(in srgb, var(--text) 70%, var(--sub)); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-.lp-spark .avg { stroke: color-mix(in srgb, var(--sub) 45%, transparent); stroke-width: 1; stroke-dasharray: 2 2; }
-.lp-spark circle { fill: var(--accent); }
-.lp-cell .lp-key { display: inline-grid; place-items: center; min-width: 1.5em; height: 1.4em; align-self: center; border: 1px solid var(--line); border-radius: 4px; color: var(--accent-text); }
-.lp-dots { display: inline-flex; gap: 3px; align-self: center; margin-right: 2px; }
-.lp-dots i { width: 8px; height: 8px; border-radius: 50%; background: color-mix(in srgb, var(--sub) 30%, transparent); }
-.lp-dots i.on { background: var(--ok); }
-.lp-cell.met .lp-val b { color: var(--ok); }
-.lp-news { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 1rem; color: var(--text); cursor: default; }
-.lp-news.big { color: var(--accent-text); }
-.lp-news b { color: var(--accent-text); font-weight: 600; }
 
 /* ---------- typing settings (settings.js CHOICES and SWITCHES) ---------- */
 :root { --text-size: 2.4rem; }
@@ -138,7 +124,6 @@ body[data-glide="jump"], body[data-glide="jump"] :is(.caret, .streak) { --feel-c
 body:not([data-mode="learn"]) .mode-bar { padding-inline: calc((100% - var(--tw)) / 2 + var(--text-l)) calc((100% - var(--tw)) / 2 + var(--text-r)); }
 .bar-side { display: flex; flex-wrap: wrap; gap: 8px; position: relative; }
 .round-ring { display: inline-flex; align-self: center; width: 26px; height: 26px; flex: none; cursor: default; will-change: scale; }
-.round-switch .round-ring { margin-right: 10px; }
 .bar-side > .round-ring { position: absolute; right: calc(100% + 9px); top: calc(50% - 13px); }
 .round-ring svg { width: 100%; height: 100%; rotate: -90deg; overflow: visible; }
 .round-ring circle { fill: none; stroke-width: 4; stroke: color-mix(in srgb, var(--sub) 60%, transparent); }
@@ -147,33 +132,38 @@ body:not([data-mode="learn"]) .mode-bar { padding-inline: calc((100% - var(--tw)
 .round-ring.time .fill { transition: stroke-dashoffset .5s linear; }
 .round-ring.back .fill { color: var(--error); transition: stroke-dashoffset 300ms var(--ease), color 380ms ease-out; }
 @media (prefers-reduced-motion: reduce) { .round-ring .fill { transition: none; } }
-.mode-bar[hidden], .round-switch[hidden] { display: none; }
-.round-switch { display: flex; align-items: center; }
+.mode-bar[hidden] { display: none; }
 /* ---------- while typing: dim what is not needed now, move nothing ---------- */
-:is(.mode-bar > .steps, .bar-side > :not(.round-ring), .round-switch > :not(.round-ring)) { transition: opacity .4s var(--ease); }
-body.typing-now :is(.mode-bar > .steps, .bar-side > :not(.round-ring), .round-switch > :not(.round-ring), .lp-cols > .lp-cell:not(.lp-goal)) { opacity: .35; }
-body.typing-now :is(.mode-bar:hover > .steps, .mode-bar:hover .bar-side > :not(.round-ring), .round-switch:hover > :not(.round-ring), .lp-cols > .lp-cell:hover) { opacity: 1; }
-/* ---------- the Learn line above the text: cells, round switch ---------- */
-body[data-mode="learn"] .live { --lp-gap: 28px; display: grid; grid-template-columns: auto var(--lp-gap) auto repeat(4, minmax(10px, 1fr) auto); column-gap: 0; }
-body[data-mode="learn"] :is(.live > *, .lp-cols > .lp-cell) { grid-row: 1; }
-body[data-mode="learn"] .lp-cols > .lp-cell { min-width: max-content; }
-@media (max-width: 1100px) { body[data-mode="learn"] .live { --lp-gap: 6px; } .round-switch .rs-u { display: none; } .round-switch .round-ring { margin-right: 4px; width: 16px; height: 16px; } }
-body[data-mode="learn"] .live > .metric > span { font-size: 1rem; line-height: 1.3; font-weight: 600; letter-spacing: 0; }
-body[data-mode="learn"] .live > .metric small { font-size: 1rem; line-height: 1.3; margin-left: .5ch; }
-body[data-mode="learn"] .live > .metric > span.pct { margin-left: 0; }
-body[data-mode="learn"] .live > .metric.num:nth-child(1) { grid-column: 1; }
-body[data-mode="learn"] .live > .metric.raw { display: none; }
-body[data-mode="learn"] .live > .metric.num:nth-child(3) { grid-column: 3; }
-body[data-mode="learn"] .live > .metric.num > .live-n { display: inline-block; min-width: 3ch; text-align: right; }
-body[data-mode="learn"] .lp-cols > .lp-last { grid-column: 1 / 4; }
-body[data-mode="learn"] .lp-cols > .lp-intro { grid-column: 1 / 10; min-width: 0; }
-body[data-mode="learn"] .lp-cols > .lp-fc { grid-column: 5; }
-body[data-mode="learn"] .lp-cols > .lp-streak { grid-column: 7; }
-body[data-mode="learn"] .lp-cols > .lp-goal { grid-column: 9; }
-body[data-mode="learn"] .round-switch { grid-column: 11; }
-/* while typing this round's numbers stand where the last round's were; no raw speed in Learn */
-body[data-mode="learn"]:not(.typing-now) .live > .metric.num { opacity: 0; pointer-events: none; }
-body.typing-now:not(.live-off) .lp-cols > :is(.lp-last, .lp-intro) { opacity: 0; pointer-events: none; }
+:is(.mode-bar > .steps, .bar-side > :not(.round-ring)) { transition: opacity .4s var(--ease); }
+body.typing-now :is(.mode-bar > .steps, .bar-side > :not(.round-ring), .lp-cols) { opacity: .35; }
+body.typing-now :is(.mode-bar:hover > .steps, .mode-bar:hover .bar-side > :not(.round-ring), .lp-cols:hover) { opacity: 1; }
+/* ---------- Learn: this round's numbers while typing; no raw speed ---------- */
+/* ---------- Learn: this round's speed and accuracy take the last round's place while typing ---------- */
+.lp-live { display: flex; align-items: baseline; gap: 1.2ch; }
+.lp-live > .metric > span { font-size: 1.15rem; line-height: 1.3; font-weight: 600; letter-spacing: 0; }
+.lp-live > .metric small { font-size: 1rem; margin-left: .5ch; }
+.lp-live > .metric > span.pct { font-size: 1.15rem; margin-left: 0; }
+.lp-live > .metric { min-width: 0; }
+body[data-mode="learn"] .live { display: none; }
+/* on a wide screen the panel stands right of the text, level with its first line: one dial, the speed inside, the accuracy under it */
+@media (min-width: 1300px) and (pointer: fine) {
+  .learn-panel { --dial: 92px; position: absolute; left: calc(100% + 40px); top: 0; height: auto; margin: 0;
+    grid-template-columns: auto; justify-items: center; row-gap: 10px; }
+  .learn-panel > .goal-ring { grid-area: 1 / 1; width: var(--dial); height: var(--dial); }
+  .learn-panel > :is(.lp-cols, .lp-live) { grid-area: 2 / 1; justify-self: center; }
+  .goal-ring circle { stroke-width: 1.7; }
+  .goal-ring > .round-ring { width: calc(var(--dial) - 10px); height: calc(var(--dial) - 10px); }
+  .goal-ring > .round-ring circle { stroke-width: 1.5; }
+  .goal-ring :is(circle:not(.fill), .round-ring circle:not(.fill)) { stroke: color-mix(in srgb, var(--sub) 16%, transparent); }
+  .goal-ring:hover :is(circle:not(.fill), .round-ring circle:not(.fill)) { stroke: color-mix(in srgb, var(--sub) 40%, transparent); }
+  .goal-ring > .round-ring[aria-valuenow="0"] .fill { opacity: 0; }
+  :is(.lp-cols > .lp-last > .lp-pair, .lp-live > .metric):first-child { position: absolute; top: calc(var(--dial) / 2); left: 50%; translate: -50% -50%;
+    display: flex; flex-direction: column; align-items: center; gap: 0; line-height: 1.1; pointer-events: none; }
+  :is(.lp-cols > .lp-last > .lp-pair, .lp-live > .metric):first-child > :first-child { font-size: 1.35rem; }
+  :is(.lp-cols > .lp-last > .lp-pair, .lp-live > .metric):first-child small { font-size: .8rem; margin: 0; }
+}
+body:not(.typing-now) .lp-live, body.live-off .lp-live { opacity: 0; pointer-events: none; }
+body.typing-now:not(.live-off) .learn-panel > .lp-cols { opacity: 0; pointer-events: none; }
 .wl { padding: 2px 8px; border: 0; border-radius: 6px; background: none; color: var(--sub); font: inherit; font-size: .9rem; cursor: pointer; transition: color .15s, opacity .4s var(--ease); }
 .wl:hover { color: var(--text); }
 .wl[aria-pressed="true"] { color: var(--accent-text); }
@@ -181,9 +171,9 @@ body.typing-now:not(.live-off) .lp-cols > :is(.lp-last, .lp-intro) { opacity: 0;
 
 @media (min-width: 900px) and (pointer: fine) {
   .letters { margin-bottom: 12px; }
-  .letter-row { gap: 6px; min-height: calc(1.05rem * 1.75); }
-  .chip { font-size: 1.05rem; border-radius: 7px; }
-  .chip.locked { color: color-mix(in srgb, var(--sub) 80%, transparent); }
+  .letter-row { gap: 6px; min-height: calc(1.2rem * 2); }
+  .chip { flex: 1 1 0; max-width: 2.3em; height: 2em; font-size: 1.2rem; border-radius: 8px; }
+  .chip.locked { color: color-mix(in srgb, var(--sub) 70%, transparent); }
   .chip.mastered::before { top: -7px; right: -7px; width: 18px; height: 18px; }
   .chip.mastered::after { top: -4px; right: -4px; width: 12px; height: 12px; }
 }
@@ -300,7 +290,7 @@ body:not([data-caret]) .caret, body[data-caret="line"] .caret {
 
 /* ---------- Caps Lock / wrong layout warning ---------- */
 .warn {
-  position: absolute; left: 0; top: -4px; max-width: 100%; z-index: 2;
+  position: relative; max-width: 100%;
   display: flex; align-items: center; gap: 10px; width: max-content; min-height: 34px; padding: 4px 6px 4px 5px;
   border-radius: 10px; font-size: var(--fs-min); line-height: 1.35;
   color: var(--text); background: var(--panel-2);

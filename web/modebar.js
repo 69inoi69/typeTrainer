@@ -2,26 +2,28 @@
 
 import { t } from "./i18n.js";
 import { $, S, listLabel, levelWords, listless, store } from "./state.js";
-import { LENGTHS, LEARN_LENGTHS, lengthOf, lengthLabel, setSetting } from "./settings.js";
+import { LENGTHS, lengthOf, lengthLabel, setSetting } from "./settings.js";
 import { hasCustomText } from "./customtext.js";
 import { ring, ringBtn } from "./minipop.js";
 
-const bar = $("mode-bar"), learnBar = $("round-switch"), roundRing = $("round-ring");
+const bar = $("mode-bar"), roundRing = $("round-ring"), learnLive = $("lp-live");
+const [wpmM, rawM, accM] = ["wpm", "raw", "acc"].map((id) => $(id).parentElement);
 
 export function renderModeBar() {
   const cur = S.settings.length;
   const parts = [];
   const learn = S.mode === "learn";
   bar.hidden = learn;
-  learnBar.hidden = !learn;
   if (learn) {
     bar.innerHTML = "";
-    learnBar.innerHTML = ring(t("bar.round"), LEARN_LENGTHS.map((id) =>
-      ringBtn(`data-length="${id}" aria-label="${lengthLabel(id)}"`, lengthLabel(id).replace(/^(\d+)(.*)$/, `$1<span class="rs-u">$2</span>`), id === cur)));
-    learnBar.prepend(roundRing);
+    learnLive.append(wpmM, accM);
+    $("goal-ring").append(roundRing);
     return;
   }
-  learnBar.innerHTML = "";
+  if (wpmM.parentElement === learnLive) {
+    rawM.before(wpmM);
+    rawM.after(accM);
+  }
   let steps = "";
   if (S.mode === "climb" && S.climb?.levels) {
     steps = climbSteps();
@@ -103,4 +105,3 @@ const onClick = (e) => {
   else if (b.dataset.length) pickListener({ length: b.dataset.length });
 };
 bar.addEventListener("click", onClick);
-learnBar.addEventListener("click", onClick);

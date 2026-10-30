@@ -74,12 +74,10 @@ export const FX = (() => {
     if (!current) showNext();
   }
   function showNext() {
-    const slot = document.getElementById("live");
     const box = document.getElementById("notice");
     const item = queue.shift();
     if (!item) {
       current = null;
-      slot.classList.remove("noticing");
       return;
     }
     const node = document.createElement("div");
@@ -95,7 +93,6 @@ export const FX = (() => {
     node.addEventListener("click", () => closeNote(node));
     box.replaceChildren(node);
     current = node;
-    slot.classList.add("noticing");
   }
   function closeNote(node) {
     if (node !== current || node.classList.contains("out")) return;
