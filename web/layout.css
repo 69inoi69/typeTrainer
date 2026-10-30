@@ -92,10 +92,6 @@ body:not(.typing-now) .live:not(.final) > .metric.num { opacity: 0; pointer-even
 .streak[data-tier="1"] { --sc: #f39a3d; --glow: .45; }
 .streak[data-tier="2"] { --sc: #f2607a; --glow: .6; }
 .streak[data-tier="3"] { --sc: #a98bff; --glow: .8; }
-:root[data-theme="light"] .streak { --sc: var(--accent-text); }
-:root[data-theme="light"] .streak[data-tier="1"] { --sc: #d9741a; }
-:root[data-theme="light"] .streak[data-tier="2"] { --sc: #d63a5a; }
-:root[data-theme="light"] .streak[data-tier="3"] { --sc: #7a5ae0; }
 .text-box.typing .streak.show { display: flex; animation: streak-in var(--med) var(--ease); }
 .text-box:is(.paused, .blurred, .resulting) .streak.show, body.streak-off .text-box .streak.show { display: none; }
 @keyframes streak-in { from { opacity: 0; } }

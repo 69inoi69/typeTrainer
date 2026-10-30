@@ -58,7 +58,6 @@ export function loadSettings() {
   S.settings.bg = bg && bg !== "off" ? "keys" : "off";
   const caret = store.get("tt.caret");
   S.settings.caret = CARETS.includes(caret) ? caret : "line";
-  S.settings.theme = store.get("tt.theme") === "light" ? "light" : "dark";
   S.settings.goal = goalOf(store.get("tt.goal"));
   const daily = store.get("tt.daily");
   S.settings.daily = daily !== null && DAILY.includes(Number(daily)) ? Number(daily) : DAILY_DEFAULT;
@@ -78,9 +77,6 @@ function applySettings() {
   document.body.classList.toggle("hand-off", !S.settings.hand);
   document.body.dataset.caret = S.settings.caret;
   for (const name of Object.keys(CHOICES)) document.body.dataset[name] = S.settings[name];
-  document.documentElement.dataset.theme = S.settings.theme;
-  document.querySelector('meta[name="theme-color"]')
-    ?.setAttribute("content", getComputedStyle(document.documentElement).getPropertyValue("--bg").trim());
 }
 
 let goalListener = () => {};
@@ -107,9 +103,6 @@ const action = (id, icon, label, cls = "btn") => `<button type="button" class="$
 
 const pick = (name, label) => seg(CHOICES[name].values.map((v) => choice(name, v, label(v), S.settings[name] === v)));
 const ROWS = [
-  { group: "settings.look", name: "settings.theme", ctl: () => seg([
-    choice("theme", "dark", t("settings.dark"), S.settings.theme === "dark"),
-    choice("theme", "light", t("settings.light"), S.settings.theme === "light")]) },
   { group: "settings.look", name: "settings.caret", ctl: () => seg(CARETS.map((id) =>
     choice("caret", id, `<i class="cs ${id}"></i>${t("settings." + id)}`, S.settings.caret === id))) },
   { group: "settings.look", name: "settings.glide", ctl: () => pick("glide", (v) => t("settings.glide_" + v)) },
@@ -164,9 +157,6 @@ export function setSetting(key, value) {
   } else if (key === "caret") {
     S.settings.caret = value;
     store.set("tt.caret", value);
-  } else if (key === "theme") {
-    S.settings.theme = value;
-    store.set("tt.theme", value);
   } else if (key === "goal") {
     S.settings.goal = goalOf(value);
     store.set("tt.goal", String(S.settings.goal));

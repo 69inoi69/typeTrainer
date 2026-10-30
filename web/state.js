@@ -39,7 +39,7 @@ export const S = {
   freetypeList: 0,
   freetypeVariant: "",
   climbLevel: null,
-  settings: { length: "words-30", live: false, caret: "line", theme: "dark", streak: false, bg: "off", goal: 0, daily: 15,
+  settings: { length: "words-30", live: false, caret: "line", streak: false, bg: "off", goal: 0, daily: 15,
     glide: "smooth", sound: "off", volume: "50", rest: "0",
     stop: false, nextKey: true, hand: true },
   kbHidden: false,
@@ -60,8 +60,7 @@ const motionQuery = matchMedia("(prefers-reduced-motion: reduce)");
 export const reducedMotion = () => motionQuery.matches;
 const themeColors = {};
 export function themeColor(name) {
-  const key = (document.documentElement.dataset.theme || "dark") + name;
-  return themeColors[key] ??= getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return themeColors[name] ??= getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 export function boxState(on, ...names) {
   for (const n of names) {
