@@ -143,6 +143,8 @@ consequences, the same word for the same thing. All text lives in
   switches, the Learn cells) and comes back on hover; only what has lost
   its meaning goes (the news of the last round). The progress ring beside
   the round switch stays bright: it is what you glance at while typing.
+  The mouse pointer hides with the first key and comes back as soon as the
+  mouse really moves (`no-pointer` on `<html>`, set by `input.js`).
   Each dim or fade has a reason (#201).
 - A screen that opens (the result, the stats) does it as one short
   sequence of small rises (`rise` in `stats.css`), not as scattered effects;

@@ -96,6 +96,7 @@ body {
 }
 button, input { font: inherit; }
 body, dialog, [popover] { user-select: none; -webkit-user-select: none; }
+:root.no-pointer, :root.no-pointer * { cursor: none !important; }
 input, textarea { user-select: text; -webkit-user-select: text; }
 ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); color: var(--text); }
 
