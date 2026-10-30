@@ -24,7 +24,7 @@ function drawGoalPick(mode) {
       ? `<span class="goal-chip" data-tip-text="${t("stats.goalLearnTip")}"></span>`
       : `<span class="goal-step">` +
         `<button type="button" class="goal-btn" data-step="-1" aria-label="${t("stats.goalDown")}">−</button>` +
-        `<span class="goal-chip" data-tip-text="${t("settings.goalDesc")}" aria-live="polite"></span>` +
+        `<button type="button" class="goal-chip goal-toggle" data-tip-text="${t("stats.goalTip")}" aria-live="polite"></button>` +
         `<button type="button" class="goal-btn" data-step="1" aria-label="${t("stats.goalUp")}">+</button></span>`;
   }
   goalShown = g;
@@ -35,7 +35,15 @@ function stepGoal(dir) {
   if (dir > 0) g = g ? Math.min(GOAL_TOP, (Math.floor(g / GOAL_STEP) + 1) * GOAL_STEP) : GOAL_START;
   else if (g) g = (Math.ceil(g / GOAL_STEP) - 1) * GOAL_STEP;
   if (g < GOAL_MIN) g = 0;
+  showGoal(g, dir);
+}
+function toggleGoal() {
+  if (goalShown) showGoal(0, -1);
+  else showGoal(Number(store.get("tt.goal.last")) || GOAL_START, 1);
+}
+function showGoal(g, dir) {
   if (g === goalShown) return;
+  if (goalShown) store.set("tt.goal.last", String(goalShown));
   goalShown = g;
   goalPick.querySelector(".goal-chip").innerHTML = goalText(g);
   if (!reducedMotion()) goalPick.querySelector(".goal-chip b")?.animate(
@@ -47,6 +55,7 @@ function stepGoal(dir) {
 goalPick.addEventListener("click", (e) => {
   const b = e.target.closest(".goal-btn");
   if (b) stepGoal(Number(b.dataset.step));
+  else if (e.target.closest(".goal-toggle")) toggleGoal();
 });
 goalPick.addEventListener("wheel", (e) => {
   if (goalKind !== "own" || !e.deltaY) return;

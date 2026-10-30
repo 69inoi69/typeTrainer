@@ -432,6 +432,15 @@ test("stats: the goal line is a number of your own, and Learn's is its target", 
   await expect(page.locator("#tiles .tile.goal")).toHaveCount(0);
   await up.click();
   await expect(chip, "+ from off starts at 40").toHaveText(/^Goal 40 wpm/);
+  await chip.click();
+  await expect(chip, "a click on the goal switches it off at once").toHaveText(/^Goal: off/);
+  await expect.poll(stored).toBe("0");
+  await chip.click();
+  await expect(chip, "and back to the same number").toHaveText(/^Goal 40 wpm/);
+  await up.click();
+  await chip.click();
+  await chip.click();
+  await expect(chip).toHaveText(/^Goal 45 wpm/);
 
   await page.locator('#stats-pick button[data-mode="learn"]').click();
   const target = await page.evaluate(() => fetch("/api/v1/stats?length=words-30").then((r) => r.json()).then((s) => s.targetWpm));
