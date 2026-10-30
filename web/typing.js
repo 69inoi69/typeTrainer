@@ -97,6 +97,7 @@ let roundBefore = null;
 let roundNewLetter = "";
 let roundNewLap = 0;
 const SHOWN_AHEAD = 12;
+const TIME_AHEAD_WORDS = 36;
 let wordOf = new Int32Array(0);
 let revealAt = 0;
 let shownWords = 0;
@@ -131,7 +132,7 @@ function appendPortions(list) {
   for (let i = old; i < S.text.length; i++) {
     const sp = document.createElement("span");
     sp.textContent = S.text[i];
-    sp.className = (focusMask[i] ? "fx" : "") + " later" + (endAt >= 0 && i >= endAt ? " beyond" : "");
+    sp.className = (focusMask[i] ? "fx" : "") + (learning() ? " later" : "") + (endAt >= 0 && i >= endAt ? " beyond" : "");
     if (focusMask[i]) sp.dataset.tipText = t("tip.fx", { l: S.text[i] });
     else if (S.text[i] === " ") sp.dataset.sp = "";
     frag.appendChild(sp);
@@ -144,8 +145,13 @@ function appendPortions(list) {
 }
 
 function reveal() {
+  if (!learning()) return;
   shownWords = Math.max(shownWords, wordsTyped + SHOWN_AHEAD);
-  for (; revealAt < spans.length && wordOf[revealAt] < shownWords; revealAt++) spans[revealAt].classList.remove("later");
+  const fade = wordsTyped > 0;
+  for (; revealAt < spans.length && wordOf[revealAt] < shownWords; revealAt++) {
+    spans[revealAt].classList.remove("later");
+    if (fade) spans[revealAt].classList.add("new");
+  }
 }
 
 function showPortion(i) {
@@ -217,7 +223,7 @@ function freePortionDone(k) {
 
 const portionRoute = () => ({ learn: "/portion", climb: "/freeplay/portion", freetype: "/freetype/portion" })[S.mode];
 const ownText = () => S.mode === "freetype" && S.freetypeVariant === "custom";
-const getPortions = (body) => ownText() ? Promise.resolve(customPortions(body.start)) : postJSON(portionRoute(), body);
+const getPortions = (body) => ownText() ? Promise.resolve(customPortions(body.start, body.words)) : postJSON(portionRoute(), body);
 
 export const roundStarted = () => startTime !== null;
 
@@ -249,12 +255,14 @@ function resetStream() {
 export async function loadExercise() {
   resetStream();
   const id = streamId;
-  const body = { start: true, recent: [], list: roundList(), variant: S.freetypeVariant, level: S.climbLevel ?? 0 };
+  const next = lengthOf(S.settings.length);
+  const words = learning() ? 0 : next.kind === "words" ? next.n : TIME_AHEAD_WORDS;
+  const body = { start: true, words, recent: [], list: roundList(), variant: S.freetypeVariant, level: S.climbLevel ?? 0 };
   const res = await getPortions(body);
   if (id !== streamId) return;
   roundBefore = S.lastStats;
   if (S.mode === "climb" && res.level !== S.climbLevel) { S.climbLevel = res.level; renderModeBar(); renderLetters(); }
-  limit = lengthOf(S.settings.length);
+  limit = next;
   roundWords = limit.kind === "words" ? limit.n : 0;
   appendPortions(res.portions);
   renderProgress(true);

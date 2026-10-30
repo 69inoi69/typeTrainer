@@ -246,10 +246,13 @@ is `RoundPortions` portions (30 words).
    `last: true` and gets none. Backspace can go back one word, also into a
    portion that was sent; those new presses are only shown, not sent again.
 
-   **Rendering: one word at a time.** Portions arrive whole, but the browser
+   **Rendering: one word at a time in Learn.** Portions arrive whole, but the browser
    shows only the words up to `SHOWN_AHEAD = 12` (two portions) after the
-   current one; every finished word reveals exactly one more, with a short
-   fade (`typing.js` `reveal()`, CSS `.later` / `.new`). A hidden word is
+   current one; every finished word reveals exactly one more, fading in
+   (`typing.js` `reveal()`, CSS `.later` / `.new`). Climb and Freetype show
+   everything at once: a words round asks for all its words at the start
+   (`words`), a time round for `TIME_AHEAD_WORDS = 36` and then one portion
+   per finished portion, so the three visible lines are always full. A hidden word is
    `visibility: hidden`, so it already has its place in the line: nothing
    visible moves when it appears. Two portions are always waiting, so the
    next word to show is always already there.
@@ -289,10 +292,10 @@ All responses are JSON. Every route except `/languages` and `/auth/*` takes `?la
 | GET | `/api/v1/stats?length=` | | `{keys: [{char, count, errorRate, avgMs, difficulty, mastered, unlocked}], sessions: [last 50 of that length, newest first, without raw keys], order: [the unlock order, for the letters a round opened], streaks (as in `/freeplay/stats`), sessionCount (of that length), learnRounds (Learn rounds of every length), lengths: [every length in the history], bests: {length: the fastest round of it}, targetWpm (the goal of the current lap), lap (0 = the first), lastLap, forecast: {known, rounds, more, letter, few} (about how many rounds to the next letter, `history.NextForecast`, HOW-THE-MODES-WORK.md 6.2), masteryMin, masteryErr (the mastery rule: at least masteryMin presses, under masteryErr % mistakes, for the texts)}`; no `length` = every length |
 | GET | `/api/v1/learn/history` | | `{order: [the letters in unlock order], rounds: [{wpm, accuracy, unlocked, lap, letters: [{count, errorRate, avgMs, mastered} or null while locked, in order]}], confusions: [{want, typed, n}]}`: every Learn round oldest first, every length, with the letter model replayed over the rounds' raw keys (`history.LetterTimeline`); the pairs mixed up at least `ConfusionMin` times, at most `ConfusionShown` (`history.Confusions`) |
 | GET | `/api/v1/activity?tz=` | | `{days: [{date, rounds, seconds, chars}]}`: every day with a finished round, every mode together, oldest first; `tz` = the browser's minutes from UTC (east positive), so days end at the user's midnight. `seconds` = right letters / 5 / WPM (`storage.RoundSeconds`). The stats screen builds the total time typing, the days in a row and the activity calendar from it |
-| POST | `/api/v1/freeplay/portion` | `{recent: [words of the round], start: bool, level}` | `{portions: [{words}], round, level}`; Climb: the next words at the level of the round (`level` 1..10, or 0 = where the user stands, `freeplay.Standing`) |
+| POST | `/api/v1/freeplay/portion` | `{recent: [words of the round], start: bool, words, level}` | `{portions: [{words}], level}`; with `start`, enough portions for `words` (0..`MaxStartWords`), otherwise one; Climb: the next words at the level of the round (`level` 1..10, or 0 = where the user stands, `freeplay.Standing`) |
 | POST | `/api/v1/freeplay/results` | `{chars, wpm, accuracy, perSecond, keys, length, level}` | `{consistency, weak: [{pair, cost, count}], verdict: "pass" \| "hold" \| "fail", place: {level, passes, fails, moved}}`; one entry in Climb's history with the level it was typed at (a whole number 1..10); verdict and place say what it counted for and where the next round starts; its keys may be capitals and `,` `.` (rounds from before 2026-10-20 had them) |
 | GET | `/api/v1/freeplay/stats?length=` | | `{place: {level, passes, fails, moved} (freeplay.Standing), sessions: [last 50 of that length, newest first, without raw keys, each with its level], sessionCount, lengths, bests (as in `/stats`), streaks: [{min, longest, current}] (the accuracy streaks of that length at `StreakAccuracies`, history.AccuracyStreaks), levels (the words of each level), passesUp, failsDown, passAccuracy, failAccuracy}` |
-| POST | `/api/v1/freetype/portion` | `{recent: [words], start: bool, list, variant}` (variant: "" or "long" with a list; "sentences" with none) | `{portions: [{words}], round}`; Freetype: words drawn evenly from the `list` most common ones (`freeplay.Picker.Freetype`); a list not offered is a 400 |
+| POST | `/api/v1/freetype/portion` | `{recent: [words], start: bool, words, list, variant}` (variant: "" or "long" with a list; "sentences" with none) | `{portions: [{words}]}`; `words` as in Climb; Freetype: words drawn evenly from the `list` most common ones (`freeplay.Picker.Freetype`); a list not offered is a 400 |
 | POST | `/api/v1/freetype/results` | `{chars, wpm, accuracy, perSecond, keys, length, list, variant}` (your own text: list 0, variant "custom") | `{consistency}`; one entry in the history of that list (`storage.FreetypeMode`) |
 | GET | `/api/v1/freetype/stats?list=&variant=&length=` | | `{lists (offered: those of `FreetypeLists` the language's long list has words for), list (no `list` = the first), sessions, sessionCount, lengths, bests, streaks}` of that list, as in `/freeplay/stats` without the level |
 

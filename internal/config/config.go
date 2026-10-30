@@ -134,8 +134,7 @@ func Default() Config {
 		},
 		Freeplay: freeplay.Params{
 			PortionWords:  6,
-			AheadPortions: 2,
-			RoundPortions: 5,
+			MaxStartWords: 60,
 			RecentWords:   20,
 			RepeatPenalty: 0.3,
 

@@ -885,3 +885,18 @@ test("Learn: a keyboard that can't fit leaves one line in its place", async ({ p
   await expect(page.locator("#keyboard")).toBeVisible();
   await expect(page.locator("#kb-away")).toBeHidden();
 });
+
+test("Freetype and Climb show the whole round at once; Learn fades its next word in", async ({ page }) => {
+  const words = () => page.evaluate(() => [...document.querySelectorAll("#text > span:not(.beyond):not(.extra)")].map((s) => s.textContent).join("").trim().split(" ").length);
+  await openApp(page, { "tt.mode.en": "freetype", "tt.length.freetype": "words-50" });
+  expect(await words(), "all 50 words are there before the first key").toBe(50);
+  await expect(page.locator("#text > span.later")).toHaveCount(0);
+  await openApp(page, { "tt.mode.en": "climb", "tt.length.climb": "time-60" });
+  expect(await words(), "a time round keeps lines ahead").toBeGreaterThanOrEqual(36);
+  await expect(page.locator("#text > span.later")).toHaveCount(0);
+  await openApp(page, { "tt.mode.en": "learn" });
+  await expect(page.locator("#text > span.new")).toHaveCount(0);
+  for (;;) { const c = await nextChar(page); await page.keyboard.type(c); if (c === " ") break; }
+  await expect(page.locator("#text > span.new").first()).toHaveCSS("animation-name", "word-in");
+  expect(await page.locator("#text > span.later").count(), "Learn still shows 12 words ahead").toBeGreaterThan(0);
+});
