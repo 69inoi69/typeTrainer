@@ -390,10 +390,9 @@ test("the settings of one screen live on that screen", async ({ page }) => {
 
   await page.keyboard.press("Shift+Tab");
   await page.locator('#stats-pick button[data-mode="climb"]').click();
-  await page.locator("#goal-pick button.goal-chip").click();
-  await page.keyboard.type("50");
-  await page.keyboard.press("Enter");
-  expect(await page.evaluate(() => localStorage.getItem("tt.goal"))).toBe("50");
+  await page.locator('#goal-pick button[data-step="1"]').click();
+  await page.locator('#goal-pick button[data-step="1"]').click();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("tt.goal"))).toBe("45");
 });
 
 test("stats: the goal line is a number of your own, and Learn's is its target", async ({ page }) => {
@@ -401,26 +400,47 @@ test("stats: the goal line is a number of your own, and Learn's is its target", 
   await openApp(page, { "tt.mode.en": "climb", "tt.goal": "100" });
   await page.locator("#tab-stats").click();
   const chip = page.locator("#goal-pick .goal-chip");
+  const up = page.locator('#goal-pick button[data-step="1"]'), down = page.locator('#goal-pick button[data-step="-1"]');
+  const stored = () => page.evaluate(() => localStorage.getItem("tt.goal"));
   await expect(chip).toHaveText(/^Goal 100 wpm/);
+  const at = await chip.boundingBox();
 
-  await chip.click();
-  await page.keyboard.type("x137");
-  await page.keyboard.press("Enter");
-  await expect(chip, "letters are ignored").toHaveText(/^Goal 137 wpm/);
-  expect(await page.evaluate(() => localStorage.getItem("tt.goal"))).toBe("137");
-  await expect(page.locator("#tiles .tile.goal b")).toHaveText("137");
+  await up.click();
+  await up.click();
+  await expect(chip, "+ adds 5 at once").toHaveText(/^Goal 110 wpm/);
+  expect(await stored(), "saved only when the clicks stop").toBe("100");
+  await expect.poll(stored).toBe("110");
+  await expect(page.locator("#tiles .tile.goal b")).toHaveText("110");
+  expect((await chip.boundingBox()).x, "the number stays in place").toBeCloseTo(at.x, 0);
 
-  await chip.click();
-  await page.keyboard.type("90");
-  await page.keyboard.press("Escape");
-  await expect(chip, "Esc keeps the old goal").toHaveText(/^Goal 137 wpm/);
-  await expect(page.locator("#settings-win")).not.toHaveAttribute("open", "");
+  await chip.hover();
+  await page.mouse.wheel(0, 100);
+  await expect(chip, "the wheel down lowers it").toHaveText(/^Goal 105 wpm/);
+  await down.focus();
+  await page.keyboard.press("ArrowUp");
+  await expect(chip, "and the arrows").toHaveText(/^Goal 110 wpm/);
+  await expect.poll(stored).toBe("110");
 
-  await chip.click();
-  await page.keyboard.press("Backspace");
-  await page.keyboard.press("Enter");
-  await expect(chip, "an empty field turns it off").toHaveText(/^Goal: off/);
+  await openApp(page, { "tt.mode.en": "climb", "tt.goal": "22" });
+  await page.locator("#tab-stats").click();
+  await expect(chip, "a goal between steps shows as it is").toHaveText(/^Goal 22 wpm/);
+  await down.click();
+  await expect(chip).toHaveText(/^Goal 20 wpm/);
+  await down.click();
+  await expect(chip, "below 20 it turns off").toHaveText(/^Goal: off/);
+  await expect.poll(stored).toBe("0");
   await expect(page.locator("#tiles .tile.goal")).toHaveCount(0);
+  await up.click();
+  await expect(chip, "+ from off starts at 40").toHaveText(/^Goal 40 wpm/);
+  await chip.click();
+  await expect(chip, "a click on the goal switches it off at once").toHaveText(/^Goal: off/);
+  await expect.poll(stored).toBe("0");
+  await chip.click();
+  await expect(chip, "and back to the same number").toHaveText(/^Goal 40 wpm/);
+  await up.click();
+  await chip.click();
+  await chip.click();
+  await expect(chip).toHaveText(/^Goal 45 wpm/);
 
   await page.locator('#stats-pick button[data-mode="learn"]').click();
   const target = await page.evaluate(() => fetch("/api/v1/stats?length=words-30").then((r) => r.json()).then((s) => s.targetWpm));

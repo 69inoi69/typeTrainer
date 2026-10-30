@@ -10,44 +10,65 @@ import { freetypeUrl, toggledVariant } from "./modes.js";
 
 // ---------- the goal line ----------
 const goalPick = $("goal-pick");
-let goalEditing = false;
+const GOAL_STEP = 5, GOAL_MIN = 20, GOAL_START = 40, GOAL_TOP = 300, GOAL_SAVE_MS = 400;
+let goalShown = 0, goalKind = "", saveTimer = 0;
 export const goalFor = (mode) => (mode === "learn" ? S.lastStats?.targetWpm ?? 0 : S.settings.goal);
+const goalText = (g) => (g ? t("stats.goalIs", { wpm: `<b>${g}</b>` }) : t("stats.goalOff"));
 function drawGoalPick(mode) {
-  if (goalEditing) return;
+  const kind = mode === "learn" ? "learn" : "own";
+  if (kind === "own" && saveTimer) return;
   const g = goalFor(mode);
-  goalPick.innerHTML = mode === "learn"
-    ? `<span class="goal-chip" data-tip-text="${t("stats.goalLearnTip")}">${t("stats.goalIs", { wpm: `<b>${g}</b>` })}</span>`
-    : `<button type="button" class="goal-chip" data-tip-text="${t("settings.goalDesc")}">` +
-      (g ? t("stats.goalIs", { wpm: `<b>${g}</b>` }) : t("stats.goalOff")) + `<span class="goal-pen" aria-hidden="true">✎</span></button>`;
+  if (kind !== goalKind) {
+    goalKind = kind;
+    goalPick.innerHTML = kind === "learn"
+      ? `<span class="goal-chip" data-tip-text="${t("stats.goalLearnTip")}"></span>`
+      : `<span class="goal-step">` +
+        `<button type="button" class="goal-btn" data-step="-1" aria-label="${t("stats.goalDown")}">−</button>` +
+        `<button type="button" class="goal-chip goal-toggle" data-tip-text="${t("stats.goalTip")}" aria-live="polite"></button>` +
+        `<button type="button" class="goal-btn" data-step="1" aria-label="${t("stats.goalUp")}">+</button></span>`;
+  }
+  goalShown = g;
+  goalPick.querySelector(".goal-chip").innerHTML = goalText(g);
 }
-function editGoal() {
-  goalEditing = true;
-  goalPick.innerHTML = `<label class="goal-chip editing">${t("stats.goalIs", {
-    wpm: `<input type="text" inputmode="numeric" maxlength="3" aria-label="${t("stats.goalAria")}" value="${S.settings.goal || ""}">`,
-  })}</label><span class="goal-hint">${t("stats.goalHint")}</span>`;
-  const input = goalPick.querySelector("input");
-  input.focus();
-  input.select();
+function stepGoal(dir) {
+  let g = goalShown;
+  if (dir > 0) g = g ? Math.min(GOAL_TOP, (Math.floor(g / GOAL_STEP) + 1) * GOAL_STEP) : GOAL_START;
+  else if (g) g = (Math.ceil(g / GOAL_STEP) - 1) * GOAL_STEP;
+  if (g < GOAL_MIN) g = 0;
+  showGoal(g, dir);
 }
-function stopEditing(save) {
-  if (!goalEditing) return;
-  const v = goalPick.querySelector("input").value.trim();
-  goalEditing = false;
-  if (save) setSetting("goal", v);
-  else drawGoalPick(shownStats().mode);
+function toggleGoal() {
+  if (goalShown) showGoal(0, -1);
+  else showGoal(Number(store.get("tt.goal.last")) || GOAL_START, 1);
+}
+function showGoal(g, dir) {
+  if (g === goalShown) return;
+  if (goalShown) store.set("tt.goal.last", String(goalShown));
+  goalShown = g;
+  goalPick.querySelector(".goal-chip").innerHTML = goalText(g);
+  if (!reducedMotion()) goalPick.querySelector(".goal-chip b")?.animate(
+    [{ transform: `translateY(${dir > 0 ? 5 : -5}px)`, opacity: 0.3 }, { transform: "none", opacity: 1 }],
+    { duration: 160, easing: "ease-out" });
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { saveTimer = 0; setSetting("goal", String(goalShown)); }, GOAL_SAVE_MS);
 }
 goalPick.addEventListener("click", (e) => {
-  if (e.target.closest("button.goal-chip")) editGoal();
+  const b = e.target.closest(".goal-btn");
+  if (b) stepGoal(Number(b.dataset.step));
+  else if (e.target.closest(".goal-toggle")) toggleGoal();
 });
+goalPick.addEventListener("wheel", (e) => {
+  if (goalKind !== "own" || !e.deltaY) return;
+  e.preventDefault();
+  stepGoal(e.deltaY < 0 ? 1 : -1);
+}, { passive: false });
 goalPick.addEventListener("keydown", (e) => {
-  if (e.target.tagName !== "INPUT") return;
-  if (e.key === "Enter" || e.key === "Escape") {
-    e.preventDefault();
-    e.stopPropagation();
-    stopEditing(e.key === "Enter");
-  } else if (e.key.length === 1 && !/[0-9]/.test(e.key) && !e.ctrlKey && !e.metaKey) e.preventDefault();
+  if (goalKind !== "own") return;
+  const dir = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 }[e.key];
+  if (!dir) return;
+  e.preventDefault();
+  stepGoal(dir);
 });
-goalPick.addEventListener("focusout", (e) => { if (e.target.tagName === "INPUT") stopEditing(true); });
 
 let introVars = "";
 export async function refreshStats() {
