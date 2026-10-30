@@ -145,16 +145,22 @@ body.typing-now :is(.mode-bar:hover > .steps, .mode-bar:hover .bar-side > :not(.
 .lp-live > .metric > span.pct { font-size: 1.15rem; margin-left: 0; }
 .lp-live > .metric { min-width: 0; }
 body[data-mode="learn"] .live { display: none; }
-/* on a wide screen the panel stands right of the text: the rings big, the numbers under them */
+/* on a wide screen the panel stands right of the text, level with its first line: one dial, the speed inside, the accuracy under it */
 @media (min-width: 1300px) and (pointer: fine) {
-  .learn-panel { position: absolute; left: calc(100% + 40px); top: 50%; translate: 0 -50%; height: auto; margin: 0;
-    grid-template-columns: auto; justify-items: center; row-gap: 12px; }
-  .learn-panel > .goal-ring { grid-area: 1 / 1; width: 76px; height: 76px; }
+  .learn-panel { --dial: 92px; position: absolute; left: calc(100% + 40px); top: 0; height: auto; margin: 0;
+    grid-template-columns: auto; justify-items: center; row-gap: 10px; }
+  .learn-panel > .goal-ring { grid-area: 1 / 1; width: var(--dial); height: var(--dial); }
   .learn-panel > :is(.lp-cols, .lp-live) { grid-area: 2 / 1; justify-self: center; }
-  .goal-ring circle { stroke-width: 2; }
-  .goal-ring > .round-ring { width: 48px; height: 48px; }
-  .goal-ring > .round-ring circle { stroke-width: 2.6; }
-  :is(.lp-cell, .lp-live) { flex-direction: column; align-items: center; gap: 2px; }
+  .goal-ring circle { stroke-width: 1.7; }
+  .goal-ring > .round-ring { width: calc(var(--dial) - 10px); height: calc(var(--dial) - 10px); }
+  .goal-ring > .round-ring circle { stroke-width: 1.5; }
+  .goal-ring :is(circle:not(.fill), .round-ring circle:not(.fill)) { stroke: color-mix(in srgb, var(--sub) 16%, transparent); }
+  .goal-ring:hover :is(circle:not(.fill), .round-ring circle:not(.fill)) { stroke: color-mix(in srgb, var(--sub) 40%, transparent); }
+  .goal-ring > .round-ring[aria-valuenow="0"] .fill { opacity: 0; }
+  :is(.lp-cols > .lp-last > .lp-pair, .lp-live > .metric):first-child { position: absolute; top: calc(var(--dial) / 2); left: 50%; translate: -50% -50%;
+    display: flex; flex-direction: column; align-items: center; gap: 0; line-height: 1.1; pointer-events: none; }
+  :is(.lp-cols > .lp-last > .lp-pair, .lp-live > .metric):first-child > :first-child { font-size: 1.35rem; }
+  :is(.lp-cols > .lp-last > .lp-pair, .lp-live > .metric):first-child small { font-size: .8rem; margin: 0; }
 }
 body:not(.typing-now) .lp-live, body.live-off .lp-live { opacity: 0; pointer-events: none; }
 body.typing-now:not(.live-off) .learn-panel > .lp-cols { opacity: 0; pointer-events: none; }
