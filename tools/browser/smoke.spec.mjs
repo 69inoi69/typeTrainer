@@ -279,15 +279,65 @@ test("Live stats is on for a new user and doesn't switch itself", async ({ page 
   await expect(page.locator("body")).toHaveClass(/\blive-off\b/);
 });
 
-test("the background is off by default and on when chosen", async ({ page }) => {
+test("the background is off by default, alt+b fades it in and out, holding the keys toggles it once", async ({ page }) => {
   await openApp(page);
-  await expect(page.locator(".ambient")).toHaveAttribute("data-kind", "off");
+  const layer = page.locator(".ambient");
+  await expect(layer).toHaveAttribute("data-kind", "off");
   await expect(page.locator(".ambient > *")).toHaveCount(0);
+  await page.keyboard.down("Alt");
+  await page.keyboard.down("b");
+  await page.evaluate(() => {
+    for (let i = 0; i < 5; i++) document.activeElement.dispatchEvent(new KeyboardEvent("keydown", { key: "b", code: "KeyB", altKey: true, repeat: true, bubbles: true, cancelable: true }));
+  });
+  await page.keyboard.up("b");
+  await page.keyboard.up("Alt");
+  await expect(layer, "on, and the repeats did nothing").toHaveAttribute("data-kind", "keys");
+  await expect(page.locator(".ambient > *").first()).toBeAttached();
+  expect(await layer.evaluate((l) => l.getAnimations().length), "it fades in").toBe(1);
+  expect(await page.evaluate(() => localStorage.getItem("tt.bg"))).toBe("keys");
+  await page.waitForTimeout(350);
+  await page.keyboard.press("Alt+b");
+  expect(await layer.evaluate((l) => l.getAnimations().length), "it fades out").toBe(1);
+  await expect(page.locator(".ambient > *")).toHaveCount(0);
+  await expect(layer).toHaveAttribute("data-kind", "off");
   await page.evaluate(() => localStorage.setItem("tt.bg", "letters"));
   await page.reload();
   await waitForText(page);
-  await expect(page.locator(".ambient")).toHaveAttribute("data-kind", "keys");
-  await expect(page.locator(".ambient > *").first()).toBeAttached();
+  await expect(layer, "an old stored value still means on").toHaveAttribute("data-kind", "keys");
+});
+
+test("a held or hammered shortcut fires once: tab, shift+tab, esc", async ({ page }) => {
+  await openApp(page, {});
+  const text = () => page.evaluate(() => document.getElementById("text").textContent);
+  const held = (key, extra = {}) => page.evaluate(([key, extra]) => {
+    for (let i = 0; i < 5; i++) document.activeElement.dispatchEvent(new KeyboardEvent("keydown", { key, code: key, repeat: true, bubbles: true, cancelable: true, ...extra }));
+  }, [key, extra]);
+  const before = await text();
+  await page.keyboard.press("Tab");
+  await expect.poll(text).not.toBe(before);
+  const once = await text();
+  await held("Tab");
+  await page.keyboard.press("Tab");
+  await page.waitForTimeout(150);
+  expect(await text(), "repeats and a second press within the cooldown do nothing").toBe(once);
+  await page.waitForTimeout(250);
+  await page.keyboard.press("Tab");
+  await expect.poll(text, "a press after the cooldown works").not.toBe(once);
+
+  await page.keyboard.press("Shift+Tab");
+  await expect(page.locator("#view-stats")).toBeVisible();
+  await held("Tab", { shiftKey: true });
+  await page.waitForTimeout(100);
+  await expect(page.locator("#view-stats"), "still on the stats").toBeVisible();
+  await page.waitForTimeout(300);
+  await page.keyboard.press("Shift+Tab");
+
+  await page.waitForTimeout(350);
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#settings-win")).toBeVisible();
+  await held("Escape");
+  await page.waitForTimeout(100);
+  await expect(page.locator("#settings-win"), "a held esc doesn't close what it opened").toBeVisible();
 });
 
 test("the caret is still at rest, spaces have a dot, the settings are fewer", async ({ page }) => {
@@ -303,7 +353,7 @@ test("the caret is still at rest, spaces have a dot, the settings are fewer", as
   await expect(page.getByText("Caret at rest")).toHaveCount(0);
   await expect(page.getByText("Space marks")).toHaveCount(0);
   const names = await page.locator("#settings-win .sw-name").allTextContents();
-  expect(names, "only what holds for the whole site").toEqual(["Theme", "Caret", "Caret movement", "Falling keycaps",
+  expect(names, "only what holds for the whole site").toEqual(["Theme", "Caret", "Caret movement",
     "Live stats", "Stop on a mistake", "Sounds", "Break reminder", "Progress data", "Reset progress"]);
   await expect(page.locator("#settings-win input[type=text]"), "no search").toHaveCount(0);
   const preview = page.locator("#settings-win .sw-preview");
@@ -313,7 +363,7 @@ test("the caret is still at rest, spaces have a dot, the settings are fewer", as
   await page.keyboard.press("ArrowDown");
   await expect(preview, "the preview next to Caret movement").toBeVisible();
   await page.keyboard.press("ArrowDown");
-  await expect(preview, "no preview on Falling keycaps").toBeHidden();
+  await expect(preview, "no preview on Live stats").toBeHidden();
   const list = await page.locator("#settings-win .sw-list").evaluate((l) => l.scrollHeight <= l.clientHeight);
   expect(list, "every row fits without scrolling").toBe(true);
 });
@@ -452,6 +502,22 @@ test("the keyboard shows only while Learn opens letters", async ({ page }) => {
   await page.reload();
   await waitForText(page);
   await expect(kb).toBeHidden();
+});
+
+test("alt+k hides and shows the keyboard, and each mode keeps its own choice", async ({ page }) => {
+  await openApp(page, { "tt.mode.en": "learn" });
+  const kb = page.locator("#keyboard");
+  await expect(kb, "Learn shows it by default").not.toHaveClass(/\boff\b/);
+  await page.keyboard.press("Alt+k");
+  await expect(kb).toHaveClass(/\boff\b/);
+  expect(await page.evaluate(() => localStorage.getItem("tt.kb.learn"))).toBe("off");
+  await page.reload();
+  await waitForText(page);
+  await expect(kb, "the choice is kept").toHaveClass(/\boff\b/);
+  await openApp(page, { "tt.mode.en": "freetype" });
+  await expect(kb, "Freetype hides it by default").toHaveClass(/\boff\b/);
+  await page.keyboard.press("Alt+k");
+  await expect(kb, "and shows it on alt+k").not.toHaveClass(/\boff\b/);
 });
 
 test("the text stands at the same place for the same keyboard state", async ({ page }) => {
