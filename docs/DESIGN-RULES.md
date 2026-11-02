@@ -42,10 +42,14 @@ there is a reason not to).
 - Boxes size to their content rather than to a fixed height (the result
   card, the panels).
 - Rare actions (Export, Import, Reset all progress) live in Settings, not on the main screen.
-- The settings window holds only what holds for the whole site. A setting of
-  one screen lives on that screen, next to what it changes: on the round bar,
-  in a small window opened from the control it belongs to (`openPop`), or
-  above the chart it draws on (#202).
+- Every setting is in the settings window: a search at the top that has the
+  focus, the categories under it as one row of buttons, then the rows with
+  their switches right in them (one press changes a value). A setting of one
+  mode carries that mode's name as a tag, and it may also sit on its own
+  screen, next to what it changes: on the round bar, in a small window opened
+  from the control it belongs to (`openPop`), or above the chart it draws on.
+  Both places show the same setting with one value. How a setting is defined:
+  `docs/CODE-RULES.md`, "Settings".
 
 **Recommended**
 - Every element has a reason to be there and a reason to be where it is.

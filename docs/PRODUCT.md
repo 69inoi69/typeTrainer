@@ -41,7 +41,8 @@ are thesis items and stay.
 - **Settings change how much and how it looks, never what is practised.**
   What a round is belongs to each mode and sits in the round bar above the
   text (`web/modebar.js`). The settings window (`web/settings.js`) holds
-  what applies to the whole app.
+  every setting, with a search and categories; a mode's own ones are tagged
+  with the mode.
 - **Plain defaults.** No decorative animation, dimming, glow or blur: a state
   changes at once. What moves is what shows position: the caret and the line
   scroll. The on-screen keyboard keeps its keycap look and its lit next key. Effects may come back one by one, each decided

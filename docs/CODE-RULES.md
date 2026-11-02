@@ -68,6 +68,39 @@ comments. How the parts fit together is in `docs/HOW-THE-CODE-WORKS.md`.
 
 How the parts fit together: `docs/HOW-THE-CODE-WORKS.md`.
 
+## Settings
+
+Every setting is one entry in `SETTINGS` in `web/settings-list.js`, and
+only there. The settings window, its search, saving, loading and the small
+windows on single screens are all built from that list by `web/settings.js`;
+nothing else declares a setting. A new setting is one entry plus its texts.
+
+An entry has:
+
+- `id`: its name in `S.settings` and in the texts.
+- `cat`: one of `CATEGORIES` (text, caret, typing, sound, keyboard, goals,
+  data). A new category is a decision, not a side effect.
+- `kind`: `switch` (off / on), `choice` (one of `values`), `number`
+  (`min`, `max`, `step`, `start`; 0 means off), `action` (buttons, no
+  value) or `length` (the round length of the current mode).
+- `def`: the value for a new user.
+- `store`: its `localStorage` key, `tt.<something>`. Keep a key once users
+  have it; when a setting changes shape, convert the old key on load (as
+  `splitOldSound` does) instead of dropping it.
+- optional: `tip` (it has a tooltip), `unit` (a text key with `{n}` for
+  number values), `icons`, `body` (the value goes to `<body data-<id>>` for
+  the CSS; switches as `on` / `off`), `preview` (the typing preview beside
+  the window), `modes` (the modes it works in, shown as a tag), `words`
+  (other words the search should find it by), `show()` (when to list it),
+  `touch: false` (not on touch screens), and `get()` / `set(v)` when the
+  value lives somewhere else than its own key.
+
+Its texts in `web/i18n.js` follow from the `id`: `settings.<id>` (the
+name), `settings.<id>Desc` (the tooltip), `settings.<id>_<value>` (each
+value of a choice; `off`, `0` and numbers need none). A module that must
+react to a change listens with `onSetting(fn)` (`web/input.js` does it for
+the screen); it never reads `localStorage` itself.
+
 ## Comments
 
 Comments in this repository are written for **a newcomer who knows a little

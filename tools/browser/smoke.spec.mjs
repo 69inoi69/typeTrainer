@@ -216,15 +216,15 @@ test("Learn: an unsaved round offers to save it again", async ({ page }, info) =
 
 test("Live stats is on for a new user and doesn't switch itself", async ({ page }) => {
   await openApp(page, { "tt.mode.en": "climb", "tt.length.climb": "words-10" });
-  await expect(page.locator("body")).not.toHaveClass(/\blive-off\b/);
+  await expect(page.locator("body")).toHaveAttribute("data-live", "on");
   await page.evaluate(() => localStorage.setItem("tt.live", "0"));
   await page.reload();
   await waitForText(page);
-  await expect(page.locator("body")).toHaveClass(/\blive-off\b/);
+  await expect(page.locator("body")).toHaveAttribute("data-live", "off");
   await typeRound(page);
   await expectResult(page);
   expect(await page.evaluate(() => localStorage.getItem("tt.live")), "a finished round leaves the setting alone").toBe("0");
-  await expect(page.locator("body")).toHaveClass(/\blive-off\b/);
+  await expect(page.locator("body")).toHaveAttribute("data-live", "off");
 });
 
 test("a held or hammered shortcut fires once: tab, shift+tab, esc", async ({ page }) => {
@@ -261,30 +261,63 @@ test("a held or hammered shortcut fires once: tab, shift+tab, esc", async ({ pag
   await expect(page.locator("#settings-win"), "a held esc doesn't close what it opened").toBeVisible();
 });
 
-test("the caret is still at rest, spaces have a dot, the settings are fewer", async ({ page }) => {
-  await openApp(page, { "tt.caret": "outline", "tt.blink": "pulse", "tt.ws": "none" });
+test("the caret is still at rest, spaces have a dot unless you switch it off", async ({ page }) => {
+  await openApp(page, { "tt.caret": "outline", "tt.blink": "pulse" });
   await expect(page.locator("body")).toHaveAttribute("data-caret", "line");
   await page.waitForTimeout(1500);
   const caretAnims = await page.evaluate(() => document.getElementById("caret").getAnimations().length);
   expect(caretAnims, "animations on the caret at rest").toBe(0);
-  const dot = await page.evaluate(() => getComputedStyle(document.querySelector("#text span[data-sp]")).backgroundImage);
-  expect(dot, "a space has its dot").toContain("radial-gradient");
+  const dot = () => page.evaluate(() => getComputedStyle(document.querySelector("#text span[data-sp]")).backgroundImage);
+  expect(await dot(), "a space has its dot").toContain("radial-gradient");
   await page.keyboard.press("Escape");
-  await expect(page.getByText("Caret movement")).toBeVisible();
   await expect(page.getByText("Caret at rest")).toHaveCount(0);
-  await expect(page.getByText("Space marks")).toHaveCount(0);
-  const names = await page.locator("#settings-win .sw-name").allTextContents();
-  expect(names, "only what holds for the whole site").toEqual(["Caret", "Caret movement",
-    "Live stats", "Streak", "Falling keycaps", "Stop on a mistake", "Sounds", "Progress data", "Reset progress"]);
-  await expect(page.locator("#settings-win input[type=text]"), "no search").toHaveCount(0);
-  const preview = page.locator("#settings-win .sw-preview");
+  const win = page.locator("#settings-win");
+  await win.locator('button[data-key="ws"][data-value="none"]').click();
+  expect(await page.evaluate(() => localStorage.getItem("tt.ws"))).toBe("none");
+  expect(await dot(), "no dot").toBe("none");
+  const preview = win.locator(".sw-preview");
+  await win.locator('#settings-chips button[data-cat="caret"]').click();
   await expect(preview, "the preview next to Caret").toBeVisible();
   await page.keyboard.press("ArrowDown");
   await expect(preview, "the preview next to Caret movement").toBeVisible();
-  await page.keyboard.press("ArrowDown");
-  await expect(preview, "no preview on Live stats").toBeHidden();
-  const list = await page.locator("#settings-win .sw-list").evaluate((l) => l.scrollHeight <= l.clientHeight);
-  expect(list, "every row fits without scrolling").toBe(true);
+  await win.locator('#settings-chips button[data-cat="typing"]').click();
+  await expect(preview, "no preview on Stop on a mistake").toBeHidden();
+});
+
+test("settings: one window with every setting, a search and categories", async ({ page }) => {
+  await openApp(page, { "tt.mode.en": "freetype" });
+  await page.keyboard.press("Escape");
+  const win = page.locator("#settings-win"), q = win.locator("#settings-q");
+  await expect(q, "the search waits for typing").toBeFocused();
+  const names = () => win.locator(".sw-name > span:first-child").allTextContents();
+  expect(await names()).toEqual(["Space between words", "Live stats", "Streak", "Falling keycaps", "Caret", "Caret movement",
+    "Stop on a mistake", "Round length", "Keys", "Mistakes", "Show keyboard", "Next key", "Hand",
+    "Daily goal, minutes", "Speed goal, wpm", "Progress data", "Reset progress"]);
+  await expect(win.locator(".sw-row", { hasText: "Streak" }).locator(".sw-tag"), "a mode's own setting says whose").toHaveText("Freetype");
+
+  await page.keyboard.type("cursor");
+  expect(await names(), "a search finds other words for a setting too").toEqual(["Caret", "Caret movement"]);
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator("body")).toHaveAttribute("data-caret", "block");
+  await page.keyboard.press("Escape");
+  await expect(q, "the first esc clears the search").toHaveValue("");
+  await expect(win).toBeVisible();
+  await page.keyboard.type("zzzz");
+  await expect(win.locator(".sw-none")).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  await win.locator('#settings-chips button[data-cat="goals"]').click();
+  expect(await names()).toEqual(["Daily goal, minutes", "Speed goal, wpm"]);
+  await win.locator('button[data-key="goal"][data-step="1"]').click();
+  await expect(win.locator(".stepper output")).toHaveText("40");
+  expect(await page.evaluate(() => localStorage.getItem("tt.goal"))).toBe("40");
+
+  await win.locator('#settings-chips button[data-cat="typing"]').click();
+  await win.locator('button[data-key="length"][data-value="words-10"]').click();
+  await expect(page.locator('#mode-bar button[data-length="words-10"]'), "the round bar follows").toHaveAttribute("aria-pressed", "true");
+  await page.keyboard.press("Escape");
+  await expect(win).toBeHidden();
+  await expect(page.locator("#round-count"), "a new round of the new length").toHaveText("0 / 10");
 });
 
 test("the falling keycaps are on by default, the settings switch turns them off for good", async ({ page }) => {

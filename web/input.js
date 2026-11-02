@@ -1,14 +1,14 @@
 // Keys and buttons, routed to the modules that handle them.
 
 import { $, el, S, introOpen, isTouch, focusText } from "./state.js";
-import { requestFit, highlightNextKey, toggleKb } from "./keyboard.js";
+import { requestFit, highlightNextKey, toggleKb, autoKb } from "./keyboard.js";
 import { refreshStats, renderStats, resetStatsPick } from "./stats.js";
 import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, loadExercise, roundStarted, pauseRound, checkLayout } from "./typing.js";
 import { checkCaps } from "./warn.js";
 import { introKey } from "./intro.js";
 import { profileOpen, closeProfile } from "./profile.js";
 import { resultOpen, closeResult } from "./result.js";
-import { settingsOpen, openSettings, onSettingsClose, onGoalChange, onBgChange, onTypingLook, onSoundPick, setLength, setSetting } from "./settings.js";
+import { settingsOpen, openSettings, onSettingsClose, onSetting, setLength } from "./settings.js";
 import { setMode, refreshFreeplay, renderNav, setFreetypeList, setFreetypeVariant } from "./modes.js";
 import { openCustomText, hasCustomText } from "./customtext.js";
 import { onBarPick, renderModeBar } from "./modebar.js";
@@ -96,18 +96,26 @@ async function barPick(pick) {
 }
 onBarPick(barPick);
 
-onBgChange(buildAmbient);
-onTypingLook(() => {
-  fitText();
-  requestFit();
-  placeCaret(true);
-  highlightNextKey();
-});
-onSoundPick((key) => (key === "missSound" || S.settings.keySound === "off" ? missSound() : keySound()));
-
-onGoalChange(() => {
-  renderPanel();
-  if (S.view === "stats") renderStats();
+onSetting((id, value) => {
+  if (id === "nextKey" || id === "hand") {
+    fitText();
+    requestFit();
+    placeCaret(true);
+    highlightNextKey();
+  } else if (id === "kb") {
+    autoKb();
+    highlightNextKey();
+  } else if (id === "keySound" || id === "missSound" || id === "volume") {
+    if (id === "missSound" || S.settings.keySound === "off") missSound();
+    else keySound();
+  } else if (id === "daily" || id === "goal") {
+    renderPanel();
+    if (S.view === "stats") renderStats();
+  } else if (id === "bg") {
+    buildAmbient(true);
+  } else if (id === "length") {
+    barPick({ length: value }).catch(console.error);
+  }
 });
 
 // ---------- input ----------

@@ -98,14 +98,34 @@ button, .tooltip, .hints, .rail small, .intro p, .intro h2, .account-msg,
 dialog.settings-win {
   position: fixed; inset: 14vh auto auto 50%; translate: -50% 0; margin: 0;
   border: 0; padding: 0; width: max-content; max-width: calc(100vw - 24px); color: var(--text);
-  font-family: var(--ui); overflow: visible;
+  font-family: var(--ui); overflow: visible; width: min(44rem, calc(100vw - 24px));
+  max-height: calc(100dvh - 2 * 14vh);
 }
+dialog.settings-win[open] { display: flex; flex-direction: column; }
 dialog.settings-win::backdrop { background: color-mix(in srgb, var(--bg) 70%, transparent); }
 dialog.settings-win:focus { outline: none; }
-.sw-list { padding: 4px 6px 6px; max-height: calc(100dvh - 14vh - 140px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 28%, transparent) transparent; }
+.sw-list { flex: 1 1 auto; min-height: 0; padding: 4px 6px 6px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 28%, transparent) transparent; }
 .sw-list::-webkit-scrollbar { width: 8px; }
 .sw-list::-webkit-scrollbar-thumb { border-radius: var(--r-sm); background: color-mix(in srgb, var(--text) 28%, transparent); }
-.sw-rows { display: grid; grid-template-columns: max-content 1fr; }
+.sw-search { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: text; }
+.sw-search svg { flex: none; width: 18px; height: 18px; fill: none; stroke: var(--sub); stroke-width: 2; stroke-linecap: round; }
+.sw-search input { flex: 1; min-width: 0; border: 0; padding: 0; background: none; color: var(--text); font-size: var(--fs-s); caret-color: var(--accent); }
+.sw-search input:focus, .sw-search input:focus-visible { outline: none; }
+.sw-search input::placeholder { color: var(--label); }
+.sw-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px 2px; }
+.sw-chips button {
+  height: 28px; padding: 0 10px; border: 0; border-radius: var(--r-sm); background: none; color: var(--label);
+  box-shadow: inset 0 0 0 1px var(--line); font-size: var(--fs-min); cursor: pointer;
+}
+.sw-chips button:hover { color: var(--text); }
+.sw-chips button[aria-pressed="true"] { color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: none; }
+.sw-chips button:disabled { opacity: .35; cursor: default; }
+.sw-none { margin: 0; padding: 18px 12px; color: var(--label); font-size: var(--fs-min); }
+.sw-name mark { background: none; color: var(--accent); }
+.sw-tag { flex: none; padding: 0 6px; border-radius: var(--r-sm); box-shadow: inset 0 0 0 1px var(--line); color: var(--label); font-size: var(--fs-min); line-height: 1.5; }
+.sw-ctl { flex-wrap: wrap; }
+.stepper output { display: inline-flex; align-items: center; justify-content: center; min-width: 4ch; padding: 0 8px; font-size: var(--fs-min); color: var(--text); }
+.sw-rows { display: grid; grid-template-columns: minmax(15rem, max-content) 1fr; }
 .sw-group { grid-column: 1 / -1; color: color-mix(in srgb, var(--text) 58%, var(--sub)); font-size: var(--fs-min); padding: 10px 8px 2px; }
 .sw-sep { grid-column: 1 / -1; height: 1px; background: var(--line); margin: 5px 8px; }
 .sw-row { display: contents; }
@@ -132,8 +152,8 @@ dialog.settings-win:focus { outline: none; }
 .sw-foot { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 14px; border-top: 1px solid var(--line); color: var(--label); font-size: var(--fs-min); }
 .sw-foot kbd { background: var(--track); box-shadow: var(--ring); color: var(--text); border-radius: var(--r-sm); padding: 0 5px; margin-right: 3px; font-family: var(--mono); }
 @media (min-width: 900px) and (pointer: fine) {
-  dialog.settings-win { inset-block-start: 6vh; min-width: 34rem; }
-  .sw-list { padding: 8px 10px 10px; max-height: calc(100dvh - 6vh - 110px); }
+  dialog.settings-win { inset-block-start: 6vh; max-height: calc(100dvh - 2 * 6vh); }
+  .sw-list { padding: 8px 10px 10px; }
   .sw-group { padding: 14px 12px 4px; }
   .sw-row > span { min-height: 44px; padding: 3px 12px; }
   .sw-name { font-size: var(--fs-s); }

@@ -3,8 +3,7 @@
 import { FEEL } from "./feel.js";
 import { t } from "./i18n.js";
 import { $, el, S, isTouch, store } from "./state.js";
-import { setSetting } from "./settings.js";
-import { openPop, ring, ringBtn } from "./minipop.js";
+import { openSettingsPop } from "./settings.js";
 
 // ---------- keyboard ----------
 let fingerOf = {};
@@ -67,19 +66,13 @@ export function drawKeyboard() {
 }
 
 // ---------- the keyboard's own settings ----------
-const KB_SWITCHES = ["nextKey", "hand"];
 const gear = Object.assign(document.createElement("button"), { type: "button", className: "kb-gear" });
 gear.appendChild($("btn-settings").querySelector("svg").cloneNode(true));
 gear.dataset.tip = "tip.kb";
 gear.setAttribute("aria-label", t("tip.kb"));
 gear.setAttribute("aria-haspopup", "dialog");
 gear.setAttribute("aria-expanded", "false");
-const kbRows = () => KB_SWITCHES.map((k) => {
-  const on = S.settings[k];
-  return `<div class="mp-row"><span class="mp-name">${t("settings." + k)}</span>` +
-    ring(t("settings." + k), [ringBtn(`data-key="${k}" data-value=""`, t("settings.off"), !on), ringBtn(`data-key="${k}" data-value="1"`, t("settings.on"), on)]) + `</div>`;
-}).join("");
-gear.addEventListener("click", () => openPop(gear, t("settings.kbGroup"), kbRows, setSetting));
+gear.addEventListener("click", () => openSettingsPop(gear, t("settings.cat_keyboard"), ["nextKey", "hand"]));
 
 // ---------- the hand as pictures ----------
 const handPics = new Map();

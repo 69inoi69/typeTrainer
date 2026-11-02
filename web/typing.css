@@ -71,7 +71,7 @@ body:not(.kb-hidden) .stand-fact b { font-size: var(--fs-m); }
 .lp-cols, .climb-note { position: absolute; left: 0; top: 0; bottom: 0; display: flex; align-items: center; }
 .climb-note { right: 8rem; color: var(--label); font-size: var(--fs-min); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .climb-note[hidden] { display: none; }
-body.typing-now .climb-note, body.typing-now:not(.live-off) .lp-cols { visibility: hidden; }
+body.typing-now .climb-note, body.typing-now:not([data-live="off"]) .lp-cols { visibility: hidden; }
 .lp-cell { display: flex; align-items: baseline; gap: .5ch; font-size: var(--fs-s); line-height: 1.3; color: var(--text); white-space: nowrap; cursor: default; }
 .lp-cell b { font-size: var(--fs-m); font-weight: 500; color: var(--accent-text); font-variant-numeric: tabular-nums; }
 .lp-cell small { font-size: var(--fs-min); color: var(--label); }
@@ -88,6 +88,7 @@ body[data-glide="jump"], body[data-glide="jump"] :is(.caret, .streak) { --feel-c
 .text span[data-sp] {
   background: radial-gradient(circle closest-side, color-mix(in srgb, currentColor 30%, transparent) 98%, transparent) center / .14em .14em no-repeat;
 }
+body[data-ws="none"] .text span[data-sp] { background: none; }
 .mode-bar { flex: 1; min-width: 0; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .bar-side { display: flex; align-items: center; gap: 8px; }
 .mode-bar[hidden] { display: none; }
@@ -263,7 +264,7 @@ body:not([data-caret]) .caret, body[data-caret="line"] .caret {
   margin-top: calc(var(--u) * var(--feel-hand-room, 1));
   border-radius: var(--r-lg); background: color-mix(in srgb, var(--panel) 55%, transparent); box-shadow: var(--ring);
 }
-body.hand-off .keyboard > .hands { display: none; }
+body[data-hand="off"] .keyboard > .hands { display: none; }
 .kb-gear {
   position: absolute; right: 12px; bottom: 12px; display: grid; place-items: center; width: 34px; height: 34px;
   padding: 0; border: 0; border-radius: var(--r-sm); background: none; color: var(--sub); cursor: pointer;}

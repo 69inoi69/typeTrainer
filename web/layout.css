@@ -83,7 +83,7 @@ body:not(.typing-now) .live:not(.final) > .metric.num { opacity: 0; pointer-even
 .streak[data-tier="2"] { --sc: #f2607a; }
 .streak[data-tier="3"] { --sc: #a98bff; }
 .text-box.typing .streak.show { display: flex; }
-.text-box:is(.paused, .blurred, .resulting) .streak.show, body.streak-off .text-box .streak.show { display: none; }
+.text-box:is(.paused, .blurred, .resulting) .streak.show, body[data-streak="off"] .text-box .streak.show { display: none; }
 
 /* ---------- the navigation switch ---------- */
 .switch { position: relative; display: grid; --n: 2; --i: 0; flex: none; }
