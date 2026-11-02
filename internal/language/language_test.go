@@ -30,10 +30,10 @@ func TestParse(t *testing.T) {
 		t.Fatalf("valid list: %v", err)
 	}
 	for name, bad := range map[string]string{
-		"empty":        `[]`,
-		"no alphabet":  `[{"id":"en","layout":"qwerty-en"}]`,
-		"duplicate":    `[{"id":"en","layout":"a","alphabet":"a"},{"id":"en","layout":"a","alphabet":"a"}]`,
-		"not json":     `{`,
+		"empty":       `[]`,
+		"no alphabet": `[{"id":"en","layout":"qwerty-en"}]`,
+		"duplicate":   `[{"id":"en","layout":"a","alphabet":"a"},{"id":"en","layout":"a","alphabet":"a"}]`,
+		"not json":    `{`,
 	} {
 		if _, err := Parse([]byte(bad)); err == nil {
 			t.Errorf("%s: expected an error", name)
