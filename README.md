@@ -5,7 +5,7 @@
 <h1 align="center">typeTrainer</h1>
 
 <p align="center">
-  Looks like Monkeytype. Teaches like keybr. Real words only.<br><br>
+  A typing trainer that finds your weak letters and builds the next words around them. Real words only.<br><br>
   <a href="https://69inoi69.github.io/typeTrainer/"><b>Start typing</b></a>
   ·
   <a href="docs/HOW-THE-MODES-WORK.md">How it works</a>
@@ -61,8 +61,6 @@ the code follows. How the parts fit together is in
   (**CC BY 4.0**) to leave out names and offensive words.
 - Fonts: [Geist Mono](https://github.com/vercel/geist-font) and
   [Sora](https://github.com/sora-xor/sora-font), **SIL OFL 1.1**.
-- The look owes a lot to [Monkeytype](https://github.com/monkeytypegame/monkeytype),
-  the teaching to [keybr](https://github.com/aradzie/keybr.com).
 
 How the word lists were made: [docs/HOW-THE-MODES-WORK.md](docs/HOW-THE-MODES-WORK.md).
 

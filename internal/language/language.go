@@ -14,7 +14,6 @@ type Language struct {
 	Layout       string `json:"layout"`
 	Alphabet     string `json:"alphabet"`
 	SystemLayout string `json:"systemLayout"`
-	Hidden       bool   `json:"hidden,omitempty"`
 }
 
 func Parse(data []byte) ([]Language, error) {
@@ -24,9 +23,6 @@ func Parse(data []byte) ([]Language, error) {
 	}
 	if len(langs) == 0 {
 		return nil, fmt.Errorf("languages json: no languages")
-	}
-	if langs[0].Hidden {
-		return nil, fmt.Errorf("language %q: the first language is the default and cannot be hidden", langs[0].ID)
 	}
 	seen := map[string]bool{}
 	for _, l := range langs {

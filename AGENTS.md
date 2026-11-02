@@ -24,41 +24,37 @@ Where they differ, this file wins, then `docs/PRODUCT.md`, then the others.
 - Talk to me in Russian. Code, comments, commit messages and docs: English.
 - Work in small steps. For anything bigger than one feature, show a short plan
   first and wait for my OK.
-- Do not run `git commit` or `git push` unless I ask. I commit myself.
-- `main` is protected: changes reach it only through a pull request. When I ask
-  you to commit, work in a separate branch, push it and open a pull request;
-  I merge it myself. Never push to `main` directly.
+- Commits in your own branch are fine. `git push` and pull requests only when I
+  say so.
+- `main` is protected: changes reach it only through a pull request. I merge it
+  myself. Never push to `main` directly.
 
-## Current phase: cleanup
+## How we work
 
-We are not adding features. We subtract, clean up and add checks, in small
-pull requests. The queue lives in GitHub issues, in order, without dates.
+I test by feel, on my own machine, and I do not touch the terminal.
 
-1. **One PR = one issue.** Nothing beyond the issue, silently.
-2. **An idea outside the issue is a proposal, not an action.** Write it as
-   a comment or a draft issue and wait for my OK. Going a step further is
-   allowed only marked "proposed beyond the task", only if it breaks
-   nothing and is the natural next step.
-3. **Every PR description answers three things:** (a) what changed;
-   (b) what else it affects (other modes, themes, combinations of
-   settings); (c) how it was checked: what was run, on what, with which
-   numbers. "Checked" without that list does not count.
-4. **A change to the typing screen is measured before and after**, with
-   the numbers in the PR, and must not be worse than before. The canonical
-   measurement: `node tools/browser/perf.mjs` (CONTRIBUTING.md): style
-   recalc per key at full speed, key → caret start and the share of slow
-   frames with the CPU slowed 6×. The goal of the performance work
-   (issue #148), not a per-PR budget: under 2 ms of style recalc per key
-   for the screen itself (`perf.mjs --bare`: no background, no keyboard;
-   the keyboard is a thesis item and costs on top of it), caret start
-   ≤ 40 ms and slow frames ≤ 15% with everything on.
-5. **Measure first, then change numbers.** No tuning without a measurement.
-6. **Comments never retell me.** Link the issue instead. A comment explains
-   the current value; history lives in git and
-   `docs/thesis/DEVELOPMENT-LOG.md`.
-7. **I merge**, with green CI and point (c) of rule 3 filled in.
-8. **No tool for a needed check is not a reason to skip the check.** Say
-   so in the PR: "no tool for this, add one?"
+1. **You run the site.** Start and restart the local server yourself (the web
+   files are built into the program, so a change needs a restart). I only
+   refresh <http://localhost:3000>. Git pulls are yours too.
+2. **First an opinion, then work.** On any request or mockup say what you think
+   and what you would do better, and why. Build after my "ок". An idea outside
+   the request is a proposal, not an action.
+3. **One branch for one topic, one PR at the end,** when I say so. A GitHub
+   issue is not required.
+4. **Every PR description answers three things:** (a) what changed;
+   (b) what else it affects (other modes, combinations of settings);
+   (c) how it was checked: what was run, on what, with which numbers.
+5. **A change to the typing screen is measured** before the PR, against
+   `main`, with the numbers in the PR, and must not be worse. The canonical
+   measurement: `node tools/browser/perf.mjs` (CONTRIBUTING.md): style recalc
+   per key at full speed, key → caret start and the share of slow frames with
+   the CPU slowed 6×. The goal: under 2 ms of style recalc per key for the
+   screen itself (`perf.mjs --bare`), caret start ≤ 40 ms and slow frames
+   ≤ 15% with everything on.
+6. **Measure first, then change numbers.** No tuning without a measurement.
+7. **Comments and docs never retell history.** They say what is true now;
+   history lives in git.
+8. **No tool for a needed check is not a reason to skip the check.** Say so.
 9. **Docs do not multiply.** Every rule and fact has one home in the files
    listed under "What to read first"; other places link to it. No new files
    in `docs/` or the repo root without my decision. The exception I

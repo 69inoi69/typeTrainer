@@ -1,14 +1,14 @@
 # 2. Requirements
 
-Thesis item 2: functional and non-functional requirements. A first list,
-taken from what the app does now (docs/PRODUCT.md and the code); the final
-list is fixed when the cleanup phase ends. Each line says where it is met.
+Thesis item 2: functional and non-functional requirements. Taken from
+what the app does now (docs/PRODUCT.md and the code). Each line says where
+it is met.
 
 ## Functional
 
 - F1. Learn teaches from zero: letters open one by one from the home row;
   the algorithm alone chooses the words (HOW-THE-MODES-WORK.md sections 6-7).
-- F2. Only real words of the language are typed (data/langs, HOW-THE-MODES-WORK.md
+- F2. Only real English words are typed (data/langs, HOW-THE-MODES-WORK.md
   section 11).
 - F3. Every keypress is measured per letter: mistakes and time
   (HOW-THE-MODES-WORK.md sections 3-4).
@@ -17,8 +17,8 @@ list is fixed when the cleanup phase ends. Each line says where it is met.
   text; nothing adapts (section 13).
 - F6. Statistics per mode, list and round length, never mixed
   (`web/stats.js`).
-- F7. Accounts: sign up, log in, log out; progress kept per user and
-  language (HOW-THE-CODE-WORKS.md).
+- F7. Accounts: sign up, log in, log out; progress kept per user
+  (HOW-THE-CODE-WORKS.md).
 - F8. An on-screen keyboard shows the next key and the finger to use
   (06-interface-finger-layout-latency.md).
 - F9. Export and import of all progress as a file.

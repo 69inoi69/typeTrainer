@@ -34,7 +34,7 @@ func call(t *testing.T, h http.Handler, method, path, body string) (int, map[str
 	return rec.Code, out
 }
 
-func TestApp_AllLanguagesLoad(t *testing.T) {
+func TestApp_LanguageLoads(t *testing.T) {
 	h, _, err := newApp()
 	if err != nil {
 		t.Fatal(err)
@@ -45,15 +45,12 @@ func TestApp_AllLanguagesLoad(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &langs); err != nil || len(langs) != 1 || langs[0]["id"] != "en" {
 		t.Fatalf("languages: %s", rec.Body.String())
 	}
-	for _, id := range []string{"en", "pl", "uk", "ru"} {
-		code, out := call(t, h, "POST", "/api/v1/portion?lang="+id, `{"start":true}`)
-		if code != 200 || len(out["portions"].([]any)) != 3 {
-			t.Fatalf("%s: portion %d %v", id, code, out)
-		}
-		code, _ = call(t, h, "GET", "/api/v1/layout?lang="+id, "")
-		if code != 200 {
-			t.Fatalf("%s: layout %d", id, code)
-		}
+	code, out := call(t, h, "POST", "/api/v1/portion?lang=en", `{"start":true}`)
+	if code != 200 || len(out["portions"].([]any)) != 3 {
+		t.Fatalf("portion %d %v", code, out)
+	}
+	if code, _ = call(t, h, "GET", "/api/v1/layout?lang=en", ""); code != 200 {
+		t.Fatalf("layout %d", code)
 	}
 }
 
@@ -64,38 +61,27 @@ func TestApp_UnknownLanguageIs400(t *testing.T) {
 	}
 }
 
-func TestApp_ResultsAreKeptPerLanguage(t *testing.T) {
+func TestApp_ResultsRefuseForeignLetters(t *testing.T) {
 	h, _, _ := newApp()
-	body := `{"samples":[{"char":"ж","errors":0,"ms":300},{"char":" ","errors":0,"ms":200}],"wpm":30,"accuracy":100}`
-	if code, out := call(t, h, "POST", "/api/v1/results?lang=ru", body); code != 200 {
-		t.Fatalf("ru results: %d %v", code, out)
-	}
-	_, ru := call(t, h, "GET", "/api/v1/stats?lang=ru", "")
-	_, uk := call(t, h, "GET", "/api/v1/stats?lang=uk", "")
-	if ru["sessionCount"].(float64) != 1 || uk["sessionCount"].(float64) != 0 {
-		t.Fatalf("ru=%v uk=%v", ru["sessionCount"], uk["sessionCount"])
-	}
-	bad := `{"samples":[{"char":"a","errors":0,"ms":300}],"wpm":30,"accuracy":100}`
-	if code, _ := call(t, h, "POST", "/api/v1/results?lang=ru", bad); code != 400 {
-		t.Fatalf("latin letter in ru: got %d, want 400", code)
+	bad := `{"samples":[{"char":"ж","errors":0,"ms":300}],"wpm":30,"accuracy":100}`
+	if code, _ := call(t, h, "POST", "/api/v1/results?lang=en", bad); code != 400 {
+		t.Fatalf("cyrillic letter in en: got %d, want 400", code)
 	}
 }
 
-func TestApp_ResetClearsOneLanguage(t *testing.T) {
+func TestApp_ResetClearsProgress(t *testing.T) {
 	h, _, _ := newApp()
-	body := `{"samples":[{"char":"ж","errors":0,"ms":300},{"char":" ","errors":0,"ms":200}],"wpm":30,"accuracy":100}`
-	call(t, h, "POST", "/api/v1/results?lang=ru", body)
-	call(t, h, "POST", "/api/v1/results?lang=uk", body)
-	call(t, h, "POST", "/api/v1/progress?lang=ru", `{"unlockAll":true}`)
-	if code, out := call(t, h, "POST", "/api/v1/reset?lang=ru", ""); code != 200 {
+	body := `{"samples":[{"char":"a","errors":0,"ms":300},{"char":" ","errors":0,"ms":200}],"wpm":30,"accuracy":100}`
+	call(t, h, "POST", "/api/v1/results?lang=en", body)
+	call(t, h, "POST", "/api/v1/progress?lang=en", `{"unlockAll":true}`)
+	if code, out := call(t, h, "POST", "/api/v1/reset?lang=en", ""); code != 200 {
 		t.Fatalf("reset: %d %v", code, out)
 	}
-	_, ru := call(t, h, "GET", "/api/v1/stats?lang=ru", "")
-	_, uk := call(t, h, "GET", "/api/v1/stats?lang=uk", "")
-	if ru["sessionCount"].(float64) != 0 || uk["sessionCount"].(float64) != 1 {
-		t.Fatalf("after reset ru=%v uk=%v", ru["sessionCount"], uk["sessionCount"])
+	_, en := call(t, h, "GET", "/api/v1/stats?lang=en", "")
+	if en["sessionCount"].(float64) != 0 {
+		t.Fatalf("after reset en=%v", en["sessionCount"])
 	}
-	_, out := call(t, h, "POST", "/api/v1/portion?lang=ru", "{}")
+	_, out := call(t, h, "POST", "/api/v1/portion?lang=en", "{}")
 	if len(out["portions"].([]any)[0].(map[string]any)["locked"].([]any)) == 0 {
 		t.Fatal("after reset all letters are still open")
 	}
@@ -104,13 +90,13 @@ func TestApp_ResetClearsOneLanguage(t *testing.T) {
 func TestApp_ExportImportRoundTrip(t *testing.T) {
 	h, _, _ := newApp()
 	for _, wpm := range []string{"20", "40"} {
-		body := `{"samples":[{"char":"ж","errors":1,"ms":300},{"char":" ","errors":0,"ms":200}],"wpm":` + wpm + `,"accuracy":90}`
-		call(t, h, "POST", "/api/v1/results?lang=ru", body)
+		body := `{"samples":[{"char":"a","errors":1,"ms":300},{"char":" ","errors":0,"ms":200}],"wpm":` + wpm + `,"accuracy":90}`
+		call(t, h, "POST", "/api/v1/results?lang=en", body)
 	}
-	call(t, h, "POST", "/api/v1/progress?lang=ru", `{"unlockAll":true}`)
+	call(t, h, "POST", "/api/v1/progress?lang=en", `{"unlockAll":true}`)
 
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, guestRequest("GET", "/api/v1/export?lang=ru", ""))
+	h.ServeHTTP(rec, guestRequest("GET", "/api/v1/export?lang=en", ""))
 	exported := rec.Body.String()
 	var file struct {
 		Unlocked int
@@ -123,16 +109,16 @@ func TestApp_ExportImportRoundTrip(t *testing.T) {
 	if len(file.Sessions) != 2 || file.Sessions[0].WPM != 20 || file.Sessions[1].WPM != 40 {
 		t.Fatalf("sessions must be oldest first: %+v", file.Sessions)
 	}
-	if file.Keys["ж"]["count"].(float64) != 2 || file.Unlocked == 0 {
+	if file.Keys["a"]["count"].(float64) != 2 || file.Unlocked == 0 {
 		t.Fatalf("export lost data: %s", exported)
 	}
 
-	call(t, h, "POST", "/api/v1/reset?lang=ru", "")
-	if code, out := call(t, h, "POST", "/api/v1/import?lang=ru", exported); code != 200 {
+	call(t, h, "POST", "/api/v1/reset?lang=en", "")
+	if code, out := call(t, h, "POST", "/api/v1/import?lang=en", exported); code != 200 {
 		t.Fatalf("import: %d %v", code, out)
 	}
 	rec = httptest.NewRecorder()
-	h.ServeHTTP(rec, guestRequest("GET", "/api/v1/export?lang=ru", ""))
+	h.ServeHTTP(rec, guestRequest("GET", "/api/v1/export?lang=en", ""))
 	if rec.Body.String() != exported {
 		t.Fatalf("round trip changed the data:\n%s\n%s", exported, rec.Body.String())
 	}
@@ -140,11 +126,11 @@ func TestApp_ExportImportRoundTrip(t *testing.T) {
 
 func TestApp_ExportOfEmptyLanguage(t *testing.T) {
 	h, _, _ := newApp()
-	code, out := call(t, h, "GET", "/api/v1/export?lang=pl", "")
+	code, out := call(t, h, "GET", "/api/v1/export?lang=en", "")
 	if code != 200 || out["unlocked"].(float64) != 0 || len(out["sessions"].([]any)) != 0 || len(out["keys"].(map[string]any)) != 0 {
 		t.Fatalf("empty export: %d %v", code, out)
 	}
-	if code, _ := call(t, h, "POST", "/api/v1/import?lang=pl", `{}`); code != 200 {
+	if code, _ := call(t, h, "POST", "/api/v1/import?lang=en", `{}`); code != 200 {
 		t.Fatalf("importing an empty record: %d", code)
 	}
 }
@@ -180,53 +166,53 @@ func TestApp_ImportRejectsBadDataAndKeepsOldData(t *testing.T) {
 
 func TestApp_RawKeysKept(t *testing.T) {
 	h, _, _ := newApp()
-	call(t, h, "POST", "/api/v1/portion?lang=ru", `{"samples":[{"char":"ж","errors":1,"ms":300}],"last":true}`)
+	call(t, h, "POST", "/api/v1/portion?lang=en", `{"samples":[{"char":"a","errors":1,"ms":300}],"last":true}`)
 	body := `{"samples":[{"char":" ","errors":0,"ms":200}],` +
-		`"keys":[{"char":"ж","errors":1,"ms":300},{"char":" ","errors":0,"ms":200}],"wpm":30,"accuracy":50}`
-	if code, out := call(t, h, "POST", "/api/v1/results?lang=ru", body); code != 200 {
+		`"keys":[{"char":"a","errors":1,"ms":300},{"char":" ","errors":0,"ms":200}],"wpm":30,"accuracy":50}`
+	if code, out := call(t, h, "POST", "/api/v1/results?lang=en", body); code != 200 {
 		t.Fatalf("results: %d %v", code, out)
 	}
 
-	_, exp := call(t, h, "GET", "/api/v1/export?lang=ru", "")
+	_, exp := call(t, h, "GET", "/api/v1/export?lang=en", "")
 	sess := exp["sessions"].([]any)[0].(map[string]any)
 	keys, _ := sess["keys"].([]any)
-	if len(keys) != 2 || keys[0].(map[string]any)["char"] != "ж" || sess["unlocked"].(float64) == 0 {
+	if len(keys) != 2 || keys[0].(map[string]any)["char"] != "a" || sess["unlocked"].(float64) == 0 {
 		t.Fatalf("raw record not kept: %v", sess)
 	}
-	if n := exp["keys"].(map[string]any)["ж"].(map[string]any)["count"].(float64); n != 1 {
-		t.Fatalf("ж learned %v times, want 1 (keys must not be learned again)", n)
+	if n := exp["keys"].(map[string]any)["a"].(map[string]any)["count"].(float64); n != 1 {
+		t.Fatalf("a learned %v times, want 1 (keys must not be learned again)", n)
 	}
 
-	_, st := call(t, h, "GET", "/api/v1/stats?lang=ru", "")
+	_, st := call(t, h, "GET", "/api/v1/stats?lang=en", "")
 	if _, has := st["sessions"].([]any)[0].(map[string]any)["keys"]; has {
 		t.Fatal("/stats must not send raw keys")
 	}
 
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, guestRequest("GET", "/api/v1/export?lang=ru", ""))
+	h.ServeHTTP(rec, guestRequest("GET", "/api/v1/export?lang=en", ""))
 	exported := rec.Body.String()
-	call(t, h, "POST", "/api/v1/reset?lang=ru", "")
-	call(t, h, "POST", "/api/v1/import?lang=ru", exported)
+	call(t, h, "POST", "/api/v1/reset?lang=en", "")
+	call(t, h, "POST", "/api/v1/import?lang=en", exported)
 	rec = httptest.NewRecorder()
-	h.ServeHTTP(rec, guestRequest("GET", "/api/v1/export?lang=ru", ""))
+	h.ServeHTTP(rec, guestRequest("GET", "/api/v1/export?lang=en", ""))
 	if rec.Body.String() != exported {
 		t.Fatal("raw keys lost in an export/import round trip")
 	}
 
-	call(t, h, "POST", "/api/v1/progress?lang=ru", `{"unlockAll":true}`)
-	free := `{"keys":[{"char":"ж","errors":0,"ms":250}],"chars":1,"wpm":60,"accuracy":100,"level":1}`
-	if code, out := call(t, h, "POST", "/api/v1/freeplay/results?lang=ru", free); code != 200 {
+	call(t, h, "POST", "/api/v1/progress?lang=en", `{"unlockAll":true}`)
+	free := `{"keys":[{"char":"a","errors":0,"ms":250}],"chars":1,"wpm":60,"accuracy":100,"level":1}`
+	if code, out := call(t, h, "POST", "/api/v1/freeplay/results?lang=en", free); code != 200 {
 		t.Fatalf("freeplay results: %d %v", code, out)
 	}
-	_, exp = call(t, h, "GET", "/api/v1/export?lang=ru", "")
+	_, exp = call(t, h, "GET", "/api/v1/export?lang=en", "")
 	fs := exp["freeplay"].(map[string]any)["sessions"].([]any)[0].(map[string]any)
 	if k, _ := fs["keys"].([]any); len(k) != 1 {
 		t.Fatalf("freeplay raw keys not kept: %v", fs)
 	}
-	if n := exp["keys"].(map[string]any)["ж"].(map[string]any)["count"].(float64); n != 1 {
-		t.Fatalf("free practice changed the letter model: ж count %v", n)
+	if n := exp["keys"].(map[string]any)["a"].(map[string]any)["count"].(float64); n != 1 {
+		t.Fatalf("free practice changed the letter model: a count %v", n)
 	}
-	_, fst := call(t, h, "GET", "/api/v1/freeplay/stats?lang=ru", "")
+	_, fst := call(t, h, "GET", "/api/v1/freeplay/stats?lang=en", "")
 	if _, has := fst["sessions"].([]any)[0].(map[string]any)["keys"]; has {
 		t.Fatal("/freeplay/stats must not send raw keys")
 	}

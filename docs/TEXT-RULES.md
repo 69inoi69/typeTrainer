@@ -1,9 +1,7 @@
 # Text rules
 
 How to write every text a user sees: labels, buttons, descriptions,
-tooltips, messages, the first-visit guide. All of them live in `web/i18n.js`. Only English is
-shown for now, so only English texts exist; the Polish, Ukrainian and
-Russian ones are written from them when those languages come back.
+tooltips, messages, the first-visit guide. All of them live in `web/i18n.js`.
 
 These rules apply to every change, new features included: whoever adds or
 changes something decides on their own what text it needs, how much and
@@ -14,7 +12,7 @@ calling the work done.
 
 1. **Names are short, sentences are human.** A label (button, tab,
    setting name) is one or two words. Everything that is a sentence
-   (tooltips, messages, Learn news, the mascot) is a whole, living sentence,
+   (tooltips, messages, the mascot) is a whole, living sentence,
    the way a friend next to you would say it. A tooltip appears
    only when the look doesn't say enough, and says what the thing means
    for you, not how it is computed.
@@ -142,8 +140,7 @@ exclamation mark.
 | deleting all progress | Reset progress (the button says "Reset") |
 | speed | wpm after a number ("30 wpm"), WPM as a label on its own |
 
-`wpm`, `raw` and the mode names Learn, Climb and Freetype stay in English in every
-language.
+`wpm` and `raw` stay in lower case.
 
 ## How it looks
 

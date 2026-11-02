@@ -10,8 +10,6 @@ import (
 func TestRestingKeys(t *testing.T) {
 	for file, want := range map[string]string{
 		"qwerty-en": "asdfjkl;",
-		"jcuken-ru": "фываолдж",
-		"jcuken-uk": "фіваолдж",
 	} {
 		data, err := os.ReadFile("../../data/layouts/" + file + ".json")
 		if err != nil {

@@ -1,13 +1,12 @@
-// The Learn panel.
+// Learn's part of the line over the text: the last round and the daily goal.
 
 import { t } from "./i18n.js";
-import { $, S, store } from "./state.js";
+import { $, S } from "./state.js";
 import { getJSON } from "./api.js";
 import { learning } from "./modes.js";
-import { FX } from "./fx.js";
 import { pickDaily } from "./settings.js";
 
-const box = $("learn-panel"), cols = $("lp-cols");
+const cols = $("lp-cols");
 
 const AVG_ROUNDS = 10, AVG_MIN = 3;
 
@@ -28,53 +27,22 @@ export function compareStats(before, after) {
   return { best, mastered };
 }
 
-// ---------- milestones of the round ----------
 let bestLang = "";
-export function roundMilestone(r) {
-  bestLang = r.best ? S.lang : "";
-  const ex = S.exercise, keys = S.lastStats?.keys ?? [];
-  if (!ex) return false;
-  const flag = store.get(`tt.milestone.${S.lang}`) || "";
-  const allOpen = ex.locked.length === 0;
-  const waiting = keys.some((k) => ex.unlocked.includes(k.char) && !k.mastered);
-  const s = S.lastStats ?? {};
-  const set = (v) => { store.set(`tt.milestone.${S.lang}`, v); return true; };
-  if (r.newLap) return set("complete");
-  if (allOpen && !waiting && s.lap >= s.lastLap && flag !== "final") return set("final");
-  if (allOpen && !flag) return set("open");
-  return false;
-}
+export function roundMilestone(r) { bestLang = r.best ? S.lang : ""; }
 
 // ---------- drawing ----------
 let drawn = "";
 export function renderPanel() {
-  if (!box) return;
   const show = learning() && !!S.lastStats && !!S.exercise;
-  box.hidden = !show;
-  if (!show) { drawn = ""; return; }
+  goalBtn.hidden = !show;
+  if (!show) { drawn = ""; cols.innerHTML = ""; return; }
   goalState();
   const html = lastRound();
   if (html !== drawn) {
     drawn = html;
-    redraw(cols, html);
-    document.fonts.ready.then(() => cols.querySelectorAll(".lp-best:not(.foil)").forEach(FX.foil));
+    cols.innerHTML = html;
   }
 }
-
-function redraw(el, html) {
-  const nums = (root) => [...root.querySelectorAll(".lp-cell :is(.lp-n, .lp-best)")];
-  const before = nums(el).map((v) => +v.dataset.n);
-  el.innerHTML = html;
-  if (!before.length) return;
-  nums(el).forEach((v, i) => {
-    const was = before[i], now = +v.dataset.n;
-    if (was === undefined || was === now) return;
-    v.animate([{ "--v": was }, { "--v": now }], { duration: 700, easing: "cubic-bezier(.2, .7, .3, 1)" });
-    v.animate([{ color: gold() }, {}], { duration: 1200, easing: "ease-out" });
-  });
-}
-
-const gold = () => getComputedStyle(document.body).getPropertyValue("--accent-text").trim();
 
 const num = (x, unit = "", cls = "") => {
   const n = Math.round(x);
@@ -102,29 +70,22 @@ function lastRound() {
     `<span class="lp-pair">${num(last.accuracy, "%")}<small>${t("metric.acc")}</small></span>`, tip);
 }
 
-// ---------- the daily goal: the outer ring around the round's ring ----------
-const goalBtn = $("goal-ring"), goalSvg = goalBtn?.querySelector("svg");
+// ---------- the daily goal ----------
+const goalBtn = $("goal-count");
 let goalNow = null;
 let goalTyping = false;
-let roundTip = "", goalTip = "";
 const dayKey = (back) => {
   const d = new Date();
   d.setDate(d.getDate() - back);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
-const showTip = () => { goalBtn.dataset.tipText = [roundTip.replace(/\.?$/, "."), goalTip].filter(Boolean).join(" "); };
-export function ringTip(tip) {
-  roundTip = tip;
-  if (goalBtn) showTip();
-}
-const fillGoal = (share) => goalSvg.style.setProperty("--g", Math.min(1, share).toFixed(3));
+const fillGoal = (today) => { goalBtn.textContent = t("lp.goalShort", { m: Math.floor(today / 60), g: S.settings.daily }); };
 function goalState() {
   goalNow = null;
   goalTyping = document.body.classList.contains("typing-now");
   const goal = S.settings.daily;
-  goalBtn.classList.toggle("off", !goal);
   goalBtn.classList.remove("met");
-  if (!goal) { fillGoal(0); goalTip = t("lp.goalOff"); showTip(); return; }
+  if (!goal) { goalBtn.textContent = t("lp.goalNone"); goalBtn.dataset.tipText = t("lp.goalOff"); return; }
   const byDate = activityLang === S.lang && activity ? Object.fromEntries(activity.map((d) => [d.date, d.seconds])) : {};
   const need = goal * 60, base = byDate[dayKey(0)] ?? 0, today = base + (goalTyping ? S.roundSeconds : 0);
   const met = today >= need;
@@ -132,21 +93,20 @@ function goalState() {
   for (let back = met ? 0 : 1; (byDate[dayKey(back)] ?? 0) >= need; back++) days++;
   if (goalTyping && !met) goalNow = { base, need };
   goalBtn.classList.toggle("met", met);
-  fillGoal(today / need);
+  fillGoal(today);
   const m = Math.floor(today / 60);
-  goalTip = [t(met ? "lp.goalMet" : "lp.goal", { m, g: goal }), days >= 2 ? t("lp.goalDays", { n: days }) : "", t("lp.goalClick")].filter(Boolean).join(" ");
-  showTip();
+  goalBtn.dataset.tipText = [t(met ? "lp.goalMet" : "lp.goal", { m, g: goal }), days >= 2 ? t("lp.goalDays", { n: days }) : "", t("lp.goalClick")].filter(Boolean).join(" ");
 }
 export function tickGoal() {
-  if (!box || box.hidden) return false;
+  if (goalBtn.hidden) return false;
   if (!goalTyping) renderPanel();
   if (!goalNow) return false;
   const today = goalNow.base + S.roundSeconds;
-  fillGoal(today / goalNow.need);
+  fillGoal(today);
   if (today >= goalNow.need) { renderPanel(); return true; }
   return false;
 }
-goalBtn?.addEventListener("click", () => pickDaily(goalBtn, renderPanel));
+goalBtn.addEventListener("click", () => pickDaily(goalBtn, renderPanel));
 
 const cell = (cls, value, tip = "") =>
   `<span class="lp-cell ${cls}"${tip ? ` tabindex="0" data-tip-text="${tip}"` : ""}>${value}</span>`;

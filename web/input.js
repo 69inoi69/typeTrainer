@@ -6,26 +6,23 @@ import { refreshStats, renderStats, resetStatsPick } from "./stats.js";
 import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, loadExercise, roundStarted, pauseRound, checkLayout } from "./typing.js";
 import { checkCaps } from "./warn.js";
 import { introKey } from "./intro.js";
-import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
-import { resultOpen, closeResult, settleResult } from "./result.js";
-import { settingsOpen, openSettings, onSettingsClose, onGoalChange, onBgChange, onTypingLook, onSoundPick, setLength, setSetting } from "./settings.js";
-import { setMode, refreshFreeplay, renderNav, setFreetypeList, setFreetypeVariant, toggledVariant } from "./modes.js";
+import { resultOpen, closeResult } from "./result.js";
+import { settingsOpen, openSettings, onSettingsClose, onGoalChange, onTypingLook, onSoundPick, setLength, setSetting } from "./settings.js";
+import { setMode, refreshFreeplay, renderNav, setFreetypeList, setFreetypeVariant } from "./modes.js";
 import { openCustomText, hasCustomText } from "./customtext.js";
 import { onBarPick, renderModeBar } from "./modebar.js";
 import { renderLetters } from "./letters.js";
-import { buildAmbient } from "./ambient.js";
 import { renderPanel } from "./learnpanel.js";
 import { keySound } from "./sound.js";
 import { questOpen, questKey } from "./mascot.js";
 import "./share.js";
 
 window.addEventListener("resize", () => {
-  buildAmbient();
   fitText();
   requestFit();
   placeCaret(true);
-  if (S.view === "stats") { el.viewStats.classList.remove("grow"); renderStats(); }
+  if (S.view === "stats") renderStats();
 });
 
 // ---------- screens: typing / stats ----------
@@ -34,19 +31,14 @@ document.body.classList.toggle("stats-only", statsOnly);
 export function startView() {
   if (statsOnly) setView("stats");
 }
-let statsSeen = "";
 function setView(name) {
   if (statsOnly) name = "stats";
   S.view = name;
   document.body.dataset.view = name;
   const stats = name === "stats";
   renderNav();
-  if (stats) settleResult();
   el.viewType.hidden = stats;
   el.viewStats.hidden = !stats;
-  const seen = JSON.stringify([S.mode, S.settings.length, S.lastStats?.sessionCount, S.climb?.sessionCount, S.freetype?.sessionCount, S.freetypeList]);
-  el.viewStats.classList.toggle("grow", stats && seen !== statsSeen);
-  if (stats) statsSeen = seen;
   if (stats) {
     resetStatsPick();
     setTyping(false);
@@ -66,13 +58,11 @@ function chooseMode(m) {
   if (m !== S.mode) {
     if (resultOpen()) {
       setMode(m);
-      el.live.classList.remove("final");
       closeResult();
     } else if (S.busy) {
       return;
     } else {
       setMode(m);
-      el.live.classList.remove("final");
       loadExercise().catch(console.error);
     }
   }
@@ -87,11 +77,10 @@ document.getElementById("logo").addEventListener("click", () => {
 });
 async function barPick(pick) {
   if (S.busy && !resultOpen()) return;
-  if (pick.edit || (pick.toggle === "custom" && S.freetypeVariant !== "custom" && !hasCustomText())) {
+  if (pick.edit || (pick.variant === "custom" && !hasCustomText())) {
     openCustomText(() => barPick({ variant: "custom" }).catch(console.error));
     return;
   }
-  if (pick.toggle) pick.variant = toggledVariant(S.freetypeVariant, pick.toggle);
   if (pick.variant !== undefined) await setFreetypeVariant(pick.variant);
   if (pick.list) await setFreetypeList(pick.list);
   if (pick.level) { S.climbLevel = pick.level; renderLetters(); }
@@ -100,13 +89,11 @@ async function barPick(pick) {
     await Promise.all([refreshStats(), refreshFreeplay()]);
   }
   renderModeBar();
-  el.live.classList.remove("final");
   if (resultOpen()) closeResult();
   else loadExercise().catch(console.error);
 }
 onBarPick(barPick);
 
-onBgChange(buildAmbient);
 onTypingLook(() => {
   fitText();
   requestFit();
@@ -117,7 +104,7 @@ onSoundPick((mode) => keySound(mode !== "errors", mode));
 
 onGoalChange(() => {
   renderPanel();
-  if (S.view === "stats") { el.viewStats.classList.remove("grow"); renderStats(); }
+  if (S.view === "stats") renderStats();
 });
 
 // ---------- input ----------
@@ -139,7 +126,6 @@ document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") { e.preventDefault(); closeProfile(); }
     return;
   }
-  if (document.body.classList.contains("splashing")) return;
   if (e.key === "Escape") {
     if (!shortcut(e, "esc")) return;
     if (S.view === "type" && !resultOpen() && roundStarted()) pauseRound();
@@ -151,18 +137,9 @@ document.addEventListener("keydown", (e) => {
     if (shortcut(e, "kb") && S.view === "type") toggleKb();
     return;
   }
-  if (e.altKey && !e.ctrlKey && !e.metaKey && !altGr && e.code === "KeyB") {
-    if (shortcut(e, "bg")) setSetting("bg", S.settings.bg === "off" ? "1" : "");
-    return;
-  }
   if (e.key === "Tab" && e.shiftKey) {
     if (!shortcut(e, "view")) return;
     setView(S.view === "type" ? "stats" : "type");
-    return;
-  }
-  if (e.altKey && !e.ctrlKey && !e.metaKey && !altGr && /^Digit[1-9]$/.test(e.code)) {
-    const l = S.languages[Number(e.code.slice(5)) - 1];
-    if (l && shortcut(e, "lang")) switchLanguage(l.id);
     return;
   }
   if (resultOpen()) {

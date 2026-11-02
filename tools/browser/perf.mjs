@@ -30,7 +30,7 @@ const median = (a) => { const s = [...a].sort((x, y) => x - y); return s.length 
 async function oneRun(browser, cpu) {
   const ctx = await browser.newContext({ baseURL: opt.url, viewport: { width: 1920, height: 1080 } });
   const page = await ctx.newPage();
-  const bare = opt.bare ? { "tt.bg": "off", "tt.kbHidden": "1", "tt.kbHidden.free": "1" } : { "tt.bg": "keys" };
+  const bare = opt.bare ? { [`tt.kb.${opt.mode}`]: "off" } : {};
   await openApp(page, { "tt.mode.en": opt.mode, "tt.length.learn": "words-30", [`tt.length.${opt.mode}`]: "words-30", ...bare });
   if (opt.bare && opt.mode === "learn") {
     await page.request.post("/api/v1/progress?lang=en", { data: { unlockAll: true } });

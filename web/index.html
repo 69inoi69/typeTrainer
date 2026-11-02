@@ -13,12 +13,8 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="theme-color" content="#0e0f12">
-  <script>try { if (localStorage.getItem("tt.splashSeen")) document.documentElement.dataset.splash = "again"; } catch {}</script>
 </head>
-<body class="splashing">
-  <div class="splash" id="splash" aria-hidden="true">
-    <div class="splash-logo" id="splash-logo"><svg class="logo-key" viewBox="0 0 64 64" aria-hidden="true"><rect x="9" y="12" width="46" height="44" rx="10" fill="#a8851a"/><rect x="9" y="8" width="46" height="42" rx="10" fill="#e2b714"/><rect x="22" y="38" width="20" height="5" rx="2.5" fill="#15171a"/></svg><span class="splash-type"><i style="--i:0">t</i><i style="--i:1">y</i><i style="--i:2">p</i><i style="--i:3">e</i><b><i style="--i:4">T</i><i style="--i:5">r</i><i style="--i:6">a</i><i style="--i:7">i</i><i style="--i:8">n</i><i style="--i:9">e</i><i style="--i:10">r</i></b></span></div>
-  </div>
+<body>
   <header class="top">
     <div class="logo" id="logo">
       <svg class="logo-key" viewBox="0 0 64 64" aria-hidden="true"><rect class="logo-side" x="9" y="12" width="46" height="44" rx="10" fill="#a8851a"/><g class="logo-cap"><rect x="9" y="8" width="46" height="42" rx="10" fill="#e2b714"/><rect x="22" y="38" width="20" height="5" rx="2.5" fill="#15171a"/><g class="logo-eyes"><circle cx="24" cy="25" r="4" fill="#15171a"/><circle cx="40" cy="25" r="4" fill="#15171a"/></g></g></svg>
@@ -26,7 +22,6 @@
     </div>
 
     <div class="top-side">
-    <div class="switch lang-switch" id="lang-switch" role="tablist" aria-label="Language" data-tip="tip.lang"></div>
     <div class="profile" id="profile">
       <button type="button" class="profile-btn" id="profile-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="profile-card">
         <span class="profile-name" id="profile-name"></span><span class="avatar" id="avatar" aria-hidden="true"></span>
@@ -79,12 +74,15 @@
       </div>
 
       <div id="text-box" class="text-box" tabindex="0" aria-label="Exercise text">
-        <div id="learn-panel" class="learn-panel" hidden><div id="lp-cols" class="lp-cols"></div><span id="lp-live" class="lp-live"></span><button type="button" id="goal-ring" class="goal-ring" aria-haspopup="dialog"><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="16"/><circle class="fill" cx="18" cy="18" r="16" pathLength="100"/></svg></button></div>
         <div class="live" id="live">
+          <div id="lp-cols" class="lp-cols"></div>
+          <span id="climb-note" class="climb-note" hidden></span>
           <div class="metric num"><span id="wpm" class="live-n" data-v="0">0</span><small>wpm</small></div>
-          <div class="metric num raw" data-tip="tip.raw"><span id="raw" class="live-n" data-v="0">0</span><small data-i18n="metric.raw">Raw</small></div>
           <div class="metric num"><span id="acc" class="live-n" data-v="100">100</span><span class="pct">%</span><small data-i18n="metric.acc">Acc</small></div>
-          <span id="round-ring" class="round-ring" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" pathLength="100"/><circle class="fill" cx="12" cy="12" r="9" pathLength="100"/></svg></span>
+          <span class="live-right">
+            <button type="button" id="goal-count" class="goal-count" aria-haspopup="dialog" hidden></button>
+            <span id="round-count" class="round-count"></span>
+          </span>
         </div>
         <div id="text" class="text">loading…</div>
         <div id="caret" class="caret" aria-hidden="true"></div>
@@ -97,6 +95,8 @@
              autocorrect="off" spellcheck="false" aria-hidden="true">
 
       <div class="finger-hint sr-only" id="finger-hint" aria-live="off">&nbsp;</div>
+
+      <div id="stand" class="stand" aria-label="Where you stand"></div>
 
       <div id="keyboard" class="keyboard" aria-label="On-screen keyboard">
         <div class="hands" id="hands" aria-hidden="true">
@@ -186,11 +186,8 @@
       <span class="round-only"><kbd>tab</kbd> <span data-i18n="hint.tab">New round</span></span>
       <span class="result-only"><kbd>enter</kbd> / <kbd>tab</kbd> <span data-i18n="hint.next">Next round</span></span>
       <span><kbd>esc</kbd> <span data-i18n="hint.settings">Settings</span></span>
-      <span><kbd>shift</kbd> + <kbd>tab</kbd> <span class="type-only" data-i18n="hint.stats">Stats</span><span class="stats-hint" data-i18n="hint.typing">Typing</span></span>
-      <span class="lang-hint"><kbd>alt</kbd> + <kbd>1</kbd>…<kbd>4</kbd> <span data-i18n="hint.lang">Language</span></span>
+      <span class="stats-line"><kbd>shift</kbd> + <kbd>tab</kbd> <span class="type-only" data-i18n="hint.stats">Stats</span><span class="stats-hint" data-i18n="hint.typing">Typing</span></span>
       <span class="type-only"><kbd>alt</kbd> + <kbd>k</kbd> <span data-i18n="hint.kb">Keyboard</span></span>
-      <span><kbd>alt</kbd> + <kbd>b</kbd> <span data-i18n="hint.bg">Falling keycaps</span></span>
-      <span class="round-only"><kbd>ctrl</kbd> + <kbd>backspace</kbd> <span data-i18n="hint.word">Delete word</span></span>
     </div>
   </footer>
 

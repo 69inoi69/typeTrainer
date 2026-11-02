@@ -16,9 +16,6 @@ func TestApp_Freetype(t *testing.T) {
 	if lists != "[200 1000 5000 10000 25000]" || st["list"] != float64(200) || st["sessionCount"] != float64(0) {
 		t.Fatalf("new user: lists %v, list %v, rounds %v", lists, st["list"], st["sessionCount"])
 	}
-	if _, ru := call(t, h, "GET", "/api/v1/freetype/stats?lang=ru", ""); fmt.Sprint(ru["lists"]) != "[200 1000]" {
-		t.Fatalf("ru lists: %v", ru["lists"])
-	}
 	code, out := call(t, h, "POST", "/api/v1/freetype/portion?lang=en", `{"start":true,"list":200,"words":10}`)
 	if code != 200 || len(out["portions"].([]any)) != 2 || out["level"] != nil {
 		t.Fatalf("first portions: %d %v", code, out)
@@ -71,9 +68,6 @@ func TestApp_Freetype(t *testing.T) {
 		if code, _ := call(t, h, "POST", "/api/v1/freetype/portion?lang=en", bad); code != 400 {
 			t.Fatalf("%s: your own text, unknown variants and a list where none belongs have no portions", bad)
 		}
-	}
-	if _, ru := call(t, h, "GET", "/api/v1/freetype/stats?lang=ru", ""); ru["sentences"] != false {
-		t.Fatalf("ru has no sentences.txt: %v", ru["sentences"])
 	}
 	variant := func(list int, v string) int {
 		code, _ := call(t, h, "POST", "/api/v1/freetype/results?lang=en", fmt.Sprintf(

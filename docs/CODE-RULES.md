@@ -18,11 +18,9 @@ comments. How the parts fit together is in `docs/HOW-THE-CODE-WORKS.md`.
   (`internal/storage/store_test.go`); a new `Store` method needs both and a
   test there. Table changes go into a new numbered file in
   `internal/storage/migrations/`, never into an old one.
-- Four languages: English, Polish, Ukrainian, Russian. Language data lives in
-  `data/` (`languages.json`, `layouts/`, `langs/<id>/words.txt`), not in code.
-  **Only English is shown for now:** Polish, Ukrainian and Russian are
-  `"hidden": true` in `languages.json` until the English version is
-  polished; their data stays and keeps passing the tests.
+- One language: English. Its data lives in `data/` (`languages.json`,
+  `layouts/`, `langs/en/`), not in code; the `lang` parameter of the API and
+  the store stays.
 - Development machine: Windows, PowerShell.
 
 ## Architecture rules
@@ -39,7 +37,7 @@ comments. How the parts fit together is in `docs/HOW-THE-CODE-WORKS.md`.
   per animation frame (`requestAnimationFrame`). Animations use CSS transitions
   or the Web Animations API (`element.animate`), never JS timers. Typing
   latency is the product: measure it after touching this path (`AGENTS.md`,
-  rule 4 of "Current phase").
+  "How we work").
 - The frontend is native ES modules with a three-layer import rule
   (`docs/HOW-THE-CODE-WORKS.md`, checked by `webmodules_test.go`): imports only go down, no
   cycles. State shared by several modules lives in the object `S`.
@@ -49,14 +47,11 @@ comments. How the parts fit together is in `docs/HOW-THE-CODE-WORKS.md`.
   browser's guest (cookie `tt_guest`, `storage.IsGuest`). Password and token
   handling lives in `internal/auth` (standard library only); never store a
   password or a login token itself, only its hash.
-- Visual rewards (the foil, the wave along the letters, bumps, toasts) live in `web/fx.js` and must never
-  change what is measured or sent to the server. Tab starts a new round, as
+- Tab starts a new round, as
   on Monkeytype: the dropped round is not saved, its presses already sent
   stay learned.
 - Every text the user sees follows `docs/TEXT-RULES.md` and lives in
-  `web/i18n.js`; decide yourself what text a new feature needs. Only the
-  English texts exist while only English is shown; the other languages'
-  texts are written from them when those languages come back. Never
+  `web/i18n.js`; decide yourself what text a new feature needs. Never
   hard-code interface text in the other `.js` files or `index.html`; use
   `t("key")` or `data-i18n="key"`. The one exception is `web/file-check.js`
   (the page opened from disk, where modules cannot load).

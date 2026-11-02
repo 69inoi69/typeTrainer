@@ -14,8 +14,6 @@ export const learning = () => S.mode === "learn";
 export const freetypeUrl = (length, list, variant) =>
   `/freetype/stats?length=${length}${list ? `&list=${list}` : ""}${variant ? `&variant=${variant}` : ""}`;
 
-export const toggledVariant = (cur, what) => cur === what ? "" : what;
-
 export async function refreshFreeplay() {
   const climbLength = lengthFor("climb"), length = lengthFor("freetype");
   const list = Number(store.get(`tt.list.${S.lang}`)) || 0;
@@ -62,7 +60,7 @@ export function setMode(m) {
   renderModeBar();
   store.set(`tt.mode.${S.lang}`, m);
   renderNav();
-  autoKb(true);
+  autoKb();
 }
 
 export function renderNav() {

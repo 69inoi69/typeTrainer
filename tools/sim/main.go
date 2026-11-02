@@ -19,7 +19,7 @@ import (
 )
 
 func main() {
-	only := flag.String("lang", "", "language id (en, pl, uk, ru); empty = all")
+	only := flag.String("lang", "", "language id; empty = all")
 	temps := flag.String("temps", "", "comma-separated temperatures to try for the adaptive\n"+
 		"strategy instead of the configured one, e.g. 0.1,0.25 (experiment only)")
 	floor := flag.Int("floor", -1, "FloorWords instead of the configured one (experiment only)")

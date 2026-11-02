@@ -1,18 +1,7 @@
-// Caret motion: flinch, glide pace and line scroll.
+// Caret motion: glide pace and line scroll.
 
 import { FEEL } from "./feel.js";
-import { el, themeColor, reducedMotion } from "./state.js";
-
-export function flinchCaret() {
-  if (!FEEL.caretFlinchMs || !el.caret.animate || reducedMotion()) return;
-  const red = `color-mix(in srgb, ${themeColor("--error")} 75%, transparent)`, px = FEEL.caretShakePx;
-  el.caret.animate([
-    { scale: `1 ${FEEL.caretFlinchScale}`, transform: "none", backgroundColor: red },
-    { transform: `translateX(${-px}px)`, offset: .3 },
-    { transform: `translateX(${px}px)`, offset: .6 },
-    { scale: "1 1", transform: "none", backgroundColor: red },
-  ], { duration: FEEL.caretFlinchMs, easing: "ease-out" });
-}
+import { el } from "./state.js";
 
 let lastKey = 0, gap = 0, glideNow = 0;
 export function paceGlide(now) {

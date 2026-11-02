@@ -3,17 +3,10 @@
 import os
 import sys
 
-ALPHABET = {
-    "en": "abcdefghijklmnopqrstuvwxyz",
-    "pl": "aąbcćdeęfghijklłmnńoóprsśtuwyzźżqvx",
-    "uk": "абвгґдеєжзиіїйклмнопрстуфхцчшщьюя",
-    "ru": "абвгдежзийклмнопрстуфхцчшщъыьэюя",
-}
-ONE_LETTER = {"en": set("ai"), "pl": set("aiouwz"), "uk": set("явіузао"), "ru": set("явискуоа")}
-VOWELS = set("aeiouyąęóаеєиіїоуюяыэ")
-UK_KEEP = {"по"}
+ALPHABET = {"en": "abcdefghijklmnopqrstuvwxyz"}
+ONE_LETTER = {"en": set("ai")}
+VOWELS = set("aeiouy")
 MIN_PER_LETTER = 10
-NO_FILL = {"pl": set("qvx"), "uk": set("ґ")}
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -25,8 +18,6 @@ def load(src, lang):
             if len(parts) != 2:
                 continue
             word, n = parts[0].lower(), int(parts[1])
-            if lang == "ru":
-                word = word.replace("ё", "е")
             counts[word] = counts.get(word, 0) + n
             total += n
     return {w: c / total * 1e6 for w, c in counts.items()}
@@ -48,14 +39,10 @@ def build(src, out_root, n):
                 continue
             if len(w) > 1 and not any(ch in VOWELS for ch in w):
                 continue
-            if lang == "uk" and len(w) > 1 and w not in UK_KEEP and freq["ru"].get(w, 0) > 1.6 * p:
-                continue
-            if lang == "pl" and freq["en"].get(w, 0) > p:
-                continue
             if w in blocked:
                 continue
             words.append(w)
-        words = with_rare_letters(words, n, set(alphabet) - NO_FILL.get(lang, set()))
+        words = with_rare_letters(words, n, set(alphabet))
         os.makedirs(os.path.join(out_root, lang), exist_ok=True)
         with open(os.path.join(out_root, lang, "words.txt"), "w", encoding="utf-8") as f:
             f.write("\n".join(words) + "\n")

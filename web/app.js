@@ -1,16 +1,15 @@
 // Entry point of the frontend.
 
 import { t } from "./i18n.js";
-import { FX, Splash } from "./fx.js";
+import { FX } from "./fx.js";
 import { el, S, store, isTouch } from "./state.js";
 import { getJSON, postJSON } from "./api.js";
 import { labelTips } from "./tools.js";
 import { autoKb } from "./keyboard.js";
 import { showIntro } from "./intro.js";
 import { renderProfile, loadAccount } from "./profile.js";
-import { buildLangSwitch, initialLanguage, loadLanguage } from "./languages.js";
+import { loadLanguage } from "./languages.js";
 import { loadSettings } from "./settings.js";
-import { buildAmbient } from "./ambient.js";
 
 import { startView } from "./input.js";
 
@@ -28,8 +27,6 @@ async function joinStudy() {
 // ---------- start ----------
 (async function init() {
   renderProfile();
-  const splash = Splash.start(store.get("tt.splashSeen") === null);
-  store.set("tt.splashSeen", "1");
   loadSettings();
   autoKb();
   labelTips();
@@ -38,15 +35,12 @@ async function joinStudy() {
     await loadAccount();
     S.languages = await getJSON("/languages", true);
     await joinStudy();
-    buildLangSwitch();
-    await loadLanguage(initialLanguage());
+    await loadLanguage(S.languages[0].id);
   } catch (err) {
     console.error(err);
     el.text.textContent = t("err.server");
   }
   startView();
-  buildAmbient();
-  await splash.done();
   const flash = store.get("tt.flash");
   if (flash) {
     store.set("tt.flash", "");

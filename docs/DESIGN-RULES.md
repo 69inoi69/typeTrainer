@@ -33,7 +33,7 @@ there is a reason not to).
 
 **Established**
 - Three fixed places on every screen: the header (logo, account), the
-  navigation (a rail on the left from 900 px, a bar at the bottom below),
+  navigation (in the header from 900 px, a bar at the bottom below),
   and the content in the middle (`docs/HOW-THE-CODE-WORKS.md`, "Screen layout").
 - Panels (Settings, Profile, the reset confirm) share one window style:
   `.win` and `.win-title`.
@@ -85,25 +85,21 @@ there is a reason not to).
   size); `--sub` is for things that step back (untyped text, choices not
   picked), not for labels people must read.
 - One accent colour (`--accent`, gold) for the caret, the focus letter and
-  the selected option; a filled gold thing uses `--accent-fill` (a slight
-  gradient) and `--accent-glow`; gold as text is `--accent-text` (4.5:1 on
+  the selected option; gold as text is `--accent-text` (4.5:1 on
   the page), and gold numbers of 24px and more (the result, the stats
   tiles and records) and the logo use `--accent-big` (3:1, the contrast
   large text needs). Green (`--ok`) for mastered; red (`--error`) for
   mistakes and destructive actions. Colours are CSS variables. There is one
-  theme, dark: a light one was removed, so every colour is tuned once.
+  theme, dark.
 - Surfaces in three steps: the page (`--bg`), cards (`--panel`) and small
   things on them (`--panel-2`). Depth is `--lift` (a hairline edge and a
-  short soft shadow), never a heavy shadow. Glass (`--glass`, a blurred
-  see-through background) only for what floats over the page: windows,
-  tooltips, the phone's bottom bar. Corners: `--r-sm`, `--r-md`, `--r-lg`.
+  short soft shadow), never a heavy shadow. Corners: `--r-sm`, `--r-md`, `--r-lg`.
 - The typing screen has no card or frame around the text: the order of
   importance is shown by size and brightness alone. The text is the biggest
-  and brightest; the line above it and Learn's letters (all but the one in
-  training and the next) are dimmer.
+  and brightest.
 - One font: Geist Mono (`--mono`, `--ui`), served from `web/fonts`
   (SIL Open Font License, `web/fonts/OFL.txt`). The one exception is the
-  logo, "typeTrainer" in the header, the start screen and the stats picture:
+  logo, "typeTrainer" in the header and the stats picture:
   Sora SemiBold (`--logo`), a file with only the
   letters of the logo (`web/fonts/Sora-SemiBold-logo.woff2`, license
   `web/fonts/Sora-OFL.txt`).
@@ -127,28 +123,20 @@ consequences, the same word for the same thing. All text lives in
 
 **Established**
 - Typing feels instant: the rules for the keypress path and how to measure
-  it are in `docs/CODE-RULES.md` ("Architecture rules") and `AGENTS.md` (rule 4
-  of "Current phase").
-  Feel numbers live in `web/feel.js`. Responses to a key are 80-180 ms,
-  start in the same frame and ease out; they animate colour, opacity, filter or transform only
-  (nothing that moves the layout). Colours for JavaScript animations come
-  from the theme (`themeColor` in `state.js`), never hard-coded.
+  it are in `docs/CODE-RULES.md` ("Architecture rules") and `AGENTS.md`
+  ("How we work"). Feel numbers live in `web/feel.js`.
+- A state changes at once. Only the caret, the line scroll and the keyboard's
+  lit key move (`docs/PRODUCT.md`, "Plain defaults").
 - No `:has()` over a big part of the page (`body`, `#view-type`): any text
   that changes inside it (the hint, a counter) makes the browser restyle
   the whole typing screen on every key (measured:
   `docs/thesis/06-interface-finger-layout-latency.md`). A state other parts
   follow goes on `<body>` as a class instead (`boxState` in `state.js`).
-- When a round starts, nothing moves and nothing disappears just because
-  typing began. What is not needed right now dims (the header, the round
-  switches) and comes back on hover; only what has lost its meaning gives
-  way (Learn's last round makes room for this round's live numbers). The round's progress ring
-  stays bright: it is what you glance at while typing.
-  The mouse pointer hides with the first key and comes back as soon as the
-  mouse really moves (`no-pointer` on `<html>`, set by `input.js`).
-  Each dim or fade has a reason (#201).
-- A screen that opens (the result, the stats) does it as one short
-  sequence of small rises (`rise` in `stats.css`), not as scattered effects;
-  a redraw on resize does not replay it.
+- When a round starts, nothing moves, dims or disappears just because typing
+  began; only what has lost its meaning gives way (Learn's last round makes
+  room for this round's live numbers). The mouse pointer hides with the first
+  key and comes back as soon as the mouse really moves (`no-pointer` on
+  `<html>`, set by `input.js`).
 - Selected states use `aria-pressed` / `aria-selected`; a chosen value in a
   `.ring` group is a light accent tint. A `.ring` group is a row of cells
   side by side, with a thin line between them, so it reads as one switch.
@@ -174,8 +162,9 @@ consequences, the same word for the same thing. All text lives in
   choice of a few values: the round bars, the settings, the small window,
   the stats)
   (Off on the left, On on the right), `.btn` buttons (`.danger` for
-  destructive), `data-tip` tooltips, `--ctl` (38 px) as the height of every
-  control.
+  destructive), `data-tip` tooltips, `--ctl` (32 px) as the height of every
+  control. Text sizes come from `--fs-min` to `--fs-xxl`, corners from
+  `--r-sm`, `--r-md`, `--r-lg` (`web/base.css`).
 - Naming: Learn, Climb, Freetype, Stats, Settings; round, focus, mastered, level
   (`docs/TEXT-RULES.md`, word list).
 
@@ -189,7 +178,6 @@ consequences, the same word for the same thing. All text lives in
 **Established**
 - Visible keyboard focus: `button:focus-visible, input:focus-visible` get an
   accent outline.
-- `prefers-reduced-motion` turns animations off (the timer bar excepted).
 - Panels are dialogs (`role="dialog"`, `aria-expanded`, `aria-controls`);
   Esc closes them. The settings window and the reset confirm are native
   `<dialog>`s opened with `showModal()` (focus stays inside).
@@ -198,8 +186,8 @@ consequences, the same word for the same thing. All text lives in
 **Recommended**
 - Text contrast high enough to read; never grey on grey for
   something the user must read.
-- Touch targets at least about 40 px high on a phone (`--ctl` is 38 px plus
-  spacing); never two small targets right next to each other.
+- Touch targets at least about 40 px high on a phone; never two small targets
+  right next to each other.
 - Everything that works with a mouse also works with a keyboard.
 - Don't rely on colour alone: mastered letters also get a tick, mistakes
   also get an underline.

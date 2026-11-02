@@ -1,8 +1,6 @@
 # 1. Existing systems and literature
 
-Thesis item 1: analysis of existing systems and the literature. The
-reading list below was `LITERATURE.md`; the comparison of existing
-products is to be written here as the work brings material.
+Thesis item 1: analysis of existing systems and the literature.
 
 ## Existing systems
 

@@ -5,7 +5,7 @@ export const $ = (id) => document.getElementById(id);
 export const el = {
   textBox: $("text-box"), text: $("text"), caret: $("caret"), input: $("hidden-input"),
   keyboard: $("keyboard"), hint: $("finger-hint"),
-  live: $("live"), wpm: $("wpm"), raw: $("raw"), acc: $("acc"), roundRing: $("round-ring"),
+  live: $("live"), wpm: $("wpm"), acc: $("acc"), roundCount: $("round-count"),
   letters: $("letters"),
   tooltip: $("tooltip"),
   hands: $("hands"),
@@ -13,7 +13,7 @@ export const el = {
   nav: $("nav-switch"), tabLearn: $("tab-learn"), tabClimb: $("tab-climb"), tabFreetype: $("tab-freetype"), tabStats: $("tab-stats"),
   viewType: $("view-type"), viewStats: $("view-stats"),
   lengthFilter: $("length-filter"), tiles: $("tiles"), chart: $("chart"), chartNote: $("chart-note"),
-  langSwitch: $("lang-switch"), warn: $("layout-warn"), toasts: $("toasts"),
+  warn: $("layout-warn"), toasts: $("toasts"),
   streak: $("streak"), streakN: $("streak-n"),
 };
 
@@ -58,10 +58,6 @@ export const listLabel = (n) => n >= 1000 && n % 1000 === 0 ? `${n / 1000}k` : S
 export const isTouch = () => matchMedia("(pointer: coarse)").matches;
 const motionQuery = matchMedia("(prefers-reduced-motion: reduce)");
 export const reducedMotion = () => motionQuery.matches;
-const themeColors = {};
-export function themeColor(name) {
-  return themeColors[name] ??= getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-}
 export function boxState(on, ...names) {
   for (const n of names) {
     el.textBox.classList.toggle(n, on);

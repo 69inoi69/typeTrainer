@@ -16,8 +16,8 @@ import (
 
 func TestApp_PortionLearnsWithoutAHistoryEntry(t *testing.T) {
 	h, _, _ := newApp()
-	body := `{"samples":[{"char":"о","errors":1,"ms":300},{"char":" ","errors":0,"ms":200}],"recent":["он"],"retry":["он"]}`
-	code, out := call(t, h, "POST", "/api/v1/portion?lang=ru", body)
+	body := `{"samples":[{"char":"a","errors":1,"ms":300},{"char":" ","errors":0,"ms":200}],"recent":["as"],"retry":["as"]}`
+	code, out := call(t, h, "POST", "/api/v1/portion?lang=en", body)
 	if code != 200 {
 		t.Fatalf("portion: %d %v", code, out)
 	}
@@ -25,36 +25,36 @@ func TestApp_PortionLearnsWithoutAHistoryEntry(t *testing.T) {
 	if len(por["words"].([]any)) == 0 || por["focus"] == "" || len(out["portions"].([]any)) != 1 {
 		t.Fatalf("portion: %v", out)
 	}
-	_, st := call(t, h, "GET", "/api/v1/stats?lang=ru", "")
+	_, st := call(t, h, "GET", "/api/v1/stats?lang=en", "")
 	if st["sessionCount"].(float64) != 0 {
 		t.Fatal("a portion must not add a history entry")
 	}
 	counted := false
 	for _, k := range st["keys"].([]any) {
-		if k := k.(map[string]any); k["char"] == "о" && k["count"].(float64) == 1 {
+		if k := k.(map[string]any); k["char"] == "a" && k["count"].(float64) == 1 {
 			counted = true
 		}
 	}
 	if !counted {
-		t.Fatal("the sample of о was not applied")
+		t.Fatal("the sample of a was not applied")
 	}
-	if code, out := call(t, h, "POST", "/api/v1/results?lang=ru", `{"samples":[],"chars":40,"wpm":30,"accuracy":95}`); code != 200 {
+	if code, out := call(t, h, "POST", "/api/v1/results?lang=en", `{"samples":[],"chars":40,"wpm":30,"accuracy":95}`); code != 200 {
 		t.Fatalf("results: %d %v", code, out)
 	}
-	_, st = call(t, h, "GET", "/api/v1/stats?lang=ru", "")
+	_, st = call(t, h, "GET", "/api/v1/stats?lang=en", "")
 	if st["sessionCount"].(float64) != 1 {
 		t.Fatal("results must add one history entry")
 	}
-	_, out = call(t, h, "POST", "/api/v1/portion?lang=ru", `{"last":true}`)
+	_, out = call(t, h, "POST", "/api/v1/portion?lang=en", `{"last":true}`)
 	if len(out["portions"].([]any)) != 0 {
 		t.Fatalf("last: want no portions, got %v", out)
 	}
-	for _, bad := range []string{`{"start":"yes"}`, `{"samples":[{"char":"a","errors":0,"ms":1}]}`} {
-		if code, _ := call(t, h, "POST", "/api/v1/portion?lang=ru", bad); code != 400 {
+	for _, bad := range []string{`{"start":"yes"}`, `{"samples":[{"char":"ж","errors":0,"ms":1}]}`} {
+		if code, _ := call(t, h, "POST", "/api/v1/portion?lang=en", bad); code != 400 {
 			t.Fatalf("%s: got %d, want 400", bad, code)
 		}
 	}
-	if code, _ := call(t, h, "POST", "/api/v1/results?lang=ru", `{"samples":[],"wpm":30,"accuracy":95}`); code != 400 {
+	if code, _ := call(t, h, "POST", "/api/v1/results?lang=en", `{"samples":[],"wpm":30,"accuracy":95}`); code != 400 {
 		t.Fatal("a run with nothing typed must be rejected")
 	}
 }
@@ -214,13 +214,6 @@ func TestApp_StudyGroup(t *testing.T) {
 	sess := st["sessions"].([]any)[0].(map[string]any)
 	if st["group"] != "random" || sess["group"] != "random" {
 		t.Fatalf("stats: group %v, round group %v", st["group"], sess["group"])
-	}
-	if _, pl := call(t, h, "GET", "/api/v1/stats?lang=pl", ""); pl["group"] != "" {
-		t.Fatalf("another language got the group: %v", pl["group"])
-	}
-	_, out = call(t, h, "POST", "/api/v1/portion?lang=pl", `{"start":true}`)
-	if out["portions"].([]any)[0].(map[string]any)["focus"] == "" {
-		t.Fatal("the normal app must still have a focus letter")
 	}
 
 	rec := httptest.NewRecorder()

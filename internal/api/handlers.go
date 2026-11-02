@@ -97,9 +97,7 @@ func (s *Server) withLang(h langHandler) http.HandlerFunc {
 func (s *Server) handleLanguages(w http.ResponseWriter, r *http.Request) {
 	out := []language.Language{}
 	for _, l := range s.order {
-		if !l.Info.Hidden {
-			out = append(out, l.Info)
-		}
+		out = append(out, l.Info)
 	}
 	writeJSON(w, http.StatusOK, out)
 }
