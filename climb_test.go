@@ -101,9 +101,6 @@ func TestApp_Climb(t *testing.T) {
 			t.Fatalf("Climb changed the letter statistics: %v", k)
 		}
 	}
-	if _, pl := call(t, h, "GET", "/api/v1/freeplay/stats?lang=pl", ""); pl["sessionCount"] != float64(0) {
-		t.Fatal("the history of one language leaked into another")
-	}
 
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, guestRequest("GET", "/api/v1/export?lang=en", ""))

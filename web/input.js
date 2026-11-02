@@ -6,7 +6,6 @@ import { refreshStats, renderStats, resetStatsPick } from "./stats.js";
 import { fitText, placeCaret, handleChar, backspace, restartRound, setTyping, loadExercise, roundStarted, pauseRound, checkLayout } from "./typing.js";
 import { checkCaps } from "./warn.js";
 import { introKey } from "./intro.js";
-import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
 import { resultOpen, closeResult } from "./result.js";
 import { settingsOpen, openSettings, onSettingsClose, onGoalChange, onTypingLook, onSoundPick, setLength, setSetting } from "./settings.js";
@@ -145,11 +144,6 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Tab" && e.shiftKey) {
     if (!shortcut(e, "view")) return;
     setView(S.view === "type" ? "stats" : "type");
-    return;
-  }
-  if (e.altKey && !e.ctrlKey && !e.metaKey && !altGr && /^Digit[1-9]$/.test(e.code)) {
-    const l = S.languages[Number(e.code.slice(5)) - 1];
-    if (l && shortcut(e, "lang")) switchLanguage(l.id);
     return;
   }
   if (resultOpen()) {

@@ -83,7 +83,7 @@ body:not(.typing-now) .live:not(.final) > .metric.num { opacity: 0; pointer-even
 .text-box.typing .streak.show { display: flex; }
 .text-box:is(.paused, .blurred, .resulting) .streak.show, body.streak-off .text-box .streak.show { display: none; }
 
-/* ---------- switches: the navigation and the languages ---------- */
+/* ---------- the navigation switch ---------- */
 .switch { position: relative; display: grid; --n: 2; --i: 0; flex: none; }
 .switch button {
   position: relative; z-index: 1; border: 0; background: none; cursor: pointer; white-space: nowrap;
@@ -97,12 +97,6 @@ body:not(.typing-now) .live:not(.final) > .metric.num { opacity: 0; pointer-even
   content: ""; position: absolute; border-radius: 2px;
   background: var(--accent);
 }
-
-.lang-switch { grid-auto-flow: column; grid-auto-columns: minmax(34px, auto); height: var(--ctl); }
-.lang-switch button { padding: 0 8px; font-weight: 500; }
-.lang-switch .switch-thumb { left: 0; bottom: 1px; height: 2px; width: calc(100% / var(--n)); transform: translateX(calc(var(--i) * 100%)); }
-body.one-lang .lang-switch, body.one-lang .lang-hint { display: none; }
-.lang-switch .switch-thumb::after { left: calc(50% - 7px); width: 14px; height: 2px; }
 
 .rail {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 8;
@@ -144,13 +138,6 @@ body:is([data-mode="climb"], [data-mode="freetype"]) .letter-row { visibility: h
   .rail .switch button, .rail-btn { flex-direction: row; width: auto; height: 44px; padding: 0 11px; }
   .rail .switch button svg, .rail-btn svg { width: 24px; height: 24px; }
   .rail .switch button small, .rail-btn small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .lang-switch {
-    position: fixed; right: 14px; top: 50%; translate: 0 -50%; height: auto;
-    grid-auto-flow: row; grid-auto-rows: 40px; grid-auto-columns: auto;
-  }
-  .lang-switch button { padding: 0 14px; }
-  .lang-switch .switch-thumb { top: 0; bottom: auto; left: auto; right: -6px; width: 2px; height: calc(100% / var(--n)); transform: translateY(calc(var(--i) * 100%)); }
-  .lang-switch .switch-thumb::after { top: calc(50% - 7px); left: 0; width: 2px; height: 14px; }
 }
 
 /* ---------- views ---------- */

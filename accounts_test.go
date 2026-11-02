@@ -59,12 +59,12 @@ func TestApp_Accounts(t *testing.T) {
 		}
 	}
 
-	round := `{"samples":[{"char":"ж","errors":0,"ms":300}],"wpm":30,"accuracy":100}`
-	if code, _, _ := callAs(t, h, ann, "POST", "/api/v1/results?lang=ru", round); code != 200 {
+	round := `{"samples":[{"char":"a","errors":0,"ms":300}],"wpm":30,"accuracy":100}`
+	if code, _, _ := callAs(t, h, ann, "POST", "/api/v1/results?lang=en", round); code != 200 {
 		t.Fatalf("ann's round: %d", code)
 	}
-	_, guest, _ := callAs(t, h, "", "GET", "/api/v1/stats?lang=ru", "")
-	_, mine, _ := callAs(t, h, ann, "GET", "/api/v1/stats?lang=ru", "")
+	_, guest, _ := callAs(t, h, "", "GET", "/api/v1/stats?lang=en", "")
+	_, mine, _ := callAs(t, h, ann, "GET", "/api/v1/stats?lang=en", "")
 	if guest["sessionCount"].(float64) != 0 || mine["sessionCount"].(float64) != 1 {
 		t.Fatalf("guest=%v ann=%v", guest["sessionCount"], mine["sessionCount"])
 	}
@@ -78,7 +78,7 @@ func TestApp_Accounts(t *testing.T) {
 	if code != 200 || ann2 == "" || ann2 == ann {
 		t.Fatalf("login: %d, a new cookie expected", code)
 	}
-	if _, again, _ := callAs(t, h, ann2, "GET", "/api/v1/stats?lang=ru", ""); again["sessionCount"].(float64) != 1 {
+	if _, again, _ := callAs(t, h, ann2, "GET", "/api/v1/stats?lang=en", ""); again["sessionCount"].(float64) != 1 {
 		t.Fatal("after logging in again ann's data is gone")
 	}
 
@@ -96,22 +96,22 @@ func TestApp_Accounts(t *testing.T) {
 
 func TestApp_SignUpKeepsGuestProgress(t *testing.T) {
 	h, _, _ := newApp()
-	round := `{"samples":[{"char":"ж","errors":0,"ms":300}],"wpm":30,"accuracy":100}`
-	if code, _, _ := callAs(t, h, "", "POST", "/api/v1/results?lang=ru", round); code != 200 {
+	round := `{"samples":[{"char":"a","errors":0,"ms":300}],"wpm":30,"accuracy":100}`
+	if code, _, _ := callAs(t, h, "", "POST", "/api/v1/results?lang=en", round); code != 200 {
 		t.Fatalf("guest's round: %d", code)
 	}
 	_, _, ann := callAs(t, h, "", "POST", "/api/v1/auth/register", `{"name":"ann","password":"secret-ann"}`)
-	_, mine, _ := callAs(t, h, ann, "GET", "/api/v1/stats?lang=ru", "")
-	_, guest, _ := callAs(t, h, "", "GET", "/api/v1/stats?lang=ru", "")
+	_, mine, _ := callAs(t, h, ann, "GET", "/api/v1/stats?lang=en", "")
+	_, guest, _ := callAs(t, h, "", "GET", "/api/v1/stats?lang=en", "")
 	if mine["sessionCount"].(float64) != 1 || guest["sessionCount"].(float64) != 0 {
 		t.Fatalf("after sign up: ann=%v guest=%v", mine["sessionCount"], guest["sessionCount"])
 	}
 
-	callAs(t, h, "", "POST", "/api/v1/results?lang=ru", round)
-	callAs(t, h, "", "POST", "/api/v1/results?lang=ru", round)
+	callAs(t, h, "", "POST", "/api/v1/results?lang=en", round)
+	callAs(t, h, "", "POST", "/api/v1/results?lang=en", round)
 	_, _, again := callAs(t, h, "", "POST", "/api/v1/auth/login", `{"name":"ann","password":"secret-ann"}`)
-	_, mine, _ = callAs(t, h, again, "GET", "/api/v1/stats?lang=ru", "")
-	_, guest, _ = callAs(t, h, "", "GET", "/api/v1/stats?lang=ru", "")
+	_, mine, _ = callAs(t, h, again, "GET", "/api/v1/stats?lang=en", "")
+	_, guest, _ = callAs(t, h, "", "GET", "/api/v1/stats?lang=en", "")
 	if mine["sessionCount"].(float64) != 1 || guest["sessionCount"].(float64) != 2 {
 		t.Fatalf("log in must not mix the two: ann=%v guest=%v", mine["sessionCount"], guest["sessionCount"])
 	}
@@ -143,15 +143,15 @@ func TestApp_GuestPerBrowser(t *testing.T) {
 		t.Fatal("an existing guest cookie must not be replaced")
 	}
 
-	round := `{"samples":[{"char":"ж","errors":0,"ms":300}],"wpm":30,"accuracy":100}`
-	call(t, h, "POST", "/api/v1/results?lang=ru", round)
-	other := httptest.NewRequest("GET", "/api/v1/stats?lang=ru", nil)
+	round := `{"samples":[{"char":"a","errors":0,"ms":300}],"wpm":30,"accuracy":100}`
+	call(t, h, "POST", "/api/v1/results?lang=en", round)
+	other := httptest.NewRequest("GET", "/api/v1/stats?lang=en", nil)
 	other.AddCookie(c)
 	rec = httptest.NewRecorder()
 	h.ServeHTTP(rec, other)
 	var theirs map[string]any
 	json.Unmarshal(rec.Body.Bytes(), &theirs)
-	_, mine := call(t, h, "GET", "/api/v1/stats?lang=ru", "")
+	_, mine := call(t, h, "GET", "/api/v1/stats?lang=en", "")
 	if theirs["sessionCount"].(float64) != 0 || mine["sessionCount"].(float64) != 1 {
 		t.Fatalf("new guest=%v test browser=%v", theirs["sessionCount"], mine["sessionCount"])
 	}

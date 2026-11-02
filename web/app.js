@@ -8,7 +8,7 @@ import { labelTips } from "./tools.js";
 import { autoKb } from "./keyboard.js";
 import { showIntro } from "./intro.js";
 import { renderProfile, loadAccount } from "./profile.js";
-import { buildLangSwitch, initialLanguage, loadLanguage } from "./languages.js";
+import { loadLanguage } from "./languages.js";
 import { loadSettings } from "./settings.js";
 
 import { startView } from "./input.js";
@@ -35,8 +35,7 @@ async function joinStudy() {
     await loadAccount();
     S.languages = await getJSON("/languages", true);
     await joinStudy();
-    buildLangSwitch();
-    await loadLanguage(initialLanguage());
+    await loadLanguage(S.languages[0].id);
   } catch (err) {
     console.error(err);
     el.text.textContent = t("err.server");
