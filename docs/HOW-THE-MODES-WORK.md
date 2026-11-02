@@ -13,8 +13,7 @@ Code: `internal/engine/model.go` (the math) and `internal/engine/generator.go`
 
 ## 1. The idea in one paragraph
 
-The user types **real words** in one of four languages (English, Polish,
-Ukrainian, Russian). For every letter the program keeps a
+The user types **real English words**. For every letter the program keeps a
 short, constantly updated picture of how well the user types it: how often they
 make a mistake on it and how long it takes. These two numbers are combined into
 one **difficulty** between 0 and 1. Letters are introduced **gradually**, the
@@ -219,28 +218,14 @@ uniform choice.
 language, but a letter under a resting finger counts `HomeBoost = 4` times
 (`Generator.SetHome`). The resting keys come from the layout data
 (`layout.RestingKeys`): in the row with the home bumps, one key per finger,
-`a s d f j k l ;` on QWERTY, `ф ы в а о л д ж` on the Russian ЙЦУКЕН. The
-order is computed from the data, not written by hand, so a new language only
-needs a word list and a layout. With the included lists (first lesson in bold):
+`a s d f j k l ;` on QWERTY. The order is computed from the data, not written
+by hand (first lesson in bold):
 
-| Language | Unlock order |
-|---|---|
-| English | **a s l d e f r** t i n o k c g h u p m y w b v j x z q |
-| Polish | **a s d k j i e l o** z m n w r y c p t ł u b ę g ć ś ó ą ż f h ź ń |
-| Ukrainian | **о а в і д л и т** н ж р с е у п м к з б я ь й ч ш г х ю є ц ї ф щ |
-| Russian | **о а л в д е т** и с н ы ж р м у п ь к я б з г ш ч й ю х ф ц щ э ъ |
-
-Letters that never occur in the list (Polish q v x, Ukrainian ґ) are not in the
-order and never appear in exercises.
+**a s l d e f r** t i n o k c g h u p m y w b v j x z q
 
 **First lesson.** At least `StartLetters = 6` letters, and more if needed until
-at least `MinWords = 30` real words can be built from them: 7 letters for
-English (39 words) and Russian (38), 8 for Ukrainian (35), 9 for Polish (34).
+at least `MinWords = 30` real words can be built from them: 7 letters (39 words).
 Without this rule the first lesson would cycle through a handful of words.
-
-**Every language has its own progress.** Statistics, unlocked letters and
-history are stored per language: mastering `e` in English says nothing about
-`е` in Russian, even though both sit on similar keys.
 
 **Mastery** of a letter is a plain yes/no rule on the smoothed values, with
 a margin once it is reached (`engine.MeetsGoal`, `Mastered`):
@@ -423,8 +408,7 @@ words or an hour at 30 WPM; then the penalty is gone. Choices behind this:
   history, so it needs no new stored field and survives export/import; a
   reset starts it again.
 - **A floor for rare letters.** Some letters have almost no words among the
-  200 most common: Russian `ф` and `ъ`, Ukrainian `ф`, English `q`, `x`, `z`
-  have none, Polish `f` none, `ń` and `ź` one. Their words are all far down
+  200 most common: `q`, `x`, `z` have none. Their words are all far down
   the list, and the penalty makes the most common of them much more likely
   than the others (two words 400 places apart: 4 times). So the focus letter
   uses its own limit:
@@ -439,12 +423,8 @@ words or an hour at 30 WPM; then the penalty is gone. Choices behind this:
   repeat. The words are counted in the whole list, not only among the open
   words: in the first lessons every letter has few open words, and counting
   only those would let rare words in exactly where common ones matter most. Letters with many common words are not affected: their 10th word is
-  inside the top 200. Affected (rank of the 10th word): en `j` 1222, `p` 275,
-  `q` 1823, `x` 851, `z` (8 words in all); pl `f` 1154, `ń` 1159, `ź` 683,
-  `ć` 295, `ł` 250, `ó` 239, `ą` 217; uk `ф` 1797, `щ` 447, `ї` 450, `є` 291,
-  `ц` 223, `х` 209, `ш` 205; ru `ф` 1410, `ц` 845, `щ` 807, `ю` 280, `х` 237,
-  `ш` 231, and `ъ`, which had a single word in the Russian list before step 9 of
-  section 11 added more.
+  inside the top 200. Affected (rank of the 10th word): `j` 1222, `p` 275,
+  `q` 1823, `x` 851, `z` (8 words in all).
   The penalty only shapes which words of the focus letter are taken: the
   focus letter itself (step 1) does not depend on it, so a rare letter is
   never trained less because its words are rare.
@@ -469,9 +449,8 @@ dictionary too small for both rules relaxes them (first the cap, then
 "not twice in a row").
 
 **No one-letter words.** Words shorter than `MinWordLetters = 2` are left
-out of learning when the generator is made (`NewGenerator`): English `a` and
-`i`, Polish `w`, `z`, `o`, `u`, Russian `я`, `в`, `и`. They are among the most common words
-of every list, so they came up often, and a lone letter is not a word to
+out of learning when the generator is made (`NewGenerator`): `a` and
+`i`. They are among the most common words of the list, so they came up often, and a lone letter is not a word to
 practise. They are left out before anything is
 counted, so they take no part in the unlock order, the first lesson or the
 ranks. The word lists keep them (section 11): Climb and Freetype draw from
@@ -560,7 +539,7 @@ All in `internal/config/config.go`.
 | `RoundPortions` | 5 | portions per round (30 words), one result in the history | a clear end; about 1-2 minutes for a beginner, 20 seconds for a fast typist |
 | `RankStart` | 200 | words up to this frequency rank come without a penalty until every letter is open | the size of monkeytype's smallest list ("English 200"): the core words of a language |
 | `RankStep` | 200 | distance in ranks that halves a word's chance | one "200 words" block per halving: rank 1000 while learning letters is 16 times rarer |
-| `FloorWords` | 10 | the focus letter's most common words that always come without the frequency penalty | a portion (6 words) without a repeat, with room for the next one; only letters with few common words (`ф`, `q`, `x`, `z`) are affected |
+| `FloorWords` | 10 | the focus letter's most common words that always come without the frequency penalty | a portion (6 words) without a repeat, with room for the next one; only letters with few common words (`q`, `x`, `z`) are affected |
 | `RampLetters` | 10 000 | letters typed after the full alphabet until every word comes freely | about 1700-1900 words (5.2-5.9 letters per word), ~60 rounds of 30 words, an hour at 30 WPM: the list grows by ~200 words every 6 minutes of typing |
 | `ConsistencyMinSeconds` | 5 | shortest round that gets a consistency (section 3) | a standard deviation of 2-3 numbers says little; 5 s is a few words even for a beginner |
 | `RankPenalty` | 0.5 | weight multiplier per `RankStep` over the limit | halving is easy to explain; with `T = 0.1` one step equals about 0.07 of difficulty, so weak letters still decide first |
@@ -579,12 +558,10 @@ fitted to real data; `docs/thesis/08-testing-and-verification.md` says how they 
   for a guest (HOW-THE-CODE-WORKS.md, "Accounts"). Someone who types as a guest on
   two computers is two learners to the model; the model itself does not know
   about users at all.
-- **Word lists from subtitles.** The 2000 most frequent words per language,
+- **Word lists from subtitles.** The 2000 most frequent words,
   counted in film and TV subtitles (section 11). That is spoken, everyday
   language: good for typing practice, but some names or slang may remain after
-  filtering. Rare letters (`q`, `j`, `x`, `z`, `ф`, `щ`) have few words.
-- **Simplified spelling.** Russian `ё` is typed as `е`, and Ukrainian words with
-  an apostrophe (`м'ясо`, `п'ять`) are left out for now.
+  filtering. Rare letters (`q`, `j`, `x`, `z`) have few words.
 - **One stubborn letter blocks progress.** If one letter never reaches mastery,
   nothing new opens. The focus pushes such a letter much
   harder (`UnmasteredBonus`, section 7), but a person who does not get
@@ -597,9 +574,9 @@ fitted to real data; `docs/thesis/08-testing-and-verification.md` says how they 
 ## 10. Simulation
 
 Code: `internal/sim` (tests in `internal/sim/sim_test.go`), run with
-`go run ./tools/sim` (or `-lang en`) from the repository root. All numbers are
+`go run ./tools/sim` from the repository root. All numbers are
 in `internal/config/config.go` (`Sim`). `go test ./...` guards the main
-result: `tools/sim/main_test.go` runs three typists per language and fails
+result: `tools/sim/main_test.go` runs three typists and fails
 if random words need less than 3 times the practice of the stream.
 
 **The simulated typist.** Every letter has a hidden error probability, drawn
@@ -662,12 +639,9 @@ Median exercises to the goal (20 typists), and the stream's variety:
 | Language | Random words | Best of 20 | Adaptive, T = 0.1 | Stream (the app) | Stream, no frequency penalty | Stream variety, first 30 | Stream variety, expert |
 |---|---|---|---|---|---|---|---|
 | en | 2179 | 280 | 144 | 134 | 132 | 79 / 40 / 86 | 97 / 5 / 67 |
-| pl | 1444 | 256 | 182 | 164 | 158 | 72 / 47 / 76 | 98 / 4 / 63 |
-| uk | 1772 | 268 | 184 | 172 | 172 | 73 / 46 / 77 | 98 / 4 / 61 |
-| ru | 2588 (19/20 reached) | 350 | 194 | 183 | 175 | 76 / 45 / 80 | 98 / 5 / 65 |
 
-The stream needs 8-16 times fewer exercises than random words and 1.6-2.1
-times fewer than best of 20, in every language. The forecast is within
+The stream needs 16 times fewer exercises than random words and 2.1
+times fewer than best of 20. The forecast is within
 max(2, 25 %) in 79-87 % of cases (mean error 1.2-1.5 rounds).
 
 Limits: the typist is invented. Letters do not influence each other, there is
@@ -676,18 +650,13 @@ simulation compares strategies under the same assumptions; it does not predict
 how fast a real person learns. The variety numbers are simple proxies; how
 boring an exercise feels can only be measured with real users.
 
-## 11. Languages, layouts and word lists
+## 11. Layout and word lists
 
-**Layouts** (`data/layouts/`): English QWERTY; Polish "Programmers" (the
-standard in Poland: QWERTY, Polish letters with AltGr, e.g. AltGr + a = ą);
-Ukrainian and Russian ЙЦУКЕН. Finger zones are the same for every layout, by
-key position. AltGr letters are shown in the corner of their base key; for such
-a letter the trainer highlights the base key and the AltGr key together.
+**Layout** (`data/layouts/`): English QWERTY. Finger zones are by key position.
 
-**The system layout is not replaced.** The user switches the operating system's
-keyboard layout, as in real life (Windows: Win + Space). If the typed letter
-is not in the language's alphabet at all (for example Latin letters while
-practising Ukrainian), the app does not count a mistake but shows a hint to
+**The system layout is not replaced.** If the typed letter is not in the
+alphabet at all (for example Cyrillic letters from a Russian system layout),
+the app does not count a mistake but shows a hint to
 switch the layout. Caps Lock is detected the same way. Wrong-layout presses
 would otherwise ruin the statistics for reasons that have nothing to do with
 typing skill.
@@ -698,25 +667,18 @@ typing skill.
 (Brysbaert & New, 2009). `tools/wordlists/build.py` rebuilds the lists and
 documents every filtering step:
 
-1. lowercase; Russian ё → е;
+1. lowercase;
 2. only words made of the language's alphabet;
-3. one-letter words only if they are real words (en: a, i; pl: a, i, o, u, w, z; ...);
+3. one-letter words only if they are real words (a, i);
    learning leaves even those out (`MinWordLetters`, section 7), the lists keep them;
 4. no tokens without a vowel (encoding garbage in the source);
-5. Ukrainian: drop words more than 1.6× more frequent in the Russian list
-   (Ukrainian subtitles contain a lot of Russian text; known Russian words fall
-   between 1.7× and 2×, real shared words like "я" or "не" at about 1×);
-6. Polish: drop words more frequent in the English list (untranslated names);
-7. hand-made block lists in `tools/wordlists/block_<id>.txt`: names, places,
+5. a hand-made block list in `tools/wordlists/block_en.txt`: names, places,
    profanity, sound tags ("sighs") and fragments ("don" from "don't");
-8. keep the first 2000;
-9. a letter that is in fewer than 10 of them (the `FloorWords` of section 7)
+6. keep the first 2000;
+7. a letter that is in fewer than 10 of them (the `FloorWords` of section 7)
    gets its next most frequent words appended at the end, until it has 10.
-   This adds 9 Russian words (`ъ` was in a single word: `объяснить`) and 2
-   English ones (`z`: `zero`, `magazine`). The added words are the rarest
-   in the list for the app. Not for Polish `q`, `v`, `x` and Ukrainian `ґ`:
-   they occur only in loan words and names, and filling them brings in names
-   (`vincent`, `quinn`, `ґрегорі`).
+   This adds 2 words (`z`: `zero`, `magazine`). The added words are the rarest
+   in the list for the app.
 
 ## 12. Climb, the second mode
 

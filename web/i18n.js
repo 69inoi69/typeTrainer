@@ -38,7 +38,6 @@ const I18N = {
     "toast.importFail": "Couldn't load this file. Use one made with Export.",
     "toast.rest": "{m} minutes straight. Your fingers have earned a break.",
     "tip.stats": "Stats · Shift+Tab",
-    "tip.lang": "Alt + 1…4",
     "intro.kicker0": "Home row",
     "intro.title0": "Place your fingers on the home row",
     "intro.p0": "Left hand on <b>{l}</b>, right hand on <b>{r}</b>. Feel the bumps on <b>{f}</b> and <b>{j}</b> to find where your index fingers belong.",

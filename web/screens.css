@@ -47,11 +47,12 @@ body.tb-resulting .hints .round-only { display: none; }
 .r-fact b { font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
 .r-fact.bad b { color: var(--error); }
 .r-fact[data-tip-text] { text-decoration: underline dotted color-mix(in srgb, var(--sub) 60%, transparent); text-underline-offset: 4px; }
-.result .s1 { --sp: var(--error); }
-.result .s2 { --sp: color-mix(in srgb, var(--error) 50%, var(--accent-text)); }
-.result .s3 { --sp: var(--accent-text); }
-.result .s4 { --sp: color-mix(in srgb, var(--accent-text) 50%, var(--ok)); }
-.result .s5 { --sp: var(--ok); }
+/* speed bands, slow to fast: red is for mistakes only */
+.result .s1 { --sp: #a08cf0; }
+.result .s2 { --sp: #6fa8f5; }
+.result .s3 { --sp: #4fcfc0; }
+.result .s4 { --sp: var(--ok); }
+.result .s5 { --sp: var(--accent); }
 .r-chart { display: flex; gap: 8px; padding-bottom: 1.3em; }
 @media (max-height: 720px) and (min-width: 641px) {
   .r-body { gap: 16px; }
@@ -93,7 +94,7 @@ body.tb-resulting .hints .round-only { display: none; }
 }
 .r-w { border-radius: 4px; padding: 1px 0; cursor: default; color: var(--sp, inherit); }
 .r-w:hover, .r-w:focus-visible { background: color-mix(in srgb, var(--text) 10%, transparent); outline: none; }
-.r-w i { font-style: normal; text-decoration: underline 2px var(--error); text-underline-offset: 4px; }
+.r-w i { font-style: normal; color: var(--error); text-decoration: underline 2px var(--error); text-underline-offset: 4px; }
 .result .r-foot { display: flex; justify-content: center; margin-top: 26px; }
 .r-next {
   display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%;

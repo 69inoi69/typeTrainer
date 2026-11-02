@@ -1,7 +1,7 @@
 // The Learn panel.
 
 import { t } from "./i18n.js";
-import { $, S, store } from "./state.js";
+import { $, S } from "./state.js";
 import { getJSON } from "./api.js";
 import { learning } from "./modes.js";
 import { pickDaily } from "./settings.js";
@@ -27,22 +27,8 @@ export function compareStats(before, after) {
   return { best, mastered };
 }
 
-// ---------- milestones of the round ----------
 let bestLang = "";
-export function roundMilestone(r) {
-  bestLang = r.best ? S.lang : "";
-  const ex = S.exercise, keys = S.lastStats?.keys ?? [];
-  if (!ex) return false;
-  const flag = store.get(`tt.milestone.${S.lang}`) || "";
-  const allOpen = ex.locked.length === 0;
-  const waiting = keys.some((k) => ex.unlocked.includes(k.char) && !k.mastered);
-  const s = S.lastStats ?? {};
-  const set = (v) => { store.set(`tt.milestone.${S.lang}`, v); return true; };
-  if (r.newLap) return set("complete");
-  if (allOpen && !waiting && s.lap >= s.lastLap && flag !== "final") return set("final");
-  if (allOpen && !flag) return set("open");
-  return false;
-}
+export function roundMilestone(r) { bestLang = r.best ? S.lang : ""; }
 
 // ---------- drawing ----------
 let drawn = "";

@@ -1,9 +1,7 @@
 # Text rules
 
 How to write every text a user sees: labels, buttons, descriptions,
-tooltips, messages, the first-visit guide. All of them live in `web/i18n.js`. Only English is
-shown for now, so only English texts exist; the Polish, Ukrainian and
-Russian ones are written from them when those languages come back.
+tooltips, messages, the first-visit guide. All of them live in `web/i18n.js`.
 
 These rules apply to every change, new features included: whoever adds or
 changes something decides on their own what text it needs, how much and

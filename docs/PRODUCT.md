@@ -44,11 +44,12 @@ are thesis items and stay.
   What a round is belongs to each mode and sits in the round bar above the
   text (`web/modebar.js`). The settings window (`web/settings.js`) holds
   what applies to the whole app.
-- **The site feels cozy and answers with motion, not sentences.** Every
-  change of state gets a short, pleasant answer from the interface (a dot
-  fills, a step lights up, a letter opens). A rule that does not change is
-  spelled out once, then lives in a tooltip. Text only where nothing else
-  can say it. The motion is cheap (transform and opacity, measured).
+- **Plain defaults.** No decorative animation, dimming, glow or blur: a state
+  changes at once. What moves is what shows position: the caret, the line
+  scroll, the progress rings. Effects may come back one by one, each decided
+  on its own. A rule that does not change is spelled out once, then lives in
+  a tooltip. Text only where nothing else can say it.
+- **One language: English.** Other languages are removed, not hidden.
 - **The letter model is Learn's core.** Do not change the formulas in
   `internal/engine/model.go` or their values in `config.go` on your own: a
   silent change moves every user's progress. Explain the change, show it
@@ -57,13 +58,12 @@ are thesis items and stay.
   instead of using the algorithm, so the algorithm can be compared against
   it on real people (`docs/thesis/08-testing-and-verification.md`). Every round stores its
   group. It is never shown or offered in the interface.
-- **Try things freely**, outside the cleanup phase: build an idea, I test
-  it, we keep it or drop it.
+- **Try things freely:** build an idea, I test it, we keep it or drop it.
 
 ## Not now
 
-Leaderboards, public profile pages, more languages, more themes (there are
-two: dark and light, as CSS variables in `web/base.css`), frameworks.
+Leaderboards, public profile pages, more languages, more themes (there is
+one, dark, as CSS variables in `web/base.css`), frameworks.
 Accounts exist (sign up / log in / log out on the normal server, kept in
 PostgreSQL when it is configured). Structure code so these can be added
 later, but do not build them yet.
