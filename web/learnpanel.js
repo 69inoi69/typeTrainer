@@ -94,8 +94,7 @@ function goalState() {
   if (goalTyping && !met) goalNow = { base, need };
   goalBtn.classList.toggle("met", met);
   fillGoal(today);
-  const m = Math.floor(today / 60);
-  goalBtn.dataset.tipText = [t(met ? "lp.goalMet" : "lp.goal", { m, g: goal }), days >= 2 ? t("lp.goalDays", { n: days }) : "", t("lp.goalClick")].filter(Boolean).join(" ");
+  goalBtn.dataset.tipText = [t(met ? "lp.goalMet" : "lp.goal"), days >= 2 ? t("lp.goalDays", { n: days }) : "", t("lp.goalClick")].filter(Boolean).join(" ");
 }
 export function tickGoal() {
   if (goalBtn.hidden) return false;

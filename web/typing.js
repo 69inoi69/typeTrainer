@@ -462,20 +462,19 @@ function endWord() {
 }
 function renderProgress() {
   const time = limit.kind === "time";
-  let shown, tip;
+  let shown, tip = "";
   if (!time) {
     const words = Math.min(wordsTyped, roundWords);
     shown = `${words} / ${roundWords}`;
-    tip = t("round.words", { n: words, of: roundWords });
     const s = learning() && S.lastStats;
-    if (s?.lap) tip += `. ${t("lp.lap")} ${t("lp.lapOf", { n: s.lap + 1, all: s.lastLap + 1 })}. ${t("lp.lapTip", { w: s.targetWpm })}`;
+    if (s?.lap) tip = `${t("lp.lap")} ${t("lp.lapOf", { n: s.lap + 1, all: s.lastLap + 1 })}. ${t("lp.lapTip", { w: s.targetWpm })}`;
   } else {
     const passed = startTime === null ? 0 : (performance.now() - startTime) / 1000;
     shown = String(Math.max(0, Math.ceil(limit.n - passed)));
-    tip = t("round.seconds", { n: shown });
   }
   el.roundCount.textContent = shown;
-  el.roundCount.dataset.tipText = tip;
+  if (tip) el.roundCount.dataset.tipText = tip;
+  else delete el.roundCount.dataset.tipText;
 }
 // ---------- Tab: start the round again ----------
 export function restartRound() {
