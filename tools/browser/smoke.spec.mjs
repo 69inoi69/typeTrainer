@@ -313,13 +313,30 @@ test("key and mistake sounds are two settings, the old one splits", async ({ pag
   await openApp(page, { "tt.sound": "keys" });
   await page.keyboard.press("Escape");
   const win = page.locator("#settings-win");
-  await expect(win.locator('button[data-key="keySound"][aria-pressed="true"]')).toHaveText("Click");
+  await expect(win.locator('button[data-key="keySound"][aria-pressed="true"]')).toHaveText("Deep");
   await expect(win.locator('button[data-key="missSound"][aria-pressed="true"]')).toHaveText("Thud");
   await win.locator('button[data-key="missSound"]', { hasText: "Off" }).click();
   await expect(win.getByText("Volume"), "volume stays while keys still sound").toBeVisible();
   await win.locator('button[data-key="keySound"]', { hasText: "Off" }).click();
   await expect(win.getByText("Volume"), "no volume with every sound off").toHaveCount(0);
   expect(await page.evaluate(() => [localStorage.getItem("tt.keySound"), localStorage.getItem("tt.missSound")])).toEqual(["off", "off"]);
+});
+
+test("erasing sounds lower than typing, a whole word lower still", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__rates = [];
+    const start = AudioBufferSourceNode.prototype.start;
+    AudioBufferSourceNode.prototype.start = function (...a) { window.__rates.push(this.playbackRate.value); return start.apply(this, a); };
+  });
+  await openApp(page, { "tt.keySound": "deep", "tt.missSound": "off" });
+  for (let i = 0; i < 2; i++) await page.keyboard.type(await nextChar(page));
+  await page.keyboard.press("Backspace");
+  await page.keyboard.press("Control+Backspace");
+  await page.keyboard.press("Backspace");
+  const rates = await page.evaluate(() => window.__rates);
+  expect(rates, "two keys, one letter, one word, nothing left to erase").toHaveLength(4);
+  expect(rates[2]).toBeLessThan(Math.min(rates[0], rates[1]));
+  expect(rates[3]).toBeLessThan(rates[2]);
 });
 
 test("the settings of one screen live on that screen", async ({ page }) => {

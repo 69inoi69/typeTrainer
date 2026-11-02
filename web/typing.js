@@ -12,7 +12,7 @@ import { renderPanel, roundMilestone, compareStats, refreshActivity, tickGoal } 
 import { learning, refreshFreeplay } from "./modes.js";
 import { renderModeBar, climbAnswer } from "./modebar.js";
 import { lengthOf } from "./settings.js";
-import { keySound, missSound } from "./sound.js";
+import { keySound, missSound, eraseSound } from "./sound.js";
 import { customPortions, customRoundDone } from "./customtext.js";
 import { paceGlide, resetGlide, scrollText, stopScroll } from "./caret.js";
 import { STREAK_RISE, streakOn, cleanWord, breakStreak } from "./streak.js";
@@ -430,6 +430,7 @@ export function backspace(wholeWord) {
   } else {
     setState(--S.pos, 0);
   }
+  eraseSound(wholeWord);
   afterBackspace = true;
   highlightNextKey();
   placeCaret(false);

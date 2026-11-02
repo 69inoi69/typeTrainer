@@ -77,7 +77,7 @@ export function loadSettings() {
 function splitOldSound() {
   const old = store.get("tt.sound");
   if (old === null) return;
-  if (store.get(CHOICES.keySound.key) === null) store.set(CHOICES.keySound.key, old === "keys" ? "click" : "off");
+  if (store.get(CHOICES.keySound.key) === null) store.set(CHOICES.keySound.key, old === "keys" ? "deep" : "off");
   if (store.get(CHOICES.missSound.key) === null) store.set(CHOICES.missSound.key, old === "off" ? "off" : "thud");
 }
 function applySettings() {
