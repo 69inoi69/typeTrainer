@@ -804,15 +804,15 @@ test("Freetype and Climb show the whole round at once; Learn shows its next word
 
 test("under the text: where you stand, a thin strip over the keyboard, and typing hides it", async ({ page }) => {
   await openApp(page, { "tt.mode.en": "freetype", "tt.length.freetype": "words-10" });
-  const below = page.locator("#below");
+  const below = page.locator("#stand");
   await expect(below).toContainText("Your rounds will show up here.");
   await typeRound(page);
   await expectResult(page);
   await expect(below, "the result stands alone").toBeHidden();
   await page.keyboard.press("Enter");
   await waitForText(page);
-  await expect(below.locator(".below-chart > i")).toHaveCount(1);
-  await expect(below.locator(".below-fact b")).toHaveText(/^\d+$/);
+  await expect(below.locator(".stand-chart > i")).toHaveCount(1);
+  await expect(below.locator(".stand-fact b")).toHaveText(/^\d+$/);
   await page.keyboard.press("Alt+k");
   await expect(page.locator("#keyboard")).toBeVisible();
   expect((await below.boundingBox()).height, "a strip over the keys").toBeLessThan(50);
@@ -824,6 +824,9 @@ test("under the text: where you stand, a thin strip over the keyboard, and typin
   await expect(below, "typing leaves only the text").toBeHidden();
   await page.locator("#tab-climb").click();
   await waitForText(page);
-  await expect(page.locator("#below .step")).toHaveCount(10);
-  await expect(page.locator("#below .step.on")).toHaveText("200");
+  await expect(page.locator("#stand .step")).toHaveCount(10);
+  await expect(page.locator("#stand .step.on")).toHaveText("200");
+  await page.locator("#tab-learn").hover();
+  await expect(page.locator("#tooltip")).toHaveClass(/\bshow\b/);
+  expect((await page.locator("#tooltip").boundingBox()).height, "a tooltip under the header stays one line").toBeLessThan(50);
 });

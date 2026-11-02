@@ -232,7 +232,7 @@ function fitKeyboard() {
   if (el.keyboard.classList.contains("off")) return;
   const kb = getComputedStyle(el.keyboard);
   const kbFrame = ["paddingTop", "paddingBottom", "borderTopWidth", "borderBottomWidth"].reduce((sum, p) => sum + parseFloat(kb[p]), 0);
-  const above = Math.max(el.textBox.getBoundingClientRect().bottom, $("below").getBoundingClientRect().bottom);
+  const above = Math.max(el.textBox.getBoundingClientRect().bottom, $("stand").getBoundingClientRect().bottom);
   const rest = above + scrollY + kbFrame
     + document.querySelector(".bottom").offsetHeight + 12
     + parseFloat(getComputedStyle(document.body).paddingBottom);
