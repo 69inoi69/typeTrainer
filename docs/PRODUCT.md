@@ -5,10 +5,8 @@ changing any of them.
 
 ## What it is
 
-typeTrainer is a touch-typing trainer that looks and feels like Monkeytype
-and teaches like keybr: it tracks every letter's mistakes and speed and
-builds the next words around your weak letters. Real words only. It aims to
-be a real alternative to both, not a demo.
+typeTrainer is a touch-typing trainer. It tracks every letter's mistakes and
+speed and builds the next words around your weak letters. Real words only.
 
 The product comes first. It is also an engineering thesis (2027), a side
 quest: its material collects in `docs/thesis/`, one file per item of the
@@ -28,7 +26,7 @@ are thesis items and stay.
   snapshot and need not have every feature.
 - **The keyboard with the hands stays.** It is part of the thesis: make it
   cheap, hide it where it is not needed, never cut it.
-- **Real words only.** No generated letter combinations like keybr's.
+- **Real words only.** No generated letter combinations.
 - **A computer keyboard is needed to practise.** Phones and tablets show only
   the stats and the account: thumbs on glass would skew the letter model.
   The phone layout of the typing screen is not maintained.

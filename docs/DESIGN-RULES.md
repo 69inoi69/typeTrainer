@@ -90,7 +90,7 @@ there is a reason not to).
   tiles and records) and the logo use `--accent-big` (3:1, the contrast
   large text needs). Green (`--ok`) for mastered; red (`--error`) for
   mistakes and destructive actions. Colours are CSS variables. There is one
-  theme, dark: a light one was removed, so every colour is tuned once.
+  theme, dark.
 - Surfaces in three steps: the page (`--bg`), cards (`--panel`) and small
   things on them (`--panel-2`). Depth is `--lift` (a hairline edge and a
   short soft shadow), never a heavy shadow. Corners: `--r-sm`, `--r-md`, `--r-lg`.

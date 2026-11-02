@@ -52,8 +52,8 @@ I test by feel, on my own machine, and I do not touch the terminal.
    screen itself (`perf.mjs --bare`), caret start ≤ 40 ms and slow frames
    ≤ 15% with everything on.
 6. **Measure first, then change numbers.** No tuning without a measurement.
-7. **Comments never retell me.** A comment explains the current value; history
-   lives in git and `docs/thesis/DEVELOPMENT-LOG.md`.
+7. **Comments and docs never retell history.** They say what is true now;
+   history lives in git.
 8. **No tool for a needed check is not a reason to skip the check.** Say so.
 9. **Docs do not multiply.** Every rule and fact has one home in the files
    listed under "What to read first"; other places link to it. No new files

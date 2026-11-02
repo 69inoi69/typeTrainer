@@ -4,31 +4,27 @@ Thesis item 8: testing, and verifying that the adaptation works. How to
 check that Learn's adaptive word choice helps, beyond "it feels right":
 what is already built for it, the results so far, and where the model
 could go next. The algorithm itself is in
-[docs/HOW-THE-MODES-WORK.md](../HOW-THE-MODES-WORK.md). (This file was `EVALUATION.md`.)
+[docs/HOW-THE-MODES-WORK.md](../HOW-THE-MODES-WORK.md).
 
 ## Results so far
 
 **Adaptive against random words, in the simulation** (`go test ./tools/sim
--run TestAdaptiveBeatsRandom -v`, PR #157, 2026-10-24). Exercises of 20
+-run TestAdaptiveBeatsRandom -v`). Exercises of 20
 words until a simulated beginner meets the mastery goal on every letter;
 the same three typists for both strategies:
 
-| Language | Stream (Learn) | Random words | Random needs |
-|---|---|---|---|
-| en | 112 / 112 / 117 | 2514 / 1440 / 1791 | 13-22× more |
-| pl | 162 / 154 / 181 | 1690 / 1431 / 1403 | 8-10× more |
-| uk | 234 / 193 / 192 | 1959 / 1768 / 1962 | 8-10× more |
-| ru | 193 / 165 / 198 | not reached in 3000 / 2689 / 2391 | 12-16× more or never |
+| Stream (Learn) | Random words | Random needs |
+|---|---|---|
+| 112 / 112 / 117 | 2514 / 1440 / 1791 | 13-22× more |
 
-Rerun on 2026-10-25 (issue #153): the same numbers to the exercise.
 The test fails if random words ever need less than 3 times the practice.
 With the engine made almost random (temperature 50) it fails, so it does
 guard the claim.
 
 **Automated checks.** `go test ./...` (engine, storage on memory and on a
 real PostgreSQL in CI, the whole app through HTTP) and browser checks in a
-real Chromium (`tools/browser`, PR #156: a round in each mode, the caret,
-the result and stats screens; issue #149: a save that fails, by a lost
+real Chromium (`tools/browser`: a round in each mode, the caret,
+the result and stats screens, a save that fails, by a lost
 connection or by the server turning the round down). Coverage per package:
 [05-go-server.md](05-go-server.md).
 
@@ -61,7 +57,7 @@ http://localhost:3000/?group=random
 ```
 
 and the other half the normal address. `?group=random` puts that browser
-(or account) into the control group in every language, `?group=adaptive`
+(or account) into the control group, `?group=adaptive`
 takes it back (`web/app.js`, `POST /api/v1/group`).
 
 In the control group learning works as usual (the same letter model, the

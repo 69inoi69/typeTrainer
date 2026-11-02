@@ -2,8 +2,8 @@
 
 How the trainer decides what you type next, as the code does it now. Every
 formula here is exactly what the code does, and every number comes from
-`internal/config/config.go`. Why each part is built this way, and how it
-got there: [docs/thesis/04-adaptive-algorithm.md](thesis/04-adaptive-algorithm.md).
+`internal/config/config.go`. Why each part is built this way:
+[docs/thesis/04-adaptive-algorithm.md](thesis/04-adaptive-algorithm.md).
 
 Code: `internal/engine/model.go` (the math) and `internal/engine/generator.go`
 (unlocking and word selection). Tests that check each claim:
@@ -631,9 +631,7 @@ They are measured twice: on the **first 30 exercises** of the beginner above
 already open (every letter starts at ≤ 5 % errors and 150..350 ms) over 100
 exercises.
 
-**The numbers** (recounted in issue #153). `go run ./tools/sim` on the
-configured model; the earlier runs and what each change did are in
-`docs/thesis/04-adaptive-algorithm.md`, "Simulation runs, in order".
+**The numbers:** `go run ./tools/sim` on the configured model.
 Median exercises to the goal (20 typists), and the stream's variety:
 
 | Language | Random words | Best of 20 | Adaptive, T = 0.1 | Stream (the app) | Stream, no frequency penalty | Stream variety, first 30 | Stream variety, expert |

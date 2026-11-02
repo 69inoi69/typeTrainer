@@ -17,10 +17,3 @@ files link to them.
 6. [06-interface-finger-layout-latency.md](06-interface-finger-layout-latency.md): interface, finger layout, input latency.
 7. [07-postgresql.md](07-postgresql.md): profiles, round history, statistics.
 8. [08-testing-and-verification.md](08-testing-and-verification.md): tests, the adaptive-vs-random check, a user study.
-
-Also here:
-
-- [ALGORITHM-AUDIT.md](ALGORITHM-AUDIT.md): an outside audit of the Learn
-  algorithm as it was on 2026-10-16 (linked from item 4).
-- [DEVELOPMENT-LOG.md](DEVELOPMENT-LOG.md): how the project was built,
-  decision by decision.
