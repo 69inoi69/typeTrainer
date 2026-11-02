@@ -8,7 +8,7 @@ import { highlightNextKey, requestFit, autoKb } from "./keyboard.js";
 import { refreshStats } from "./stats.js";
 import { showResult } from "./result.js";
 import { renderLetters } from "./letters.js";
-import { renderPanel, roundMilestone, compareStats, refreshActivity, tickGoal, ringTip } from "./learnpanel.js";
+import { renderPanel, roundMilestone, compareStats, refreshActivity, tickGoal } from "./learnpanel.js";
 import { learning, refreshFreeplay } from "./modes.js";
 import { renderModeBar, climbAnswer } from "./modebar.js";
 import { lengthOf } from "./settings.js";
@@ -260,12 +260,14 @@ export async function loadExercise() {
   limit = next;
   roundWords = limit.kind === "words" ? limit.n : 0;
   appendPortions(res.portions);
-  renderProgress(true);
+  renderProgress();
   fitText();
   requestFit();
   el.textBox.classList.remove("typing");
   setTyping(false);
-  if (!el.live.classList.contains("final")) { setLive(el.wpm, 0); setLive(el.raw, 0); setLive(el.acc, 100); }
+  el.live.classList.remove("final");
+  setLive(el.wpm, 0);
+  setLive(el.acc, 100);
   highlightNextKey();
   showPortion(0);
   placeCaret(true);
@@ -314,6 +316,7 @@ export function typedWords() {
   return out;
 }
 export function roundFacts(end = lastTime) {
+  const raw = Math.round(currentRaw(end));
   const chars = { correct: 0, wrong: 0, extra: 0, missed: 0 };
   for (let i = 0; i < S.pos; i++) {
     if (state[i] === 1) chars.correct++;
@@ -322,7 +325,7 @@ export function roundFacts(end = lastTime) {
   }
   for (const list of extras.values()) chars.extra += list.length;
   const seconds = startTime === null || end === null ? 0 : (end - startTime) / 1000;
-  return { chars, seconds };
+  return { chars, seconds, raw };
 }
 const wordHasError = (start, end) =>
   state.subarray(start, end).some((s) => s >= 2) || (extras.get(end)?.length ?? 0) > 0;
@@ -349,7 +352,6 @@ export function handleChar(ch) {
   }
   if (startTime === null) {
     startTime = now;
-    el.live.classList.remove("final");
     keepTextInView();
   }
   el.textBox.classList.add("typing");
@@ -458,39 +460,26 @@ function endWord() {
   if (wordClean) cleanWord();
   wordClean = true;
 }
-const ringFill = el.roundRing.querySelector(".fill");
-let ringDone = 0, ringBack = 0;
-function renderProgress(fresh = false) {
+function renderProgress() {
   const time = limit.kind === "time";
-  let done, tip;
+  let shown, tip;
   if (!time) {
     const words = Math.min(wordsTyped, roundWords);
-    done = words / roundWords;
+    shown = `${words} / ${roundWords}`;
     tip = t("round.words", { n: words, of: roundWords });
     const s = learning() && S.lastStats;
     if (s?.lap) tip += `. ${t("lp.lap")} ${t("lp.lapOf", { n: s.lap + 1, all: s.lastLap + 1 })}. ${t("lp.lapTip", { w: s.targetWpm })}`;
   } else {
     const passed = startTime === null ? 0 : (performance.now() - startTime) / 1000;
-    done = Math.min(1, passed / limit.n);
-    tip = t("round.seconds", { n: Math.max(0, Math.ceil(limit.n - passed)) });
+    shown = String(Math.max(0, Math.ceil(limit.n - passed)));
+    tip = t("round.seconds", { n: shown });
   }
-  const ring = el.roundRing;
-  ring.classList.toggle("time", time);
-  if (!fresh && !time && done < ringDone) {
-    ring.classList.add("back");
-    clearTimeout(ringBack);
-    ringBack = setTimeout(() => ring.classList.remove("back"), 380);
-  }
-  ringDone = done;
-  ringFill.style.strokeDashoffset = String(100 - done * 100);
-  ring.setAttribute("aria-valuenow", String(Math.round(done * 100)));
-  ring.dataset.tipText = tip;
-  if (learning()) ringTip(tip);
+  el.roundCount.textContent = shown;
+  el.roundCount.dataset.tipText = tip;
 }
 // ---------- Tab: start the round again ----------
 export function restartRound() {
   if (S.busy) return;
-  el.live.classList.remove("final");
   loadExercise().catch(console.error);
 }
 
@@ -518,7 +507,6 @@ function currentAccuracy() {
 }
 function updateLive() {
   setLive(el.wpm, Math.round(currentWpm()));
-  setLive(el.raw, Math.round(currentRaw()));
   setLive(el.acc, Math.round(currentAccuracy()));
 }
 function setLive(node, n) {
@@ -572,7 +560,6 @@ async function finishRound() {
   el.live.classList.add("final");
   setTyping(false);
   setLive(el.wpm, Math.round(wpm));
-  setLive(el.raw, Math.round(currentRaw(end)));
   setLive(el.acc, Math.round(accuracy));
   if (limit.kind === "time") renderProgress();
   const typed = records.filter(Boolean);
@@ -591,7 +578,6 @@ async function finishRound() {
       res = await saveRound("/results", body);
     } catch (err) {
       learnUnsaved(err, body);
-      el.live.classList.remove("final");
       await loadExercise();
       return;
     }
@@ -602,7 +588,6 @@ async function finishRound() {
     const r = compareStats(roundBefore, S.lastStats);
     roundMilestone({ ...r, wpm, newLetter: roundNewLetter, newLap: roundNewLap });
     refreshActivity();
-    el.live.classList.remove("final");
     await loadExercise();
   } catch (err) {
     console.error(err);

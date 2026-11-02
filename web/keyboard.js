@@ -222,7 +222,6 @@ export function requestFit() {
   cancelAnimationFrame(fitFrame);
   fitFrame = requestAnimationFrame(fitKeyboard);
 }
-const lettersBar = document.querySelector("#view-type > .letters");
 let baseU = 0, baseDpr = 0;
 function fitKeyboard() {
   const root = document.documentElement.style;
@@ -230,14 +229,9 @@ function fitKeyboard() {
   if (S.view !== "type") return;
   if (el.textBox.classList.contains("resulting")) return;
   if (el.keyboard.classList.contains("off")) return;
-  const centred = getComputedStyle(el.viewType).getPropertyValue("--view-centred").trim() === "1";
   const kb = getComputedStyle(el.keyboard);
   const kbFrame = ["paddingTop", "paddingBottom", "borderTopWidth", "borderBottomWidth"].reduce((sum, p) => sum + parseFloat(kb[p]), 0);
-  const away = document.body.classList.contains("kb-nofit");
-  const above = away ? 0 : parseFloat(kb.marginTop) || 0;
-  const rest = document.querySelector(".top").offsetHeight + el.viewType.offsetHeight
-    - el.keyboard.offsetHeight - above + kbFrame
-    + (centred ? -2 * parseFloat(getComputedStyle(lettersBar).marginTop) : parseFloat(getComputedStyle(el.viewType).marginTop))
+  const rest = el.textBox.getBoundingClientRect().bottom + scrollY + kbFrame
     + document.querySelector(".bottom").offsetHeight + 12
     + parseFloat(getComputedStyle(document.body).paddingBottom);
   const room = innerHeight - rest - 4;

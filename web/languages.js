@@ -22,7 +22,6 @@ export async function loadLanguage(id) {
     S.alphabet = new Set(info.alphabet);
     document.documentElement.lang = id;
     hideWarn();
-    el.live.classList.remove("final");
     S.layout = await getJSON("/layout");
     drawKeyboard();
     drawIntroKeys();

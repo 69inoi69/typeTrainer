@@ -6,7 +6,7 @@ import { getJSON } from "./api.js";
 import { LENGTHS, lengthLabel, lengthFor, setSetting, pickDaily } from "./settings.js";
 import { ring, ringBtn } from "./minipop.js";
 import { renderLearnStats, learnStatsStale } from "./learnstats.js";
-import { freetypeUrl, toggledVariant } from "./modes.js";
+import { freetypeUrl } from "./modes.js";
 
 // ---------- the goal line ----------
 const goalPick = $("goal-pick");
@@ -270,14 +270,12 @@ async function choose(change) {
 
 const pickEl = $("stats-pick");
 function renderPick(mode, list, variant) {
-  const tab = (m, key) => `<button type="button" role="tab" data-mode="${m}" aria-selected="${m === mode}">${t(key)}</button>`;
   const ft = mode === "freetype", lists = ft && !listless(variant) ? (S.freetype?.lists ?? []) : [];
-  const kinds = ["long", ...(S.freetype?.sentences ? ["sentences"] : []), "custom"];
-  const kind = (k, on) => `<button type="button" class="wl" data-toggle="${k}" aria-pressed="${on}" data-tip-text="${t(`ft.${k}Tip`)}">${t(`ft.${k}`)}</button>`;
-  pickEl.innerHTML = `<div class="stats-modes" role="tablist" aria-label="${t("stats.modes")}">${tab("learn", "mode.learn")}${tab("climb", "mode.free")}${tab("freetype", "mode.freetype")}</div>` +
-    (ft ? `<div class="stats-lists" role="group" aria-label="${t("ft.kind")}">${kinds.map((k) => kind(k, variant === k)).join("")}</div>` : "") +
-    (lists.length ? `<div class="stats-lists" role="tablist" aria-label="${t("freetype.list")}">` + lists.map((n) =>
-      `<button type="button" role="tab" class="wl" data-list="${n}" aria-selected="${n === list}" data-tip-text="${t("freetype.listN", { n })}">${listLabel(n)}</button>`).join("") + `</div>` : "");
+  const kinds = ["", "long", ...(S.freetype?.sentences ? ["sentences"] : []), "custom"];
+  pickEl.innerHTML = ring(t("stats.modes"), [["learn", "mode.learn"], ["climb", "mode.free"], ["freetype", "mode.freetype"]].map(([m, key]) =>
+    ringBtn(`data-mode="${m}"`, t(key), m === mode))) +
+    (ft ? ring(t("ft.kind"), kinds.map((k) => ringBtn(`data-variant="${k}"`, t(k ? `ft.${k}` : "ft.words"), variant === k, k ? t(`ft.${k}Tip`) : ""))) : "") +
+    (lists.length ? ring(t("freetype.list"), lists.map((n) => ringBtn(`data-list="${n}"`, listLabel(n), n === list, t("freetype.listN", { n })))) : "");
 }
 document.getElementById("activity").addEventListener("click", (e) => {
   const g = e.target.closest(".act-goal");
@@ -294,7 +292,7 @@ pickEl.addEventListener("click", (e) => {
   b.blur();
   if (b.dataset.mode && b.dataset.mode !== pick.mode) choose({ mode: b.dataset.mode, list: pick.list || S.freetypeList, length: lengthFor(b.dataset.mode) }).catch(console.error);
   if (b.dataset.list && Number(b.dataset.list) !== pick.list) choose({ list: Number(b.dataset.list) }).catch(console.error);
-  if (b.dataset.toggle) choose({ variant: toggledVariant(pick.variant, b.dataset.toggle) }).catch(console.error);
+  if (b.dataset.variant !== undefined && b.dataset.variant !== pick.variant) choose({ variant: b.dataset.variant }).catch(console.error);
 });
 
 // ---------- one round length at a time ----------

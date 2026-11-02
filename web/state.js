@@ -5,7 +5,7 @@ export const $ = (id) => document.getElementById(id);
 export const el = {
   textBox: $("text-box"), text: $("text"), caret: $("caret"), input: $("hidden-input"),
   keyboard: $("keyboard"), hint: $("finger-hint"),
-  live: $("live"), wpm: $("wpm"), raw: $("raw"), acc: $("acc"), roundRing: $("round-ring"),
+  live: $("live"), wpm: $("wpm"), acc: $("acc"), roundCount: $("round-count"),
   letters: $("letters"),
   tooltip: $("tooltip"),
   hands: $("hands"),

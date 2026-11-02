@@ -104,6 +104,7 @@ const ROWS = [
     choice("caret", id, `<i class="cs ${id}"></i>${t("settings." + id)}`, S.settings.caret === id))) },
   { group: "settings.look", name: "settings.glide", ctl: () => pick("glide", (v) => t("settings.glide_" + v)) },
   { group: "settings.look", name: "settings.live", desc: "settings.liveDesc", ctl: () => onOff("live", S.settings.live) },
+  { group: "settings.look", name: "settings.streak", desc: "settings.streakDesc", ctl: () => onOff("streak", S.settings.streak) },
   { group: "settings.typing", name: "settings.stop", desc: "settings.stopDesc", ctl: () => onOff("stop", S.settings.stop) },
   { group: "settings.typing", name: "settings.sound", ctl: () => pick("sound", (v) => t("settings.sound_" + v)) },
   { group: "settings.typing", name: "settings.volume", ctl: () => pick("volume", (v) => v + "%"), show: () => S.settings.sound !== "off" },

@@ -9,7 +9,7 @@ import { introKey } from "./intro.js";
 import { profileOpen, closeProfile } from "./profile.js";
 import { resultOpen, closeResult } from "./result.js";
 import { settingsOpen, openSettings, onSettingsClose, onGoalChange, onTypingLook, onSoundPick, setLength, setSetting } from "./settings.js";
-import { setMode, refreshFreeplay, renderNav, setFreetypeList, setFreetypeVariant, toggledVariant } from "./modes.js";
+import { setMode, refreshFreeplay, renderNav, setFreetypeList, setFreetypeVariant } from "./modes.js";
 import { openCustomText, hasCustomText } from "./customtext.js";
 import { onBarPick, renderModeBar } from "./modebar.js";
 import { renderLetters } from "./letters.js";
@@ -58,13 +58,11 @@ function chooseMode(m) {
   if (m !== S.mode) {
     if (resultOpen()) {
       setMode(m);
-      el.live.classList.remove("final");
       closeResult();
     } else if (S.busy) {
       return;
     } else {
       setMode(m);
-      el.live.classList.remove("final");
       loadExercise().catch(console.error);
     }
   }
@@ -79,11 +77,10 @@ document.getElementById("logo").addEventListener("click", () => {
 });
 async function barPick(pick) {
   if (S.busy && !resultOpen()) return;
-  if (pick.edit || (pick.toggle === "custom" && S.freetypeVariant !== "custom" && !hasCustomText())) {
+  if (pick.edit || (pick.variant === "custom" && !hasCustomText())) {
     openCustomText(() => barPick({ variant: "custom" }).catch(console.error));
     return;
   }
-  if (pick.toggle) pick.variant = toggledVariant(S.freetypeVariant, pick.toggle);
   if (pick.variant !== undefined) await setFreetypeVariant(pick.variant);
   if (pick.list) await setFreetypeList(pick.list);
   if (pick.level) { S.climbLevel = pick.level; renderLetters(); }
@@ -92,7 +89,6 @@ async function barPick(pick) {
     await Promise.all([refreshStats(), refreshFreeplay()]);
   }
   renderModeBar();
-  el.live.classList.remove("final");
   if (resultOpen()) closeResult();
   else loadExercise().catch(console.error);
 }

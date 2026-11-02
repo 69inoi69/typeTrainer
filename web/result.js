@@ -33,6 +33,7 @@ export function showResult(r) {
   const facts = [];
   if (r.consistency != null) facts.push(fact(`<b>${Math.round(r.consistency)}%</b> ${t("result.cons")}`, "", "result.consTip"));
   if (r.seconds != null) facts.push(fact(`<b>${Math.round(r.seconds)}</b>${t("result.sec")}`));
+  if (r.raw != null) facts.push(fact(`<b>${r.raw}</b> ${t("result.raw")}`, "", "tip.raw"));
   if (r.chars) {
     const c = r.chars;
     facts.push(fact(`<b>${c.correct}</b> ${t("result.correct")}`));

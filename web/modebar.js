@@ -2,37 +2,26 @@
 
 import { t } from "./i18n.js";
 import { $, S, listLabel, levelWords, listless, store } from "./state.js";
-import { LENGTHS, lengthOf, lengthLabel, setSetting } from "./settings.js";
+import { LENGTHS, lengthOf, lengthLabel } from "./settings.js";
 import { hasCustomText } from "./customtext.js";
 import { ring, ringBtn } from "./minipop.js";
 
-const bar = $("mode-bar"), roundRing = $("round-ring"), learnLive = $("lp-live");
-const [wpmM, rawM, accM] = ["wpm", "raw", "acc"].map((id) => $(id).parentElement);
+const bar = $("mode-bar"), note = $("climb-note");
 
 export function renderModeBar() {
   const cur = S.settings.length;
   const parts = [];
-  const learn = S.mode === "learn";
-  bar.hidden = learn;
-  if (learn) {
+  note.hidden = true;
+  bar.hidden = S.mode === "learn";
+  if (bar.hidden) {
     bar.innerHTML = "";
-    learnLive.append(wpmM, accM);
-    $("goal-ring").append(roundRing);
     return;
   }
-  if (wpmM.parentElement === learnLive) {
-    rawM.before(wpmM);
-    rawM.after(accM);
-  }
-  let steps = "";
-  if (S.mode === "climb" && S.climb?.levels) {
-    steps = climbSteps();
-    parts.push(climbStatus());
-  }
+  if (S.mode === "climb" && S.climb?.levels) parts.push(climbStatus(), climbLevels());
   if (S.mode === "freetype") {
     const v = S.freetypeVariant;
-    const kinds = ["long", ...(S.freetype?.sentences ? ["sentences"] : []), "custom"].map((k) =>
-      ringBtn(`data-toggle="${k}"`, t(`ft.${k}`), v === k, t(`ft.${k}Tip`)));
+    const kinds = ["", "long", ...(S.freetype?.sentences ? ["sentences"] : []), "custom"].map((k) =>
+      ringBtn(`data-variant="${k}"`, t(k ? `ft.${k}` : "ft.words"), v === k, k ? t(`ft.${k}Tip`) : ""));
     if (v === "custom" && hasCustomText()) kinds.push(ringBtn(`data-edit="1"`, t("ft.edit"), false));
     parts.push(ring(t("ft.kind"), kinds));
     if (!listless(v)) parts.push(ring(t("freetype.list"), (S.freetype?.lists ?? []).map((n) =>
@@ -44,20 +33,15 @@ export function renderModeBar() {
     ringBtn(`data-length="${k}-30"`, t(k === "words" ? "settings.words" : "settings.time"), k === kind))));
   end.push(ring(t("bar.length"), LENGTHS.filter((id) => lengthOf(id).kind === kind).map((id) =>
     ringBtn(`data-length="${id}"`, String(lengthOf(id).n), id === cur, lengthLabel(id)))));
-  if (S.mode === "freetype") end.push(ring(t("settings.streak"), [ringBtn(`data-streak="1"`, t("settings.streak"), S.settings.streak, t("settings.streakDesc"))]));
-  bar.innerHTML = steps + `<span class="bar-side">${parts.join("")}</span><span class="bar-side">${end.join("")}</span>`;
-  bar.lastElementChild.prepend(roundRing);
+  bar.innerHTML = `<span class="bar-side">${parts.join("")}</span><span class="bar-side">${end.join("")}</span>`;
 }
 
-// ---------- Climb: the levels as steps, and where you stand ----------
+// ---------- Climb: the levels, and where you stand ----------
 const kLabel = (n) => n >= 1000 ? `${Math.round(n / 500) / 2}k` : String(n);
-function climbSteps() {
-  const c = S.climb, at = S.climbLevel ?? c.place?.level, reached = c.place?.level ?? 0;
-  return `<div class="steps" role="group" aria-label="${t("climb.level")}">` + c.levels.map((n, i) => {
-    const l = i + 1, cls = l === at ? " on" : l <= reached ? " past" : "";
-    return `<button type="button" class="step${cls}" data-level="${l}" aria-pressed="${l === at}" style="--i:${i}" ` +
-      `aria-label="${t("climb.level")} ${l}" data-tip-text="${t("climb.levelTip", { words: levelWords(l) })}"><i></i>${kLabel(n)}</button>`;
-  }).join("") + `</div>`;
+function climbLevels() {
+  const c = S.climb, at = S.climbLevel ?? c.place?.level;
+  return ring(t("climb.level"), c.levels.map((n, i) =>
+    ringBtn(`data-level="${i + 1}" aria-label="${t("climb.level")} ${i + 1}"`, kLabel(n), i + 1 === at, t("climb.levelTip", { words: levelWords(i + 1) }))));
 }
 const SEEN = "tt.climbSeen";
 function climbStatus() {
@@ -71,9 +55,10 @@ function climbStatus() {
   const words = t("climb.levelTip", { words: levelWords(level) });
   const rule = level < top ? t("climb.words", { up: c.passesUp, pass: c.passAccuracy }) : t("climb.top");
   const tip = [words + ".", rule, slip ? t("climb.slip", { fail: c.failAccuracy, prev: level - 1 }) : t("climb.ruleTip", { fail: c.failAccuracy })].join(" ");
-  const intro = store.get(SEEN) ? "" : `<span class="climb-words">${words}</span><span class="climb-note">${rule}</span>`;
+  note.hidden = !!store.get(SEEN);
+  note.textContent = `${words}. ${rule}`;
   return `<span class="climb-status" tabindex="0" data-tip-text="${tip}">` +
-    `<span>${t("climb.level")} <b>${level}</b></span>${pips}${intro}</span>`;
+    `<span>${t("climb.level")} <b>${level}</b></span>${pips}</span>`;
 }
 
 export function climbAnswer() {
@@ -87,11 +72,10 @@ const onClick = (e) => {
   const b = e.target.closest("button");
   if (!b) return;
   b.blur();
-  if (b.dataset.toggle) return pickListener({ toggle: b.dataset.toggle });
   if (b.dataset.edit) return pickListener({ edit: true });
-  if (b.dataset.streak) { setSetting("streak", S.settings.streak ? "" : "1"); return renderModeBar(); }
   if (b.getAttribute("aria-pressed") === "true") return;
-  if (b.dataset.list) pickListener({ list: Number(b.dataset.list) });
+  if (b.dataset.variant !== undefined) pickListener({ variant: b.dataset.variant });
+  else if (b.dataset.list) pickListener({ list: Number(b.dataset.list) });
   else if (b.dataset.level) pickListener({ level: Number(b.dataset.level) });
   else if (b.dataset.length) pickListener({ length: b.dataset.length });
 };
