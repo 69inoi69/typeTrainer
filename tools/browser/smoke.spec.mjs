@@ -68,7 +68,7 @@ test("Learn: the line over the text holds the last round, the daily goal and the
   await expect(last.locator("[data-n]")).toHaveCount(2);
   await expect(last.locator("[data-n]").first()).toHaveAttribute("data-n", /^[1-9]\d*$/);
   await expect(last).toHaveAttribute("data-tip-text", /^Your last round\. .*faster/);
-  await expect(goal).toHaveText(/^\d+ \/ 15 min$/);
+  await expect(goal, "minutes and seconds").toHaveText(/^(\d+:\d\d of 15:00|15:00 done)$/);
   await expect(goal).toHaveAttribute("data-tip-text", /Daily goal/);
   await expect(page.locator("#letters .locked.next").first()).toHaveAttribute("data-tip-text", /rounds? away\. Mastered means/);
   await goal.click();
@@ -84,7 +84,8 @@ test("Learn: a best round's speed is gold, the letters change state without moti
     m.renderPanel();
   });
   await expect(page.locator("#lp-cols .lp-last .lp-best"), "a best round's speed stands out").toHaveCount(1);
-  expect(await page.evaluate(() => document.getAnimations().length), "nothing runs on the screen").toBe(0);
+  expect(await page.evaluate(() => document.getAnimations().filter((x) => !x.effect.target.closest(".ambient")).length),
+    "nothing runs on the screen but the falling keycaps").toBe(0);
 });
 
 test("Learn: while typing this round's numbers take the last round's place, nothing moves", async ({ page }) => {
@@ -274,7 +275,7 @@ test("the caret is still at rest, spaces have a dot, the settings are fewer", as
   await expect(page.getByText("Space marks")).toHaveCount(0);
   const names = await page.locator("#settings-win .sw-name").allTextContents();
   expect(names, "only what holds for the whole site").toEqual(["Caret", "Caret movement",
-    "Live stats", "Streak", "Stop on a mistake", "Sounds", "Break reminder", "Progress data", "Reset progress"]);
+    "Live stats", "Streak", "Falling keycaps", "Stop on a mistake", "Sounds", "Progress data", "Reset progress"]);
   await expect(page.locator("#settings-win input[type=text]"), "no search").toHaveCount(0);
   const preview = page.locator("#settings-win .sw-preview");
   await expect(preview, "the preview next to Caret").toBeVisible();
@@ -284,6 +285,28 @@ test("the caret is still at rest, spaces have a dot, the settings are fewer", as
   await expect(preview, "no preview on Live stats").toBeHidden();
   const list = await page.locator("#settings-win .sw-list").evaluate((l) => l.scrollHeight <= l.clientHeight);
   expect(list, "every row fits without scrolling").toBe(true);
+});
+
+test("the falling keycaps are on by default, the settings switch turns them off for good", async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await openApp(page);
+  const layer = page.locator(".ambient");
+  await expect(layer).toHaveAttribute("data-kind", "keys");
+  await expect(page.locator(".ambient > i").first()).toBeAttached();
+  const playing = () => page.evaluate(() => document.querySelector(".ambient").getAnimations({ subtree: true }).filter((a) => a.playState === "running").length);
+  expect(await playing(), "they fall at rest").toBeGreaterThan(0);
+  await page.keyboard.type((await nextChar(page)) ?? "");
+  await expect.poll(playing, { message: "they hold still while you type" }).toBe(0);
+  await page.keyboard.press("Escape");
+  const row = page.locator("#settings-win .sw-row", { hasText: "Falling keycaps" });
+  await row.getByRole("button", { name: "Off" }).click();
+  await expect(layer).toHaveAttribute("data-kind", "off");
+  await expect(page.locator(".ambient > *")).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem("tt.bg"))).toBe("off");
+  await page.reload();
+  await waitForText(page);
+  await expect(layer).toHaveAttribute("data-kind", "off");
+  await expect(page.locator(".ambient > *")).toHaveCount(0);
 });
 
 test("the settings of one screen live on that screen", async ({ page }) => {
@@ -606,7 +629,7 @@ test("no text on the typing, result, settings and stats screens is smaller than 
     const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     for (let n; (n = w.nextNode());) {
       const el = n.parentElement;
-      if (!n.textContent.trim() || !el.checkVisibility({ visibilityProperty: true }) || el.closest("#keyboard, .logo")) continue;
+      if (!n.textContent.trim() || !el.checkVisibility({ visibilityProperty: true }) || el.closest("#keyboard, .logo, .ambient")) continue;
       const fs = parseFloat(getComputedStyle(el).fontSize);
       if (fs < 13.95) out.add(`${el.tagName.toLowerCase()}.${el.className} ${fs}px "${n.textContent.trim().slice(0, 20)}"`);
     }

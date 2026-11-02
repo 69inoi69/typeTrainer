@@ -33,7 +33,6 @@ const CHOICES = {
   glide: { key: "tt.glide", values: ["smooth", "jump"], def: "smooth" },
   sound: { key: "tt.sound", values: ["off", "errors", "keys"], def: "off" },
   volume: { key: "tt.volume", values: ["25", "50", "75", "100"], def: "50" },
-  rest: { key: "tt.rest", values: ["0", "20", "30", "45", "60"], def: "0" },
 };
 const SWITCHES = {
   stop: { key: "tt.stop", on: false },
@@ -55,6 +54,7 @@ export function loadSettings() {
   S.settings.length = lengthFor(S.mode);
   S.settings.live = store.get("tt.live") !== "0";
   S.settings.streak = store.get("tt.streak.free") === "1";
+  S.settings.bg = store.get("tt.bg") === "off" ? "off" : "keys";
   const caret = store.get("tt.caret");
   S.settings.caret = CARETS.includes(caret) ? caret : "line";
   S.settings.goal = goalOf(store.get("tt.goal"));
@@ -82,6 +82,8 @@ let goalListener = () => {};
 export function onGoalChange(fn) { goalListener = fn; }
 let typingListener = () => {};
 export function onTypingLook(fn) { typingListener = fn; }
+let bgListener = () => {};
+export function onBgChange(fn) { bgListener = fn; }
 
 // ---------- the window ----------
 const win = $("settings-win"), btn = $("btn-settings"), body = $("settings-body");
@@ -105,10 +107,10 @@ const ROWS = [
   { group: "settings.look", name: "settings.glide", ctl: () => pick("glide", (v) => t("settings.glide_" + v)) },
   { group: "settings.look", name: "settings.live", desc: "settings.liveDesc", ctl: () => onOff("live", S.settings.live) },
   { group: "settings.look", name: "settings.streak", desc: "settings.streakDesc", ctl: () => onOff("streak", S.settings.streak) },
+  { group: "settings.look", name: "settings.bg", desc: "settings.bgDesc", ctl: () => onOff("bg", S.settings.bg !== "off") },
   { group: "settings.typing", name: "settings.stop", desc: "settings.stopDesc", ctl: () => onOff("stop", S.settings.stop) },
   { group: "settings.typing", name: "settings.sound", ctl: () => pick("sound", (v) => t("settings.sound_" + v)) },
   { group: "settings.typing", name: "settings.volume", ctl: () => pick("volume", (v) => v + "%"), show: () => S.settings.sound !== "off" },
-  { group: "settings.typing", name: "settings.rest", desc: "settings.restDesc", ctl: () => pick("rest", (v) => (v === "0" ? t("settings.off") : t("settings.min", { n: v }))) },
   { group: null, name: "settings.data", desc: "settings.dataDesc", ctl: () => action("btn-export", "export", "data.save") + action("btn-import", "import", "data.load") },
   { group: null, name: "settings.danger", desc: "settings.dangerDesc", ctl: () => action("btn-reset", "trash", "data.reset", "btn danger") },
 ];
@@ -148,6 +150,10 @@ export function setSetting(key, value) {
   } else if (key === "streak") {
     S.settings.streak = value === "1";
     store.set("tt.streak.free", value === "1" ? "1" : "0");
+  } else if (key === "bg") {
+    S.settings.bg = value === "1" ? "keys" : "off";
+    store.set("tt.bg", S.settings.bg);
+    bgListener(true);
   } else if (key === "caret") {
     S.settings.caret = value;
     store.set("tt.caret", value);

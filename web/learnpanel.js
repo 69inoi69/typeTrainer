@@ -79,7 +79,14 @@ const dayKey = (back) => {
   d.setDate(d.getDate() - back);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
-const fillGoal = (today) => { goalBtn.textContent = t("lp.goalShort", { m: Math.floor(today / 60), g: S.settings.daily }); };
+const clock = (seconds) => {
+  const s = Math.floor(seconds);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+};
+const fillGoal = (today) => {
+  const g = clock(S.settings.daily * 60);
+  goalBtn.textContent = today >= S.settings.daily * 60 ? t("lp.goalDone", { g }) : t("lp.goalShort", { m: clock(today), g });
+};
 function goalState() {
   goalNow = null;
   goalTyping = document.body.classList.contains("typing-now");

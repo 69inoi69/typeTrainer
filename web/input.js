@@ -8,17 +8,19 @@ import { checkCaps } from "./warn.js";
 import { introKey } from "./intro.js";
 import { profileOpen, closeProfile } from "./profile.js";
 import { resultOpen, closeResult } from "./result.js";
-import { settingsOpen, openSettings, onSettingsClose, onGoalChange, onTypingLook, onSoundPick, setLength, setSetting } from "./settings.js";
+import { settingsOpen, openSettings, onSettingsClose, onGoalChange, onBgChange, onTypingLook, onSoundPick, setLength, setSetting } from "./settings.js";
 import { setMode, refreshFreeplay, renderNav, setFreetypeList, setFreetypeVariant } from "./modes.js";
 import { openCustomText, hasCustomText } from "./customtext.js";
 import { onBarPick, renderModeBar } from "./modebar.js";
 import { renderLetters } from "./letters.js";
 import { renderPanel } from "./learnpanel.js";
+import { buildAmbient } from "./ambient.js";
 import { keySound } from "./sound.js";
 import { questOpen, questKey } from "./mascot.js";
 import "./share.js";
 
 window.addEventListener("resize", () => {
+  buildAmbient();
   fitText();
   requestFit();
   placeCaret(true);
@@ -94,6 +96,7 @@ async function barPick(pick) {
 }
 onBarPick(barPick);
 
+onBgChange(buildAmbient);
 onTypingLook(() => {
   fitText();
   requestFit();

@@ -566,7 +566,6 @@ async function finishRound() {
     await queue;
     streamId++;
     if (!typed.length) { await loadExercise(); return; }
-    restCheck((end - startTime) / 1000);
     if (S.mode === "climb") { await finishFree(wpm, accuracy, typed, fullSeconds(end)); return; }
     if (S.mode === "freetype") { await finishFreetype(wpm, accuracy, typed, fullSeconds(end)); return; }
     const body = { samples, keys: typed, chars: typed.length, wpm, accuracy, perSecond: fullSeconds(end), length: S.settings.length, device: device(), round: roundId() };
@@ -610,20 +609,6 @@ function learnUnsaved(err, body) {
       FX.toast(t("save.done"));
     }, (again) => learnUnsaved(again, body));
   });
-}
-
-const REST_BREAK_MS = 5 * 60 * 1000;
-let restTyped = 0, restAt = 0;
-function restCheck(seconds) {
-  const now = Date.now();
-  if (now - restAt - seconds * 1000 > REST_BREAK_MS) restTyped = 0;
-  restAt = now;
-  restTyped += seconds;
-  const limit = Number(S.settings.rest);
-  if (limit && restTyped >= limit * 60) {
-    restTyped = 0;
-    FX.toast(t("toast.rest", { m: limit }));
-  }
 }
 
 const device = () => (isTouch() ? "touch" : "keyboard");

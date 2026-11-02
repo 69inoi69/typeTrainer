@@ -39,8 +39,8 @@ export const S = {
   freetypeList: 0,
   freetypeVariant: "",
   climbLevel: null,
-  settings: { length: "words-30", live: false, caret: "line", streak: false, bg: "off", goal: 0, daily: 15,
-    glide: "smooth", sound: "off", volume: "50", rest: "0",
+  settings: { length: "words-30", live: false, caret: "line", streak: false, bg: "keys", goal: 0, daily: 15,
+    glide: "smooth", sound: "off", volume: "50",
     stop: false, nextKey: true, hand: true },
   kbHidden: false,
 };

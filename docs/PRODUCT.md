@@ -45,7 +45,7 @@ are thesis items and stay.
 - **Plain defaults.** No decorative animation, dimming, glow or blur: a state
   changes at once. What moves is what shows position: the caret and the line
   scroll. The on-screen keyboard keeps its keycap look and its lit next key. Effects may come back one by one, each decided
-  on its own. A rule that does not change is spelled out once, then lives in
+  on its own; back so far: the falling keycaps in the empty sides, on by default, still while you type. A rule that does not change is spelled out once, then lives in
   a tooltip. Text only where nothing else can say it.
 - **One language: English.** Other languages are removed, not hidden.
 - **The letter model is Learn's core.** Do not change the formulas in

@@ -57,7 +57,7 @@ body.typing-now .mascot { opacity: 0; visibility: hidden; }
 }
 .live-right { margin-left: auto; display: flex; align-items: center; gap: 18px; color: var(--label); font-size: var(--fs-s); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .round-count { color: var(--text); cursor: default; }
-.goal-count { padding: 0; border: 0; background: none; color: var(--label); font: inherit; cursor: pointer; }
+.goal-count { padding: 0; border: 0; background: none; color: var(--label); font: inherit; font-variant-numeric: tabular-nums; cursor: pointer; }
 .goal-count:hover { color: var(--text); background: none; }
 .goal-count.met { color: var(--ok); }
 /* the round's numbers show from its first key; at rest their place stays empty (#241) */
