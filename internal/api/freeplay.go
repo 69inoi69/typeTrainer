@@ -193,7 +193,12 @@ func (s *Server) handleFreeplayStats(w http.ResponseWriter, r *http.Request, use
 	for i := range levels {
 		levels[i] = l.Free.MaxRank(i+1, p)
 	}
-	out["place"], out["levels"] = at, levels
+	weak, err := s.weakPairs(user, l)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	out["place"], out["levels"], out["weak"] = at, levels, weak
 	out["passesUp"], out["failsDown"], out["passAccuracy"], out["failAccuracy"] = p.PassesUp, p.FailsDown, p.PassAccuracy, p.FailAccuracy
 	writeJSON(w, http.StatusOK, out)
 }

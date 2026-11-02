@@ -6,13 +6,14 @@ import { LENGTHS, lengthOf, lengthLabel } from "./settings.js";
 import { hasCustomText } from "./customtext.js";
 import { ring, ringBtn } from "./minipop.js";
 
-const bar = $("mode-bar"), note = $("climb-note");
+const bar = $("mode-bar"), note = $("climb-note"), below = $("below");
 
 export function renderModeBar() {
   const cur = S.settings.length;
   const parts = [];
   note.hidden = true;
   bar.hidden = S.mode === "learn";
+  below.innerHTML = S.mode === "climb" ? climbBelow() : S.mode === "freetype" ? freetypeBelow() : "";
   if (bar.hidden) {
     bar.innerHTML = "";
     return;
@@ -43,6 +44,32 @@ function climbLevels() {
   return ring(t("climb.level"), c.levels.map((n, i) =>
     ringBtn(`data-level="${i + 1}" aria-label="${t("climb.level")} ${i + 1}"`, kLabel(n), i + 1 === at, t("climb.levelTip", { words: levelWords(i + 1) }))));
 }
+function climbBelow() {
+  const c = S.climb;
+  if (!c?.levels) return "";
+  const at = S.climbLevel ?? c.place?.level, reached = c.place?.level ?? 0;
+  const steps = c.levels.map((n, i) => {
+    const l = i + 1, cls = l === at ? " on" : l <= reached ? " past" : "";
+    return `<span class="step${cls}" style="--i:${i}"><i></i>${kLabel(n)}</span>`;
+  }).join("");
+  const weak = c.weak?.length ? `<p class="below-fact" tabindex="0" data-tip-text="${t("climb.weakTip")}"><small>${t("climb.weak")}</small><b>${c.weak.map((w) => w.pair).join(" ")}</b></p>` : "";
+  return `<div class="steps">${steps}</div>${weak}`;
+}
+
+// ---------- Freetype: the best and the last rounds of this list and length ----------
+const LAST_ROUNDS = 20;
+function freetypeBelow() {
+  const f = S.freetype;
+  if (!f) return "";
+  const rounds = (f.sessions ?? []).slice(0, LAST_ROUNDS).reverse();
+  if (!rounds.length) return `<p class="below-none">${t("below.none")}</p>`;
+  const best = f.bests?.[S.settings.length]?.wpm ?? Math.max(...rounds.map((r) => r.wpm));
+  const top = Math.max(best, ...rounds.map((r) => r.wpm));
+  const bars = rounds.map((r) => `<i style="height:${Math.max(4, r.wpm / top * 100).toFixed(1)}%" data-tip-text="${t("result.wordWpm", { wpm: Math.round(r.wpm) })}"></i>`).join("");
+  return `<p class="below-fact"><small>${t("below.best")}</small><b>${Math.round(best)}</b></p>` +
+    `<div class="below-chart" role="img" aria-label="${t("below.last", { n: rounds.length })}">${bars}</div>`;
+}
+
 const SEEN = "tt.climbSeen";
 function climbStatus() {
   const c = S.climb, level = S.climbLevel ?? c.place?.level, top = c.levels.length;

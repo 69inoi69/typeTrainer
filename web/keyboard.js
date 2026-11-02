@@ -209,6 +209,7 @@ export function toggleKb() {
   if (isTouch()) return;
   store.set("tt.kb." + S.mode, S.kbHidden ? "on" : "off");
   autoKb();
+  highlightNextKey();
 }
 function setOff(hide) {
   el.keyboard.classList.toggle("off", hide);

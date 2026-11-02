@@ -136,7 +136,7 @@ const I18N = {
     "bar.kind": "Round ends after", "bar.length": "Length",
     "freetype.listN": "The {n} most common words",
     "ft.kind": "Kind of text",
-    "ft.words": "Words", "ft.long": "Long", "ft.longTip": "Only long words, 6 letters or more. They get their own stats.",
+    "below.best": "Best", "below.last": "Last {n} rounds", "below.none": "Your rounds will show up here.", "ft.words": "Words", "ft.long": "Long", "ft.longTip": "Only long words, 6 letters or more. They get their own stats.",
     "ft.sentences": "Sentences", "ft.sentencesTip": "Real sentences with punctuation. They get their own stats.",
     "ft.custom": "Custom", "ft.customTip": "Type your own text, round after round.",
     "ft.edit": "Edit",
