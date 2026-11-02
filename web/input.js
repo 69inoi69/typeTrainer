@@ -15,7 +15,7 @@ import { onBarPick, renderModeBar } from "./modebar.js";
 import { renderLetters } from "./letters.js";
 import { renderPanel } from "./learnpanel.js";
 import { buildAmbient } from "./ambient.js";
-import { keySound } from "./sound.js";
+import { keySound, missSound } from "./sound.js";
 import { questOpen, questKey } from "./mascot.js";
 import "./share.js";
 
@@ -103,7 +103,7 @@ onTypingLook(() => {
   placeCaret(true);
   highlightNextKey();
 });
-onSoundPick((mode) => keySound(mode !== "errors", mode));
+onSoundPick((key) => (key === "missSound" || S.settings.keySound === "off" ? missSound() : keySound()));
 
 onGoalChange(() => {
   renderPanel();

@@ -3,6 +3,7 @@
 import { t } from "./i18n.js";
 import { $, S, store, isTouch } from "./state.js";
 import { openPop, ring, ringBtn } from "./minipop.js";
+import { KEY_SOUNDS, MISS_SOUNDS } from "./sound.js";
 
 export const LENGTHS = ["words-10", "words-20", "words-30", "words-40", "words-50", "time-15", "time-30", "time-60", "time-90"];
 const DEFAULT_LENGTH = "words-30";
@@ -31,7 +32,8 @@ export const DAILY = [0, 5, 10, 15, 20, 30, 45, 60];
 const DAILY_DEFAULT = 15;
 const CHOICES = {
   glide: { key: "tt.glide", values: ["smooth", "jump"], def: "smooth" },
-  sound: { key: "tt.sound", values: ["off", "errors", "keys"], def: "off" },
+  keySound: { key: "tt.keySound", values: KEY_SOUNDS, def: "off" },
+  missSound: { key: "tt.missSound", values: MISS_SOUNDS, def: "off" },
   volume: { key: "tt.volume", values: ["25", "50", "75", "100"], def: "50" },
 };
 const SWITCHES = {
@@ -60,6 +62,7 @@ export function loadSettings() {
   S.settings.goal = goalOf(store.get("tt.goal"));
   const daily = store.get("tt.daily");
   S.settings.daily = daily !== null && DAILY.includes(Number(daily)) ? Number(daily) : DAILY_DEFAULT;
+  splitOldSound();
   for (const [name, c] of Object.entries(CHOICES)) {
     const v = store.get(c.key);
     S.settings[name] = c.values.includes(v) ? v : c.def;
@@ -69,6 +72,13 @@ export function loadSettings() {
     S.settings[name] = v === null ? w.on : v === "1";
   }
   applySettings();
+}
+// The old single "tt.sound" (off / errors / keys) becomes the two settings.
+function splitOldSound() {
+  const old = store.get("tt.sound");
+  if (old === null) return;
+  if (store.get(CHOICES.keySound.key) === null) store.set(CHOICES.keySound.key, old === "keys" ? "click" : "off");
+  if (store.get(CHOICES.missSound.key) === null) store.set(CHOICES.missSound.key, old === "off" ? "off" : "thud");
 }
 function applySettings() {
   document.body.classList.toggle("live-off", !S.settings.live);
@@ -109,8 +119,10 @@ const ROWS = [
   { group: "settings.look", name: "settings.streak", desc: "settings.streakDesc", ctl: () => onOff("streak", S.settings.streak) },
   { group: "settings.look", name: "settings.bg", desc: "settings.bgDesc", ctl: () => onOff("bg", S.settings.bg !== "off") },
   { group: "settings.typing", name: "settings.stop", desc: "settings.stopDesc", ctl: () => onOff("stop", S.settings.stop) },
-  { group: "settings.typing", name: "settings.sound", ctl: () => pick("sound", (v) => t("settings.sound_" + v)) },
-  { group: "settings.typing", name: "settings.volume", ctl: () => pick("volume", (v) => v + "%"), show: () => S.settings.sound !== "off" },
+  { group: "settings.sound", name: "settings.keySound", ctl: () => pick("keySound", (v) => t("sound." + v)) },
+  { group: "settings.sound", name: "settings.missSound", ctl: () => pick("missSound", (v) => t("sound." + v)) },
+  { group: "settings.sound", name: "settings.volume", ctl: () => pick("volume", (v) => v + "%"),
+    show: () => S.settings.keySound !== "off" || S.settings.missSound !== "off" },
   { group: null, name: "settings.data", desc: "settings.dataDesc", ctl: () => action("btn-export", "export", "data.save") + action("btn-import", "import", "data.load") },
   { group: null, name: "settings.danger", desc: "settings.dangerDesc", ctl: () => action("btn-reset", "trash", "data.reset", "btn danger") },
 ];
@@ -139,7 +151,7 @@ export function setSetting(key, value) {
   if (CHOICES[key]) {
     S.settings[key] = value;
     store.set(CHOICES[key].key, value);
-    if (key === "sound" && value !== "off") soundListener(value);
+    if (key === "keySound" || key === "missSound" || key === "volume") soundListener(key);
   } else if (SWITCHES[key]) {
     S.settings[key] = value === "1";
     store.set(SWITCHES[key].key, value === "1" ? "1" : "0");

@@ -12,7 +12,7 @@ import { renderPanel, roundMilestone, compareStats, refreshActivity, tickGoal } 
 import { learning, refreshFreeplay } from "./modes.js";
 import { renderModeBar, climbAnswer } from "./modebar.js";
 import { lengthOf } from "./settings.js";
-import { keySound } from "./sound.js";
+import { keySound, missSound } from "./sound.js";
 import { customPortions, customRoundDone } from "./customtext.js";
 import { paceGlide, resetGlide, scrollText, stopScroll } from "./caret.js";
 import { STREAK_RISE, streakOn, cleanWord, breakStreak } from "./streak.js";
@@ -329,7 +329,7 @@ export function roundFacts(end = lastTime) {
 const wordHasError = (start, end) =>
   state.subarray(start, end).some((s) => s >= 2) || (extras.get(end)?.length ?? 0) > 0;
 function mistake() {
-  keySound(false);
+  missSound();
   if (wordClean) breakStreak();
   wordClean = false;
 }
@@ -392,7 +392,7 @@ export function handleChar(ch) {
       const ok = ch === S.text[S.pos];
       record(S.pos, !ok, now, ch);
       setState(S.pos, ok ? 1 : 2);
-      if (ok) { correctPresses++; keySound(true); }
+      if (ok) { correctPresses++; keySound(ch === " "); }
       else mistake();
       const space = S.text[S.pos] === " ";
       if (space) { leaveBackWord(); endWord(); }

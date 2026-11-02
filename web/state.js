@@ -40,7 +40,7 @@ export const S = {
   freetypeVariant: "",
   climbLevel: null,
   settings: { length: "words-30", live: false, caret: "line", streak: false, bg: "keys", goal: 0, daily: 15,
-    glide: "smooth", sound: "off", volume: "50",
+    glide: "smooth", keySound: "off", missSound: "off", volume: "50",
     stop: false, nextKey: true, hand: true },
   kbHidden: false,
 };

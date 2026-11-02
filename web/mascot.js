@@ -2,7 +2,7 @@
 
 import { t } from "./i18n.js";
 import { $, S, store, isTouch, reducedMotion } from "./state.js";
-import { keySound } from "./sound.js";
+import { keySound, missSound } from "./sound.js";
 
 const CHAIN_MS = 700, WAKE_CLICKS = 3, POKE_CLICKS = 5;
 const SIZE = 52, EDGE = 24, SAY_MS = 2800, HOLD_SAY_MS = 600;
@@ -13,7 +13,6 @@ const logo = $("logo");
 const cap = logo.querySelector(".logo-cap");
 const nameEl = logo.querySelector(".logo-name");
 const typingNow = () => document.body.classList.contains("typing-now");
-const sound = (ok) => keySound(ok, S.settings.sound === "off" ? "off" : "keys");
 
 let clicks = 0, lastClick = 0;
 function chain(now) {
@@ -24,7 +23,7 @@ function chain(now) {
 
 // ---------- the logo key ----------
 function press() {
-  sound(true);
+  keySound();
   cap.animate([{ transform: "translateY(0)" }, { transform: "translateY(4px)" }, { transform: "translateY(0)" }],
     { duration: 140, easing: "ease-out" });
 }
@@ -262,12 +261,12 @@ export function questKey(e) {
   if (e.key.length !== 1 || e.ctrlKey || e.metaKey || e.repeat) return;
   e.preventDefault();
   if (e.key !== QUEST[quest.pos]) {
-    sound(false);
+    missSound();
     quest.box.animate([{ transform: "translateX(0)" }, { transform: "translateX(-5px)" }, { transform: "translateX(5px)" }, { transform: "translateX(0)" }],
       { duration: 180 });
     return;
   }
-  sound(true);
+  keySound();
   if (!quest.pos) quest.start = performance.now();
   quest.falls[quest.pos].playbackRate = 3;
   quest.falls[quest.pos].reverse();
