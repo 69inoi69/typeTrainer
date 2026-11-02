@@ -30,8 +30,7 @@ function hideTip() {
 }
 document.addEventListener("pointerover", (e) => {
   if (e.pointerType === "touch") return;
-  let node = e.target.closest?.("[data-tip], [data-tip-text]");
-  if (node && document.body.classList.contains("typing-now") && el.text.contains(node)) node = null;
+  const node = e.target.closest?.("[data-tip], [data-tip-text]");
   if (node && node !== tipFor) showTip(node);
   else if (!node && tipFor) hideTip();
 });

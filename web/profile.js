@@ -55,7 +55,6 @@ export function renderProfile() {
   $("account-in").hidden = !account.name;
   if (account.name) $("account-as").innerHTML = t("account.as", { name: account.name });
   else if (!msg.classList.contains("bad")) msg.textContent = "";
-  btn.title = t("profile.open");
   picks.innerHTML = COLORS.map((c) =>
     `<button type="button" data-c="${c}" style="--av:${c}" aria-label="${c}" aria-pressed="${avatar() === c}"></button>`).join("") +
     `<button type="button" class="upload" data-tip-text="${t("profile.upload")}" aria-label="${t("profile.upload")}">` +

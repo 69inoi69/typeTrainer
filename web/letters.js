@@ -51,7 +51,7 @@ export function renderLetters() {
     if (!chip) continue;
     chip.style.setProperty("--p", k?.mastered ? 1 : letterProgress(k).toFixed(3));
     chip.classList.toggle("fresh", !k?.count);
-    chip.dataset.tipText = letterTip(c, k);
+    chip.dataset.tipText = letterTip(k);
     if (!k?.mastered) needs.push(c);
   }
   const next = chipOf[S.exercise.locked[0]];
@@ -97,12 +97,12 @@ export function letterNeeds(k) {
   if (k.count < r.min) out.push("need.more");
   return out;
 }
-function letterTip(c, k) {
-  if (!k?.count) return `${c}: ${t("letter.noData")}.`;
+function letterTip(k) {
+  if (!k?.count) return t("letter.noData");
   const parts = [t("heat.count", { n: k.count }), t("letter.err", { e: Math.round(k.errorRate * 100) })];
   if (k.avgMs) parts.push(t("letter.ms", { wpm: Math.round(12000 / k.avgMs) }));
   const needs = letterNeeds(k);
-  return `${c}: ${parts.join(", ")}. ${k.mastered ? t("letter.mastered") : t("letter.needs", { list: needs.map((n) => t(n)).join(", ") })}.`;
+  return `${parts.join(", ")}. ${k.mastered ? t("letter.mastered") : t("letter.needs", { list: needs.map((n) => t(n)).join(", ") })}.`;
 }
 
 // ---------- the forecast ----------

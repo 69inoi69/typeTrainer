@@ -22,7 +22,7 @@ export function renderModeBar() {
   if (S.mode === "freetype") {
     const v = S.freetypeVariant;
     const kinds = ["", "long", ...(S.freetype?.sentences ? ["sentences"] : []), "custom"].map((k) =>
-      ringBtn(`data-variant="${k}"`, t(k ? `ft.${k}` : "ft.words"), v === k, k ? t(`ft.${k}Tip`) : ""));
+      ringBtn(`data-variant="${k}"`, t(k ? `ft.${k}` : "ft.words"), v === k, k && k !== "custom" ? t(`ft.${k}Tip`) : ""));
     if (v === "custom" && hasCustomText()) kinds.push(ringBtn(`data-edit="1"`, t("ft.edit"), false));
     parts.push(ring(t("ft.kind"), kinds));
     if (!listless(v)) parts.push(ring(t("freetype.list"), (S.freetype?.lists ?? []).map((n) =>

@@ -132,8 +132,7 @@ function appendPortions(list) {
     const sp = document.createElement("span");
     sp.textContent = S.text[i];
     sp.className = (focusMask[i] ? "fx" : "") + (learning() ? " later" : "") + (endAt >= 0 && i >= endAt ? " beyond" : "");
-    if (focusMask[i]) sp.dataset.tipText = t("tip.fx", { l: S.text[i] });
-    else if (S.text[i] === " ") sp.dataset.sp = "";
+    if (S.text[i] === " ") sp.dataset.sp = "";
     frag.appendChild(sp);
     spans.push(sp);
   }

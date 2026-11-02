@@ -144,10 +144,10 @@ function tiles(sessions, count, goal, level, streaks) {
     tile(num(avg(last.filter((x) => x.consistency != null), (x) => x.consistency), "%"), t("tile.cons"), last10((x) => x.consistency)),
   ];
   if (count && streaks.length) {
-    const [first] = streaks;
-    const runs = streaks.map((x) => t("tile.streakAt", { min: x.min, n: x.longest })).join(", ");
-    const tip = t("tile.streakTip", { min: first.min, runs });
-    out.push(`<div class="tile" data-tip-text="${tip}"><b>${first.current}</b><small>${t("tile.streak", { min: first.min })}</small><span class="meta">${t("tile.streakBest", { n: first.longest })}</span></div>`);
+    const [first, ...more] = streaks;
+    const runs = more.map((x) => t("tile.streakAt", { min: x.min, n: x.longest })).join(", ");
+    const tip = runs ? ` data-tip-text="${t("tile.streakTip", { runs })}"` : "";
+    out.push(`<div class="tile"${tip}><b>${first.current}</b><small>${t("tile.streak", { min: first.min })}</small><span class="meta">${t("tile.streakBest", { n: first.longest })}</span></div>`);
   }
   if (goal) {
     const left = wpm === null ? null : Math.max(0, Math.round(goal - wpm));
@@ -226,7 +226,7 @@ function drawActivity() {
   const dayName = new Intl.DateTimeFormat(lang, { weekday: "short" });
   const dayNames = [0, 2, 4].map((i) => `<span style="grid-row:${i + 1}">${dayName.format(new Date(2026, 9, 19 + i))}</span>`).join("");
   const legend = `<span class="act-legend">${t("act.less")}<i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i>${t("act.more")}` +
-    `<button type="button" class="act-goal" aria-haspopup="dialog" data-tip-text="${t("settings.dailyDesc")}">` +
+    `<button type="button" class="act-goal" aria-haspopup="dialog" data-tip-text="${t("lp.goalClick")}">` +
     (goal ? `<i class="l2 met"></i>${t("act.goalLegend", { g: goal })}` : t("act.goalOff")) + `</button></span>`;
   const periods = `<div class="ring act-period" role="group" aria-label="${t("act.period")}">` +
     Object.keys(PERIODS).map((p) => `<button type="button" data-period="${p}" aria-pressed="${p === period}">${t("act." + p)}</button>`).join("") + `</div>`;
@@ -274,7 +274,7 @@ function renderPick(mode, list, variant) {
   const kinds = ["", "long", ...(S.freetype?.sentences ? ["sentences"] : []), "custom"];
   pickEl.innerHTML = ring(t("stats.modes"), [["learn", "mode.learn"], ["climb", "mode.free"], ["freetype", "mode.freetype"]].map(([m, key]) =>
     ringBtn(`data-mode="${m}"`, t(key), m === mode))) +
-    (ft ? ring(t("ft.kind"), kinds.map((k) => ringBtn(`data-variant="${k}"`, t(k ? `ft.${k}` : "ft.words"), variant === k, k ? t(`ft.${k}Tip`) : ""))) : "") +
+    (ft ? ring(t("ft.kind"), kinds.map((k) => ringBtn(`data-variant="${k}"`, t(k ? `ft.${k}` : "ft.words"), variant === k, k && k !== "custom" ? t(`ft.${k}Tip`) : ""))) : "") +
     (lists.length ? ring(t("freetype.list"), lists.map((n) => ringBtn(`data-list="${n}"`, listLabel(n), n === list, t("freetype.listN", { n })))) : "");
 }
 document.getElementById("activity").addEventListener("click", (e) => {
