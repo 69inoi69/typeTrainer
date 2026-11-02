@@ -18,6 +18,8 @@ CPU slowed 6× (a weak laptop), in headless Chromium.
 | after PR #142 (by hand) | 5.5 ms | 35 ms | 14% | state classes on `<body>` instead of `:has()` |
 | main, 2026-10-24 (perf.mjs, Learn) | 5.0 ms | 32 ms | 12% | the baseline for issue #148 |
 | main, 2026-10-25 (perf.mjs, Learn, median of 5) | 5.1 ms | 37 ms | 18% | after issue #150, another machine (issue #153, below) |
+| main, 2026-11-02 (perf.mjs, Learn, Edge, median of 3) | 4.0 ms | 70 ms | 52% | the owner's own machine, before the effects were removed |
+| after removing effects, keycaps back (same machine) | 1.4 ms | 18 ms | 1% | no background, dimming, glow or motion; one frame for every mode |
 
 The goal of issue #148: under 2 ms style recalc per key for the screen
 itself (`perf.mjs --bare`), caret start
@@ -34,13 +36,12 @@ runs; each line turns one more part off):
 | also no keyboard | 1.9 ms | 18 ms | 2% |
 
 The screen alone (`perf.mjs --bare`) is 1.9 ms, so the 2 ms goal is set for
-it; the keyboard and the background cost on top (AGENTS.md rule 4). Each
+it; the keyboard and the background cost on top. Each
 part's cost is the browser restyling its elements on every key and every
 frame of a running animation (invalidation tracking in the Chromium trace).
 Tried and dropped, measured no better: touching only the fingers that
 change, keeping the hidden hand laid out, a pre-drawn lit finger on its own
-layer, the sr-only finger hint as text. The background stays moving during
-a round (owner's call).
+layer, the sr-only finger hint as text. The background was later removed (2026-11-02).
 
 What worked for the hand: it is no longer a live model (ten fingers, each a
 layer that lifts with a transition) but a picture. For every finger to
@@ -73,10 +74,9 @@ screen work of issue #150 (`c9a2481`) and after it, run in turns:
 So issue #150 changed nothing measurable. Against the goal of #148: the
 screen itself is under 2 ms and the caret starts within 40 ms; slow frames
 with everything on (18%) are above 15% on this machine. Since #150 the
-keyboard is only on while Learn opens letters; Climb, Freetype and Learn
-after the last letter type at the Climb line.
+keyboard is by default only on while Learn opens letters.
 
-The falling background, measured 2026-10-20 (headless Chromium, 170 wpm,
+The falling background (removed on 2026-11-02), measured 2026-10-20 (headless Chromium, 170 wpm,
 keyboard and hands on): one `element.animate` per keycap with plain numbers
 on a bare wrapper costs about 1 ms more main-thread work per key than
 holding the keycaps still (16.5-17.9 vs 15.9-16.5 ms), and the typed letter

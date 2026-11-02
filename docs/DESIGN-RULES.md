@@ -33,7 +33,7 @@ there is a reason not to).
 
 **Established**
 - Three fixed places on every screen: the header (logo, account), the
-  navigation (a rail on the left from 900 px, a bar at the bottom below),
+  navigation (in the header from 900 px, a bar at the bottom below),
   and the content in the middle (`docs/HOW-THE-CODE-WORKS.md`, "Screen layout").
 - Panels (Settings, Profile, the reset confirm) share one window style:
   `.win` and `.win-title`.
@@ -96,8 +96,7 @@ there is a reason not to).
   short soft shadow), never a heavy shadow. Corners: `--r-sm`, `--r-md`, `--r-lg`.
 - The typing screen has no card or frame around the text: the order of
   importance is shown by size and brightness alone. The text is the biggest
-  and brightest; the line above it and Learn's letters (all but the one in
-  training and the next) are dimmer.
+  and brightest.
 - One font: Geist Mono (`--mono`, `--ui`), served from `web/fonts`
   (SIL Open Font License, `web/fonts/OFL.txt`). The one exception is the
   logo, "typeTrainer" in the header and the stats picture:
@@ -163,8 +162,7 @@ consequences, the same word for the same thing. All text lives in
   choice of a few values: the round bars, the settings, the small window,
   the stats)
   (Off on the left, On on the right), `.btn` buttons (`.danger` for
-  destructive), `data-tip` tooltips, `--ctl` (38 px) as the height of every
-  control.
+  destructive), `data-tip` tooltips.
 - Naming: Learn, Climb, Freetype, Stats, Settings; round, focus, mastered, level
   (`docs/TEXT-RULES.md`, word list).
 
@@ -186,8 +184,8 @@ consequences, the same word for the same thing. All text lives in
 **Recommended**
 - Text contrast high enough to read; never grey on grey for
   something the user must read.
-- Touch targets at least about 40 px high on a phone (`--ctl` is 38 px plus
-  spacing); never two small targets right next to each other.
+- Touch targets at least about 40 px high on a phone; never two small targets
+  right next to each other.
 - Everything that works with a mouse also works with a keyboard.
 - Don't rely on colour alone: mastered letters also get a tick, mistakes
   also get an underline.

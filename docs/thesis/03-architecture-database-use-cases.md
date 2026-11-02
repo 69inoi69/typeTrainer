@@ -2,7 +2,7 @@
 
 Thesis item 3. The architecture itself is described in
 [docs/HOW-THE-CODE-WORKS.md](../HOW-THE-CODE-WORKS.md); this file collects what the
-chapter needs on top of it. To bring up to date after the cleanup phase.
+chapter needs on top of it.
 
 ## Architecture
 

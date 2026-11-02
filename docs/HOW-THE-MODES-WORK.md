@@ -106,8 +106,8 @@ raw      = (all keypresses / 5) / minutes             (wrong presses count too)
 accuracy = correct keypresses / all keypresses * 100  (a skipped letter = one wrong press)
 ```
 
-`raw` is only shown in the header (as on monkeytype); it is not sent to the
-server and the model does not use it.
+`raw` is shown on the result screen of Climb and Freetype; it is not sent to
+the server and the model does not use it.
 
 **Consistency** (`internal/engine/consistency.go`) tells how even the speed
 was during a round. The browser counts the keypresses in every full second
@@ -480,7 +480,7 @@ is a delay: a new portion is typed about 12 words after the data it was built
 from.
 
 **The round.** The stream is cut into rounds of `RoundPortions = 5` portions
-(30 words), so the user always sees how much is left (a progress ring) and
+(30 words), so the user always sees how much is left (`3 / 30` over the text) and
 gets a result at a clear point. The last letter of the last word ends it (no space after it is needed,
 right or wrong). The WPM and accuracy of the round go to
 the history, and the next round starts from scratch: new waiting portions, an
@@ -696,9 +696,7 @@ follow each other; a comma or a capital in a list of random words is not a
 sentence, it only breaks the rhythm.
 
 **The levels** (`Params.Levels`, `MaxRank`). Level n draws evenly from the
-`Levels[n-1]` most common words of the long list (`free.txt`, section 13;
-a language without it uses `words.txt`, and a list shorter than a level
-caps it), without the words of one letter (`MinLetters = 2`, `Longer`:
+`Levels[n-1]` most common words of the long list (`free.txt`, section 13), without the words of one letter (`MinLetters = 2`, `Longer`:
 "a" and "i" are nothing to train; Freetype keeps them, as monkeytype does). A word used recently is rarer, the same word never comes twice
 in a row (the same draw as Freetype).
 
@@ -751,7 +749,7 @@ level 1. The passes need not be in a row (a hold between them does not
 matter), but a fail between them starts them again: three clean rounds
 with no bad one between. Nothing is stored for the counts: every round
 keeps its level, and a run at another level (the level moved, or the
-typist picked one on the steps above the round bar) starts them again. A new typist
+typist picked one on the round bar) starts them again. A new typist
 starts at `LevelStart` = 1 and can pick any level before any round.
 
 **Old history** (rounds from before 2026-10-20, level 0..1) gets the new
@@ -813,7 +811,7 @@ drawn from the words that contain a weak pair, else from all words; both
 draws use the same level limit (`MaxRank`) and the same "do not repeat"
 weights. If the level allows fewer than `WeakMinWords = 10` words with a weak
 pair, there is no such draw (the same few words would repeat). The
-result screen names the weak pairs,
+result screen and the block under the text name the weak pairs,
 so the typist sees what the next rounds practise.
 
 | Name | Value | Reason |
@@ -887,5 +885,4 @@ lower case. Names are written with a capital there, so they drop out by
 themselves. Offensive words are removed by the dictionary's own marks
 (NOSUGGEST) and a public list of bad words (LDNOOBW). Of the 50 000 most
 frequent subtitle words, about 30 800 pass; the list keeps the first
-25 000. For now only English has a long list; a language without one
-offers the lists its 2000 words allow (200 and 1000).
+25 000.
