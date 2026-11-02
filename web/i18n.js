@@ -131,7 +131,7 @@ const I18N = {
     "tip.learn": "Learn: touch typing from scratch, one letter at a time.",
     "tip.free": "Climb: beat each word level in three clean rounds to challenge yourself.",
     "mode.freetype": "Freetype",
-    "tip.freetype": "Freetype: type what you like, as you like.",
+    "tip.freetype": "Freetype: I think it's obvious what this is.",
     "freetype.list": "Word list",
     "bar.kind": "Round ends after", "bar.length": "Length",
     "freetype.listN": "The {n} most common words",
