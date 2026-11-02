@@ -1,9 +1,7 @@
 // The result screen.
 
 import { t } from "./i18n.js";
-import { $, el, isTouch, reducedMotion, boxState } from "./state.js";
-import { FEEL } from "./feel.js";
-import { FX } from "./fx.js";
+import { $, el, isTouch, boxState } from "./state.js";
 import { showTip } from "./tools.js";
 
 const box = $("result");
@@ -112,12 +110,8 @@ function speedChart(words, bands) {
 
 const ICON_NEXT = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>`;
 
-// ---------- a new best: the speed and a badge under it as trading-card foil ----------
 function newBest() {
-  const hero = box.querySelector(".r-hero .r-num.hero");
-  hero.insertAdjacentHTML("beforeend", `<span class="r-best"><span>${t("result.newBest")}</span></span>`);
-  const nodes = [hero.querySelector(".r-v > b"), hero.querySelector(".r-best > span")];
-  document.fonts.ready.then(() => nodes.forEach(FX.foil));
+  box.querySelector(".r-hero .r-num.hero").insertAdjacentHTML("beforeend", `<span class="r-best">${t("result.newBest")}</span>`);
 }
 function open(body, btn) {
   box.innerHTML = `<div class="r-body">${body}</div>` +
@@ -133,38 +127,17 @@ function open(body, btn) {
     el.textBox.classList.remove("blurred");
     closeResult();
   });
-  const from = lettersTop();
   box.hidden = false;
-  el.viewType.classList.remove("settled");
   boxState(true, "resulting");
-  boxState(false, "ending");
-  glideLetters(from);
   if (isTouch()) el.input.blur();
   return new Promise((resolve) => { done = resolve; });
-}
-
-export function settleResult() {
-  if (done) el.viewType.classList.add("settled");
 }
 
 export function closeResult() {
   if (!done) return;
   const resolve = done;
   done = null;
-  const from = lettersTop();
   box.hidden = true;
-  el.viewType.classList.remove("settled");
   boxState(false, "resulting");
-  glideLetters(from);
   resolve();
-}
-
-const lettersRow = document.querySelector("#view-type > .letters");
-const lettersTop = () => lettersRow?.getBoundingClientRect().top ?? 0;
-function glideLetters(from) {
-  if (!lettersRow || !lettersRow.animate || reducedMotion() || el.viewType.hidden) return;
-  const dy = from - lettersTop();
-  if (Math.abs(dy) < 1) return;
-  lettersRow.animate([{ translate: `0 ${dy}px` }, { translate: "0 0" }],
-    { duration: FEEL.resultInMs, easing: "cubic-bezier(.2, .8, .2, 1)" });
 }

@@ -2,7 +2,7 @@
 
 import { FEEL } from "./feel.js";
 import { t } from "./i18n.js";
-import { $, el, S, isTouch, themeColor, reducedMotion, store } from "./state.js";
+import { $, el, S, isTouch, store } from "./state.js";
 import { setSetting } from "./settings.js";
 import { openPop, ring, ringBtn } from "./minipop.js";
 
@@ -193,72 +193,26 @@ function showHands(show) {
   if (el.hands.dataset.show !== show) el.hands.dataset.show = show;
 }
 
-export function pulseKey(ch, ok) {
-  if (ok || S.kbHidden) return;
-  const k = keyFor(ch);
-  if (!k || !k.animate || reducedMotion()) return;
-  const red = `color-mix(in srgb, ${themeColor("--error")} ${Math.round(FEEL.keyMissAlpha * 100)}%, transparent)`;
-  k.animate([{ boxShadow: `inset 0 0 0 999px ${red}` }, { boxShadow: "inset 0 0 0 999px transparent" }],
-    { duration: FEEL.keyMissMs, easing: "ease-out" });
-}
-
-export function glowKey(ch) {
-  const k = keyFor(ch);
-  if (!k || !k.animate || reducedMotion()) return;
-  const gold = themeColor("--accent");
-  k.animate([{ boxShadow: `0 0 0 0 color-mix(in srgb, ${gold} 75%, transparent)` }, { boxShadow: `0 0 0 10px color-mix(in srgb, ${gold} 0%, transparent)` }],
-    { duration: 380, easing: "ease-out" });
-}
-
 let applied = false;
 
-export function autoKb(animate = false) {
+export function autoKb() {
   const allOpen = S.exercise?.locked?.length === 0;
   const own = store.get("tt.kb." + S.mode);
   const hide = isTouch() || (own ? own === "off" : S.mode !== "learn" || allOpen);
   if (hide === S.kbHidden && applied) return;
   applied = true;
   S.kbHidden = hide;
-  if (animate && !reducedMotion() && el.keyboard.animate) fold(S.kbHidden);
-  else {
-    setOff(S.kbHidden);
-    requestFit();
-  }
+  setOff(S.kbHidden);
+  requestFit();
 }
 export function toggleKb() {
   if (isTouch()) return;
   store.set("tt.kb." + S.mode, S.kbHidden ? "on" : "off");
-  autoKb(true);
+  autoKb();
 }
 function setOff(hide) {
   el.keyboard.classList.toggle("off", hide);
   document.body.classList.toggle("kb-hidden", hide);
-}
-
-const FOLD_MS = 220;
-const FOLD_EASE = "cubic-bezier(.2, .8, .2, 1)";
-let foldRun = 0;
-async function fold(hide) {
-  const run = ++foldRun;
-  const movers = [lettersBar, el.textBox];
-  for (const n of [el.keyboard, ...movers]) n.getAnimations().forEach((a) => a.cancel());
-  if (hide) {
-    const out = el.keyboard.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(14px)" }],
-      { duration: FOLD_MS * .7, easing: "ease-in" });
-    try { await out.finished; } catch { return; }
-    if (run !== foldRun) return;
-  }
-  const before = movers.map((n) => n.getBoundingClientRect().top);
-  setOff(hide);
-  if (!hide) fitKeyboard();
-  const after = movers.map((n) => n.getBoundingClientRect().top);
-  movers.forEach((n, i) => {
-    const dy = before[i] - after[i];
-    if (Math.abs(dy) > .5) n.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }], { duration: FOLD_MS, easing: FOLD_EASE });
-  });
-  if (!hide) el.keyboard.animate([{ opacity: 0, transform: "translateY(14px)" }, { opacity: 1, transform: "none" }],
-    { duration: FOLD_MS, easing: FOLD_EASE });
-  if (hide) requestFit();
 }
 
 const KB_PER_U = 4 + 3 * KEY_GAP + FEEL.handRoom;
@@ -275,7 +229,7 @@ function fitKeyboard() {
   if (isTouch()) { root.removeProperty("--u-fit"); return; }
   if (S.view !== "type") return;
   if (el.textBox.classList.contains("resulting")) return;
-  if (el.keyboard.getAnimations().length || el.keyboard.classList.contains("off")) return;
+  if (el.keyboard.classList.contains("off")) return;
   const centred = getComputedStyle(el.viewType).getPropertyValue("--view-centred").trim() === "1";
   const kb = getComputedStyle(el.keyboard);
   const kbFrame = ["paddingTop", "paddingBottom", "borderTopWidth", "borderBottomWidth"].reduce((sum, p) => sum + parseFloat(kb[p]), 0);

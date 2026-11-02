@@ -76,18 +76,9 @@ function climbStatus() {
     `<span>${t("climb.level")} <b>${level}</b></span>${pips}${intro}</span>`;
 }
 
-// ---------- Climb: the bar answers a round with motion ----------
-export function climbAnswer(verdict, place) {
+export function climbAnswer() {
   store.set(SEEN, "1");
   renderModeBar();
-  const at = (sel) => bar.querySelector(sel);
-  let node, cls;
-  if (place.moved > 0) [node, cls] = [at(".step.on"), "up"];
-  else if (place.moved < 0) [node, cls] = [at(".step.on"), "down"];
-  else if (verdict === "pass") [node, cls] = [at(`.pips > i:nth-child(${place.passes})`), "pop"];
-  else if (verdict === "hold") [node, cls] = [at(".pips"), "nope"];
-  else [node, cls] = [at(".pips > i.slip") ?? at(".pips"), at(".pips > i.slip") ? "pop" : "nope"];
-  if (node) node.classList.add(cls);
 }
 
 let pickListener = () => {};

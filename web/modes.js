@@ -62,7 +62,7 @@ export function setMode(m) {
   renderModeBar();
   store.set(`tt.mode.${S.lang}`, m);
   renderNav();
-  autoKb(true);
+  autoKb();
 }
 
 export function renderNav() {

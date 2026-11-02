@@ -1,7 +1,7 @@
 // The stats screen.
 
 import { i18nVars, t, applyI18n } from "./i18n.js";
-import { $, el, S, store, reducedMotion, listLabel, listless } from "./state.js";
+import { $, el, S, store, listLabel, listless } from "./state.js";
 import { getJSON } from "./api.js";
 import { LENGTHS, lengthLabel, lengthFor, setSetting, pickDaily } from "./settings.js";
 import { ring, ringBtn } from "./minipop.js";
@@ -46,9 +46,6 @@ function showGoal(g, dir) {
   if (goalShown) store.set("tt.goal.last", String(goalShown));
   goalShown = g;
   goalPick.querySelector(".goal-chip").innerHTML = goalText(g);
-  if (!reducedMotion()) goalPick.querySelector(".goal-chip b")?.animate(
-    [{ transform: `translateY(${dir > 0 ? 5 : -5}px)`, opacity: 0.3 }, { transform: "none", opacity: 1 }],
-    { duration: 160, easing: "ease-out" });
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => { saveTimer = 0; setSetting("goal", String(goalShown)); }, GOAL_SAVE_MS);
 }
@@ -268,12 +265,7 @@ async function choose(change) {
     if (keyOf(pick) !== key) return;
     other = { key, data };
   }
-  el.viewStats.classList.remove("grow");
   renderStats();
-  if (reducedMotion()) return;
-  for (const part of [el.lengthFilter, el.tiles, el.chart.closest(".panel")]) {
-    part?.animate?.([{ opacity: 0.35 }, { opacity: 1 }], { duration: 220, easing: "ease-out" });
-  }
 }
 
 const pickEl = $("stats-pick");

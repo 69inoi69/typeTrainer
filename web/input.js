@@ -8,24 +8,22 @@ import { checkCaps } from "./warn.js";
 import { introKey } from "./intro.js";
 import { switchLanguage } from "./languages.js";
 import { profileOpen, closeProfile } from "./profile.js";
-import { resultOpen, closeResult, settleResult } from "./result.js";
-import { settingsOpen, openSettings, onSettingsClose, onGoalChange, onBgChange, onTypingLook, onSoundPick, setLength, setSetting } from "./settings.js";
+import { resultOpen, closeResult } from "./result.js";
+import { settingsOpen, openSettings, onSettingsClose, onGoalChange, onTypingLook, onSoundPick, setLength, setSetting } from "./settings.js";
 import { setMode, refreshFreeplay, renderNav, setFreetypeList, setFreetypeVariant, toggledVariant } from "./modes.js";
 import { openCustomText, hasCustomText } from "./customtext.js";
 import { onBarPick, renderModeBar } from "./modebar.js";
 import { renderLetters } from "./letters.js";
-import { buildAmbient } from "./ambient.js";
 import { renderPanel } from "./learnpanel.js";
 import { keySound } from "./sound.js";
 import { questOpen, questKey } from "./mascot.js";
 import "./share.js";
 
 window.addEventListener("resize", () => {
-  buildAmbient();
   fitText();
   requestFit();
   placeCaret(true);
-  if (S.view === "stats") { el.viewStats.classList.remove("grow"); renderStats(); }
+  if (S.view === "stats") renderStats();
 });
 
 // ---------- screens: typing / stats ----------
@@ -34,19 +32,14 @@ document.body.classList.toggle("stats-only", statsOnly);
 export function startView() {
   if (statsOnly) setView("stats");
 }
-let statsSeen = "";
 function setView(name) {
   if (statsOnly) name = "stats";
   S.view = name;
   document.body.dataset.view = name;
   const stats = name === "stats";
   renderNav();
-  if (stats) settleResult();
   el.viewType.hidden = stats;
   el.viewStats.hidden = !stats;
-  const seen = JSON.stringify([S.mode, S.settings.length, S.lastStats?.sessionCount, S.climb?.sessionCount, S.freetype?.sessionCount, S.freetypeList]);
-  el.viewStats.classList.toggle("grow", stats && seen !== statsSeen);
-  if (stats) statsSeen = seen;
   if (stats) {
     resetStatsPick();
     setTyping(false);
@@ -106,7 +99,6 @@ async function barPick(pick) {
 }
 onBarPick(barPick);
 
-onBgChange(buildAmbient);
 onTypingLook(() => {
   fitText();
   requestFit();
@@ -117,7 +109,7 @@ onSoundPick((mode) => keySound(mode !== "errors", mode));
 
 onGoalChange(() => {
   renderPanel();
-  if (S.view === "stats") { el.viewStats.classList.remove("grow"); renderStats(); }
+  if (S.view === "stats") renderStats();
 });
 
 // ---------- input ----------
@@ -139,7 +131,6 @@ document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") { e.preventDefault(); closeProfile(); }
     return;
   }
-  if (document.body.classList.contains("splashing")) return;
   if (e.key === "Escape") {
     if (!shortcut(e, "esc")) return;
     if (S.view === "type" && !resultOpen() && roundStarted()) pauseRound();
@@ -149,10 +140,6 @@ document.addEventListener("keydown", (e) => {
   const altGr = e.getModifierState?.("AltGraph");
   if (e.altKey && !e.ctrlKey && !e.metaKey && !altGr && e.code === "KeyK") {
     if (shortcut(e, "kb") && S.view === "type") toggleKb();
-    return;
-  }
-  if (e.altKey && !e.ctrlKey && !e.metaKey && !altGr && e.code === "KeyB") {
-    if (shortcut(e, "bg")) setSetting("bg", S.settings.bg === "off" ? "1" : "");
     return;
   }
   if (e.key === "Tab" && e.shiftKey) {

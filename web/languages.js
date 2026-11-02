@@ -1,7 +1,6 @@
 // The language switch and loading a language.
 
 import { i18nVars, t, applyI18n } from "./i18n.js";
-import { FX } from "./fx.js";
 import { el, S, store } from "./state.js";
 import { getJSON } from "./api.js";
 import { labelTips } from "./tools.js";
@@ -58,8 +57,6 @@ export async function loadLanguage(id) {
     drawKeyboard();
     drawIntroKeys();
     if (S.languages.length && S.exercise) {
-      FX.anim(el.keyboard, [{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 260, easing: "cubic-bezier(.2,.8,.2,1)" });
-      FX.anim(el.letters, [{ opacity: 0 }, { opacity: 1 }], { duration: 260 });
     }
     const home = S.layout.rows.flat().filter((k) => k.home).map((k) => k.char.toUpperCase());
     [i18nVars.f, i18nVars.j] = home;

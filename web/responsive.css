@@ -40,6 +40,5 @@
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
-  .note-bar { animation-duration: var(--ms, 3500ms) !important; }
-}
+  }
 

@@ -55,8 +55,6 @@ export function loadSettings() {
   S.settings.length = lengthFor(S.mode);
   S.settings.live = store.get("tt.live") !== "0";
   S.settings.streak = store.get("tt.streak.free") === "1";
-  const bg = store.get("tt.bg");
-  S.settings.bg = bg && bg !== "off" ? "keys" : "off";
   const caret = store.get("tt.caret");
   S.settings.caret = CARETS.includes(caret) ? caret : "line";
   S.settings.goal = goalOf(store.get("tt.goal"));
@@ -82,8 +80,6 @@ function applySettings() {
 
 let goalListener = () => {};
 export function onGoalChange(fn) { goalListener = fn; }
-let bgListener = () => {};
-export function onBgChange(fn) { bgListener = fn; }
 let typingListener = () => {};
 export function onTypingLook(fn) { typingListener = fn; }
 
@@ -151,10 +147,6 @@ export function setSetting(key, value) {
   } else if (key === "streak") {
     S.settings.streak = value === "1";
     store.set("tt.streak.free", value === "1" ? "1" : "0");
-  } else if (key === "bg") {
-    S.settings.bg = value ? "keys" : "off";
-    store.set("tt.bg", S.settings.bg);
-    bgListener(true);
   } else if (key === "caret") {
     S.settings.caret = value;
     store.set("tt.caret", value);

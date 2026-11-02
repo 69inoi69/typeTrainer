@@ -58,10 +58,6 @@ export const listLabel = (n) => n >= 1000 && n % 1000 === 0 ? `${n / 1000}k` : S
 export const isTouch = () => matchMedia("(pointer: coarse)").matches;
 const motionQuery = matchMedia("(prefers-reduced-motion: reduce)");
 export const reducedMotion = () => motionQuery.matches;
-const themeColors = {};
-export function themeColor(name) {
-  return themeColors[name] ??= getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-}
 export function boxState(on, ...names) {
   for (const n of names) {
     el.textBox.classList.toggle(n, on);

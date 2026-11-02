@@ -11,7 +11,7 @@ export async function openApp(page, storage = {}) {
 
 export async function waitForText(page) {
   await page.waitForFunction(
-    () => !document.getElementById("splash") && document.querySelectorAll("#text > span").length > 20,
+    () => document.querySelectorAll("#text > span").length > 20,
     null, { timeout: 20_000 });
 }
 

@@ -1,6 +1,5 @@
 // The touch typing basics guide.
 
-import { FX } from "./fx.js";
 import { $, el, S, store, introOpen, focusText } from "./state.js";
 import { makeKey } from "./keyboard.js";
 
@@ -91,7 +90,6 @@ export function introKey(e) {
     const key = introKeys[e.code];
     if (!key) return;
     key.classList.add("hit");
-    FX.anim(key, [{ transform: "translateY(2px) scale(.92)" }, { transform: "none" }], { duration: 160 });
     introPressed.add(e.code);
     if (introPressed.size === HOME_CODES.length) advanceAfter($("intro-home"));
   } else if (introStep === STEP_SPACE) {
@@ -104,9 +102,8 @@ export function introKey(e) {
 }
 
 function closeIntro() {
-  if (!introOpen() || el.intro.classList.contains("closing")) return;
-  el.intro.classList.add("closing");
-  FX.fadeOut(el.intro).then(() => el.intro.classList.add("hidden"), () => {}).finally(() => el.intro.classList.remove("closing"));
+  if (!introOpen()) return;
+  el.intro.classList.add("hidden");
   store.set("tt.introDone", "1");
   focusText();
 }

@@ -1,21 +1,20 @@
 // The typing screen: text, caret and keypresses.
 
-import { FEEL } from "./feel.js";
 import { t } from "./i18n.js";
 import { FX } from "./fx.js";
-import { el, S, introOpen, isTouch, roundList, boxState, reducedMotion } from "./state.js";
+import { el, S, introOpen, isTouch, roundList, boxState } from "./state.js";
 import { postJSON, saveRound, retryable } from "./api.js";
-import { highlightNextKey, pulseKey, glowKey, requestFit, autoKb } from "./keyboard.js";
+import { highlightNextKey, requestFit, autoKb } from "./keyboard.js";
 import { refreshStats } from "./stats.js";
 import { showResult } from "./result.js";
-import { renderLetters, markNewLetter, markMastered } from "./letters.js";
+import { renderLetters } from "./letters.js";
 import { renderPanel, roundMilestone, compareStats, refreshActivity, tickGoal, ringTip } from "./learnpanel.js";
 import { learning, refreshFreeplay } from "./modes.js";
 import { renderModeBar, climbAnswer } from "./modebar.js";
 import { lengthOf } from "./settings.js";
 import { keySound } from "./sound.js";
 import { customPortions, customRoundDone } from "./customtext.js";
-import { flinchCaret, paceGlide, resetGlide, scrollText, stopScroll } from "./caret.js";
+import { paceGlide, resetGlide, scrollText, stopScroll } from "./caret.js";
 import { STREAK_RISE, streakOn, cleanWord, breakStreak } from "./streak.js";
 import { showWarn, hideWarn, warnShowing, foreignKey, layoutCheck } from "./warn.js";
 
@@ -147,10 +146,8 @@ function appendPortions(list) {
 function reveal() {
   if (!learning()) return;
   shownWords = Math.max(shownWords, wordsTyped + SHOWN_AHEAD);
-  const fade = wordsTyped > 0;
   for (; revealAt < spans.length && wordOf[revealAt] < shownWords; revealAt++) {
     spans[revealAt].classList.remove("later");
-    if (fade) spans[revealAt].classList.add("new");
   }
 }
 
@@ -163,7 +160,7 @@ function renderTop() {
   S.roundSeconds = startTime === null ? 0 : (performance.now() - startTime) / 1000;
   renderLetters();
   renderPanel();
-  autoKb(true);
+  autoKb();
 }
 
 function recentWords() {
@@ -233,8 +230,6 @@ function newLetter(l) {
   roundNewLetter = l;
   const ex = S.exercise;
   if (ex?.locked?.includes(l)) S.exercise = { ...ex, unlocked: [...ex.unlocked, l], locked: ex.locked.filter((c) => c !== l) };
-  markNewLetter(l);
-  glowKey(l);
 }
 
 function resetStream() {
@@ -245,7 +240,7 @@ function resetStream() {
   portions = []; sentUpTo = 0; current = 0; roundNewLetter = ""; roundNewLap = 0; wordsLoaded = 0; endAt = -1;
   wordOf = new Int32Array(0); revealAt = 0; shownWords = 0;
   extras = new Map(); correctChars = 0; afterBackspace = false; afterPause = false;
-  pausedAt = null; boxState(false, "snap", "paused");
+  pausedAt = null; boxState(false, "paused");
   backWord = -1; backErrors = 0; fixedWords = new Set();
   startTime = null; lastTime = null; presses = 0; correctPresses = 0; perSecond = [];
   resetGlide();
@@ -268,9 +263,6 @@ export async function loadExercise() {
   renderProgress(true);
   fitText();
   requestFit();
-  el.text.classList.remove("swap");
-  void el.text.offsetWidth;
-  el.text.classList.add("swap");
   el.textBox.classList.remove("typing");
   setTyping(false);
   if (!el.live.classList.contains("final")) { setLive(el.wpm, 0); setLive(el.raw, 0); setLive(el.acc, 100); }
@@ -282,7 +274,7 @@ export async function loadExercise() {
 
 // ---------- typing ----------
 const MAX_EXTRA = 10;
-const canType = () => !(S.busy || S.pos >= S.text.length || introOpen() || S.view !== "type" || document.body.classList.contains("splashing"));
+const canType = () => !(S.busy || S.pos >= S.text.length || introOpen() || S.view !== "type");
 
 function wordStart(i) { while (i > 0 && S.text[i - 1] !== " ") i--; return i; }
 function wordEnd(i) { while (i < S.text.length && S.text[i] !== " ") i++; return i; }
@@ -338,7 +330,6 @@ function mistake() {
   keySound(false);
   if (wordClean) breakStreak();
   wordClean = false;
-  flinchCaret();
 }
 export function handleChar(ch) {
   if (!canType()) return;
@@ -372,7 +363,6 @@ export function handleChar(ch) {
   if (S.settings.stop && ch !== expected) {
     record(S.pos, true, now, ch);
     setState(S.pos, 2);
-    pulseKey(ch, false);
     mistake();
     lastTime = now; afterBackspace = false; afterPause = false;
     return;
@@ -389,7 +379,6 @@ export function handleChar(ch) {
       list.push(s);
       extras.set(S.pos, list);
     }
-    pulseKey(ch, false);
     mistake();
   } else {
     if (ch === " " && expected !== " ") {
@@ -404,7 +393,6 @@ export function handleChar(ch) {
       setState(S.pos, ok ? 1 : 2);
       if (ok) { correctPresses++; keySound(true); }
       else mistake();
-      pulseKey(ch, ok);
       const space = S.text[S.pos] === " ";
       if (space) { leaveBackWord(); endWord(); }
       S.pos++;
@@ -414,7 +402,7 @@ export function handleChar(ch) {
     }
   }
   lastTime = now; afterBackspace = false; afterPause = false;
-  if (roundOver) { placeCaret(false, true); finishRound(true); return; }
+  if (roundOver) { placeCaret(false, true); finishRound(); return; }
   highlightNextKey();
   placeCaret(false);
 }
@@ -492,8 +480,6 @@ function renderProgress(fresh = false) {
     ring.classList.add("back");
     clearTimeout(ringBack);
     ringBack = setTimeout(() => ring.classList.remove("back"), 380);
-  } else if (!fresh && !time && done > ringDone && !reducedMotion()) {
-    ring.animate([{ scale: 1 }, { scale: 1.18, offset: .4 }, { scale: 1 }], { duration: 300, easing: "cubic-bezier(.34, 1.45, .64, 1)" });
   }
   ringDone = done;
   ringFill.style.strokeDashoffset = String(100 - done * 100);
@@ -563,7 +549,7 @@ export function pauseRound(since, why) {
   if (pausedAt !== null || S.busy || !S.text) return;
   if (S.view !== "type" || el.textBox.classList.contains("resulting")) return;
   pausedAt = typeof since === "number" ? since : performance.now();
-  boxState(true, "snap", "paused");
+  boxState(true, "paused");
   el.textBox.classList.toggle("goal", why === "goal");
 }
 function resumeRound(now) {
@@ -574,17 +560,13 @@ function resumeRound(now) {
     afterPause = true;
   }
   pausedAt = null;
-  boxState(false, "snap", "paused");
+  boxState(false, "paused");
   el.textBox.classList.remove("goal");
 }
 
-async function finishRound(byLastKey = false) {
+async function finishRound() {
   S.busy = true;
   const end = lastTime;
-  if (byLastKey && FEEL.resultHoldMs > 0) {
-    if (!learning()) boxState(true, "ending");
-    await new Promise((r) => setTimeout(r, FEEL.resultHoldMs));
-  }
   const wpm = Math.round(currentWpm(end) * 10) / 10;
   const accuracy = Math.round(currentAccuracy() * 10) / 10;
   el.live.classList.add("final");
@@ -618,18 +600,15 @@ async function finishRound(byLastKey = false) {
     if (res.newLap) roundNewLap = res.newLap;
 
     const r = compareStats(roundBefore, S.lastStats);
-    markMastered(r.mastered);
-    const milestone = roundMilestone({ ...r, wpm, newLetter: roundNewLetter, newLap: roundNewLap });
+    roundMilestone({ ...r, wpm, newLetter: roundNewLetter, newLap: roundNewLap });
     refreshActivity();
     el.live.classList.remove("final");
     await loadExercise();
-    if (milestone) FX.wave(el.letters);
   } catch (err) {
     console.error(err);
     FX.toast(t("err.server"));
     loadExercise().catch(console.error);
   } finally {
-    boxState(false, "ending");
     S.busy = false;
   }
 }
@@ -676,7 +655,7 @@ async function finishFree(wpm, accuracy, keys, perSecond) {
     refreshActivity();
     await refreshFreeplay();
     renderLetters();
-    climbAnswer(res.verdict, res.place);
+    climbAnswer();
     return { verdict: res.verdict, place: res.place, weak: res.weak };
   };
   const shown = { wpm, accuracy, words: typedWords(), ...roundFacts() };

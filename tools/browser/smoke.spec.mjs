@@ -87,32 +87,16 @@ test("Learn: only the last round and the double ring; the rest is tooltips; wide
   await expect(page.locator("#mini-pop button[data-key=\"daily\"]").first(), "the ring changes the daily goal").toBeVisible();
 });
 
-test("Learn: its events animate the letters row, a best round wears the foil, no confetti", async ({ page }) => {
+test("Learn: a best round's speed is gold, the letters change state without motion", async ({ page }) => {
   await withHistory(page);
   await openApp(page, { "tt.mode.en": "learn" });
-  const chips = page.locator("#letters .chip");
-  const open = (await chips.first().textContent()).trim();
-  await page.evaluate(async (c) => {
-    const m = await import("/letters.js");
-    m.markNewLetter(c);
-    m.markMastered([c]);
-    m.renderLetters();
-  }, open);
-  await expect(chips.first(), "a new letter flips open with a ring").toHaveClass(/\bpop\b/);
-  await expect(chips.first().locator("> .ring")).toHaveCount(1);
-  await expect(chips.first().locator("> .fill"), "a mastered letter fills green").toHaveCount(1);
-  await expect(page.locator("#letters .chip.locked.next"), "the dashed frame arrives on the next letter").toHaveClass(/\barrive\b/);
-  const n = await chips.count();
-  await page.evaluate(async () => (await import("/fx.js")).FX.wave(document.getElementById("letters")));
-  await expect(page.locator("#letters .chip > .wave"), "a wave runs along every letter").toHaveCount(n);
-  await expect(page.locator("#letters .chip > .wave"), "and cleans up after itself").toHaveCount(0, { timeout: 5000 });
   await page.evaluate(async () => {
     const m = await import("/learnpanel.js");
     m.roundMilestone({ best: true, mastered: [] });
     m.renderPanel();
   });
-  await expect(page.locator("#lp-cols .lp-last .lp-best.foil"), "a best round's speed wears the foil").toHaveCount(1);
-  await expect(page.locator("canvas.confetti")).toHaveCount(0);
+  await expect(page.locator("#lp-cols .lp-last .lp-best"), "a best round's speed stands out").toHaveCount(1);
+  expect(await page.evaluate(() => document.getAnimations().length), "nothing runs on the screen").toBe(0);
 });
 
 test("Learn: while typing this round's numbers take the last round's place, the ring stays bright, nothing moves", async ({ page }) => {
@@ -153,21 +137,17 @@ for (const mode of MODES) {
     await waitForText(page);
   });
 
-  test(`${mode.name}: typing dims the round switches and moves nothing`, async ({ page }) => {
+  test(`${mode.name}: typing neither dims nor moves the round switches`, async ({ page }) => {
     await openApp(page, mode.storage);
     const bar = page.locator("#mode-bar"), length = bar.locator(".bar-side:last-child > .ring").last();
-    await expect(length).toHaveCSS("opacity", "1");
     const before = await bar.boundingBox();
     await page.keyboard.type(await nextChar(page));
-    await expect(length).toHaveCSS("opacity", "0.35");
-    await expect(page.locator("#round-ring"), "the progress ring stays bright").toHaveCSS("opacity", "1");
-    await bar.hover();
     await expect(length).toHaveCSS("opacity", "1");
     expect(await bar.boundingBox(), "the bar stays where it was").toEqual(before);
   });
 }
 
-test("Freetype: a faster round shows New best in foil, and the small button starts the next round", async ({ page }) => {
+test("Freetype: a faster round shows New best, and the small button starts the next round", async ({ page }) => {
   await openApp(page, { "tt.mode.en": "freetype", "tt.length.freetype": "words-10" });
   await typeRound(page, { delay: 160 });
   await expectResult(page);
@@ -180,7 +160,6 @@ test("Freetype: a faster round shows New best in foil, and the small button star
   await typeRound(page, { delay: 40 });
   await expectResult(page);
   await expect(page.locator("#result .r-best")).toHaveText("New best");
-  await expect(page.locator("#result .r-num.hero .r-v > b.foil")).toHaveCount(1);
   expect(await page.locator(".confetti").count(), "no confetti").toBe(0);
   await page.keyboard.press("Enter");
   await expect(page.locator("body")).not.toHaveClass(/\btb-resulting\b/);
@@ -251,22 +230,6 @@ test("Learn: an unsaved round offers to save it again", async ({ page }, info) =
   expectedOnly(info, "/api/v1/results");
 });
 
-test("the start screen plays its full length only on the first visit", async ({ page }) => {
-  const ready = async () => {
-    const t0 = Date.now();
-    await page.goto("/");
-    await waitForText(page);
-    return Date.now() - t0;
-  };
-  await page.addInitScript(() => localStorage.setItem("tt.introDone", "1"));
-  const first = await ready();
-  expect(first, "the first visit shows the whole splash").toBeGreaterThanOrEqual(1750);
-  expect(await page.evaluate(() => document.documentElement.dataset.splash), "the first visit types the logo").toBeUndefined();
-  const again = await ready();
-  expect(again, "a later visit doesn't wait for it").toBeLessThan(1500);
-  expect(await page.evaluate(() => document.documentElement.dataset.splash), "a later visit only fades in, no logo").toBe("again");
-});
-
 test("Live stats is on for a new user and doesn't switch itself", async ({ page }) => {
   await openApp(page, { "tt.mode.en": "climb", "tt.length.climb": "words-10" });
   await expect(page.locator("body")).not.toHaveClass(/\blive-off\b/);
@@ -278,33 +241,6 @@ test("Live stats is on for a new user and doesn't switch itself", async ({ page 
   await expectResult(page);
   expect(await page.evaluate(() => localStorage.getItem("tt.live")), "a finished round leaves the setting alone").toBe("0");
   await expect(page.locator("body")).toHaveClass(/\blive-off\b/);
-});
-
-test("the background is off by default, alt+b fades it in and out, holding the keys toggles it once", async ({ page }) => {
-  await openApp(page);
-  const layer = page.locator(".ambient");
-  await expect(layer).toHaveAttribute("data-kind", "off");
-  await expect(page.locator(".ambient > *")).toHaveCount(0);
-  await page.keyboard.down("Alt");
-  await page.keyboard.down("b");
-  await page.evaluate(() => {
-    for (let i = 0; i < 5; i++) document.activeElement.dispatchEvent(new KeyboardEvent("keydown", { key: "b", code: "KeyB", altKey: true, repeat: true, bubbles: true, cancelable: true }));
-  });
-  await page.keyboard.up("b");
-  await page.keyboard.up("Alt");
-  await expect(layer, "on, and the repeats did nothing").toHaveAttribute("data-kind", "keys");
-  await expect(page.locator(".ambient > *").first()).toBeAttached();
-  expect(await layer.evaluate((l) => l.getAnimations().length), "it fades in").toBe(1);
-  expect(await page.evaluate(() => localStorage.getItem("tt.bg"))).toBe("keys");
-  await page.waitForTimeout(350);
-  await page.keyboard.press("Alt+b");
-  expect(await layer.evaluate((l) => l.getAnimations().length), "it fades out").toBe(1);
-  await expect(page.locator(".ambient > *")).toHaveCount(0);
-  await expect(layer).toHaveAttribute("data-kind", "off");
-  await page.evaluate(() => localStorage.setItem("tt.bg", "letters"));
-  await page.reload();
-  await waitForText(page);
-  await expect(layer, "an old stored value still means on").toHaveAttribute("data-kind", "keys");
 });
 
 test("a held or hammered shortcut fires once: tab, shift+tab, esc", async ({ page }) => {
@@ -867,7 +803,7 @@ test("Climb: the levels stand as steps, and the level shows once", async ({ page
   await typeRound(page);
   await expectResult(page);
   await expect(page.locator("#result .r-num")).toHaveCount(2);
-  await expect(page.locator("#mode-bar .pips > i.pop"), "a clean round fills a dot with a pop").toHaveCount(1);
+  await expect(page.locator("#mode-bar .pips > i.on"), "a clean round fills a dot").toHaveCount(1);
   await expect(page.locator("#mode-bar .climb-note"), "the rule is spelled out only before the first round").toHaveCount(0);
   await expect(page.locator("#mode-bar .climb-status")).toHaveAttribute("data-tip-text", /rounds at \d+% to level up\./);
   await expect(page.locator("#result .r-fact.bad"), "zero counters stay out").toHaveCount(0);
@@ -886,7 +822,7 @@ test("Learn: a keyboard that can't fit leaves one line in its place", async ({ p
   await expect(page.locator("#kb-away")).toBeHidden();
 });
 
-test("Freetype and Climb show the whole round at once; Learn fades its next word in", async ({ page }) => {
+test("Freetype and Climb show the whole round at once; Learn shows its next word when one is typed", async ({ page }) => {
   const words = () => page.evaluate(() => [...document.querySelectorAll("#text > span:not(.beyond):not(.extra)")].map((s) => s.textContent).join("").trim().split(" ").length);
   await openApp(page, { "tt.mode.en": "freetype", "tt.length.freetype": "words-50" });
   expect(await words(), "all 50 words are there before the first key").toBe(50);
@@ -895,8 +831,8 @@ test("Freetype and Climb show the whole round at once; Learn fades its next word
   expect(await words(), "a time round keeps lines ahead").toBeGreaterThanOrEqual(36);
   await expect(page.locator("#text > span.later")).toHaveCount(0);
   await openApp(page, { "tt.mode.en": "learn" });
-  await expect(page.locator("#text > span.new")).toHaveCount(0);
+  const later = await page.locator("#text > span.later").count();
   for (;;) { const c = await nextChar(page); await page.keyboard.type(c); if (c === " ") break; }
-  await expect(page.locator("#text > span.new").first()).toHaveCSS("animation-name", "word-in");
+  expect(await page.locator("#text > span.later").count(), "a word came into view").toBeLessThan(later);
   expect(await page.locator("#text > span.later").count(), "Learn still shows 12 words ahead").toBeGreaterThan(0);
 });

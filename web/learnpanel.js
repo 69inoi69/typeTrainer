@@ -4,7 +4,6 @@ import { t } from "./i18n.js";
 import { $, S, store } from "./state.js";
 import { getJSON } from "./api.js";
 import { learning } from "./modes.js";
-import { FX } from "./fx.js";
 import { pickDaily } from "./settings.js";
 
 const box = $("learn-panel"), cols = $("lp-cols");
@@ -56,25 +55,9 @@ export function renderPanel() {
   const html = lastRound();
   if (html !== drawn) {
     drawn = html;
-    redraw(cols, html);
-    document.fonts.ready.then(() => cols.querySelectorAll(".lp-best:not(.foil)").forEach(FX.foil));
+    cols.innerHTML = html;
   }
 }
-
-function redraw(el, html) {
-  const nums = (root) => [...root.querySelectorAll(".lp-cell :is(.lp-n, .lp-best)")];
-  const before = nums(el).map((v) => +v.dataset.n);
-  el.innerHTML = html;
-  if (!before.length) return;
-  nums(el).forEach((v, i) => {
-    const was = before[i], now = +v.dataset.n;
-    if (was === undefined || was === now) return;
-    v.animate([{ "--v": was }, { "--v": now }], { duration: 700, easing: "cubic-bezier(.2, .7, .3, 1)" });
-    v.animate([{ color: gold() }, {}], { duration: 1200, easing: "ease-out" });
-  });
-}
-
-const gold = () => getComputedStyle(document.body).getPropertyValue("--accent-text").trim();
 
 const num = (x, unit = "", cls = "") => {
   const n = Math.round(x);

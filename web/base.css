@@ -21,8 +21,6 @@
   --accent-deep: #e0a21a;
   --accent-text: var(--accent);
   --accent-big: var(--accent);
-  --accent-fill: linear-gradient(180deg, #f6cf47 0%, #e8ad1f 100%);
-  --accent-glow: 0 0 0 1px rgba(242, 194, 48, .35), 0 6px 22px -6px rgba(242, 194, 48, .45);
   --on-accent: #17130a;
   --on-band: var(--on-accent);
   --error: #e5484d;
@@ -34,10 +32,7 @@
   --u: min(calc((100vw - 32px - 2 * var(--side)) / 13.6), var(--u-fit, 56px), var(--u-max, 84px));
   --tw: min(100vw - 32px - 2 * var(--side), max(760px, calc(var(--u) * 14.6)));
 
-  --fast: 70ms;
-  --med: 180ms;
   --ease: cubic-bezier(.2, .8, .2, 1);
-  --grow: cubic-bezier(.34, 1.45, .64, 1);
 
   --ctl: 38px;
   --track: color-mix(in srgb, var(--text) 5%, var(--panel));
@@ -45,8 +40,6 @@
   --lift: inset 0 1px 0 rgba(255, 255, 255, .04), 0 1px 2px rgba(0, 0, 0, .35);
   --shadow: 0 24px 60px -12px rgba(0, 0, 0, .6), 0 0 0 1px rgba(255, 255, 255, .06);
   --shadow-sm: 0 10px 30px -8px rgba(0, 0, 0, .55);
-  --glass: rgba(24, 25, 30, .72);
-  --glass-blur: blur(18px) saturate(140%);
   --r-sm: 6px; --r-md: 10px; --r-lg: 16px;
   --palm-shade: rgba(0, 0, 0, .5);
   --side: 0px;
@@ -84,10 +77,6 @@ button, .tooltip, .hints, .rail small, .intro p, .intro h2, .account-msg,
 .win, .profile-card, .intro-card {
   background: var(--panel); border-radius: var(--r-lg); box-shadow: var(--ring), var(--shadow);
 }
-.win, .profile-card {
-  background: var(--glass); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
-  box-shadow: var(--shadow);
-}
 .win-title, .profile-title {
   margin: 0 0 4px; font-family: var(--ui); font-size: .95rem; font-weight: 600; color: var(--text);
 }
@@ -109,9 +98,9 @@ button, .tooltip, .hints, .rail small, .intro p, .intro h2, .account-msg,
 dialog.settings-win {
   position: fixed; inset: 14vh auto auto 50%; translate: -50% 0; margin: 0;
   border: 0; padding: 0; width: max-content; max-width: calc(100vw - 24px); color: var(--text);
-  font-family: var(--ui); overflow: visible; animation: note-in .2s var(--ease);
+  font-family: var(--ui); overflow: visible;
 }
-dialog.settings-win::backdrop { background: color-mix(in srgb, var(--bg) 70%, transparent); backdrop-filter: blur(3px); }
+dialog.settings-win::backdrop { background: color-mix(in srgb, var(--bg) 70%, transparent); }
 dialog.settings-win:focus { outline: none; }
 .sw-list { padding: 4px 6px 6px; max-height: calc(100dvh - 14vh - 140px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 28%, transparent) transparent; }
 .sw-list::-webkit-scrollbar { width: 8px; }
@@ -170,23 +159,17 @@ dialog.settings-win:focus { outline: none; }
 }
 .ring button {
   padding: 5px 9px; border: 0; border-radius: 0; background: none; color: var(--sub); font: inherit; font-size: .9rem;
-  white-space: nowrap; cursor: pointer; transition: color .15s, background-color .15s;
-}
+  white-space: nowrap; cursor: pointer;}
 .ring button + button { box-shadow: inset 1px 0 0 color-mix(in srgb, var(--sub) 40%, var(--line)); }
 .ring button:hover { color: var(--text); background: color-mix(in srgb, var(--text) 5%, transparent); }
 .ring button:focus-visible { outline-offset: -2px; }
 .ring button { position: relative; isolation: isolate; }
 .ring button[aria-pressed="true"] { color: var(--accent-text); }
 .ring button[aria-pressed="true"]::before { content: ""; position: absolute; inset: 0; z-index: -1; background: color-mix(in srgb, var(--accent) 22%, transparent); }
-.ring button.pick { animation: ring-pop .26s cubic-bezier(.3, 1.6, .5, 1); }
-.ring button.pick::before { animation: ring-fill .22s cubic-bezier(.2, .8, .3, 1); }
-@keyframes ring-pop { from { transform: scale(.92); } }
-@keyframes ring-fill { from { transform: scaleX(.3); opacity: .2; } }
-@media (prefers-reduced-motion: reduce) { .ring button.pick, .ring button.pick::before { animation: none; } }
 .ring-lbl { display: flex; align-items: center; color: var(--label); font-size: .9rem; margin: 0 4px 0 7px; }
 dialog.mini-pop {
   position: fixed; inset: auto; margin: 0; border: 0; padding: 8px 10px; color: var(--text);
-  font-family: var(--ui); animation: note-in .15s var(--ease);
+  font-family: var(--ui);
 }
 dialog.mini-pop::backdrop { background: none; }
 .mp-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 4px 2px; }
@@ -194,9 +177,8 @@ dialog.mini-pop::backdrop { background: none; }
 .mp-name[data-tip-text] { cursor: help; }
 dialog.confirm {
   border: 0; padding: 16px 18px 14px; width: min(340px, calc(100vw - 32px)); color: var(--text);
-  animation: note-in .2s var(--ease);
 }
-dialog.confirm::backdrop { background: color-mix(in srgb, var(--bg) 70%, transparent); backdrop-filter: blur(2px); }
+dialog.confirm::backdrop { background: color-mix(in srgb, var(--bg) 70%, transparent); }
 dialog.confirm .win-p { margin: 0; }
 .confirm-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
 .confirm-btns .btn.danger { color: #fff; background: var(--error); box-shadow: none; }
@@ -209,5 +191,5 @@ dialog.custom-win .custom-count { margin: 6px 0 0; color: var(--sub); }
   background: var(--panel); box-shadow: var(--ring); color: var(--text); font: 1rem/1.5 var(--mono);
 }
 #custom-area:focus { outline: 2px solid var(--accent-text); outline-offset: 1px; }
-.confirm-btns .btn.primary { color: var(--on-accent); background: var(--accent-fill); box-shadow: none; }
+.confirm-btns .btn.primary { color: var(--on-accent); background: var(--accent); box-shadow: none; }
 .confirm-btns .btn.primary:disabled { opacity: .45; cursor: default; }
