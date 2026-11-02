@@ -22,7 +22,7 @@
   --accent-text: var(--accent);
   --accent-big: var(--accent);
   --on-accent: #17130a;
-  --on-band: var(--on-accent);
+  --on-band: var(--bg);
   --error: #e5484d;
   --ok: #8fd17c;
   --mono: "Geist Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;

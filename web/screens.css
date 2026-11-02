@@ -42,11 +42,11 @@ body.tb-resulting .hints .round-only { display: none; }
 .r-fact.bad b { color: var(--error); }
 .r-fact[data-tip-text] { text-decoration: underline dotted color-mix(in srgb, var(--sub) 60%, transparent); text-underline-offset: 4px; }
 /* speed bands, slow to fast: red is for mistakes only */
-.result .s1 { --sp: #a08cf0; }
-.result .s2 { --sp: #6fa8f5; }
-.result .s3 { --sp: #4fcfc0; }
-.result .s4 { --sp: var(--ok); }
-.result .s5 { --sp: var(--accent); }
+.result .s1 { --sp: #7e6dca; }
+.result .s2 { --sp: #4b86cd; }
+.result .s3 { --sp: #12ab9a; }
+.result .s4 { --sp: #6aad57; }
+.result .s5 { --sp: #ca9f00; }
 .r-chart { display: flex; gap: 8px; padding-bottom: 1.3em; }
 @media (max-height: 720px) and (min-width: 641px) {
   .r-body { gap: 16px; }
@@ -80,7 +80,7 @@ body.tb-resulting .hints .round-only { display: none; }
   background: linear-gradient(45deg, transparent 42%, var(--error) 42% 58%, transparent 58%),
               linear-gradient(-45deg, transparent 42%, var(--error) 42% 58%, transparent 58%);
 }
-.r-legend { display: flex; border-radius: 999px; overflow: hidden; font-size: var(--fs-min); height: 16px; line-height: 16px; font-variant-numeric: tabular-nums; }
+.r-legend { display: flex; border-radius: 999px; overflow: hidden; font-size: var(--fs-min); font-weight: 500; height: 20px; line-height: 20px; font-variant-numeric: tabular-nums; }
 .r-legend > span { flex: 1; text-align: center; padding: 0 6px; background: var(--sp); color: var(--on-band); }
 .r-wordlist {
   font-family: var(--mono); font-size: 1.1rem; line-height: 1.75; color: color-mix(in srgb, var(--text) 80%, var(--sub));
