@@ -50,7 +50,7 @@ function climbBelow() {
   const at = S.climbLevel ?? c.place?.level, reached = c.place?.level ?? 0;
   const steps = c.levels.map((n, i) => {
     const l = i + 1, cls = l === at ? " on" : l <= reached ? " past" : "";
-    return `<span class="step${cls}" style="--i:${i}"><i></i>${kLabel(n)}</span>`;
+    return `<span class="step${cls}" style="--i:${i}"><i></i><span>${kLabel(n)}</span></span>`;
   }).join("");
   const weak = c.weak?.length ? `<p class="below-fact" tabindex="0" data-tip-text="${t("climb.weakTip")}"><small>${t("climb.weak")}</small><b>${c.weak.map((w) => w.pair).join(" ")}</b></p>` : "";
   return `<div class="steps">${steps}</div>${weak}`;

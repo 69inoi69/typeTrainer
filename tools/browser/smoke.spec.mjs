@@ -802,7 +802,7 @@ test("Freetype and Climb show the whole round at once; Learn shows its next word
   expect(await page.locator("#text > span.later").count(), "Learn still shows 12 words ahead").toBeGreaterThan(0);
 });
 
-test("under the text: the keyboard or where you stand, alt+k swaps them, typing hides the block", async ({ page }) => {
+test("under the text: where you stand, a thin strip over the keyboard, and typing hides it", async ({ page }) => {
   await openApp(page, { "tt.mode.en": "freetype", "tt.length.freetype": "words-10" });
   const below = page.locator("#below");
   await expect(below).toContainText("Your rounds will show up here.");
@@ -815,7 +815,7 @@ test("under the text: the keyboard or where you stand, alt+k swaps them, typing 
   await expect(below.locator(".below-fact b")).toHaveText(/^\d+$/);
   await page.keyboard.press("Alt+k");
   await expect(page.locator("#keyboard")).toBeVisible();
-  await expect(below).toBeHidden();
+  expect((await below.boundingBox()).height, "a strip over the keys").toBeLessThan(50);
   await expect(page.locator("#keyboard .key.next"), "the next key lights at once").toHaveCount(1);
   await page.waitForTimeout(350);
   await page.keyboard.press("Alt+k");
