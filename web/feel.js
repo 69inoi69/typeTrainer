@@ -15,6 +15,9 @@ export const FEEL = {
   handScale: 0.55,
   handRoom: 1.05,
   fingerLiftPx: 8,
+  nextKeyLiftPx: 3,
+  keyPressMs: 90,
+  keyPressScale: 0.96,
 };
 
 function applyFeel() {
@@ -23,6 +26,9 @@ function applyFeel() {
   root.setProperty("--caret-curve", FEEL.caretCurve);
   root.setProperty("--feel-mark-line", FEEL.markLine + "px");
   root.setProperty("--feel-hand", String(FEEL.handScale));
+  root.setProperty("--feel-next-lift", -FEEL.nextKeyLiftPx + "px");
+  root.setProperty("--feel-key-press-ms", FEEL.keyPressMs + "ms");
+  root.setProperty("--feel-key-press-scale", String(FEEL.keyPressScale));
   root.setProperty("--feel-hand-room", String(FEEL.handRoom));
 }
 applyFeel();

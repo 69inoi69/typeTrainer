@@ -126,8 +126,8 @@ consequences, the same word for the same thing. All text lives in
 - Typing feels instant: the rules for the keypress path and how to measure
   it are in `docs/CODE-RULES.md` ("Architecture rules") and `AGENTS.md`
   ("How we work"). Feel numbers live in `web/feel.js`.
-- A state changes at once. Only the caret, the line scroll and the progress
-  rings move (`docs/PRODUCT.md`, "Plain defaults").
+- A state changes at once. Only the caret, the line scroll and the keyboard's
+  lit key move (`docs/PRODUCT.md`, "Plain defaults").
 - No `:has()` over a big part of the page (`body`, `#view-type`): any text
   that changes inside it (the hint, a counter) makes the browser restyle
   the whole typing screen on every key (measured:

@@ -283,8 +283,11 @@ body.kb-nofit:not(.kb-hidden) .kb-away { display: block; }
   display: flex; align-items: center; justify-content: center;
   border-radius: calc(var(--u) * .2); font-size: calc(var(--u) * .3); font-weight: 400;
   color: color-mix(in srgb, var(--text) 70%, var(--bg));
-  background: color-mix(in srgb, var(--fc) 9%, var(--key));
+  background:
+    linear-gradient(to bottom, rgba(255, 255, 255, .035), transparent 55%),
+    color-mix(in srgb, var(--fc) 9%, var(--key));
   border-bottom: 2px solid color-mix(in srgb, var(--fc) 55%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 1px 2px rgba(0, 0, 0, .4);
   overflow: hidden;
 }
 .key.home::after {
@@ -301,23 +304,40 @@ body.kb-nofit:not(.kb-hidden) .kb-away { display: block; }
 .key.locked:not(.next) {
   background: color-mix(in srgb, var(--fc) 3%, var(--bg)); color: color-mix(in srgb, var(--sub) 65%, var(--bg));
   border-bottom-color: color-mix(in srgb, var(--fc) 22%, transparent);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .03);
 }
 .keyboard .key, .intro .key {
+  --skirt: calc(var(--u) * .09);
+  padding-bottom: var(--skirt);
   border-bottom: 0; border-radius: calc(var(--u) * .18);
   font-family: "Geist Mono Keys", var(--mono); font-weight: 600; font-size: calc(var(--u) * .34); text-transform: uppercase;
   color: color-mix(in srgb, var(--text) 88%, var(--bg));
-  background: color-mix(in srgb, var(--fc) 12%, var(--key));
+  background:
+    radial-gradient(120% 90% at 50% 30%, rgba(255, 255, 255, .06), transparent 60%),
+    linear-gradient(to bottom, rgba(255, 255, 255, .05), rgba(0, 0, 0, .08)),
+    color-mix(in srgb, var(--fc) 12%, var(--key));
+  box-shadow:
+    inset 0 calc(-1 * var(--skirt)) 0 color-mix(in srgb, var(--fc) 50%, #0b0c0f),
+    inset 0 1px 0 rgba(255, 255, 255, .08), inset 0 0 0 1px rgba(255, 255, 255, .03),
+    0 2px 0 rgba(0, 0, 0, .45), 0 6px 14px -6px rgba(0, 0, 0, .6);
 }
 .keyboard .key.wide .lbl, .keyboard .key.mod .lbl { font-size: .8em; text-transform: none; }
 :is(.keyboard, .intro) .key.home::after { bottom: 22%; }
 .keyboard .key { overflow: visible; }
 .keyboard .key > .lit {
   position: absolute; inset: 0; z-index: 1;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: center; justify-content: center; padding-bottom: var(--skirt);
   border-radius: inherit; font-style: normal; pointer-events: none;
-  color: #15161a; background: var(--fc); opacity: 0;
+  color: #15161a; translate: 0 var(--feel-next-lift, -3px);
+  background: radial-gradient(120% 90% at 50% 30%, rgba(255, 255, 255, .35), transparent 60%), var(--fc);
+  box-shadow:
+    inset 0 calc(-1 * var(--skirt)) 0 color-mix(in srgb, var(--fc) 60%, #0b0c0f),
+    0 0 0 2px color-mix(in srgb, var(--fc) 60%, transparent),
+    0 8px 22px -4px color-mix(in srgb, var(--fc) 55%, transparent);
+  opacity: 0; scale: var(--feel-key-press-scale, .96); will-change: opacity, scale;
+  transition: opacity var(--feel-key-press-ms, 90ms) ease-out, scale var(--feel-key-press-ms, 90ms) cubic-bezier(.2, .8, .2, 1);
 }
-.keyboard .key.next > .lit { opacity: 1; }
+.keyboard .key.next > .lit { opacity: 1; scale: 1; transition: none; }
 .keyboard .key.wide > .lit, .keyboard .key.mod > .lit { font-size: .8em; text-transform: none; }
 .keyboard .key.home > .lit::after {
   content: ""; position: absolute; bottom: 22%; width: 28%; height: 2px;
@@ -325,7 +345,10 @@ body.kb-nofit:not(.kb-hidden) .kb-away { display: block; }
 }
 .keyboard .key.locked {
   color: color-mix(in srgb, var(--sub) 70%, var(--bg));
-  background: color-mix(in srgb, var(--fc) 3%, var(--bg));
+  background: linear-gradient(to bottom, rgba(255, 255, 255, .025), rgba(0, 0, 0, .06)), color-mix(in srgb, var(--fc) 3%, var(--bg));
+  box-shadow:
+    inset 0 calc(-1 * var(--skirt)) 0 color-mix(in srgb, var(--fc) 18%, #0b0c0f), inset 0 1px 0 rgba(255, 255, 255, .04),
+    0 2px 0 rgba(0, 0, 0, .35);
 }
 
 .pips { display: inline-flex; gap: 5px; margin-left: 8px; vertical-align: middle; }
