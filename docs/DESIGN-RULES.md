@@ -162,7 +162,9 @@ consequences, the same word for the same thing. All text lives in
   choice of a few values: the round bars, the settings, the small window,
   the stats)
   (Off on the left, On on the right), `.btn` buttons (`.danger` for
-  destructive), `data-tip` tooltips.
+  destructive), `data-tip` tooltips, `--ctl` (32 px) as the height of every
+  control. Text sizes come from `--fs-min` to `--fs-xxl`, corners from
+  `--r-sm`, `--r-md`, `--r-lg` (`web/base.css`).
 - Naming: Learn, Climb, Freetype, Stats, Settings; round, focus, mastered, level
   (`docs/TEXT-RULES.md`, word list).
 

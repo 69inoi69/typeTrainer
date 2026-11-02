@@ -10,7 +10,7 @@
 .logo { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .logo-key { width: 34px; height: 34px; flex: none; }
 .logo-text { display: flex; flex-direction: column; line-height: 1; min-width: 0; }
-.logo-name { font-family: var(--logo); font-size: 1.75rem; font-weight: 600; letter-spacing: -.03em; color: var(--accent-big); white-space: nowrap; }
+.logo-name { font-family: var(--logo); font-size: var(--fs-l); font-weight: 600; letter-spacing: -.03em; color: var(--accent-big); white-space: nowrap; }
 .logo-name span { color: var(--text); }
 
 /* ---------- the logo's keycap and the mascot (#207) ---------- */
@@ -24,11 +24,11 @@
 .logo-name i.tail { color: var(--text); }
 .logo-text { position: relative; }
 .logo-quest { position: absolute; left: 0; top: 0; bottom: 0; display: flex; align-items: center; cursor: default; pointer-events: none; }
-.q-text { font-family: var(--logo); font-size: 1.75rem; font-weight: 600; letter-spacing: -.03em; white-space: nowrap; color: color-mix(in srgb, var(--sub) 40%, transparent); }
+.q-text { font-family: var(--logo); font-size: var(--fs-l); font-weight: 600; letter-spacing: -.03em; white-space: nowrap; color: color-mix(in srgb, var(--sub) 40%, transparent); }
 .q-text i { display: inline-block; font-style: normal; box-shadow: -2px 0 0 transparent; }
 .q-text i.done { visibility: hidden; }
 .q-text i.next { box-shadow: -2px 0 0 var(--accent); }
-.q-note { position: absolute; left: 0; top: calc(100% + 8px); white-space: nowrap; font-size: .95rem; color: color-mix(in srgb, var(--text) 70%, var(--sub)); }
+.q-note { position: absolute; left: 0; top: calc(100% + 8px); white-space: nowrap; font-size: var(--fs-min); color: color-mix(in srgb, var(--text) 70%, var(--sub)); }
 .mascot {
   position: fixed; left: 0; top: 0; z-index: 40; width: 52px; height: 52px;
   cursor: grab; touch-action: none; user-select: none; will-change: transform;
@@ -42,8 +42,8 @@
 .mascot.held .m-mouth { transform: scaleX(.4); }
 .m-say {
   position: absolute; bottom: calc(100% + 10px); left: 0; margin: 0;
-  padding: 8px 12px; border-radius: 10px; white-space: nowrap; pointer-events: none;
-  font-size: .95rem; color: var(--text); background: var(--panel-2); box-shadow: var(--lift);
+  padding: 8px 12px; border-radius: var(--r-md); white-space: nowrap; pointer-events: none;
+  font-size: var(--fs-min); color: var(--text); background: var(--panel-2); box-shadow: var(--lift);
   opacity: 0; transform: translateY(4px); transition: opacity .2s var(--ease), transform .2s var(--ease);
 }
 .m-say.left { left: auto; right: 0; }
@@ -55,7 +55,7 @@ body.typing-now .mascot { opacity: 0; visibility: hidden; }
   position: relative;
   display: flex; gap: 6px 18px; align-items: center; height: 32px; margin: 0 0 6px; min-width: 0;
 }
-.live-right { margin-left: auto; display: flex; align-items: center; gap: 18px; color: var(--label); font-size: 1rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.live-right { margin-left: auto; display: flex; align-items: center; gap: 18px; color: var(--label); font-size: var(--fs-s); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .round-count { color: var(--text); cursor: default; }
 .goal-count { padding: 0; border: 0; background: none; color: var(--label); font: inherit; cursor: pointer; }
 .goal-count:hover { color: var(--text); background: none; }
@@ -63,9 +63,9 @@ body.typing-now .mascot { opacity: 0; visibility: hidden; }
 /* the round's numbers show from its first key; at rest their place stays empty (#241) */
 body:not(.typing-now) .live:not(.final) > .metric.num { opacity: 0; pointer-events: none; }
 .metric { display: flex; align-items: baseline; }
-.metric > span { font-size: 1.3rem; font-weight: 500; letter-spacing: -.01em; color: var(--accent-text); font-variant-numeric: tabular-nums; }
+.metric > span { font-size: var(--fs-m); font-weight: 500; letter-spacing: -.01em; color: var(--accent-text); font-variant-numeric: tabular-nums; }
 .metric small { margin-left: 6px; white-space: nowrap; }
-.metric > span.pct { font-size: .9rem; margin-left: 1px; }
+.metric > span.pct { font-size: var(--fs-min); margin-left: 1px; }
 @property --v { syntax: "<integer>"; inherits: false; initial-value: 0; }
 .metric:has(#wpm) { min-width: 4rem; }
 .metric:has(#acc) { min-width: 4.6rem; }
@@ -73,7 +73,7 @@ body:not(.typing-now) .live:not(.final) > .metric.num { opacity: 0; pointer-even
 .streak {
   --sc: #f2c230;
   position: absolute; left: 0; top: 0; z-index: 3; display: none; align-items: center; gap: 3px; pointer-events: none;
-  font-size: .95rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; color: var(--sc);
+  font-size: var(--fs-min); font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; color: var(--sc);
   transition: translate var(--feel-caret-ms, 0ms) var(--caret-curve), color .4s var(--ease);
 }
 .streak.jump { transition: none; }
@@ -89,14 +89,14 @@ body:not(.typing-now) .live:not(.final) > .metric.num { opacity: 0; pointer-even
 .switch { position: relative; display: grid; --n: 2; --i: 0; flex: none; }
 .switch button {
   position: relative; z-index: 1; border: 0; background: none; cursor: pointer; white-space: nowrap;
-  color: var(--sub); border-radius: 10px; padding: 0;
+  color: var(--sub); border-radius: var(--r-md); padding: 0;
   font-size: var(--fs-min); font-weight: 600; letter-spacing: 0; line-height: 1;
 }
 .switch button:hover { background: none; color: color-mix(in srgb, var(--text) 70%, var(--sub)); }
 .switch button[aria-selected="true"] { color: var(--text); }
 .switch-thumb { position: absolute; pointer-events: none; }
 .switch-thumb::after {
-  content: ""; position: absolute; border-radius: 2px;
+  content: ""; position: absolute; border-radius: var(--r-sm);
   background: var(--accent);
 }
 
@@ -111,7 +111,7 @@ body:not(.typing-now) .live:not(.final) > .metric.num { opacity: 0; pointer-even
 .nav-switch { --n: 4; }
 .rail .switch button, .rail-btn {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-  width: 72px; height: 50px; padding: 0 2px; border-radius: 10px; background: none; color: var(--sub);
+  width: 72px; height: 50px; padding: 0 2px; border-radius: var(--r-md); background: none; color: var(--sub);
 }
 .rail .switch button:hover, .rail-btn:hover { background: none; color: color-mix(in srgb, var(--text) 70%, var(--sub)); }
 .rail .switch button[aria-selected="true"], .rail-btn[aria-expanded="true"] { color: var(--text); }
@@ -154,7 +154,7 @@ body:not(.typing-now) .live:not(.final) > .metric.num { opacity: 0; pointer-even
   display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 22px;
   color: var(--label); font-size: var(--fs-min);
 }
-.hints kbd { background: var(--panel); color: color-mix(in srgb, var(--text) 60%, var(--sub)); padding: 1px 6px; border-radius: 4px; }
+.hints kbd { background: var(--panel); color: color-mix(in srgb, var(--text) 60%, var(--sub)); padding: 1px 6px; border-radius: var(--r-sm); }
 @media (pointer: coarse) { .bottom { display: none; } }
 .stats-only-note { display: none; }
 body.stats-only .rail, body.stats-only #view-type { display: none; }
@@ -164,16 +164,17 @@ body.stats-only .stats-only-note {
   background: var(--panel); box-shadow: var(--ring); color: var(--label); font-size: var(--fs-min); line-height: 1.45;
 }
 .hints .stats-hint { display: none; }
+body:not([data-view="stats"]) .hints .stats-line { display: none; }
 .hints .result-only { display: none; }
 body.tb-resulting:not([data-view="stats"]) .hints .result-only { display: inline; }
 body[data-view="stats"] .hints :is(.type-only, .round-only) { display: none; }
 body[data-view="stats"] .hints .stats-hint { display: inline; }
 button {
   color: var(--sub); background: var(--panel); border: 0;
-  padding: 8px 14px; border-radius: 8px; cursor: pointer;
+  padding: 8px 14px; border-radius: var(--r-sm); cursor: pointer;
 }
 button:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6%, var(--panel)); }
-kbd { font: inherit; font-size: max(.8em, var(--fs-min)); padding: 1px 5px; border-radius: 4px; background: var(--bg); }
+kbd { font: inherit; font-size: max(.8em, var(--fs-min)); padding: 1px 5px; border-radius: var(--r-sm); background: var(--bg); }
 button:disabled { opacity: .35; cursor: default; }
 button:disabled:hover { color: var(--sub); background: none; }
 

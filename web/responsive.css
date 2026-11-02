@@ -20,8 +20,7 @@
   .top { padding-block: 10px 6px; gap: 8px; }
   .top-side { gap: 4px; }
   .logo-key { display: none; }
-  .logo-name { font-size: 1.3rem; }
-  :root { --ctl: 34px; }
+  .logo-name { font-size: var(--fs-m); }
   .rail { justify-content: space-between; gap: 0; padding-inline: 2px; }
   .rail-group { flex: 2; }
   .rail .nav-switch { flex: 3; }
@@ -32,8 +31,8 @@
   .tiles { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 100%; }
   .tiles > .tile:first-child:nth-last-child(odd) { grid-column: 1 / -1; }
   .tile { padding: 10px 10px 9px; }
-  .tile b { font-size: 1.3rem; }
-  .note { font-size: var(--fs-min); border-radius: 14px; }
+  .tile b { font-size: var(--fs-m); }
+  .note { font-size: var(--fs-min); border-radius: var(--r-md); }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -13,7 +13,7 @@
 body.tb-resulting #view-type > .keyboard { display: none; }
 body.tb-resulting .hints .round-only { display: none; }
 .result {
-  position: relative; font-size: 1rem;
+  position: relative; font-size: var(--fs-s);
   width: 100%;
   display: flex; flex-direction: column;
 }
@@ -28,14 +28,14 @@ body.tb-resulting .hints .round-only { display: none; }
 .r-graph .r-chart { flex: 1; min-height: 120px; margin: 0; }
 .r-num { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .r-v { display: flex; align-items: baseline; line-height: 1; }
-.r-num.big .r-v { font-size: 2.6rem; letter-spacing: -.03em; }
+.r-num.big .r-v { font-size: var(--fs-xl); letter-spacing: -.03em; }
 .r-num.big .r-v > b { color: var(--text); }
-.r-num.hero .r-v { font-size: 4.6rem; letter-spacing: -.04em; }
+.r-num.hero .r-v { font-size: var(--fs-xxl); letter-spacing: -.04em; }
 .r-num.hero .r-v > b { color: var(--accent-big); }
 .r-v > b { font-weight: 500; font-variant-numeric: tabular-nums; }
 .r-v > small { font-size: .4em; margin-left: 2px; letter-spacing: 0; color: var(--sub); }
 .r-num.hero .r-v > small { margin-left: .3em; }
-.r-facts { display: flex; flex-wrap: wrap; gap: 4px 0; font-size: 1.05rem; color: var(--label); }
+.r-facts { display: flex; flex-wrap: wrap; gap: 4px 0; font-size: var(--fs-s); color: var(--label); }
 .r-fact + .r-fact::before { content: "·"; display: inline-block; margin: 0 .7em; color: var(--sub); }
 .r-fact { outline: none; cursor: default; }
 .r-fact b { font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
@@ -50,8 +50,8 @@ body.tb-resulting .hints .round-only { display: none; }
 .r-chart { display: flex; gap: 8px; padding-bottom: 1.3em; }
 @media (max-height: 720px) and (min-width: 641px) {
   .r-body { gap: 16px; }
-  .r-num.big .r-v { font-size: 2.2rem; }
-  .r-num.hero .r-v { font-size: 3.6rem; }
+  .r-num.big .r-v { font-size: var(--fs-l); }
+  .r-num.hero .r-v { font-size: var(--fs-xl); }
   .r-hero { gap: 10px; }
   .r-wordlist { max-height: calc(1.75em * 2); }
   .result .r-foot { margin-top: 8px; }
@@ -83,10 +83,10 @@ body.tb-resulting .hints .round-only { display: none; }
 .r-legend { display: flex; border-radius: 999px; overflow: hidden; font-size: var(--fs-min); font-weight: 500; height: 20px; line-height: 20px; font-variant-numeric: tabular-nums; }
 .r-legend > span { flex: 1; text-align: center; padding: 0 6px; background: var(--sp); color: var(--on-band); }
 .r-wordlist {
-  font-family: var(--mono); font-size: 1.1rem; line-height: 1.75; color: color-mix(in srgb, var(--text) 80%, var(--sub));
+  font-family: var(--mono); font-size: var(--fs-s); line-height: 1.75; color: color-mix(in srgb, var(--text) 80%, var(--sub));
   max-height: calc(1.75em * 5); overflow-y: auto; scrollbar-width: thin;
 }
-.r-w { border-radius: 4px; padding: 1px 0; cursor: default; color: var(--sp, inherit); }
+.r-w { border-radius: var(--r-sm); padding: 1px 0; cursor: default; color: var(--sp, inherit); }
 .r-w:hover, .r-w:focus-visible { background: color-mix(in srgb, var(--text) 10%, transparent); outline: none; }
 .r-w i { font-style: normal; color: var(--error); text-decoration: underline 2px var(--error); text-underline-offset: 4px; }
 .result .r-foot { display: flex; justify-content: center; margin-top: 26px; }
@@ -113,7 +113,7 @@ body.tb-resulting .hints .round-only { display: none; }
 .intro-step { display: none; }
 .intro-step.active { display: block; }
 .intro-kicker { color: var(--accent-text); margin: 0 0 8px; }
-.intro h2 { font-size: 1.45rem; font-weight: 500; margin: 0 0 14px; text-wrap: balance; }
+.intro h2 { font-size: var(--fs-m); font-weight: 500; margin: 0 0 14px; text-wrap: balance; }
 .intro p { color: color-mix(in srgb, var(--text) 80%, var(--sub)); line-height: 1.6; margin: 0 0 12px; }
 .intro p b { color: var(--text); }
 .intro-small { font-size: var(--fs-min); color: var(--label) !important; }
@@ -130,7 +130,7 @@ body.tb-resulting .hints .round-only { display: none; }
   border-bottom: 3px solid color-mix(in srgb, var(--fc) 70%, transparent);
 }
 .intro-do {
-  display: inline-block; color: var(--accent-text) !important; font-size: .9rem;
+  display: inline-block; color: var(--accent-text) !important; font-size: var(--fs-min);
   padding: 4px 12px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 .intro-step { text-align: center; }
@@ -175,10 +175,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .avatar.photo { color: transparent; box-shadow: var(--ring); }
 @media (min-width: 900px) {
   .profile-btn { height: 44px; gap: 10px; padding-left: 14px; }
-  .profile-name { font-size: 1rem; }
-  .profile-btn .avatar { width: 36px; height: 36px; font-size: 1rem; }
+  .profile-name { font-size: var(--fs-s); }
+  .profile-btn .avatar { width: 36px; height: 36px; font-size: var(--fs-s); }
 }
-.avatar.big { width: 52px; height: 52px; font-size: 1.3rem; }
+.avatar.big { width: 52px; height: 52px; font-size: var(--fs-m); }
 .profile-card {
   position: absolute; right: 0; top: calc(100% + 8px); width: 300px; padding: 16px 18px 14px;
 }
@@ -188,8 +188,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .profile-field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
 
 .profile-field input {
-  width: 100%; padding: 6px 9px; border: 0; border-radius: 8px; outline: none;
-  background: var(--bg); color: var(--text); box-shadow: var(--ring); font-size: .9rem;
+  width: 100%; height: var(--ctl); padding: 0 9px; border: 0; border-radius: var(--r-sm); outline: none;
+  background: var(--bg); color: var(--text); box-shadow: var(--ring); font-size: var(--fs-min);
 }
 .profile-field input:focus { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent); }
 .avatar-picks { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 12px; }
@@ -202,20 +202,20 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .avatar-picks button.upload { --av: var(--sub); display: grid; place-items: center; color: var(--text); }
 .avatar-picks svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .profile-field[hidden], .profile-big-name[hidden] { display: none; }
-.profile-big-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1rem; color: var(--text); }
+.profile-big-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-s); color: var(--text); }
 .account { margin: 0 0 10px; padding-top: 10px; border-top: 1px solid var(--line); }
 .account[hidden], .account-in[hidden], .account-form[hidden], .profile-soon[hidden] { display: none; }
 .account-form { display: flex; flex-direction: column; gap: 8px; }
 .account-msg { margin: 0; min-height: 1.5em; color: var(--label); font-size: var(--fs-min); line-height: 1.5; }
 .account-msg.bad { color: var(--error); }
 .account-btns { display: flex; gap: 8px; }
-.account-btns button { flex: 1; padding: 6px 10px; font-size: var(--fs-min); border-radius: 8px; }
+.account-btns button { flex: 1; height: var(--ctl); padding: 0 10px; font-size: var(--fs-min); border-radius: var(--r-sm); }
 .account-btns button:not(.ghost) { background: var(--accent); color: var(--on-accent); }
 .account-btns button.ghost { background: none; box-shadow: var(--ring); }
 .account-in { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .account-as { margin: 0; color: var(--label); font-size: var(--fs-min); overflow: hidden; text-overflow: ellipsis; }
 .account-as b { color: var(--text); font-weight: 600; }
-.account-in button { padding: 5px 11px; font-size: var(--fs-min); background: none; box-shadow: var(--ring); }
+.account-in button { height: var(--ctl); padding: 0 11px; font-size: var(--fs-min); background: none; box-shadow: var(--ring); }
 .profile-soon { margin: 0; padding-top: 10px; border-top: 1px solid var(--line); color: var(--label); font-size: var(--fs-min); line-height: 1.5; }
 
 /* ---------- settings (settings.js) ---------- */

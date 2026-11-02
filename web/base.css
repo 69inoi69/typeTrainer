@@ -16,7 +16,7 @@
   --sub: #6c717c;
   --text: #e8e9ec;
   --label: color-mix(in srgb, var(--text) 35%, var(--sub));
-  --fs-min: .875rem;
+  --fs-min: .875rem; --fs-s: 1rem; --fs-m: 1.3rem; --fs-l: 1.75rem; --fs-xl: 2.6rem; --fs-xxl: 4.6rem;
   --accent: #f2c230;
   --accent-deep: #e0a21a;
   --accent-text: var(--accent);
@@ -34,7 +34,7 @@
 
   --ease: cubic-bezier(.2, .8, .2, 1);
 
-  --ctl: 38px;
+  --ctl: 32px;
   --track: color-mix(in srgb, var(--text) 5%, var(--panel));
   --ring: inset 0 0 0 1px rgba(255, 255, 255, .055);
   --lift: inset 0 1px 0 rgba(255, 255, 255, .04), 0 1px 2px rgba(0, 0, 0, .35);
@@ -78,14 +78,14 @@ button, .tooltip, .hints, .rail small, .intro p, .intro h2, .account-msg,
   background: var(--panel); border-radius: var(--r-lg); box-shadow: var(--ring), var(--shadow);
 }
 .win-title, .profile-title {
-  margin: 0 0 4px; font-family: var(--ui); font-size: .95rem; font-weight: 600; color: var(--text);
+  margin: 0 0 4px; font-family: var(--ui); font-size: var(--fs-min); font-weight: 600; color: var(--text);
 }
 .win-p { margin: 6px 0 0; font-family: var(--ui); font-size: var(--fs-min); line-height: 1.5; color: color-mix(in srgb, var(--text) 82%, var(--sub)); }
 .win-p b { color: var(--text); font-weight: 600; }
 .win kbd { background: var(--track); box-shadow: var(--ring); color: var(--text); font-family: var(--mono); }
 @media (pointer: coarse) { .keys-only { display: none; } }
 .btn {
-  display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: var(--r-md);
+  display: inline-flex; align-items: center; gap: 6px; height: var(--ctl); padding: 0 11px; border-radius: var(--r-md);
   background: none; color: color-mix(in srgb, var(--text) 80%, var(--sub)); box-shadow: var(--ring); font-size: var(--fs-min);
 }
 .btn:hover { color: var(--text); background: var(--track); }
@@ -104,23 +104,23 @@ dialog.settings-win::backdrop { background: color-mix(in srgb, var(--bg) 70%, tr
 dialog.settings-win:focus { outline: none; }
 .sw-list { padding: 4px 6px 6px; max-height: calc(100dvh - 14vh - 140px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 28%, transparent) transparent; }
 .sw-list::-webkit-scrollbar { width: 8px; }
-.sw-list::-webkit-scrollbar-thumb { border-radius: 4px; background: color-mix(in srgb, var(--text) 28%, transparent); }
+.sw-list::-webkit-scrollbar-thumb { border-radius: var(--r-sm); background: color-mix(in srgb, var(--text) 28%, transparent); }
 .sw-rows { display: grid; grid-template-columns: max-content 1fr; }
-.sw-group { grid-column: 1 / -1; color: color-mix(in srgb, var(--text) 58%, var(--sub)); font-size: .875rem; padding: 10px 8px 2px; }
+.sw-group { grid-column: 1 / -1; color: color-mix(in srgb, var(--text) 58%, var(--sub)); font-size: var(--fs-min); padding: 10px 8px 2px; }
 .sw-sep { grid-column: 1 / -1; height: 1px; background: var(--line); margin: 5px 8px; }
 .sw-row { display: contents; }
 .sw-row > span { display: flex; align-items: center; gap: 6px; min-height: 32px; padding: 2px 8px; }
 .sw-name { position: relative; font-size: var(--fs-min); color: var(--text); border-radius: 8px 0 0 8px; }
 .sw-ctl { padding-left: 16px !important; border-radius: 0 8px 8px 0; }
 .sw-row.on > span { background: var(--track); }
-.sw-row.on .sw-name::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: var(--accent); }
+.sw-row.on .sw-name::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; border-radius: var(--r-sm); background: var(--accent); }
 .sw-ctl .btn.kb-on { box-shadow: inset 0 0 0 1px var(--accent); }
 .sw-name[data-tip-text] { cursor: help; }
 .sw-ctl .ring { flex-wrap: wrap; }
 .sw-ctl .ring button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 34px; }
 .sw-preview {
   position: absolute; left: calc(100% + 12px); z-index: 1; padding: 8px 14px; border-radius: var(--r-md);
-  background: var(--panel); box-shadow: var(--ring), var(--shadow); font-size: 1.25rem; pointer-events: none;
+  background: var(--panel); box-shadow: var(--ring), var(--shadow); font-size: var(--fs-m); pointer-events: none;
 }
 .sw-preview.left { left: auto; right: calc(100% + 12px); }
 .sw-preview[hidden] { display: none; }
@@ -130,15 +130,14 @@ dialog.settings-win:focus { outline: none; }
   translate: calc(var(--i) * (1ch + .02em)) 0;
 }
 .sw-foot { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 14px; border-top: 1px solid var(--line); color: var(--label); font-size: var(--fs-min); }
-.sw-foot kbd { background: var(--track); box-shadow: var(--ring); color: var(--text); border-radius: 4px; padding: 0 5px; margin-right: 3px; font-family: var(--mono); }
+.sw-foot kbd { background: var(--track); box-shadow: var(--ring); color: var(--text); border-radius: var(--r-sm); padding: 0 5px; margin-right: 3px; font-family: var(--mono); }
 @media (min-width: 900px) and (pointer: fine) {
   dialog.settings-win { inset-block-start: 6vh; min-width: 34rem; }
   .sw-list { padding: 8px 10px 10px; max-height: calc(100dvh - 6vh - 110px); }
   .sw-group { padding: 14px 12px 4px; }
   .sw-row > span { min-height: 44px; padding: 3px 12px; }
-  .sw-name { font-size: 1rem; }
+  .sw-name { font-size: var(--fs-s); }
   .sw-ctl { padding-left: 32px !important; }
-  .sw-ctl .ring button, .sw-ctl .btn { font-size: .9rem; padding: 6px 12px; }
   .sw-ctl .btn svg { width: 17px; height: 17px; }
   .sw-ctl .cs { height: 14px; }
   .sw-foot { font-size: var(--fs-min); padding: 11px 20px; gap: 4px 18px; }
@@ -146,7 +145,6 @@ dialog.settings-win:focus { outline: none; }
 @media (pointer: coarse) {
   .sw-foot { display: none; }
   .sw-row > span { min-height: 46px; }
-  .sw-ctl .ring button, .sw-ctl .btn { min-height: 38px; }
 }
 @media (max-width: 899px) {
   dialog.settings-win { inset: auto auto calc(72px + env(safe-area-inset-bottom)) 50%; }
@@ -154,11 +152,11 @@ dialog.settings-win:focus { outline: none; }
   .sw-ctl { padding-left: 8px !important; }
 }
 .ring {
-  display: flex; align-items: stretch; border-radius: 10px; overflow: hidden;
+  display: flex; align-items: stretch; border-radius: var(--r-md); overflow: hidden;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sub) 40%, var(--line));
 }
 .ring button {
-  padding: 5px 9px; border: 0; border-radius: 0; background: none; color: var(--sub); font: inherit; font-size: .9rem;
+  height: var(--ctl); padding: 0 9px; border: 0; border-radius: 0; background: none; color: var(--sub); font: inherit; font-size: var(--fs-min);
   white-space: nowrap; cursor: pointer;}
 .ring button + button { box-shadow: inset 1px 0 0 color-mix(in srgb, var(--sub) 40%, var(--line)); }
 .ring button:hover { color: var(--text); background: color-mix(in srgb, var(--text) 5%, transparent); }
@@ -166,14 +164,14 @@ dialog.settings-win:focus { outline: none; }
 .ring button { position: relative; isolation: isolate; }
 .ring button[aria-pressed="true"] { color: var(--accent-text); }
 .ring button[aria-pressed="true"]::before { content: ""; position: absolute; inset: 0; z-index: -1; background: color-mix(in srgb, var(--accent) 22%, transparent); }
-.ring-lbl { display: flex; align-items: center; color: var(--label); font-size: .9rem; margin: 0 4px 0 7px; }
+.ring-lbl { display: flex; align-items: center; color: var(--label); font-size: var(--fs-min); margin: 0 4px 0 7px; }
 dialog.mini-pop {
   position: fixed; inset: auto; margin: 0; border: 0; padding: 8px 10px; color: var(--text);
   font-family: var(--ui);
 }
 dialog.mini-pop::backdrop { background: none; }
 .mp-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 4px 2px; }
-.mp-name { font-size: .9rem; }
+.mp-name { font-size: var(--fs-min); }
 .mp-name[data-tip-text] { cursor: help; }
 dialog.confirm {
   border: 0; padding: 16px 18px 14px; width: min(340px, calc(100vw - 32px)); color: var(--text);
@@ -184,7 +182,7 @@ dialog.confirm .win-p { margin: 0; }
 .confirm-btns .btn.danger { color: #fff; background: var(--error); box-shadow: none; }
 .confirm-btns .btn.danger:hover { filter: brightness(1.1); }
 dialog.custom-win { width: min(560px, calc(100vw - 32px)); }
-dialog.custom-win .win-p { font-size: .9rem; margin-bottom: 10px; }
+dialog.custom-win .win-p { font-size: var(--fs-min); margin-bottom: 10px; }
 dialog.custom-win .custom-count { margin: 6px 0 0; color: var(--sub); }
 #custom-area {
   width: 100%; box-sizing: border-box; resize: vertical; padding: 10px 12px; border: 0; border-radius: var(--r-md);
