@@ -67,7 +67,7 @@ const modeName = (m) => t(m === "climb" ? "mode.free" : "mode." + m);
 function splitOldSound() {
   const old = store.get("tt.sound");
   if (old === null) return;
-  if (store.get(BY_ID.keySound.store) === null) store.set(BY_ID.keySound.store, old === "keys" ? "click" : "off");
+  if (store.get(BY_ID.keySound.store) === null) store.set(BY_ID.keySound.store, old === "keys" ? "deep" : "off");
   if (store.get(BY_ID.missSound.store) === null) store.set(BY_ID.missSound.store, old === "off" ? "off" : "thud");
 }
 
